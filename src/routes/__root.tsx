@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Mermaid Studio — Visual diagram editor" },
+      { title: "סוכן ניתוח מערכות — תרשימים מתוך טקסט" },
       {
         name: "description",
-        content: "Create, edit and export Mermaid diagrams with a live visual canvas and code editor.",
+        content:
+          "סוכן AI לאנליסטים: הופך דרישות וטקסט חופשי לתרשימי זרימה, swim-lanes, ER ורצף — עם עריכה ויזואלית וקוד Mermaid.",
       },
+      { property: "og:site_name", content: "סוכן ניתוח מערכות" },
+      { property: "og:type", content: "website" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

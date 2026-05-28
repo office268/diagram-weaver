@@ -13,12 +13,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Mermaid Studio" },
-      { name: "description", content: "Sign in or create an account to save your diagrams." },
+      { title: "כניסה — סוכן ניתוח מערכות" },
+      { name: "description", content: "היכנסו כדי לשמור ולנהל את תרשימי הניתוח שלכם." },
+      { property: "og:title", content: "כניסה — סוכן ניתוח מערכות" },
+      { property: "og:description", content: "כניסה למרחב העבודה של סוכן ניתוח המערכות." },
+      { property: "og:url", content: "/login" },
     ],
   }),
   component: LoginPage,
 });
+
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -75,23 +79,25 @@ function LoginPage() {
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 text-sm font-medium text-foreground">
           <GitBranch className="h-5 w-5 text-primary" />
-          Mermaid Studio
+          סוכן ניתוח מערכות
         </Link>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
           <Tabs value={mode} onValueChange={(v) => setMode(v as "signin" | "signup")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Sign up</TabsTrigger>
+              <TabsTrigger value="signin">כניסה</TabsTrigger>
+              <TabsTrigger value="signup">הרשמה</TabsTrigger>
             </TabsList>
             <TabsContent value="signin" className="mt-6">
-              <h1 className="text-lg font-semibold text-foreground">Welcome back</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Sign in to your diagrams.</p>
+              <h1 className="text-lg font-semibold text-foreground">ברוכים השבים</h1>
+              <p className="mt-1 text-sm text-muted-foreground">כניסה לתרשימי הניתוח שלך.</p>
             </TabsContent>
             <TabsContent value="signup" className="mt-6">
-              <h1 className="text-lg font-semibold text-foreground">Create your account</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Start designing in seconds.</p>
+              <h1 className="text-lg font-semibold text-foreground">פתיחת חשבון</h1>
+              <p className="mt-1 text-sm text-muted-foreground">תוך שניות תייצרו את התרשים הראשון.</p>
             </TabsContent>
+          </Tabs>
+
           </Tabs>
 
           <form onSubmit={handleEmail} className="mt-6 space-y-4">
