@@ -110,18 +110,23 @@ function AuthBridge() {
       router.invalidate();
       queryClient.invalidateQueries();
     });
+function AuthBridge() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      // Only invalidate on real auth transitions — ignore TOKEN_REFRESHED
+      // and INITIAL_SESSION which fire repeatedly and cause redirect loops.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        router.invalidate();
+        queryClient.invalidateQueries();
+      }
+    });
     return () => subscription.unsubscribe();
   }, [router, queryClient]);
   return null;
 }
-
-function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthBridge />
-      <Outlet />
-      <Toaster richColors position="top-right" />
-    </QueryClientProvider>
   );
 }
