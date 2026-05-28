@@ -232,6 +232,12 @@ function EditorPage() {
             )}
           </div>
 
+          <Button size="sm" variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-1.5 h-4 w-4" />
+            AI
+          </Button>
+
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline">
