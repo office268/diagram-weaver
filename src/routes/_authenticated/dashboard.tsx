@@ -106,6 +106,10 @@ function DashboardPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
           <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
             {createMut.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
