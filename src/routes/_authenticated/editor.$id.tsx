@@ -15,7 +15,9 @@ import {
   FileImage,
   FileCode2,
   FileText,
+  Sparkles,
 } from "lucide-react";
+import { AiPromptDialog } from "@/components/ai-prompt-dialog";
 
 import {
   getDiagram,
