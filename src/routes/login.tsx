@@ -98,7 +98,6 @@ function LoginPage() {
             </TabsContent>
           </Tabs>
 
-          </Tabs>
 
           <form onSubmit={handleEmail} className="mt-6 space-y-4">
             <div className="space-y-2">
