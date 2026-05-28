@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, FileCode, Trash2, Loader2 } from "lucide-react";
+import { Plus, FileCode, Trash2, Loader2, Sparkles } from "lucide-react";
+import { AiPromptDialog } from "@/components/ai-prompt-dialog";
 import {
   listDiagrams,
   createDiagram,
@@ -48,6 +49,7 @@ function DashboardPage() {
 
   const [type, setType] = useState<string>("flowchart");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["diagrams"],
@@ -104,6 +106,10 @@ function DashboardPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
           <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
             {createMut.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -191,6 +197,23 @@ function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AiPromptDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        defaultType={type}
+        onGenerated={async ({ code, title, diagram_type }) => {
+          try {
+            const { diagram } = await createFn({
+              data: { code, title, diagram_type },
+            });
+            qc.invalidateQueries({ queryKey: ["diagrams"] });
+            navigate({ to: "/editor/$id", params: { id: diagram.id } });
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to create");
+          }
+        }}
+      />
     </div>
   );
 }

@@ -15,7 +15,9 @@ import {
   FileImage,
   FileCode2,
   FileText,
+  Sparkles,
 } from "lucide-react";
+import { AiPromptDialog } from "@/components/ai-prompt-dialog";
 
 import {
   getDiagram,
@@ -71,6 +73,7 @@ function EditorPage() {
   const [svg, setSvg] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
+  const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
     if (data?.diagram) {
@@ -229,6 +232,12 @@ function EditorPage() {
             )}
           </div>
 
+          <Button size="sm" variant="outline" onClick={() => setAiOpen(true)}>
+            <Sparkles className="mr-1.5 h-4 w-4" />
+            AI
+          </Button>
+
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline">
@@ -292,6 +301,21 @@ function EditorPage() {
           </div>
         </div>
       )}
+
+      <AiPromptDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        defaultType={type}
+        existingCode={code}
+        onGenerated={({ code: newCode, title: newTitle, diagram_type }) => {
+          setCode(newCode);
+          setType(diagram_type);
+          if (!title || title.startsWith("New ") || title === "Untitled diagram") {
+            setTitle(newTitle);
+          }
+          toast.success("Diagram generated");
+        }}
+      />
     </div>
   );
 }
