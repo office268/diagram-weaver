@@ -197,6 +197,23 @@ function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AiPromptDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        defaultType={type}
+        onGenerated={async ({ code, title, diagram_type }) => {
+          try {
+            const { diagram } = await createFn({
+              data: { code, title, diagram_type },
+            });
+            qc.invalidateQueries({ queryKey: ["diagrams"] });
+            navigate({ to: "/editor/$id", params: { id: diagram.id } });
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Failed to create");
+          }
+        }}
+      />
     </div>
   );
 }
