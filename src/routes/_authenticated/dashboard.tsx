@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, FileCode, Trash2, Loader2 } from "lucide-react";
+import { Plus, FileCode, Trash2, Loader2, Sparkles } from "lucide-react";
+import { AiPromptDialog } from "@/components/ai-prompt-dialog";
 import {
   listDiagrams,
   createDiagram,
