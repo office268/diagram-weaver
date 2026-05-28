@@ -49,6 +49,7 @@ function DashboardPage() {
 
   const [type, setType] = useState<string>("flowchart");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["diagrams"],
