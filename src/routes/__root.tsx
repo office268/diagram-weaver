@@ -128,5 +128,3 @@ function AuthBridge() {
   }, [router, queryClient]);
   return null;
 }
-  );
-}
