@@ -301,6 +301,21 @@ function EditorPage() {
           </div>
         </div>
       )}
+
+      <AiPromptDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        defaultType={type}
+        existingCode={code}
+        onGenerated={({ code: newCode, title: newTitle, diagram_type }) => {
+          setCode(newCode);
+          setType(diagram_type);
+          if (!title || title.startsWith("New ") || title === "Untitled diagram") {
+            setTitle(newTitle);
+          }
+          toast.success("Diagram generated");
+        }}
+      />
     </div>
   );
 }
