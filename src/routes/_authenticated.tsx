@@ -37,8 +37,9 @@ function AuthenticatedLayout() {
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
           <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-foreground">
             <GitBranch className="h-5 w-5 text-primary" />
-            Mermaid Studio
+            סוכן ניתוח מערכות
           </Link>
+
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.email}

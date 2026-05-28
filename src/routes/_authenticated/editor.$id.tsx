@@ -47,12 +47,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export const Route = createFileRoute("/_authenticated/editor/$id")({
   head: () => ({
     meta: [
-      { title: "Editor — Mermaid Studio" },
-      { name: "description", content: "Edit a Mermaid diagram." },
+      { title: "עורך תרשים — סוכן ניתוח מערכות" },
+      {
+        name: "description",
+        content: "עריכת תרשים ניתוח מערכות עם תצוגה ויזואלית וקוד Mermaid זה לצד זה.",
+      },
+      { property: "og:title", content: "עורך תרשים — סוכן ניתוח מערכות" },
     ],
   }),
   component: EditorPage,
 });
+
 
 function EditorPage() {
   const { id } = Route.useParams();

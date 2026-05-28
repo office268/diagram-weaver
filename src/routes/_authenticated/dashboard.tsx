@@ -33,12 +33,18 @@ import {
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Your diagrams — Mermaid Studio" },
-      { name: "description", content: "All your Mermaid diagrams in one place." },
+      { title: "התרשימים שלי — סוכן ניתוח מערכות" },
+      {
+        name: "description",
+        content: "כל תרשימי הניתוח שלך במקום אחד — צרו חדש מתוך פרומפט או מתבנית.",
+      },
+      { property: "og:title", content: "התרשימים שלי — סוכן ניתוח מערכות" },
+      { property: "og:url", content: "/dashboard" },
     ],
   }),
   component: DashboardPage,
 });
+
 
 function DashboardPage() {
   const navigate = useNavigate();
