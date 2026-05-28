@@ -73,6 +73,7 @@ function EditorPage() {
   const [svg, setSvg] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
+  const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
     if (data?.diagram) {
