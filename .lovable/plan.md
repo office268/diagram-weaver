@@ -1,43 +1,50 @@
-## דף הגדרות — System Instruction & Prompt
+## מטרה
+בלחיצה על "צור מסמך" — להריץ את אותו פרומפט במקביל על שלושת המודלים, להציג את התוצאות זו לצד זו, ולתת למשתמש לבחור איזה מסמך לשמור (או לבטל).
 
-### מטרה
-דף `/settings` שמציג ומאפשר לערוך את ה-system instruction, ומציג (קריאה בלבד) את תבנית הפרומפט שנשלחת ל-LLM בעת יצירת מסמך אפיון.
+## המודלים להשוואה
+1. `google/gemini-2.5-pro` — נוכחי
+2. `google/gemini-3-flash-preview` — Gemini מהיר
+3. `openai/gpt-5-mini` — OpenAI
 
-### שינויים
+## טיפול ב-structured output
+gemini-2.5-pro לא תומך ב-`Output.object` דרך ה-gateway (זו הסיבה שהיצירה נכשלה). כדי שכל שלושת המודלים יעבדו על מסלול אחיד ויציב — מעבר ל-**JSON parsing ידני** לכל השלושה:
+- ה-system instruction מורה להחזיר JSON בלבד לפי הסכמה.
+- שימוש ב-`generateText` רגיל (בלי `experimental_output`).
+- חילוץ JSON מהתשובה (להסיר ```json``` אם המודל הוסיף), `JSON.parse`, ואז `SpecOutputSchema.parse` (ה-Zod שכבר רוכך עם defaults) כ-validation רך.
+- אם מודל אחד נכשל, השניים האחרים עדיין מוחזרים.
 
-**1. טבלה חדשה: `ai_settings`** (לכל משתמש)
-- `user_id` (PK, unique)
-- `system_instruction` (text)
-- RLS: רק הבעלים יכול לקרוא/לעדכן.
+## שינויים
 
-**2. ברירת מחדל משותפת (`src/lib/ai-spec-defaults.ts`)**
-- מייצא את `DEFAULT_SYSTEM_INSTRUCTION` (המחרוזת שכעת hard-coded ב-`ai-spec.functions.ts` שורות 68-81).
-- מייצא את `PROMPT_TEMPLATE` — תיאור קריא של מה נשלח: `{user_prompt}` של המשתמש מועבר as-is כ-user message, יחד עם ה-system instruction וסכמת ה-JSON המובנית. (תצוגה בלבד.)
+### 1. `src/lib/ai-spec.functions.ts`
+- להחליף את `generateSpecFromPrompt` ב-`generateSpecsFromAllModels`:
+  - מקבל `prompt`.
+  - מריץ `Promise.allSettled` על 3 קריאות (אחת לכל מודל).
+  - כל קריאה: `generateText({ model, system, prompt })`, חילוץ + parse JSON, החזרה.
+  - מחזיר `{ results: Array<{ model: string; spec: SpecContent | null; error: string | null }> }`.
+- הסרת `Output.object` ו-`experimental_output`.
+- ה-system instruction נטען עדיין מ-`ai_settings` (כמו היום), עם תוספת קבועה: "החזר JSON תקני בלבד לפי הסכמה, ללא ```json``` ובלי טקסט נוסף".
 
-**3. שרת: `src/lib/ai-settings.functions.ts`**
-- `getAiSettings()` — מחזיר את ה-row של המשתמש, או את ברירת המחדל אם אין.
-- `updateAiSettings({ system_instruction })` — upsert.
-- `resetAiSettings()` — מחיקה / חזרה לברירת מחדל.
+### 2. `src/lib/ai-spec-defaults.ts`
+- להוסיף `COMPARISON_MODELS = ["google/gemini-2.5-pro", "google/gemini-3-flash-preview", "openai/gpt-5-mini"]`.
+- להחליף `SPEC_MODEL` (יחיד) בשימוש בקבוע הזה.
 
-**4. עדכון `ai-spec.functions.ts`**
-- בתחילת ה-handler: לטעון את ה-system instruction של המשתמש מ-`ai_settings`, ואם לא קיים — להשתמש ב-`DEFAULT_SYSTEM_INSTRUCTION`.
-- שאר הלוגיקה (קריאה אחת ל-Gemini 2.5 Pro עם structured output) נשארת זהה.
+### 3. `src/routes/_authenticated/dashboard.tsx`
+- ה-mutation לא יוצר עוד מסמך אוטומטית. במקום זאת:
+  - שולח לפונקציה החדשה ומקבל 3 תוצאות.
+  - פותח **דיאלוג השוואה חדש** (במקום לנווט לעורך).
+- כשהמשתמש בוחר אחד — `createSpec` נקרא עם ה-spec של המודל שנבחר (וגם עם metadata על המודל בכותרת/פרומפט), ואז ניווט לעורך.
 
-**5. דף חדש: `src/routes/_authenticated/settings.tsx`**
-- כותרת + הסבר קצר.
-- **בלוק א — System Instruction**: `Textarea` גדול ערוך, כפתורי "שמור" ו"שחזר לברירת מחדל". מציג גם את ברירת המחדל בקריאה בלבד (collapsible) להשוואה.
-- **בלוק ב — תבנית הפרומפט**: כרטיס קריאה-בלבד שמציג:
-  - "System message:" (תוכן ה-system instruction הנוכחי)
-  - "User message:" — מסביר שזה הפרומפט שהמשתמש מקליד בדיאלוג "מסמך אפיון חדש" (placeholder `{user_prompt}`)
-  - "Output schema:" — שמות השדות במסמך המובנה (overview, goals, personas, וכו').
-  - "מודל: google/gemini-2.5-pro".
+### 4. דיאלוג השוואה חדש (קומפוננטה חדשה בתוך `dashboard.tsx` או קובץ נפרד `spec-comparison-dialog.tsx`)
+- שלוש כרטיסיות / שלוש עמודות (במובייל — Tabs; בדסקטופ — 3 עמודות).
+- כל עמודה מציגה:
+  - שם המודל בכותרת.
+  - תקציר קצר של המסמך: כותרת, סקירה, מספר דרישות/personas/תרחישים/סיכונים (כדי להבין במבט מהיר).
+  - תצוגה מתקפלת של כל הסעיפים (Accordion) למי שרוצה לראות הכל.
+  - כפתור "בחר מסמך זה" שיוצר ושומר.
+- מצב שגיאה לכל עמודה (אם מודל מסוים נכשל) — הצגת השגיאה והשארת הטקסט במקום ההזנה כדי לאפשר ניסיון חוזר.
 
-**6. ניווט**
-- ב-`src/routes/_authenticated.tsx` להוסיף קישור "הגדרות" בהדר לצד אימייל המשתמש.
+### 5. ה-system instruction בעמוד `/settings`
+- ללא שינוי מבחינת UI, אבל הטקסט שמוצג כ"תבנית פרומפט" יעודכן לציין שהקריאה רצה מקבילית על 3 מודלים.
 
-### לא משתנה
-- מבנה המסמך, ה-editor, ה-dashboard, הזרימה של פנייה אחת ל-LLM.
-
-### קבצים
-- חדש: migration `ai_settings`, `src/lib/ai-spec-defaults.ts`, `src/lib/ai-settings.functions.ts`, `src/routes/_authenticated/settings.tsx`
-- עריכה: `src/lib/ai-spec.functions.ts`, `src/routes/_authenticated.tsx`
+## לא משתנה
+- מבנה ה-sp
