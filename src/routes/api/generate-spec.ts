@@ -56,12 +56,47 @@ export const Route = createFileRoute("/api/generate-spec")({
           const gateway = createLovableAiGatewayProvider(key);
           const result = streamText({
             model: gateway(body.model),
-            system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
             prompt: body.prompt,
+            system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
+            onError: ({ error }) => {
+              console.error(
+                `[generate-spec] streamText onError (${body.model}):`,
+                error,
+              );
+            },
           });
-          return result.toTextStreamResponse();
+
+          // Custom stream: forwards text chunks and surfaces upstream errors
+          // inline so the client can show a useful message instead of a silent
+          // empty body.
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream<Uint8Array>({
+            async start(controller) {
+              try {
+                for await (const chunk of result.textStream) {
+                  controller.enqueue(encoder.encode(chunk));
+                }
+                controller.close();
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                console.error(
+                  `[generate-spec] stream iteration error (${body.model}): ${msg}`,
+                );
+                controller.enqueue(
+                  encoder.encode(`\n__STREAM_ERROR__:${msg}`),
+                );
+                controller.close();
+              }
+            },
+          });
+
+          return new Response(stream, {
+            status: 200,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
+          console.error(`[generate-spec] thrown (${body.model}):`, e);
           let status = 500;
           let friendly = msg;
           if (msg.includes("429")) {

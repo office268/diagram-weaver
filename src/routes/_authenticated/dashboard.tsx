@@ -160,11 +160,21 @@ function DashboardPage() {
         }
         fullText += decoder.decode();
 
+        const errIdx = fullText.indexOf("__STREAM_ERROR__:");
+        if (errIdx >= 0) {
+          const errMsg = fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim();
+          throw new Error(errMsg || "שגיאת זרם מהמודל");
+        }
+        if (!fullText.trim()) {
+          throw new Error("המודל החזיר תשובה ריקה");
+        }
+
         let parsed: unknown;
         try {
           parsed = JSON.parse(extractJson(fullText));
         } catch {
-          throw new Error("המודל לא החזיר JSON תקני");
+          const snippet = fullText.slice(0, 200).replace(/\s+/g, " ");
+          throw new Error(`המודל לא החזיר JSON תקני. תחילת התשובה: ${snippet}`);
         }
         const spec = SpecOutputSchema.parse(parsed);
         await saveSpec(model, spec, promptText);
