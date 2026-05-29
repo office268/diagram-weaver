@@ -50,11 +50,18 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type CompareResult = {
-  model: string;
-  spec: SpecOutput | null;
-  error: string | null;
-};
+type ModelState =
+  | { status: "loading" }
+  | { status: "success"; spec: SpecOutput }
+  | { status: "error"; error: string };
+
+type CompareState = Record<SpecModel, ModelState>;
+
+function initialCompareState(): CompareState {
+  return Object.fromEntries(
+    COMPARISON_MODELS.map((m) => [m, { status: "loading" } as ModelState]),
+  ) as CompareState;
+}
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -62,47 +69,65 @@ function DashboardPage() {
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
-  const genFn = useServerFn(generateSpecsFromAllModels);
+  const genFn = useServerFn(generateSpecFromModel);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [compareResults, setCompareResults] = useState<CompareResult[] | null>(null);
-  const [savingModel, setSavingModel] = useState<string | null>(null);
+  const [compareState, setCompareState] = useState<CompareState | null>(null);
+  const [savingModel, setSavingModel] = useState<SpecModel | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
     queryFn: () => listFn(),
   });
 
-  const generateMut = useMutation({
-    mutationFn: async () => {
-      const { results } = await genFn({ data: { prompt } });
-      return results;
+  const runModel = useCallback(
+    async (model: SpecModel, promptText: string) => {
+      setCompareState((prev) => ({
+        ...(prev ?? initialCompareState()),
+        [model]: { status: "loading" },
+      }));
+      try {
+        const { spec } = await genFn({ data: { prompt: promptText, model } });
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "success", spec } } : prev,
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "error", error: msg } } : prev,
+        );
+      }
     },
-    onSuccess: (results) => {
-      setNewOpen(false);
-      setCompareResults(results);
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
-  });
+    [genFn],
+  );
+
+  const startCompare = useCallback(() => {
+    const p = prompt.trim();
+    if (p.length < 5) return;
+    setNewOpen(false);
+    setCompareState(initialCompareState());
+    COMPARISON_MODELS.forEach((m) => {
+      void runModel(m, p);
+    });
+  }, [prompt, runModel]);
 
   const pickMut = useMutation({
-    mutationFn: async (r: CompareResult) => {
-      if (!r.spec) throw new Error("אין מסמך לשמירה");
-      setSavingModel(r.model);
-      const { spec } = await createFn({
+    mutationFn: async ({ model, spec }: { model: SpecModel; spec: SpecOutput }) => {
+      setSavingModel(model);
+      const { spec: row } = await createFn({
         data: {
-          title: `${r.spec.title} — ${r.model}`,
+          title: `${spec.title} — ${model}`,
           prompt,
-          content: r.spec,
+          content: spec,
         },
       });
-      return spec;
+      return row;
     },
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["specs"] });
-      setCompareResults(null);
+      setCompareState(null);
       setPrompt("");
       setSavingModel(null);
       navigate({ to: "/editor/$id", params: { id: row.id } });
@@ -112,6 +137,10 @@ function DashboardPage() {
       toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
     },
   });
+
+  const anyLoading = compareState
+    ? Object.values(compareState).some((s) => s.status === "loading")
+    : false;
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
