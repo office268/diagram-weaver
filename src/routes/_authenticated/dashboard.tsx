@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle } from "lucide-react";
 import {
   listSpecs,
   createSpec,
   deleteSpec,
 } from "@/lib/spec.functions";
-import { generateSpecFromPrompt } from "@/lib/ai-spec.functions";
+import { generateSpecsFromAllModels } from "@/lib/ai-spec.functions";
+import type { SpecOutput } from "@/lib/ai-spec.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -47,17 +49,25 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+type CompareResult = {
+  model: string;
+  spec: SpecOutput | null;
+  error: string | null;
+};
+
 function DashboardPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
-  const genFn = useServerFn(generateSpecFromPrompt);
+  const genFn = useServerFn(generateSpecsFromAllModels);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [compareResults, setCompareResults] = useState<CompareResult[] | null>(null);
+  const [savingModel, setSavingModel] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
@@ -66,19 +76,40 @@ function DashboardPage() {
 
   const generateMut = useMutation({
     mutationFn: async () => {
-      const spec = await genFn({ data: { prompt } });
-      const { spec: row } = await createFn({
-        data: { title: spec.title, prompt, content: spec },
+      const { results } = await genFn({ data: { prompt } });
+      return results;
+    },
+    onSuccess: (results) => {
+      setNewOpen(false);
+      setCompareResults(results);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
+  });
+
+  const pickMut = useMutation({
+    mutationFn: async (r: CompareResult) => {
+      if (!r.spec) throw new Error("אין מסמך לשמירה");
+      setSavingModel(r.model);
+      const { spec } = await createFn({
+        data: {
+          title: `${r.spec.title} — ${r.model}`,
+          prompt,
+          content: r.spec,
+        },
       });
-      return row;
+      return spec;
     },
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["specs"] });
-      setNewOpen(false);
+      setCompareResults(null);
       setPrompt("");
+      setSavingModel(null);
       navigate({ to: "/editor/$id", params: { id: row.id } });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
+    onError: (e) => {
+      setSavingModel(null);
+      toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
+    },
   });
 
   const deleteMut = useMutation({
@@ -99,7 +130,7 @@ function DashboardPage() {
             מסמכי האפיון שלי
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            תארו מערכת בחופשי — קבלו מסמך אפיון על מלא וערוך.
+            תארו מערכת בחופשי — ה-3 מודלים יבנו מסמך והשוו ביניהם.
           </p>
         </div>
         <Button onClick={() => setNewOpen(true)} className="w-full sm:w-auto">
@@ -168,7 +199,7 @@ function DashboardPage() {
               מסמך אפיון חדש
             </DialogTitle>
             <DialogDescription>
-              תארו את המערכת במילים שלכם — הסוכן יבנה דרישות, הנחות יסוד, ארכיטקטורה, מודל נתונים, תרחישים ועוד.
+              תארו את המערכת — נריץ במקביל על 3 מודלים ותוכלו להשוות לפני בחירה.
             </DialogDescription>
           </DialogHeader>
 
@@ -199,18 +230,25 @@ function DashboardPage() {
               {generateMut.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  בונה את המסמך…
+                  מריץ 3 מודלים…
                 </>
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  צור מסמך
+                  צור והשווה
                 </>
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ComparisonDialog
+        results={compareResults}
+        onClose={() => !pickMut.isPending && setCompareResults(null)}
+        onPick={(r) => pickMut.mutate(r)}
+        savingModel={savingModel}
+      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
@@ -231,6 +269,123 @@ function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function ComparisonDialog({
+  results,
+  onClose,
+  onPick,
+  savingModel,
+}: {
+  results: CompareResult[] | null;
+  onClose: () => void;
+  onPick: (r: CompareResult) => void;
+  savingModel: string | null;
+}) {
+  if (!results) return null;
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>השוואת תוצאות מ-3 מודלים</DialogTitle>
+          <DialogDescription>
+            עיינו בכל תוצאה ובחרו את המסמך לשמירה. ניתן לערוך אותו אחר כך.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue={results[0]?.model} className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="grid w-full grid-cols-3">
+            {results.map((r) => (
+              <TabsTrigger key={r.model} value={r.model} className="text-xs" dir="ltr">
+                {r.model.split("/")[1]}
+                {r.error ? (
+                  <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
+                ) : (
+                  <Check className="ml-1 h-3 w-3 text-primary" />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {results.map((r) => (
+            <TabsContent
+              key={r.model}
+              value={r.model}
+              className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
+            >
+              {r.error ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                  <div className="font-medium">המודל נכשל</div>
+                  <div className="mt-1 text-xs">{r.error}</div>
+                </div>
+              ) : r.spec ? (
+                <ResultPreview spec={r.spec} />
+              ) : null}
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={!!savingModel}>
+            ביטול
+          </Button>
+          {results.map((r) =>
+            r.spec ? (
+              <Button
+                key={r.model}
+                size="sm"
+                variant={savingModel === r.model ? "default" : "outline"}
+                onClick={() => onPick(r)}
+                disabled={!!savingModel}
+                dir="ltr"
+              >
+                {savingModel === r.model ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-1.5 h-4 w-4" />
+                )}
+                בחר: {r.model.split("/")[1]}
+              </Button>
+            ) : null,
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ResultPreview({ spec }: { spec: SpecOutput }) {
+  const stats = [
+    { label: "מטרות", n: spec.goals.length },
+    { label: "Personas", n: spec.personas.length },
+    { label: "דרישות פונק'", n: spec.functional_requirements.length },
+    { label: "דרישות לא-פונק'", n: spec.non_functional_requirements.length },
+    { label: "הנחות", n: spec.assumptions.length },
+    { label: "תרחישים", n: spec.use_cases.length },
+    { label: "סיכונים", n: spec.risks.length },
+  ];
+  return (
+    <div className="space-y-4 text-sm">
+      <div>
+        <h3 className="font-semibold text-foreground">{spec.title}</h3>
+        <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{spec.overview}</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-md border border-border bg-muted/30 p-2 text-center">
+            <div className="text-lg font-semibold text-foreground">{s.n}</div>
+            <div className="text-[11px] text-muted-foreground">{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
+        <summary className="cursor-pointer font-medium">הצג מסמך מלא (JSON)</summary>
+        <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[11px]" dir="ltr">
+          {JSON.stringify(spec, null, 2)}
+        </pre>
+      </details>
     </div>
   );
 }

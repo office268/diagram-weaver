@@ -1,9 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-import { DEFAULT_SYSTEM_INSTRUCTION, SPEC_MODEL } from "./ai-spec-defaults";
+import {
+  COMPARISON_MODELS,
+  DEFAULT_SYSTEM_INSTRUCTION,
+  JSON_OUTPUT_INSTRUCTION,
+  type SpecModel,
+} from "./ai-spec-defaults";
 
 const InputSchema = z.object({
   prompt: z.string().min(5).max(5000),
@@ -42,27 +47,64 @@ const SpecOutputSchema = z.object({
   non_functional_requirements: z.array(RequirementSchema).default([]),
   assumptions: z.array(ItemSchema).default([]),
   use_cases: z.array(UseCaseSchema).default([]),
-  architecture: z.object({
-    description: z.string().default(""),
-    diagram: z.string().default(""),
-  }).default({ description: "", diagram: "" }),
-  data_model: z.object({
-    description: z.string().default(""),
-    diagram: z.string().default(""),
-  }).default({ description: "", diagram: "" }),
+  architecture: z
+    .object({
+      description: z.string().default(""),
+      diagram: z.string().default(""),
+    })
+    .default({ description: "", diagram: "" }),
+  data_model: z
+    .object({
+      description: z.string().default(""),
+      diagram: z.string().default(""),
+    })
+    .default({ description: "", diagram: "" }),
   risks: z.array(ItemSchema).default([]),
 });
 
+export type SpecOutput = z.infer<typeof SpecOutputSchema>;
 
-export const generateSpecFromPrompt = createServerFn({ method: "POST" })
+function extractJson(text: string): string {
+  let t = text.trim();
+  // strip ```json ... ``` or ``` ... ``` fences
+  const fence = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (fence) t = fence[1].trim();
+  // fall back: slice from first { to last }
+  const first = t.indexOf("{");
+  const last = t.lastIndexOf("}");
+  if (first >= 0 && last > first) t = t.slice(first, last + 1);
+  return t;
+}
+
+async function generateOne(
+  modelId: SpecModel,
+  apiKey: string,
+  system: string,
+  prompt: string,
+): Promise<SpecOutput> {
+  const gateway = createLovableAiGatewayProvider(apiKey);
+  const model = gateway(modelId);
+  const result = await generateText({
+    model,
+    system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
+    prompt,
+  });
+  const raw = extractJson(result.text);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("המודל לא החזיר JSON תקני");
+  }
+  return SpecOutputSchema.parse(parsed);
+}
+
+export const generateSpecsFromAllModels = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const gateway = createLovableAiGatewayProvider(key);
-    const model = gateway(SPEC_MODEL);
 
     const { supabase, userId } = context;
     const { data: row } = await supabase
@@ -72,19 +114,27 @@ export const generateSpecFromPrompt = createServerFn({ method: "POST" })
       .maybeSingle();
     const system = row?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION;
 
-    try {
-      const result = await generateText({
-        model,
-        system,
-        prompt: data.prompt,
-        experimental_output: Output.object({ schema: SpecOutputSchema }),
-      });
+    const settled = await Promise.allSettled(
+      COMPARISON_MODELS.map((m) => generateOne(m, key, system, data.prompt)),
+    );
 
-      return result.experimental_output;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("429")) throw new Error("הגעת למגבלת קצב. נסה שוב בעוד רגע.");
-      if (msg.includes("402")) throw new Error("אזלו קרדיטי ה-AI. יש להוסיף קרדיטים בהגדרות.");
-      throw new Error(`יצירת המסמך נכשלה: ${msg}`);
+    const results = settled.map((r, i) => {
+      const model = COMPARISON_MODELS[i];
+      if (r.status === "fulfilled") {
+        return { model, spec: r.value, error: null as string | null };
+      }
+      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+      let friendly = msg;
+      if (msg.includes("429")) friendly = "הגעת למגבלת קצב.";
+      else if (msg.includes("402")) friendly = "אזלו קרדיטי ה-AI.";
+      return { model, spec: null as SpecOutput | null, error: friendly };
+    });
+
+    if (results.every((r) => !r.spec)) {
+      throw new Error(
+        "כל שלושת המודלים נכשלו: " + results.map((r) => `${r.model}: ${r.error}`).join(" | "),
+      );
     }
+
+    return { results };
   });
