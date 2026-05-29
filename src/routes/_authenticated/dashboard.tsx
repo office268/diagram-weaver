@@ -173,8 +173,11 @@ function DashboardPage() {
         try {
           parsed = JSON.parse(extractJson(fullText));
         } catch {
-          const snippet = fullText.slice(0, 200).replace(/\s+/g, " ");
-          throw new Error(`המודל לא החזיר JSON תקני. תחילת התשובה: ${snippet}`);
+          const head = fullText.slice(0, 200).replace(/\s+/g, " ");
+          const tail = fullText.slice(-200).replace(/\s+/g, " ");
+          throw new Error(
+            `המודל לא החזיר JSON תקני (אורך ${fullText.length}). התחלה: ${head} ... סוף: ${tail}`,
+          );
         }
         const spec = SpecOutputSchema.parse(parsed);
         await saveSpec(model, spec, promptText);
