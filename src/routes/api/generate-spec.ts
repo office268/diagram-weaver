@@ -58,34 +58,79 @@ export const Route = createFileRoute("/api/generate-spec")({
             model: gateway(body.model),
             prompt: body.prompt,
             system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
+            maxOutputTokens: 8000,
             onError: ({ error }) => {
+              const detail =
+                error instanceof Error
+                  ? `${error.name}: ${error.message}${error.cause ? ` | cause: ${JSON.stringify(error.cause)}` : ""}`
+                  : JSON.stringify(error);
               console.error(
-                `[generate-spec] streamText onError (${body.model}):`,
-                error,
+                `[generate-spec] streamText onError (${body.model}): ${detail}`,
               );
             },
           });
 
-          // Custom stream: forwards text chunks and surfaces upstream errors
-          // inline so the client can show a useful message instead of a silent
-          // empty body.
           const encoder = new TextEncoder();
           const stream = new ReadableStream<Uint8Array>({
             async start(controller) {
+              let closed = false;
+              const safeEnqueue = (bytes: Uint8Array) => {
+                if (closed) return;
+                try {
+                  controller.enqueue(bytes);
+                } catch (e) {
+                  console.error(
+                    `[generate-spec] enqueue failed (${body.model}):`,
+                    e,
+                  );
+                }
+              };
+              const safeClose = () => {
+                if (closed) return;
+                closed = true;
+                try {
+                  controller.close();
+                } catch {
+                  /* already closed */
+                }
+              };
+
               try {
                 for await (const chunk of result.textStream) {
-                  controller.enqueue(encoder.encode(chunk));
+                  safeEnqueue(encoder.encode(chunk));
                 }
-                controller.close();
+
+                // After stream completes, verify it actually finished normally.
+                try {
+                  const finishReason = await result.finishReason;
+                  const usage = await result.usage;
+                  console.log(
+                    `[generate-spec] done (${body.model}) finishReason=${finishReason} usage=${JSON.stringify(usage)}`,
+                  );
+                  if (finishReason && finishReason !== "stop") {
+                    const reasonMsg =
+                      finishReason === "length"
+                        ? "המודל הגיע למגבלת אורך הפלט והתשובה נחתכה"
+                        : `המודל סיים בסטטוס לא תקין: ${finishReason}`;
+                    safeEnqueue(
+                      encoder.encode(`\n__STREAM_ERROR__:${reasonMsg}`),
+                    );
+                  }
+                } catch (metaErr) {
+                  console.error(
+                    `[generate-spec] meta read failed (${body.model}):`,
+                    metaErr,
+                  );
+                }
+
+                safeClose();
               } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.error(
                   `[generate-spec] stream iteration error (${body.model}): ${msg}`,
                 );
-                controller.enqueue(
-                  encoder.encode(`\n__STREAM_ERROR__:${msg}`),
-                );
-                controller.close();
+                safeEnqueue(encoder.encode(`\n__STREAM_ERROR__:${msg}`));
+                safeClose();
               }
             },
           });
