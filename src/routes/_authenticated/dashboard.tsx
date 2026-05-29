@@ -89,9 +89,14 @@ function DashboardPage() {
   });
 
   const saveSpec = useCallback(
-    async (model: SpecModel, spec: SpecOutput, promptText: string) => {
+    async (
+      model: SpecModel,
+      spec: SpecOutput,
+      promptText: string,
+      review: SpecReview | null,
+    ) => {
       setCompareState((prev) =>
-        prev ? { ...prev, [model]: { status: "saving", spec } } : prev,
+        prev ? { ...prev, [model]: { status: "saving", spec, review } } : prev,
       );
       try {
         const { spec: row } = await createFn({
@@ -99,11 +104,13 @@ function DashboardPage() {
             title: `${spec.title} — ${model}`,
             prompt: promptText,
             content: spec,
+            reviewScore: review?.score ?? null,
+            reviewNotes: review?.notes ?? [],
           },
         });
         setCompareState((prev) =>
           prev
-            ? { ...prev, [model]: { status: "success", spec, specId: row.id } }
+            ? { ...prev, [model]: { status: "success", spec, specId: row.id, review } }
             : prev,
         );
         qc.invalidateQueries({ queryKey: ["specs"] });
@@ -117,6 +124,7 @@ function DashboardPage() {
                   status: "error",
                   error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
                   spec,
+                  review,
                   canRetrySaveOnly: true,
                 },
               }
@@ -126,6 +134,7 @@ function DashboardPage() {
     },
     [createFn, qc],
   );
+
 
   const runModel = useCallback(
     async (model: SpecModel, promptText: string) => {
