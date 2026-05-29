@@ -10,7 +10,9 @@ export const listSpecs = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("spec_documents")
-      .select("id, title, updated_at, created_at")
+      .select(
+        "id, title, updated_at, created_at, prompt, group_id, model, variant, review_score",
+      )
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -43,6 +45,9 @@ export const createSpec = createServerFn({ method: "POST" })
         content: z.record(z.string(), z.any()).default({}),
         reviewScore: z.number().int().min(1).max(10).nullable().optional(),
         reviewNotes: z.array(z.string()).max(50).optional(),
+        groupId: z.string().uuid().optional(),
+        model: z.string().max(100).optional(),
+        variant: z.enum(["original", "revised", "single"]).optional(),
       })
       .parse(input),
   )
@@ -57,11 +62,30 @@ export const createSpec = createServerFn({ method: "POST" })
         content: data.content,
         review_score: data.reviewScore ?? null,
         review_notes: data.reviewNotes ?? [],
+        group_id: data.groupId ?? null,
+        model: data.model ?? null,
+        variant: data.variant ?? null,
       })
       .select()
       .single();
     if (error) throw new Error(error.message);
     return { spec: row };
+  });
+
+export const deleteSpecGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ groupId: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("spec_documents")
+      .delete()
+      .eq("group_id", data.groupId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 

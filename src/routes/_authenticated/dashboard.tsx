@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers } from "lucide-react";
 import {
   listSpecs,
   createSpec,
   deleteSpec,
+  deleteSpecGroup,
 } from "@/lib/spec.functions";
 import {
   SpecOutputSchema,
@@ -100,12 +101,16 @@ function DashboardPage() {
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
+  const deleteGroupFn = useServerFn(deleteSpecGroup);
+  
   
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [compareState, setCompareState] = useState<CompareState | null>(null);
+  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
@@ -113,7 +118,7 @@ function DashboardPage() {
   });
 
   const runModel = useCallback(
-    async (model: SpecModel, promptText: string) => {
+    async (model: SpecModel, promptText: string, groupId: string) => {
       const setS = (next: ModelState) =>
         setCompareState((prev) =>
           prev ? { ...prev, [model]: next } : prev,
@@ -216,6 +221,7 @@ function DashboardPage() {
         spec: SpecOutput,
         review: SpecReview | null,
         suffix: string,
+        variant: "original" | "revised" | "single",
       ): Promise<string> => {
         const { spec: row } = await createFn({
           data: {
@@ -224,6 +230,9 @@ function DashboardPage() {
             content: spec,
             reviewScore: review?.score ?? null,
             reviewNotes: review?.notes ?? [],
+            groupId,
+            model,
+            variant,
           },
         });
         return row.id;
@@ -288,10 +297,11 @@ function DashboardPage() {
             originalSpec,
             originalReview,
             revisedSpec ? "מקור" : "מסמך",
+            revisedSpec ? "original" : "single",
           );
           let revisedSpecId: string | null = null;
           if (revisedSpec) {
-            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן");
+            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן", "revised");
           }
           setS({
             status: "success",
@@ -325,19 +335,21 @@ function DashboardPage() {
 
   const retryModel = useCallback(
     (model: SpecModel) => {
-      if (!compareState) return;
-      void runModel(model, prompt);
+      if (!compareState || !compareGroupId) return;
+      void runModel(model, prompt, compareGroupId);
     },
-    [compareState, prompt, runModel],
+    [compareState, compareGroupId, prompt, runModel],
   );
 
   const startCompare = useCallback(() => {
     const p = prompt.trim();
     if (p.length < 5) return;
     setNewOpen(false);
+    const gid = crypto.randomUUID();
+    setCompareGroupId(gid);
     setCompareState(initialCompareState());
     COMPARISON_MODELS.forEach((m) => {
-      void runModel(m, p);
+      void runModel(m, p, gid);
     });
   }, [prompt, runModel]);
 
@@ -370,6 +382,42 @@ function DashboardPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
+
+  const deleteGroupMut = useMutation({
+    mutationFn: (groupId: string) => deleteGroupFn({ data: { groupId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("הקבוצה נמחקה");
+      setDeleteGroupId(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
+  });
+
+  type SpecRow = NonNullable<typeof data>["specs"][number];
+  const groups = useMemo(() => {
+    if (!data?.specs.length) return [] as { key: string; groupId: string | null; items: SpecRow[] }[];
+    const map = new Map<string, SpecRow[]>();
+    const order: string[] = [];
+    for (const s of data.specs) {
+      const k = s.group_id ?? `__solo__:${s.id}`;
+      if (!map.has(k)) {
+        map.set(k, []);
+        order.push(k);
+      }
+      map.get(k)!.push(s);
+    }
+    return order.map((k) => {
+      const items = map.get(k)!;
+      // Sort variants: original first, then revised, then anything else.
+      items.sort((a, b) => {
+        const rank = (v: string | null) =>
+          v === "original" ? 0 : v === "single" ? 1 : v === "revised" ? 2 : 3;
+        return rank(a.variant) - rank(b.variant);
+      });
+      return { key: k, groupId: items[0].group_id, items };
+    });
+  }, [data]);
+
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -406,39 +454,147 @@ function DashboardPage() {
             </p>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.specs.map((d) => (
-              <li
-                key={d.id}
-                className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-              >
-                <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span className="truncate font-medium text-foreground">
-                      {d.title}
-                    </span>
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
-                  </div>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setDeleteId(d.id);
-                  }}
+          <ul className="space-y-4">
+            {groups.map((g) => {
+              const isGroup = g.items.length > 1;
+              const head = g.items[0];
+              const topic = (head.prompt?.trim() || head.title).slice(0, 140);
+              const updated = g.items
+                .map((i) => +new Date(i.updated_at))
+                .reduce((a, b) => Math.max(a, b), 0);
+
+              if (!isGroup) {
+                const d = head;
+                return (
+                  <li
+                    key={g.key}
+                    className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                  >
+                    <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="truncate font-medium text-foreground">
+                          {d.title}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
+                      </div>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setDeleteId(d.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </li>
+                );
+              }
+
+              return (
+                <li
+                  key={g.key}
+                  className="relative rounded-2xl border-2 border-primary/20 bg-muted/30 p-4"
                 >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </li>
-            ))}
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Layers className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground line-clamp-2">
+                          {topic}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {g.items.length} גרסאות · עודכן ב-
+                          {new Date(updated).toLocaleDateString("he-IL")}
+                        </p>
+                      </div>
+                    </div>
+                    {g.groupId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => setDeleteGroupId(g.groupId!)}
+                        title="מחק את כל הקבוצה"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <ul className="relative space-y-2 pr-5">
+                    {/* Vertical tree line on the right (RTL) */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-2 bottom-2 right-2 border-r-2 border-dashed border-primary/40"
+                    />
+                    {g.items.map((d) => {
+                      const variantLabel =
+                        d.variant === "revised"
+                          ? "מתוקן"
+                          : d.variant === "original"
+                            ? "מקור"
+                            : null;
+                      return (
+                        <li key={d.id} className="group/item relative">
+                          {/* Horizontal branch */}
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute top-1/2 -right-3 h-0 w-3 border-t-2 border-dashed border-primary/40"
+                          />
+                          <Link
+                            to="/editor/$id"
+                            params={{ id: d.id }}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <FileText className="h-4 w-4 shrink-0 text-primary" />
+                              <span className="truncate text-sm text-foreground">
+                                {d.model ?? "מסמך"}
+                              </span>
+                              {variantLabel && (
+                                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
+                                  {variantLabel}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              {typeof d.review_score === "number" && (
+                                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                                  ציון {d.review_score}/10
+                                </span>
+                              )}
+                              <Button
+                                asChild={false}
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 transition-opacity group-hover/item:opacity-100"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDeleteId(d.id);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="max-w-xl">
@@ -505,6 +661,26 @@ function DashboardPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               מחק
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteGroupId} onOpenChange={(o) => !o && setDeleteGroupId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>למחוק את כל הקבוצה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              כל הגרסאות שנוצרו באותה הרצת אפיון יימחקו. לא ניתן לבטל פעולה זו.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteGroupId && deleteGroupMut.mutate(deleteGroupId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              מחק קבוצה
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
