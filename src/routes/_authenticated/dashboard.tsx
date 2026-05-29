@@ -56,12 +56,35 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
+type Stage =
+  | "loading"
+  | "reviewing"
+  | "revising"
+  | "reviewing-revised"
+  | "saving";
+
+type ModelOk = {
+  status: "success";
+  originalSpec: SpecOutput;
+  originalSpecId: string;
+  originalReview: SpecReview | null;
+  revisedSpec: SpecOutput | null;
+  revisedSpecId: string | null;
+  revisedReview: SpecReview | null;
+};
+
 type ModelState =
-  | { status: "loading" }
-  | { status: "reviewing"; spec: SpecOutput }
-  | { status: "saving"; spec: SpecOutput; review: SpecReview | null }
-  | { status: "success"; spec: SpecOutput; specId: string; review: SpecReview | null }
-  | { status: "error"; error: string; spec?: SpecOutput; review?: SpecReview | null; canRetrySaveOnly?: boolean };
+  | { status: Stage; partialSpec?: SpecOutput; partialReview?: SpecReview | null }
+  | ModelOk
+  | {
+      status: "error";
+      error: string;
+      originalSpec?: SpecOutput;
+      originalReview?: SpecReview | null;
+      revisedSpec?: SpecOutput;
+      revisedReview?: SpecReview | null;
+      canRetry?: boolean;
+    };
 
 type CompareState = Record<SpecModel, ModelState>;
 
