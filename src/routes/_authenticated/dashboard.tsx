@@ -3,14 +3,24 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, FileCode, Trash2, Loader2, Sparkles } from "lucide-react";
-import { AiPromptDialog } from "@/components/ai-prompt-dialog";
+import { FileText, Trash2, Loader2, Sparkles } from "lucide-react";
 import {
-  listDiagrams,
-  createDiagram,
-  deleteDiagram,
-} from "@/lib/diagrams.functions";
+  listSpecs,
+  createSpec,
+  deleteSpec,
+} from "@/lib/spec.functions";
+import { generateSpecFromPrompt } from "@/lib/ai-spec.functions";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,110 +31,81 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DIAGRAM_TEMPLATES } from "@/lib/mermaid-utils";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "התרשימים שלי — סוכן ניתוח מערכות" },
+      { title: "המסמכים שלי — סוכן ניתוח מערכות" },
       {
         name: "description",
-        content: "כל תרשימי הניתוח שלך במקום אחד — צרו חדש מתוך פרומפט או מתבנית.",
+        content: "כל מסמכי האפיון על שלך במקום אחד — צרו חדש מתוך תיאור חופשי של המערכת.",
       },
-      { property: "og:title", content: "התרשימים שלי — סוכן ניתוח מערכות" },
+      { property: "og:title", content: "המסמכים שלי — סוכן ניתוח מערכות" },
       { property: "og:url", content: "/dashboard" },
     ],
   }),
   component: DashboardPage,
 });
 
-
 function DashboardPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const listFn = useServerFn(listDiagrams);
-  const createFn = useServerFn(createDiagram);
-  const deleteFn = useServerFn(deleteDiagram);
+  const listFn = useServerFn(listSpecs);
+  const createFn = useServerFn(createSpec);
+  const deleteFn = useServerFn(deleteSpec);
+  const genFn = useServerFn(generateSpecFromPrompt);
 
-  const [type, setType] = useState<string>("flowchart");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [aiOpen, setAiOpen] = useState(false);
+  const [newOpen, setNewOpen] = useState(false);
+  const [prompt, setPrompt] = useState("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["diagrams"],
+    queryKey: ["specs"],
     queryFn: () => listFn(),
   });
 
-  const createMut = useMutation({
-    mutationFn: () =>
-      createFn({
-        data: {
-          diagram_type: type,
-          code: DIAGRAM_TEMPLATES[type]?.code,
-          title: `New ${DIAGRAM_TEMPLATES[type]?.label ?? "diagram"}`,
-        },
-      }),
-    onSuccess: ({ diagram }) => {
-      qc.invalidateQueries({ queryKey: ["diagrams"] });
-      navigate({ to: "/editor/$id", params: { id: diagram.id } });
+  const generateMut = useMutation({
+    mutationFn: async () => {
+      const spec = await genFn({ data: { prompt } });
+      const { spec: row } = await createFn({
+        data: { title: spec.title, prompt, content: spec },
+      });
+      return row;
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to create"),
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      setNewOpen(false);
+      setPrompt("");
+      navigate({ to: "/editor/$id", params: { id: row.id } });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["diagrams"] });
-      toast.success("Diagram deleted");
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("המסמך נמחק");
       setDeleteId(null);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Your diagrams
+            מסמכי האפיון שלי
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Create, edit, and export Mermaid diagrams.
+            תארו מערכת בחופשי — קבלו מסמך אפיון על מלא וערוך.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(DIAGRAM_TEMPLATES).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={() => setAiOpen(true)}>
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generate with AI
-          </Button>
-          <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
-            {createMut.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="mr-2 h-4 w-4" />
-            )}
-            New diagram
-          </Button>
-        </div>
+        <Button onClick={() => setNewOpen(true)} className="w-full sm:w-auto">
+          <Sparkles className="mr-2 h-4 w-4" />
+          מסמך אפיון חדש
+        </Button>
       </div>
 
       <div className="mt-8">
@@ -136,41 +117,36 @@ function DashboardPage() {
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
             {(error as Error).message}
           </div>
-        ) : !data?.diagrams.length ? (
+        ) : !data?.specs.length ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-            <FileCode className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 font-medium text-foreground">No diagrams yet</h3>
+            <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 font-medium text-foreground">עדיין אין מסמכים</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pick a template above and hit "New diagram".
+              לחצו על "מסמך אפיון חדש" כדי להתחיל.
             </p>
           </div>
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.diagrams.map((d) => (
+            {data.specs.map((d) => (
               <li
                 key={d.id}
                 className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
               >
-                <Link
-                  to="/editor/$id"
-                  params={{ id: d.id }}
-                  className="flex-1"
-                >
+                <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
                   <div className="flex items-center gap-2">
-                    <FileCode className="h-4 w-4 text-primary" />
+                    <FileText className="h-4 w-4 text-primary" />
                     <span className="truncate font-medium text-foreground">
                       {d.title}
                     </span>
                   </div>
                   <div className="mt-3 text-xs text-muted-foreground">
-                    {DIAGRAM_TEMPLATES[d.diagram_type]?.label ?? d.diagram_type} ·
-                    Updated {new Date(d.updated_at).toLocaleDateString()}
+                    עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
                   </div>
                 </Link>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                  className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={(e) => {
                     e.preventDefault();
                     setDeleteId(d.id);
@@ -184,42 +160,77 @@ function DashboardPage() {
         )}
       </div>
 
+      <Dialog open={newOpen} onOpenChange={(o) => !generateMut.isPending && setNewOpen(o)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              מסמך אפיון חדש
+            </DialogTitle>
+            <DialogDescription>
+              תארו את המערכת במילים שלכם — הסוכן יבנה דרישות, הנחות יסוד, ארכיטקטורה, מודל נתונים, תרחישים ועוד.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="spec-prompt">תיאור המערכת</Label>
+            <Textarea
+              id="spec-prompt"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="למשל: מערכת לניהול הזמנות במסעדה הכוללת אפליקציה למלצרים, ממשק למטבח, ודשבורד למנהל..."
+              rows={7}
+              maxLength={5000}
+              autoFocus
+            />
+            <div className="text-left text-xs text-muted-foreground" dir="ltr">
+              {prompt.length} / 5000
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewOpen(false)} disabled={generateMut.isPending}>
+              ביטול
+            </Button>
+            <Button
+              onClick={() => generateMut.mutate()}
+              disabled={prompt.trim().length < 5 || generateMut.isPending}
+            >
+              {generateMut.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  בונה את המסמך…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  צור מסמך
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete diagram?</AlertDialogTitle>
+            <AlertDialogTitle>למחוק את המסמך?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone.
+              לא ניתן לבטל פעולה זו.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteMut.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              מחק
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AiPromptDialog
-        open={aiOpen}
-        onOpenChange={setAiOpen}
-        defaultType={type}
-        onGenerated={async ({ code, title, diagram_type }) => {
-          try {
-            const { diagram } = await createFn({
-              data: { code, title, diagram_type },
-            });
-            qc.invalidateQueries({ queryKey: ["diagrams"] });
-            navigate({ to: "/editor/$id", params: { id: diagram.id } });
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Failed to create");
-          }
-        }}
-      />
     </div>
   );
 }
