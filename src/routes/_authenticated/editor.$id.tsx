@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Check, Plus, Trash2 } from "lucide-react";
 
 import { getSpec, updateSpec } from "@/lib/spec.functions";
+import { ReviewPanel } from "@/components/review-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EditableText } from "@/components/editable-text";
@@ -145,6 +146,17 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-10">
+        {typeof data.spec.review_score === "number" ? (
+          <ReviewPanel
+            review={{
+              score: data.spec.review_score,
+              notes: Array.isArray(data.spec.review_notes)
+                ? (data.spec.review_notes as string[])
+                : [],
+            }}
+          />
+        ) : null}
+
         {/* Overview */}
         <Section title="1. סקירה כללית">
           <EditableText

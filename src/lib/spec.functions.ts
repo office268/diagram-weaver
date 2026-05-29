@@ -41,6 +41,8 @@ export const createSpec = createServerFn({ method: "POST" })
         title: z.string().min(1).max(200),
         prompt: z.string().max(5000).default(""),
         content: z.record(z.string(), z.any()).default({}),
+        reviewScore: z.number().int().min(1).max(10).nullable().optional(),
+        reviewNotes: z.array(z.string()).max(50).optional(),
       })
       .parse(input),
   )
@@ -53,12 +55,15 @@ export const createSpec = createServerFn({ method: "POST" })
         title: data.title,
         prompt: data.prompt,
         content: data.content,
+        review_score: data.reviewScore ?? null,
+        review_notes: data.reviewNotes ?? [],
       })
       .select()
       .single();
     if (error) throw new Error(error.message);
     return { spec: row };
   });
+
 
 export const updateSpec = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

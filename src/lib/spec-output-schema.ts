@@ -50,6 +50,12 @@ export const SpecOutputSchema = z.object({
 
 export type SpecOutput = z.infer<typeof SpecOutputSchema>;
 
+export const ReviewSchema = z.object({
+  score: z.number().int().min(1).max(10),
+  notes: z.array(z.string()).default([]),
+});
+export type SpecReview = z.infer<typeof ReviewSchema>;
+
 export function extractJson(text: string): string {
   let t = text.trim();
   const fence = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);

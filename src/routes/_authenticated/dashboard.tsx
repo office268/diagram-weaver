@@ -13,6 +13,7 @@ import {
   SpecOutputSchema,
   extractJson,
   type SpecOutput,
+  type SpecReview,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
@@ -38,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReviewPanel } from "@/components/review-panel";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -56,9 +58,10 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 type ModelState =
   | { status: "loading" }
-  | { status: "saving"; spec: SpecOutput }
-  | { status: "success"; spec: SpecOutput; specId: string }
-  | { status: "error"; error: string; spec?: SpecOutput; canRetrySaveOnly?: boolean };
+  | { status: "reviewing"; spec: SpecOutput }
+  | { status: "saving"; spec: SpecOutput; review: SpecReview | null }
+  | { status: "success"; spec: SpecOutput; specId: string; review: SpecReview | null }
+  | { status: "error"; error: string; spec?: SpecOutput; review?: SpecReview | null; canRetrySaveOnly?: boolean };
 
 type CompareState = Record<SpecModel, ModelState>;
 
@@ -87,9 +90,14 @@ function DashboardPage() {
   });
 
   const saveSpec = useCallback(
-    async (model: SpecModel, spec: SpecOutput, promptText: string) => {
+    async (
+      model: SpecModel,
+      spec: SpecOutput,
+      promptText: string,
+      review: SpecReview | null,
+    ) => {
       setCompareState((prev) =>
-        prev ? { ...prev, [model]: { status: "saving", spec } } : prev,
+        prev ? { ...prev, [model]: { status: "saving", spec, review } } : prev,
       );
       try {
         const { spec: row } = await createFn({
@@ -97,11 +105,13 @@ function DashboardPage() {
             title: `${spec.title} — ${model}`,
             prompt: promptText,
             content: spec,
+            reviewScore: review?.score ?? null,
+            reviewNotes: review?.notes ?? [],
           },
         });
         setCompareState((prev) =>
           prev
-            ? { ...prev, [model]: { status: "success", spec, specId: row.id } }
+            ? { ...prev, [model]: { status: "success", spec, specId: row.id, review } }
             : prev,
         );
         qc.invalidateQueries({ queryKey: ["specs"] });
@@ -115,6 +125,7 @@ function DashboardPage() {
                   status: "error",
                   error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
                   spec,
+                  review,
                   canRetrySaveOnly: true,
                 },
               }
@@ -124,6 +135,7 @@ function DashboardPage() {
     },
     [createFn, qc],
   );
+
 
   const runModel = useCallback(
     async (model: SpecModel, promptText: string) => {
@@ -180,7 +192,37 @@ function DashboardPage() {
           );
         }
         const spec = SpecOutputSchema.parse(parsed);
-        await saveSpec(model, spec, promptText);
+
+        // Quality reviewer agent
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "reviewing", spec } } : prev,
+        );
+        let review: SpecReview | null = null;
+        try {
+          const revRes = await fetch("/api/review-spec", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ prompt: promptText, spec }),
+          });
+          if (!revRes.ok) {
+            const t = await revRes.text().catch(() => "");
+            throw new Error(t || `שגיאה ${revRes.status}`);
+          }
+          const json = await revRes.json();
+          review = {
+            score: Number(json.score),
+            notes: Array.isArray(json.notes) ? json.notes.map(String) : [],
+          };
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          toast.warning(`סוכן הביקורת נכשל (${model}): ${msg}`);
+          review = null;
+        }
+
+        await saveSpec(model, spec, promptText, review);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "יצירה נכשלה";
         setCompareState((prev) =>
@@ -196,7 +238,7 @@ function DashboardPage() {
       if (!compareState) return;
       const s = compareState[model];
       if (s.status === "error" && s.canRetrySaveOnly && s.spec) {
-        void saveSpec(model, s.spec, prompt);
+        void saveSpec(model, s.spec, prompt, s.review ?? null);
       } else {
         void runModel(model, prompt);
       }
@@ -225,7 +267,10 @@ function DashboardPage() {
 
   const anyBusy = compareState
     ? Object.values(compareState).some(
-        (s) => s.status === "loading" || s.status === "saving",
+        (s) =>
+          s.status === "loading" ||
+          s.status === "reviewing" ||
+          s.status === "saving",
       )
     : false;
 
@@ -444,13 +489,21 @@ function ComparisonDialog({
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
                   </div>
+                ) : s.status === "reviewing" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      סוכן הביקורת בודק את האפיון…
+                    </div>
+                    <ResultPreview spec={s.spec} review={null} />
+                  </div>
                 ) : s.status === "saving" ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       שומר את המסמך…
                     </div>
-                    <ResultPreview spec={s.spec} />
+                    <ResultPreview spec={s.spec} review={s.review} />
                   </div>
                 ) : s.status === "error" ? (
                   <div className="space-y-3">
@@ -462,10 +515,10 @@ function ComparisonDialog({
                       <RefreshCw className="mr-1.5 h-4 w-4" />
                       נסה שוב
                     </Button>
-                    {s.spec ? <ResultPreview spec={s.spec} /> : null}
+                    {s.spec ? <ResultPreview spec={s.spec} review={s.review ?? null} /> : null}
                   </div>
                 ) : (
-                  <ResultPreview spec={s.spec} />
+                  <ResultPreview spec={s.spec} review={s.review} />
                 )}
               </TabsContent>
             );
@@ -500,7 +553,13 @@ function ComparisonDialog({
 
 
 
-function ResultPreview({ spec }: { spec: SpecOutput }) {
+function ResultPreview({
+  spec,
+  review,
+}: {
+  spec: SpecOutput;
+  review: SpecReview | null;
+}) {
   const stats = [
     { label: "מטרות", n: spec.goals.length },
     { label: "Personas", n: spec.personas.length },
@@ -516,6 +575,7 @@ function ResultPreview({ spec }: { spec: SpecOutput }) {
         <h3 className="font-semibold text-foreground">{spec.title}</h3>
         <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{spec.overview}</p>
       </div>
+      {review ? <ReviewPanel review={review} /> : null}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-md border border-border bg-muted/30 p-2 text-center">
@@ -533,3 +593,5 @@ function ResultPreview({ spec }: { spec: SpecOutput }) {
     </div>
   );
 }
+
+
