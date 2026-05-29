@@ -219,6 +219,7 @@ function DashboardPage() {
         spec: SpecOutput,
         review: SpecReview | null,
         suffix: string,
+        variant: "original" | "revised" | "single",
       ): Promise<string> => {
         const { spec: row } = await createFn({
           data: {
@@ -227,6 +228,9 @@ function DashboardPage() {
             content: spec,
             reviewScore: review?.score ?? null,
             reviewNotes: review?.notes ?? [],
+            groupId,
+            model,
+            variant,
           },
         });
         return row.id;
