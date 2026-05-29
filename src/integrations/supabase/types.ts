@@ -63,35 +63,44 @@ export type Database = {
         Row: {
           content: Json
           created_at: string
+          group_id: string | null
           id: string
+          model: string | null
           prompt: string
           review_notes: Json
           review_score: number | null
           title: string
           updated_at: string
           user_id: string
+          variant: string | null
         }
         Insert: {
           content?: Json
           created_at?: string
+          group_id?: string | null
           id?: string
+          model?: string | null
           prompt?: string
           review_notes?: Json
           review_score?: number | null
           title?: string
           updated_at?: string
           user_id: string
+          variant?: string | null
         }
         Update: {
           content?: Json
           created_at?: string
+          group_id?: string | null
           id?: string
+          model?: string | null
           prompt?: string
           review_notes?: Json
           review_score?: number | null
           title?: string
           updated_at?: string
           user_id?: string
+          variant?: string | null
         }
         Relationships: []
       }
