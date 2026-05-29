@@ -116,7 +116,7 @@ function DashboardPage() {
   });
 
   const runModel = useCallback(
-    async (model: SpecModel, promptText: string) => {
+    async (model: SpecModel, promptText: string, groupId: string) => {
       const setS = (next: ModelState) =>
         setCompareState((prev) =>
           prev ? { ...prev, [model]: next } : prev,
