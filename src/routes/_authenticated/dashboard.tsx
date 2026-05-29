@@ -335,19 +335,21 @@ function DashboardPage() {
 
   const retryModel = useCallback(
     (model: SpecModel) => {
-      if (!compareState) return;
-      void runModel(model, prompt);
+      if (!compareState || !compareGroupId) return;
+      void runModel(model, prompt, compareGroupId);
     },
-    [compareState, prompt, runModel],
+    [compareState, compareGroupId, prompt, runModel],
   );
 
   const startCompare = useCallback(() => {
     const p = prompt.trim();
     if (p.length < 5) return;
     setNewOpen(false);
+    const gid = crypto.randomUUID();
+    setCompareGroupId(gid);
     setCompareState(initialCompareState());
     COMPARISON_MODELS.forEach((m) => {
-      void runModel(m, p);
+      void runModel(m, p, gid);
     });
   }, [prompt, runModel]);
 
