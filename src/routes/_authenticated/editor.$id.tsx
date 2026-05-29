@@ -146,16 +146,17 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-10">
-        {typeof data.spec.review_score === "number" ? (
-          <ReviewPanel
-            review={{
-              score: data.spec.review_score,
-              notes: Array.isArray(data.spec.review_notes)
-                ? (data.spec.review_notes as string[])
-                : [],
-            }}
-          />
+        {data.spec.prompt ? (
+          <section className="space-y-3">
+            <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+              הפרומפט של המשתמש
+            </h2>
+            <div className="rounded-lg border border-border bg-muted/30 p-4 whitespace-pre-wrap text-sm text-foreground">
+              {data.spec.prompt}
+            </div>
+          </section>
         ) : null}
+
 
         {/* Overview */}
         <Section title="1. סקירה כללית">
@@ -331,6 +332,22 @@ function EditorPage() {
           )}
           addLabel="הוסף סיכון"
         />
+
+        {typeof data.spec.review_score === "number" ? (
+          <section className="space-y-3">
+            <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+              ביקורת הסוכן המבקר
+            </h2>
+            <ReviewPanel
+              review={{
+                score: data.spec.review_score,
+                notes: Array.isArray(data.spec.review_notes)
+                  ? (data.spec.review_notes as string[])
+                  : [],
+              }}
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   );
