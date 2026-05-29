@@ -101,6 +101,8 @@ function DashboardPage() {
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
+  const deleteGroupFn = useServerFn(deleteSpecGroup);
+  
   
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
