@@ -1,5 +1,4 @@
 export const COMPARISON_MODELS = [
-  "google/gemini-2.5-pro",
   "google/gemini-3-flash-preview",
 ] as const;
 
