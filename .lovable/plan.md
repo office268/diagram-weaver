@@ -1,42 +1,35 @@
-# Update meta tags — "System Analysis Agent" positioning
 
-Reframe the product across all routes from a generic Mermaid editor to **"System Analysis Agent"** — an AI assistant for system analysts that turns requirements into diagrams (flows, swim-lanes, ER, sequence, etc.).
+# מסמך אפיון על — תוכנית
 
-## Files to update
+## מה הולך לקרות
 
-### 1. `src/routes/__root.tsx` — sitewide defaults
-- `title`: `"סוכן ניתוח מערכות — תרשימים מתוך טקסט"`
-- `description`: `"סוכן AI לאנליסטים: הופך דרישות וטקסט חופשי לתרשימי זרימה, swim-lanes, ER ורצף — עם עריכה ויזואלית וקוד Mermaid."`
-- Add sitewide `og:site_name`, `og:type: website`.
+האפליקציה תשתנה מ"עורך תרשימים" ל"מחולל מסמכי אפיון על". המשתמש כותב פרומפט אחד → ה-AI מייצר במכה אחת מסמך מלא הכולל: דרישות, הנחות יסוד, וכל סעיפי האפיון לפי מבנה סטנדרטי קבוע. תרשימי Mermaid משובצים בתוך הסעיפים הרלוונטיים. המשתמש יכול לערוך/למחוק/להוסיף כל דרישה, הנחה, סעיף ותרשים.
 
-### 2. `src/routes/index.tsx` — landing
-- `title`: `"סוכן ניתוח מערכות | תרשימים מתוך פרומפט"`
-- `description`: `"תארו את התהליך במילים — קבלו תרשים מקצועי. עריכה ויזואלית + קוד Mermaid, שמירה בענן, ייצוא ל-SVG/JPG/Mermaid."`
-- Matching `og:title` / `og:description` / `og:url="/"`.
-- Update the visible landing copy (h1, subtitle, feature cards, footer, button labels) so it matches the new meta — otherwise SEO and UI tell different stories.
+הכלי הקיים של ניהול תרשימים בודדים יוסר.
 
-### 3. `src/routes/login.tsx`
-- `title`: `"כניסה — סוכן ניתוח מערכות"`
-- `description`: `"היכנסו כדי לשמור ולנהל את תרשימי הניתוח שלכם."`
-- Update visible copy: header "Mermaid Studio" → "סוכן ניתוח מערכות", "Sign in to your diagrams." → "כניסה לתרשימי הניתוח שלך".
+## מבנה המסמך הסטנדרטי
 
-### 4. `src/routes/_authenticated/dashboard.tsx`
-- `title`: `"התרשימים שלי — סוכן ניתוח מערכות"`
-- `description`: `"כל תרשימי הניתוח שלך במקום אחד — צרו חדש מתוך פרומפט או מתבנית."`
+כל מסמך אפיון יכיל את הסעיפים הבאים בסדר קבוע:
 
-### 5. `src/routes/_authenticated/editor.$id.tsx`
-- `title`: `"עורך תרשים — סוכן ניתוח מערכות"`
-- `description`: `"עריכת תרשים ניתוח מערכות עם תצוגה ויזואלית וקוד Mermaid זה לצד זה."`
+1. **סקירה כללית** (Overview) — תיאור קצר של המערכת ומטרותיה
+2. **מטרות** (Goals) — מה המערכת באה לפתור
+3. **משתמשי קצה** (Personas) — מי משתמש במערכת
+4. **דרישות פונקציונליות** (Functional Requirements) — רשימה ניתנת לעריכה
+5. **דרישות לא-פונקציונליות** (Non-Functional Requirements) — ביצועים, אבטחה, נגישות
+6. **הנחות יסוד** (Assumptions) — רשימה ניתנת לעריכה
+7. **תרחישי שימוש** (Use Cases) — תרחישים מרכזיים, כל אחד יכול לכלול תרשים sequence/flow משובץ
+8. **ארכיטקטורה** (Architecture) — תיאור + תרשים flowchart משובץ
+9. **מודל נתונים** (Data Model) — תיאור + תרשים ER משובץ
+10. **סיכונים** (Risks) — רשימה ניתנת לעריכה
 
-### 6. Shared header label (`_authenticated.tsx`)
-- "Mermaid Studio" → "סוכן ניתוח מערכות" כדי לשמור על עקביות עם המטא.
+## זרימת המשתמש
 
-## Out of scope
-- לא משנים את הלוגיקה, סכמת ה-DB, או שמות הקבצים/המסלולים.
-- לא מוסיפים `og:image` (אין נכס ויזואלי מתאים כרגע — עדיף בלי מאשר תמונה גנרית).
-- לא נוגעים ב-`canonical` (כבר לא מוגדר ב-root, וזה הנכון).
-
-## Notes (technical)
-- כל הכותרות נכנסות כ-entry בתוך `meta` (לא שדה `title` עליון — הוא מתעלם).
-- `og:url` נשאר יחסי (`"/"`, `"/login"`, `"/dashboard"`) כי אין דומיין קבוע.
-- שמירה על הפורמט הקיים של `head()` ב-TanStack — רק שינוי תוכן מחרוזות.
+```text
+דשבורד → "מסמך אפיון חדש"
+   ↓
+דיאלוג: כתיבת פרומפט (תיאור המערכת בחופשי)
+   ↓
+קריאה אחת ל-AI שמחזירה את כל המסמך במבנה JSON מובנה
+(דרישות + הנחות יסוד + כל הסעיפים + תרשימי Mermaid לסעיפים הרלוונטיים)
+   ↓
+עמוד עורך המסמך — מציג את המסמך המלא בצד ש
