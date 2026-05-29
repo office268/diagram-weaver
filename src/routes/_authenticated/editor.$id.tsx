@@ -146,6 +146,17 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-10">
+        {typeof data.spec.review_score === "number" ? (
+          <ReviewPanel
+            review={{
+              score: data.spec.review_score,
+              notes: Array.isArray(data.spec.review_notes)
+                ? (data.spec.review_notes as string[])
+                : [],
+            }}
+          />
+        ) : null}
+
         {/* Overview */}
         <Section title="1. סקירה כללית">
           <EditableText
