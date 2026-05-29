@@ -112,78 +112,44 @@ function DashboardPage() {
     queryFn: () => listFn(),
   });
 
-  const saveSpec = useCallback(
-    async (
-      model: SpecModel,
-      spec: SpecOutput,
-      promptText: string,
-      review: SpecReview | null,
-    ) => {
-      setCompareState((prev) =>
-        prev ? { ...prev, [model]: { status: "saving", spec, review } } : prev,
-      );
-      try {
-        const { spec: row } = await createFn({
-          data: {
-            title: `${spec.title} — ${model}`,
-            prompt: promptText,
-            content: spec,
-            reviewScore: review?.score ?? null,
-            reviewNotes: review?.notes ?? [],
-          },
-        });
-        setCompareState((prev) =>
-          prev
-            ? { ...prev, [model]: { status: "success", spec, specId: row.id, review } }
-            : prev,
-        );
-        qc.invalidateQueries({ queryKey: ["specs"] });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "שמירה נכשלה";
-        setCompareState((prev) =>
-          prev
-            ? {
-                ...prev,
-                [model]: {
-                  status: "error",
-                  error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
-                  spec,
-                  review,
-                  canRetrySaveOnly: true,
-                },
-              }
-            : prev,
-        );
-      }
-    },
-    [createFn, qc],
-  );
-
-
   const runModel = useCallback(
     async (model: SpecModel, promptText: string) => {
-      setCompareState((prev) => ({
-        ...(prev ?? initialCompareState()),
-        [model]: { status: "loading" },
-      }));
-      try {
-        const { data: sess } = await supabase.auth.getSession();
-        const token = sess.session?.access_token;
-        if (!token) throw new Error("נדרשת התחברות מחדש");
+      const setS = (next: ModelState) =>
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: next } : prev,
+        );
 
+      setS({ status: "loading" });
+
+      const getToken = async () => {
+        const { data: sess } = await supabase.auth.getSession();
+        const t = sess.session?.access_token;
+        if (!t) throw new Error("נדרשת התחברות מחדש");
+        return t;
+      };
+
+      const generateOnce = async (
+        token: string,
+        previousSpec?: SpecOutput,
+        reviewerNotes?: string[],
+      ): Promise<SpecOutput> => {
         const res = await fetch("/api/generate-spec", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: promptText, model }),
+          body: JSON.stringify({
+            prompt: promptText,
+            model,
+            ...(previousSpec ? { previousSpec } : {}),
+            ...(reviewerNotes ? { reviewerNotes } : {}),
+          }),
         });
         if (!res.ok || !res.body) {
           const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
           throw new Error(errText);
         }
-
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let fullText = "";
@@ -203,7 +169,6 @@ function DashboardPage() {
         if (!fullText.trim()) {
           throw new Error("המודל החזיר תשובה ריקה");
         }
-
         let parsed: unknown;
         try {
           parsed = JSON.parse(extractJson(fullText));
@@ -214,13 +179,13 @@ function DashboardPage() {
             `המודל לא החזיר JSON תקני (אורך ${fullText.length}). התחלה: ${head} ... סוף: ${tail}`,
           );
         }
-        const spec = SpecOutputSchema.parse(parsed);
+        return SpecOutputSchema.parse(parsed);
+      };
 
-        // Quality reviewer agent
-        setCompareState((prev) =>
-          prev ? { ...prev, [model]: { status: "reviewing", spec } } : prev,
-        );
-        let review: SpecReview | null = null;
+      const reviewOnce = async (
+        token: string,
+        spec: SpecOutput,
+      ): Promise<SpecReview | null> => {
         try {
           const revRes = await fetch("/api/review-spec", {
             method: "POST",
@@ -235,38 +200,135 @@ function DashboardPage() {
             throw new Error(t || `שגיאה ${revRes.status}`);
           }
           const json = await revRes.json();
-          review = {
+          if (json?.score == null) return null;
+          return {
             score: Number(json.score),
             notes: Array.isArray(json.notes) ? json.notes.map(String) : [],
           };
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           toast.warning(`סוכן הביקורת נכשל (${model}): ${msg}`);
-          review = null;
+          return null;
+        }
+      };
+
+      const saveOne = async (
+        spec: SpecOutput,
+        review: SpecReview | null,
+        suffix: string,
+      ): Promise<string> => {
+        const { spec: row } = await createFn({
+          data: {
+            title: `${spec.title} — ${model} — ${suffix}`,
+            prompt: promptText,
+            content: spec,
+            reviewScore: review?.score ?? null,
+            reviewNotes: review?.notes ?? [],
+          },
+        });
+        return row.id;
+      };
+
+      try {
+        const token = await getToken();
+
+        // Stage 1: original generation
+        const originalSpec = await generateOnce(token);
+
+        // Stage 2: first review
+        setS({ status: "reviewing", partialSpec: originalSpec });
+        const originalReview = await reviewOnce(token, originalSpec);
+
+        // Decide whether to revise
+        const shouldRevise =
+          originalReview != null &&
+          originalReview.notes.length > 0 &&
+          originalReview.score < 10;
+
+        let revisedSpec: SpecOutput | null = null;
+        let revisedReview: SpecReview | null = null;
+
+        if (shouldRevise) {
+          // Stage 3: revised generation
+          setS({
+            status: "revising",
+            partialSpec: originalSpec,
+            partialReview: originalReview,
+          });
+          try {
+            revisedSpec = await generateOnce(
+              token,
+              originalSpec,
+              originalReview!.notes,
+            );
+
+            // Stage 4: review the revised spec
+            setS({
+              status: "reviewing-revised",
+              partialSpec: revisedSpec,
+              partialReview: originalReview,
+            });
+            revisedReview = await reviewOnce(token, revisedSpec);
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast.warning(`יצירת הגרסה המתוקנת נכשלה (${model}): ${msg}`);
+            revisedSpec = null;
+            revisedReview = null;
+          }
         }
 
-        await saveSpec(model, spec, promptText, review);
+        // Stage 5: save
+        setS({
+          status: "saving",
+          partialSpec: revisedSpec ?? originalSpec,
+          partialReview: revisedReview ?? originalReview,
+        });
+        try {
+          const originalSpecId = await saveOne(
+            originalSpec,
+            originalReview,
+            revisedSpec ? "מקור" : "מסמך",
+          );
+          let revisedSpecId: string | null = null;
+          if (revisedSpec) {
+            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן");
+          }
+          setS({
+            status: "success",
+            originalSpec,
+            originalSpecId,
+            originalReview,
+            revisedSpec,
+            revisedSpecId,
+            revisedReview,
+          });
+          qc.invalidateQueries({ queryKey: ["specs"] });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "שמירה נכשלה";
+          setS({
+            status: "error",
+            error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
+            originalSpec,
+            originalReview,
+            revisedSpec: revisedSpec ?? undefined,
+            revisedReview: revisedReview ?? undefined,
+            canRetry: true,
+          });
+        }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "יצירה נכשלה";
-        setCompareState((prev) =>
-          prev ? { ...prev, [model]: { status: "error", error: msg } } : prev,
-        );
+        setS({ status: "error", error: msg, canRetry: true });
       }
     },
-    [saveSpec],
+    [createFn, qc],
   );
 
   const retryModel = useCallback(
     (model: SpecModel) => {
       if (!compareState) return;
-      const s = compareState[model];
-      if (s.status === "error" && s.canRetrySaveOnly && s.spec) {
-        void saveSpec(model, s.spec, prompt, s.review ?? null);
-      } else {
-        void runModel(model, prompt);
-      }
+      void runModel(model, prompt);
     },
-    [compareState, prompt, runModel, saveSpec],
+    [compareState, prompt, runModel],
   );
 
   const startCompare = useCallback(() => {
@@ -289,13 +351,14 @@ function DashboardPage() {
   );
 
   const anyBusy = compareState
-    ? Object.values(compareState).some(
-        (s) =>
-          s.status === "loading" ||
-          s.status === "reviewing" ||
-          s.status === "saving",
+    ? Object.values(compareState).some((s) =>
+        ["loading", "reviewing", "revising", "reviewing-revised", "saving"].includes(
+          s.status,
+        ),
       )
     : false;
+
+
 
 
   const deleteMut = useMutation({
