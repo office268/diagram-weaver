@@ -297,10 +297,11 @@ function DashboardPage() {
             originalSpec,
             originalReview,
             revisedSpec ? "מקור" : "מסמך",
+            revisedSpec ? "original" : "single",
           );
           let revisedSpecId: string | null = null;
           if (revisedSpec) {
-            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן");
+            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן", "revised");
           }
           setS({
             status: "success",
