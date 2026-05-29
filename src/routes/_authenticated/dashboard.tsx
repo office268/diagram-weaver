@@ -74,7 +74,7 @@ function DashboardPage() {
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
-  const genFn = useServerFn(generateSpecFromModel);
+  
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
@@ -132,7 +132,41 @@ function DashboardPage() {
         [model]: { status: "loading" },
       }));
       try {
-        const { spec } = await genFn({ data: { prompt: promptText, model } });
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("נדרשת התחברות מחדש");
+
+        const res = await fetch("/api/generate-spec", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ prompt: promptText, model }),
+        });
+        if (!res.ok || !res.body) {
+          const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
+          throw new Error(errText);
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fullText += decoder.decode(value, { stream: true });
+        }
+        fullText += decoder.decode();
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(extractJson(fullText));
+        } catch {
+          throw new Error("המודל לא החזיר JSON תקני");
+        }
+        const spec = SpecOutputSchema.parse(parsed);
         await saveSpec(model, spec, promptText);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "יצירה נכשלה";
@@ -141,7 +175,7 @@ function DashboardPage() {
         );
       }
     },
-    [genFn, saveSpec],
+    [saveSpec],
   );
 
   const retryModel = useCallback(
