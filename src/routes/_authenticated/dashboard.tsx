@@ -333,18 +333,16 @@ function DashboardPage() {
 
 function ComparisonDialog({
   state,
-  anyLoading,
+  anyBusy,
   onClose,
   onPick,
   onRetry,
-  savingModel,
 }: {
   state: CompareState | null;
-  anyLoading: boolean;
+  anyBusy: boolean;
   onClose: () => void;
-  onPick: (model: SpecModel, spec: SpecOutput) => void;
+  onPick: (specId: string) => void;
   onRetry: (model: SpecModel) => void;
-  savingModel: SpecModel | null;
 }) {
   if (!state) return null;
   const models = COMPARISON_MODELS;
@@ -354,12 +352,12 @@ function ComparisonDialog({
         <DialogHeader>
           <DialogTitle>
             השוואת תוצאות מ-3 מודלים
-            {anyLoading ? (
+            {anyBusy ? (
               <Loader2 className="inline-block mr-2 h-4 w-4 animate-spin text-muted-foreground" />
             ) : null}
           </DialogTitle>
           <DialogDescription>
-            תוצאות מופיעות ברגע שכל מודל מסיים. ניתן לבחור גם בזמן שהאחרים עוד רצים.
+            כל מסמך שמצליח נשמר אוטומטית ברשימה. כפתור "בחר" רק פותח את המסמך לעריכה.
           </DialogDescription>
         </DialogHeader>
 
@@ -370,7 +368,7 @@ function ComparisonDialog({
               return (
                 <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
                   {m.split("/")[1]}
-                  {s.status === "loading" ? (
+                  {s.status === "loading" || s.status === "saving" ? (
                     <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
                   ) : s.status === "error" ? (
                     <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
@@ -395,6 +393,14 @@ function ComparisonDialog({
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
                   </div>
+                ) : s.status === "saving" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      שומר את המסמך…
+                    </div>
+                    <ResultPreview spec={s.spec} />
+                  </div>
                 ) : s.status === "error" ? (
                   <div className="space-y-3">
                     <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
@@ -405,6 +411,7 @@ function ComparisonDialog({
                       <RefreshCw className="mr-1.5 h-4 w-4" />
                       נסה שוב
                     </Button>
+                    {s.spec ? <ResultPreview spec={s.spec} /> : null}
                   </div>
                 ) : (
                   <ResultPreview spec={s.spec} />
@@ -415,7 +422,7 @@ function ComparisonDialog({
         </Tabs>
 
         <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={!!savingModel}>
+          <Button variant="ghost" onClick={onClose}>
             סגור
           </Button>
           {models.map((m) => {
@@ -425,17 +432,12 @@ function ComparisonDialog({
               <Button
                 key={m}
                 size="sm"
-                variant={savingModel === m ? "default" : "outline"}
-                onClick={() => onPick(m, s.spec)}
-                disabled={!!savingModel}
+                variant="outline"
+                onClick={() => onPick(s.specId)}
                 dir="ltr"
               >
-                {savingModel === m ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="mr-1.5 h-4 w-4" />
-                )}
-                בחר: {m.split("/")[1]}
+                <Check className="mr-1.5 h-4 w-4" />
+                פתח: {m.split("/")[1]}
               </Button>
             );
           })}
@@ -444,6 +446,7 @@ function ComparisonDialog({
     </Dialog>
   );
 }
+
 
 
 function ResultPreview({ spec }: { spec: SpecOutput }) {
