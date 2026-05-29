@@ -1,16 +1,17 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw } from "lucide-react";
 import {
   listSpecs,
   createSpec,
   deleteSpec,
 } from "@/lib/spec.functions";
-import { generateSpecsFromAllModels } from "@/lib/ai-spec.functions";
+import { generateSpecFromModel } from "@/lib/ai-spec.functions";
 import type { SpecOutput } from "@/lib/ai-spec.functions";
+import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -49,11 +50,18 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-type CompareResult = {
-  model: string;
-  spec: SpecOutput | null;
-  error: string | null;
-};
+type ModelState =
+  | { status: "loading" }
+  | { status: "success"; spec: SpecOutput }
+  | { status: "error"; error: string };
+
+type CompareState = Record<SpecModel, ModelState>;
+
+function initialCompareState(): CompareState {
+  return Object.fromEntries(
+    COMPARISON_MODELS.map((m) => [m, { status: "loading" } as ModelState]),
+  ) as CompareState;
+}
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -61,47 +69,65 @@ function DashboardPage() {
   const listFn = useServerFn(listSpecs);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
-  const genFn = useServerFn(generateSpecsFromAllModels);
+  const genFn = useServerFn(generateSpecFromModel);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [compareResults, setCompareResults] = useState<CompareResult[] | null>(null);
-  const [savingModel, setSavingModel] = useState<string | null>(null);
+  const [compareState, setCompareState] = useState<CompareState | null>(null);
+  const [savingModel, setSavingModel] = useState<SpecModel | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
     queryFn: () => listFn(),
   });
 
-  const generateMut = useMutation({
-    mutationFn: async () => {
-      const { results } = await genFn({ data: { prompt } });
-      return results;
+  const runModel = useCallback(
+    async (model: SpecModel, promptText: string) => {
+      setCompareState((prev) => ({
+        ...(prev ?? initialCompareState()),
+        [model]: { status: "loading" },
+      }));
+      try {
+        const { spec } = await genFn({ data: { prompt: promptText, model } });
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "success", spec } } : prev,
+        );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "error", error: msg } } : prev,
+        );
+      }
     },
-    onSuccess: (results) => {
-      setNewOpen(false);
-      setCompareResults(results);
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
-  });
+    [genFn],
+  );
+
+  const startCompare = useCallback(() => {
+    const p = prompt.trim();
+    if (p.length < 5) return;
+    setNewOpen(false);
+    setCompareState(initialCompareState());
+    COMPARISON_MODELS.forEach((m) => {
+      void runModel(m, p);
+    });
+  }, [prompt, runModel]);
 
   const pickMut = useMutation({
-    mutationFn: async (r: CompareResult) => {
-      if (!r.spec) throw new Error("אין מסמך לשמירה");
-      setSavingModel(r.model);
-      const { spec } = await createFn({
+    mutationFn: async ({ model, spec }: { model: SpecModel; spec: SpecOutput }) => {
+      setSavingModel(model);
+      const { spec: row } = await createFn({
         data: {
-          title: `${r.spec.title} — ${r.model}`,
+          title: `${spec.title} — ${model}`,
           prompt,
-          content: r.spec,
+          content: spec,
         },
       });
-      return spec;
+      return row;
     },
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ["specs"] });
-      setCompareResults(null);
+      setCompareState(null);
       setPrompt("");
       setSavingModel(null);
       navigate({ to: "/editor/$id", params: { id: row.id } });
@@ -111,6 +137,10 @@ function DashboardPage() {
       toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
     },
   });
+
+  const anyLoading = compareState
+    ? Object.values(compareState).some((s) => s.status === "loading")
+    : false;
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -191,7 +221,7 @@ function DashboardPage() {
         )}
       </div>
 
-      <Dialog open={newOpen} onOpenChange={(o) => !generateMut.isPending && setNewOpen(o)}>
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -209,7 +239,7 @@ function DashboardPage() {
               id="spec-prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="למשל: מערכת לניהול הזמנות במסעדה הכוללת אפליקציה למלצרים, ממשק למטבח, ודשבורד למנהל..."
+              placeholder="למשל: מערכת לניהול הזמנות במסעדה..."
               rows={7}
               maxLength={5000}
               autoFocus
@@ -220,35 +250,26 @@ function DashboardPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewOpen(false)} disabled={generateMut.isPending}>
+            <Button variant="ghost" onClick={() => setNewOpen(false)}>
               ביטול
             </Button>
-            <Button
-              onClick={() => generateMut.mutate()}
-              disabled={prompt.trim().length < 5 || generateMut.isPending}
-            >
-              {generateMut.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  מריץ 3 מודלים…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  צור והשווה
-                </>
-              )}
+            <Button onClick={startCompare} disabled={prompt.trim().length < 5}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              צור והשווה
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ComparisonDialog
-        results={compareResults}
-        onClose={() => !pickMut.isPending && setCompareResults(null)}
-        onPick={(r) => pickMut.mutate(r)}
+        state={compareState}
+        anyLoading={anyLoading}
+        onClose={() => !pickMut.isPending && setCompareState(null)}
+        onPick={(model, spec) => pickMut.mutate({ model, spec })}
+        onRetry={(model) => void runModel(model, prompt)}
         savingModel={savingModel}
       />
+
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
@@ -274,87 +295,119 @@ function DashboardPage() {
 }
 
 function ComparisonDialog({
-  results,
+  state,
+  anyLoading,
   onClose,
   onPick,
+  onRetry,
   savingModel,
 }: {
-  results: CompareResult[] | null;
+  state: CompareState | null;
+  anyLoading: boolean;
   onClose: () => void;
-  onPick: (r: CompareResult) => void;
-  savingModel: string | null;
+  onPick: (model: SpecModel, spec: SpecOutput) => void;
+  onRetry: (model: SpecModel) => void;
+  savingModel: SpecModel | null;
 }) {
-  if (!results) return null;
+  if (!state) return null;
+  const models = COMPARISON_MODELS;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>השוואת תוצאות מ-3 מודלים</DialogTitle>
+          <DialogTitle>
+            השוואת תוצאות מ-3 מודלים
+            {anyLoading ? (
+              <Loader2 className="inline-block mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+            ) : null}
+          </DialogTitle>
           <DialogDescription>
-            עיינו בכל תוצאה ובחרו את המסמך לשמירה. ניתן לערוך אותו אחר כך.
+            תוצאות מופיעות ברגע שכל מודל מסיים. ניתן לבחור גם בזמן שהאחרים עוד רצים.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={results[0]?.model} className="flex-1 overflow-hidden flex flex-col">
+        <Tabs defaultValue={models[0]} className="flex-1 overflow-hidden flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
-            {results.map((r) => (
-              <TabsTrigger key={r.model} value={r.model} className="text-xs" dir="ltr">
-                {r.model.split("/")[1]}
-                {r.error ? (
-                  <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
-                ) : (
-                  <Check className="ml-1 h-3 w-3 text-primary" />
-                )}
-              </TabsTrigger>
-            ))}
+            {models.map((m) => {
+              const s = state[m];
+              return (
+                <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
+                  {m.split("/")[1]}
+                  {s.status === "loading" ? (
+                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
+                  ) : s.status === "error" ? (
+                    <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
+                  ) : (
+                    <Check className="ml-1 h-3 w-3 text-primary" />
+                  )}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
-          {results.map((r) => (
-            <TabsContent
-              key={r.model}
-              value={r.model}
-              className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
-            >
-              {r.error ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-                  <div className="font-medium">המודל נכשל</div>
-                  <div className="mt-1 text-xs">{r.error}</div>
-                </div>
-              ) : r.spec ? (
-                <ResultPreview spec={r.spec} />
-              ) : null}
-            </TabsContent>
-          ))}
+          {models.map((m) => {
+            const s = state[m];
+            return (
+              <TabsContent
+                key={m}
+                value={m}
+                className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
+              >
+                {s.status === "loading" ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
+                  </div>
+                ) : s.status === "error" ? (
+                  <div className="space-y-3">
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                      <div className="font-medium">המודל נכשל</div>
+                      <div className="mt-1 text-xs">{s.error}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => onRetry(m)}>
+                      <RefreshCw className="mr-1.5 h-4 w-4" />
+                      נסה שוב
+                    </Button>
+                  </div>
+                ) : (
+                  <ResultPreview spec={s.spec} />
+                )}
+              </TabsContent>
+            );
+          })}
         </Tabs>
 
         <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
           <Button variant="ghost" onClick={onClose} disabled={!!savingModel}>
-            ביטול
+            סגור
           </Button>
-          {results.map((r) =>
-            r.spec ? (
+          {models.map((m) => {
+            const s = state[m];
+            if (s.status !== "success") return null;
+            return (
               <Button
-                key={r.model}
+                key={m}
                 size="sm"
-                variant={savingModel === r.model ? "default" : "outline"}
-                onClick={() => onPick(r)}
+                variant={savingModel === m ? "default" : "outline"}
+                onClick={() => onPick(m, s.spec)}
                 disabled={!!savingModel}
                 dir="ltr"
               >
-                {savingModel === r.model ? (
+                {savingModel === m ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="mr-1.5 h-4 w-4" />
                 )}
-                בחר: {r.model.split("/")[1]}
+                בחר: {m.split("/")[1]}
               </Button>
-            ) : null,
-          )}
+            );
+          })}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function ResultPreview({ spec }: { spec: SpecOutput }) {
   const stats = [
