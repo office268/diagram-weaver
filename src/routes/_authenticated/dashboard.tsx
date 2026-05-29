@@ -221,7 +221,7 @@ function DashboardPage() {
         )}
       </div>
 
-      <Dialog open={newOpen} onOpenChange={(o) => !generateMut.isPending && setNewOpen(o)}>
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -239,7 +239,7 @@ function DashboardPage() {
               id="spec-prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="למשל: מערכת לניהול הזמנות במסעדה הכוללת אפליקציה למלצרים, ממשק למטבח, ודשבורד למנהל..."
+              placeholder="למשל: מערכת לניהול הזמנות במסעדה..."
               rows={7}
               maxLength={5000}
               autoFocus
@@ -250,35 +250,26 @@ function DashboardPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewOpen(false)} disabled={generateMut.isPending}>
+            <Button variant="ghost" onClick={() => setNewOpen(false)}>
               ביטול
             </Button>
-            <Button
-              onClick={() => generateMut.mutate()}
-              disabled={prompt.trim().length < 5 || generateMut.isPending}
-            >
-              {generateMut.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  מריץ 3 מודלים…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  צור והשווה
-                </>
-              )}
+            <Button onClick={startCompare} disabled={prompt.trim().length < 5}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              צור והשווה
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <ComparisonDialog
-        results={compareResults}
-        onClose={() => !pickMut.isPending && setCompareResults(null)}
-        onPick={(r) => pickMut.mutate(r)}
+        state={compareState}
+        anyLoading={anyLoading}
+        onClose={() => !pickMut.isPending && setCompareState(null)}
+        onPick={(model, spec) => pickMut.mutate({ model, spec })}
+        onRetry={(model) => void runModel(model, prompt)}
         savingModel={savingModel}
       />
+
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
