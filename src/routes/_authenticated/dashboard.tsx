@@ -266,7 +266,10 @@ function DashboardPage() {
 
   const anyBusy = compareState
     ? Object.values(compareState).some(
-        (s) => s.status === "loading" || s.status === "saving",
+        (s) =>
+          s.status === "loading" ||
+          s.status === "reviewing" ||
+          s.status === "saving",
       )
     : false;
 
