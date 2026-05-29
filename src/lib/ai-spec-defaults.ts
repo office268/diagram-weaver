@@ -1,4 +1,10 @@
-export const SPEC_MODEL = "google/gemini-2.5-pro";
+export const COMPARISON_MODELS = [
+  "google/gemini-2.5-pro",
+  "google/gemini-3-flash-preview",
+  "openai/gpt-5-mini",
+] as const;
+
+export type SpecModel = (typeof COMPARISON_MODELS)[number];
 
 export const DEFAULT_SYSTEM_INSTRUCTION = [
   "אתה אנליסט מערכות בכיר. בהינתן תיאור של מערכת בעברית, החזר מסמך אפיון על מלא ומובנה.",
@@ -13,6 +19,26 @@ export const DEFAULT_SYSTEM_INSTRUCTION = [
   "הנחות היסוד צריכות להיות דברים שהמשתמש לא ציין אך אתה מניח לטובת השלמת המסמך — לפחות 3.",
   "דרישות פונקציונליות: לפחות 5. דרישות לא-פונקציונליות: לפחות 3 (ביצועים, אבטחה, נגישות וכו').",
   "סיכונים: לפחות 3.",
+].join("\n");
+
+export const JSON_OUTPUT_INSTRUCTION = [
+  "",
+  "פורמט הפלט — חובה:",
+  "החזר אך ורק אובייקט JSON תקני אחד, ללא טקסט נוסף לפניו או אחריו, ללא הסברים, וללא עטיפה ב-```json``` או בכל סימן markdown.",
+  "סכמת ה-JSON:",
+  "{",
+  '  "title": string,',
+  '  "overview": string,',
+  '  "goals": [{ "id": string, "text": string }],',
+  '  "personas": [{ "id": string, "name": string, "description": string }],',
+  '  "functional_requirements": [{ "id": string, "title": string, "description": string }],',
+  '  "non_functional_requirements": [{ "id": string, "title": string, "description": string }],',
+  '  "assumptions": [{ "id": string, "text": string }],',
+  '  "use_cases": [{ "id": string, "title": string, "description": string, "diagram": string }],',
+  '  "architecture": { "description": string, "diagram": string },',
+  '  "data_model": { "description": string, "diagram": string },',
+  '  "risks": [{ "id": string, "text": string }]',
+  "}",
 ].join("\n");
 
 export const OUTPUT_SCHEMA_FIELDS = [
