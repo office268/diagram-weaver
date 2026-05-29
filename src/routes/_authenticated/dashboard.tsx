@@ -237,7 +237,7 @@ function DashboardPage() {
       if (!compareState) return;
       const s = compareState[model];
       if (s.status === "error" && s.canRetrySaveOnly && s.spec) {
-        void saveSpec(model, s.spec, prompt);
+        void saveSpec(model, s.spec, prompt, s.review ?? null);
       } else {
         void runModel(model, prompt);
       }
