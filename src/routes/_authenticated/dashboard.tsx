@@ -488,13 +488,21 @@ function ComparisonDialog({
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
                   </div>
+                ) : s.status === "reviewing" ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      סוכן הביקורת בודק את האפיון…
+                    </div>
+                    <ResultPreview spec={s.spec} review={null} />
+                  </div>
                 ) : s.status === "saving" ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       שומר את המסמך…
                     </div>
-                    <ResultPreview spec={s.spec} />
+                    <ResultPreview spec={s.spec} review={s.review} />
                   </div>
                 ) : s.status === "error" ? (
                   <div className="space-y-3">
@@ -506,10 +514,10 @@ function ComparisonDialog({
                       <RefreshCw className="mr-1.5 h-4 w-4" />
                       נסה שוב
                     </Button>
-                    {s.spec ? <ResultPreview spec={s.spec} /> : null}
+                    {s.spec ? <ResultPreview spec={s.spec} review={s.review ?? null} /> : null}
                   </div>
                 ) : (
-                  <ResultPreview spec={s.spec} />
+                  <ResultPreview spec={s.spec} review={s.review} />
                 )}
               </TabsContent>
             );
