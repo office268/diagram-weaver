@@ -12,6 +12,7 @@ import {
 
 const InputSchema = z.object({
   prompt: z.string().min(5).max(5000),
+  model: z.enum(COMPARISON_MODELS),
 });
 
 const ItemSchema = z.object({
@@ -99,7 +100,7 @@ async function generateOne(
   return SpecOutputSchema.parse(parsed);
 }
 
-export const generateSpecsFromAllModels = createServerFn({ method: "POST" })
+export const generateSpecFromModel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
@@ -114,27 +115,14 @@ export const generateSpecsFromAllModels = createServerFn({ method: "POST" })
       .maybeSingle();
     const system = row?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION;
 
-    const settled = await Promise.allSettled(
-      COMPARISON_MODELS.map((m) => generateOne(m, key, system, data.prompt)),
-    );
-
-    const results = settled.map((r, i) => {
-      const model = COMPARISON_MODELS[i];
-      if (r.status === "fulfilled") {
-        return { model, spec: r.value, error: null as string | null };
-      }
-      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+    try {
+      const spec = await generateOne(data.model, key, system, data.prompt);
+      return { model: data.model, spec };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       let friendly = msg;
       if (msg.includes("429")) friendly = "הגעת למגבלת קצב.";
       else if (msg.includes("402")) friendly = "אזלו קרדיטי ה-AI.";
-      return { model, spec: null as SpecOutput | null, error: friendly };
-    });
-
-    if (results.every((r) => !r.spec)) {
-      throw new Error(
-        "כל שלושת המודלים נכשלו: " + results.map((r) => `${r.model}: ${r.error}`).join(" | "),
-      );
+      throw new Error(friendly);
     }
-
-    return { results };
   });
