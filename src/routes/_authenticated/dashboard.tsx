@@ -454,39 +454,147 @@ function DashboardPage() {
             </p>
           </div>
         ) : (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.specs.map((d) => (
-              <li
-                key={d.id}
-                className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-              >
-                <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span className="truncate font-medium text-foreground">
-                      {d.title}
-                    </span>
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
-                  </div>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setDeleteId(d.id);
-                  }}
+          <ul className="space-y-4">
+            {groups.map((g) => {
+              const isGroup = g.items.length > 1;
+              const head = g.items[0];
+              const topic = (head.prompt?.trim() || head.title).slice(0, 140);
+              const updated = g.items
+                .map((i) => +new Date(i.updated_at))
+                .reduce((a, b) => Math.max(a, b), 0);
+
+              if (!isGroup) {
+                const d = head;
+                return (
+                  <li
+                    key={g.key}
+                    className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                  >
+                    <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="truncate font-medium text-foreground">
+                          {d.title}
+                        </span>
+                      </div>
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
+                      </div>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setDeleteId(d.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </li>
+                );
+              }
+
+              return (
+                <li
+                  key={g.key}
+                  className="relative rounded-2xl border-2 border-primary/20 bg-muted/30 p-4"
                 >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </li>
-            ))}
+                  <div className="mb-3 flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Layers className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground line-clamp-2">
+                          {topic}
+                        </h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {g.items.length} גרסאות · עודכן ב-
+                          {new Date(updated).toLocaleDateString("he-IL")}
+                        </p>
+                      </div>
+                    </div>
+                    {g.groupId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => setDeleteGroupId(g.groupId!)}
+                        title="מחק את כל הקבוצה"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <ul className="relative space-y-2 pr-5">
+                    {/* Vertical tree line on the right (RTL) */}
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute top-2 bottom-2 right-2 border-r-2 border-dashed border-primary/40"
+                    />
+                    {g.items.map((d) => {
+                      const variantLabel =
+                        d.variant === "revised"
+                          ? "מתוקן"
+                          : d.variant === "original"
+                            ? "מקור"
+                            : null;
+                      return (
+                        <li key={d.id} className="group/item relative">
+                          {/* Horizontal branch */}
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute top-1/2 -right-3 h-0 w-3 border-t-2 border-dashed border-primary/40"
+                          />
+                          <Link
+                            to="/editor/$id"
+                            params={{ id: d.id }}
+                            className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <FileText className="h-4 w-4 shrink-0 text-primary" />
+                              <span className="truncate text-sm text-foreground">
+                                {d.model ?? "מסמך"}
+                              </span>
+                              {variantLabel && (
+                                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
+                                  {variantLabel}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              {typeof d.review_score === "number" && (
+                                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                                  ציון {d.review_score}/10
+                                </span>
+                              )}
+                              <Button
+                                asChild={false}
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 transition-opacity group-hover/item:opacity-100"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setDeleteId(d.id);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
 
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="max-w-xl">
