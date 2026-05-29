@@ -10,48 +10,49 @@ const InputSchema = z.object({
 });
 
 const ItemSchema = z.object({
-  id: z.string(),
-  text: z.string().min(1),
+  id: z.string().default(""),
+  text: z.string().default(""),
 });
 
 const RequirementSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  description: z.string().min(1),
+  id: z.string().default(""),
+  title: z.string().default(""),
+  description: z.string().default(""),
 });
 
 const PersonaSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1),
-  description: z.string().min(1),
+  id: z.string().default(""),
+  name: z.string().default(""),
+  description: z.string().default(""),
 });
 
 const UseCaseSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  description: z.string().min(1),
+  id: z.string().default(""),
+  title: z.string().default(""),
+  description: z.string().default(""),
   diagram: z.string().default(""),
 });
 
 const SpecOutputSchema = z.object({
-  title: z.string().min(1).max(120),
-  overview: z.string().min(1),
-  goals: z.array(ItemSchema).min(1),
-  personas: z.array(PersonaSchema).min(1),
-  functional_requirements: z.array(RequirementSchema).min(1),
-  non_functional_requirements: z.array(RequirementSchema).min(1),
-  assumptions: z.array(ItemSchema).min(1),
-  use_cases: z.array(UseCaseSchema).min(1),
+  title: z.string().default("מסמך אפיון"),
+  overview: z.string().default(""),
+  goals: z.array(ItemSchema).default([]),
+  personas: z.array(PersonaSchema).default([]),
+  functional_requirements: z.array(RequirementSchema).default([]),
+  non_functional_requirements: z.array(RequirementSchema).default([]),
+  assumptions: z.array(ItemSchema).default([]),
+  use_cases: z.array(UseCaseSchema).default([]),
   architecture: z.object({
-    description: z.string().min(1),
+    description: z.string().default(""),
     diagram: z.string().default(""),
-  }),
+  }).default({ description: "", diagram: "" }),
   data_model: z.object({
-    description: z.string().min(1),
+    description: z.string().default(""),
     diagram: z.string().default(""),
-  }),
-  risks: z.array(ItemSchema).min(1),
+  }).default({ description: "", diagram: "" }),
+  risks: z.array(ItemSchema).default([]),
 });
+
 
 export const generateSpecFromPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
