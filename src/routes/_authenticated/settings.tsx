@@ -9,7 +9,7 @@ import {
   updateAiSettings,
   resetAiSettings,
 } from "@/lib/ai-settings.functions";
-import { OUTPUT_SCHEMA_FIELDS, SPEC_MODEL } from "@/lib/ai-spec-defaults";
+import { COMPARISON_MODELS, OUTPUT_SCHEMA_FIELDS } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
