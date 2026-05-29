@@ -614,6 +614,80 @@ function ComparisonDialog({
   );
 }
 
+const STAGE_LABEL: Record<Stage, string> = {
+  loading: "המודל עובד… עשוי לקחת עד דקה.",
+  reviewing: "סוכן הביקורת בודק את האפיון…",
+  revising: "מריץ את סוכן הניתוח שוב עם הערות המבקר…",
+  "reviewing-revised": "סוכן הביקורת בודק את הגרסה המתוקנת…",
+  saving: "שומר את המסמכים…",
+};
+
+function ModelTabBody({
+  state,
+  onRetry,
+}: {
+  state: ModelState;
+  onRetry: () => void;
+}) {
+  if (state.status === "error") {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="font-medium">המודל נכשל</div>
+          <div className="mt-1 text-xs">{state.error}</div>
+        </div>
+        <Button size="sm" variant="outline" onClick={onRetry}>
+          <RefreshCw className="mr-1.5 h-4 w-4" />
+          נסה שוב
+        </Button>
+        {state.revisedSpec ? (
+          <ResultPreview spec={state.revisedSpec} review={state.revisedReview ?? null} />
+        ) : state.originalSpec ? (
+          <ResultPreview spec={state.originalSpec} review={state.originalReview ?? null} />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (state.status === "success") {
+    if (!state.revisedSpec) {
+      return <ResultPreview spec={state.originalSpec} review={state.originalReview} />;
+    }
+    return (
+      <Tabs defaultValue="revised" className="space-y-3">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="revised">מתוקן</TabsTrigger>
+          <TabsTrigger value="original">מקור</TabsTrigger>
+        </TabsList>
+        <TabsContent value="revised">
+          <ResultPreview spec={state.revisedSpec} review={state.revisedReview} />
+        </TabsContent>
+        <TabsContent value="original">
+          <ResultPreview spec={state.originalSpec} review={state.originalReview} />
+        </TabsContent>
+      </Tabs>
+    );
+  }
+
+  // In-flight stage
+  const label = STAGE_LABEL[state.status];
+  const partial = state.partialSpec;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        {label}
+      </div>
+      {partial ? (
+        <ResultPreview spec={partial} review={state.partialReview ?? null} />
+      ) : (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 function ResultPreview({
