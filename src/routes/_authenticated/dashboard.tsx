@@ -13,6 +13,7 @@ import {
   SpecOutputSchema,
   extractJson,
   type SpecOutput,
+  type SpecReview,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
