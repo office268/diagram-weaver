@@ -300,12 +300,12 @@ function DashboardPage() {
 
       <ComparisonDialog
         state={compareState}
-        anyLoading={anyLoading}
-        onClose={() => !pickMut.isPending && setCompareState(null)}
-        onPick={(model, spec) => pickMut.mutate({ model, spec })}
-        onRetry={(model) => void runModel(model, prompt)}
-        savingModel={savingModel}
+        anyBusy={anyBusy}
+        onClose={() => setCompareState(null)}
+        onPick={handlePick}
+        onRetry={retryModel}
       />
+
 
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
