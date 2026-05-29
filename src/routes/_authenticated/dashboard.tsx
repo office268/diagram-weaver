@@ -191,7 +191,37 @@ function DashboardPage() {
           );
         }
         const spec = SpecOutputSchema.parse(parsed);
-        await saveSpec(model, spec, promptText);
+
+        // Quality reviewer agent
+        setCompareState((prev) =>
+          prev ? { ...prev, [model]: { status: "reviewing", spec } } : prev,
+        );
+        let review: SpecReview | null = null;
+        try {
+          const revRes = await fetch("/api/review-spec", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ prompt: promptText, spec }),
+          });
+          if (!revRes.ok) {
+            const t = await revRes.text().catch(() => "");
+            throw new Error(t || `שגיאה ${revRes.status}`);
+          }
+          const json = await revRes.json();
+          review = {
+            score: Number(json.score),
+            notes: Array.isArray(json.notes) ? json.notes.map(String) : [],
+          };
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          toast.warning(`סוכן הביקורת נכשל (${model}): ${msg}`);
+          review = null;
+        }
+
+        await saveSpec(model, spec, promptText, review);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "יצירה נכשלה";
         setCompareState((prev) =>
