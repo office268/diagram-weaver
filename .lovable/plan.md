@@ -1,23 +1,65 @@
-## הבעיה
-לוג ה-Worker מראה:
-`[review-spec] failed: AI_NoObjectGeneratedError: No object generated: response did not match schema.`
 
-המודל `google/gemini-3-flash-preview` דרך ה-Gateway לא מצליח לעמוד ב-strict schema של `generateObject` (כנראה מחזיר טקסט עטוף ב-```json``` או טקסט מקדים). זה אותו דפוס שכבר פתרנו ב-`generate-spec.ts` (שם השתמשנו ב-`generateText` + `extractJson` + parse ידני, לא ב-`generateObject`).
+## מטרה
+אחרי שהמבקר נותן ציון והערות, להריץ שוב את סוכן ניתוח המערכות עם ההערות, ולהפיק מסמך מתוקן. גם המסמך המתוקן עובר ביקורת. שני המסמכים ושתי הביקורות נשמרים בנפרד.
 
-## תיקון
-לעבוד באותה גישה ב-`src/routes/api/review-spec.ts`:
+## זרימה חדשה (פר מודל)
+1. יצירה ראשונית (קיים)
+2. ביקורת ראשונה (קיים)
+3. **חדש:** אם יש הערות מהמבקר → יצירה מתוקנת על בסיס הפרומפט המקורי + המסמך הקודם + הערות המבקר
+4. **חדש:** ביקורת על המסמך המתוקן
+5. שמירה: שני מסמכים נפרדים ב-`spec_documents`, כל אחד עם הציון וההערות שלו
 
-1. החלפת `generateObject` ב-`generateText` מתוך `ai`.
-2. הוספת הוראת פורמט מפורשת ל-system prompt:
-   - "החזר אך ורק אובייקט JSON תקני יחיד בצורה: `{ \"score\": number (1-10), \"notes\": string[] }`. ללא ```json```, ללא טקסט נוסף."
-3. הוצאת ה-JSON מהפלט עם `extractJson` הקיים מ-`@/lib/spec-output-schema`.
-4. `ReviewSchema.parse(JSON.parse(extracted))` עם clamp ל-score ל-טווח 1–10 ו-truncate ל-notes (max 20, max 500 תווים לכל אחד) — דרך טרנספורם ב-Zod כדי לא להפיל אם המודל חרג מעט.
-5. במקרה של כשל parse — fallback ל-`{ score: null, notes: [] }` + status 200 ולוג שגיאה. כך הזרימה ב-dashboard לא נשברת (היא כבר תומכת ב-score=null).
+אם הביקורת הראשונה נכשלה או לא החזירה הערות (notes ריק וציון ≥9) — נדלג על שלב התיקון ונשמור רק את המסמך המקורי (כמו היום).
 
-## מה לא משתנה
-- אותו model (`gemini-3-flash-preview`), אותו gateway, אותו endpoint, אותו contract של ה-response (`{score, notes}`).
-- אין שינוי ב-DB, ב-dashboard, ב-editor או ב-ReviewPanel.
-- אין שינוי ב-`generate-spec.ts`.
+## שינויים טכניים
 
-## קבצים שישתנו
-- `src/routes/api/review-spec.ts` בלבד.
+### 1. DB
+הוספת עמודות אופציונליות ל-`spec_documents` כדי לקשר בין הגרסאות:
+- `revision_of` UUID nullable — מצביע למסמך המקור (אם המסמך הזה הוא תיקון)
+- `revision_index` int default 0 — 0 למקור, 1 לתיקון הראשון
+
+(לא חובה, אבל נחמד כדי להציג בדשבורד "מתוקן" ולקשר ביניהם. אם תעדיף לוותר ולהשאיר רק שני מסמכים נפרדים ללא קישור — נוותר על המיגרציה.)
+
+### 2. `src/routes/api/generate-spec.ts`
+תוספת לסכמת הבקשה:
+- `previousSpec?: object` — האפיון הקודם
+- `reviewerNotes?: string[]` — הערות לשיפור
+
+כשהם מסופקים, נוסיף לפרומפט הוראת תיקון: "להלן מסמך אפיון קודם והערות מבקר איכות. צור גרסה משופרת שמטפלת בהערות, שומרת את החוזקות, ומחזירה JSON תקני באותה סכמה."
+
+### 3. `src/routes/_authenticated/dashboard.tsx`
+החלפת `runModel` בזרימה דו-שלבית:
+```text
+loading → reviewing → revising → reviewing-revised → saving (x2) → success
+```
+
+`ModelState` יורחב לכלול:
+- `originalSpec`, `originalReview`
+- `revisedSpec?`, `revisedReview?`
+- `originalSpecId?`, `revisedSpecId?`
+
+הלוגיקה:
+1. קריאה ל-`/api/generate-spec` (קיים)
+2. קריאה ל-`/api/review-spec` (קיים)
+3. אם `review.notes.length > 0` ו-`review.score < 10`:
+   a. קריאה שנייה ל-`/api/generate-spec` עם `previousSpec` ו-`reviewerNotes`
+   b. קריאה שנייה ל-`/api/review-spec` על הגרסה המתוקנת
+4. שמירה: `createSpec` למקור (title "… — מקור") ו-`createSpec` לתיקון (title "… — מתוקן"), כל אחד עם הציון/הערות שלו
+
+### 4. דיאלוג ההשוואה (`ComparisonDialog` / `ResultPreview`)
+- מעל ה-Tabs של המודלים, נוסיף Tabs פנימיים: "מקור" / "מתוקן" כשקיים תיקון
+- כל טאב מציג את ה-`ReviewPanel` המתאים + תצוגת המסמך
+- בכפתורי הפעולה למטה: כפתור "פתח: מקור" וכפתור "פתח: מתוקן" לכל מודל שהצליח
+
+### 5. אין שינוי ב-`review-spec.ts`, `spec.functions.ts` (כבר מקבל ציון/הערות), `editor.$id.tsx`
+המסמך המתוקן הוא רשומה רגילה ב-spec_documents, כך שהעורך כבר יציג את הציון וההערות שלו ללא שינוי.
+
+## פרטים טכניים
+- הפרומפט לתיקון יישלח דרך אותו endpoint כדי לא לכפול קוד streaming.
+- אם יצירת הגרסה המתוקנת או הביקורת השנייה נכשלות — נציג טוסט אזהרה ונסתפק בשמירת המסמך המקורי + הביקורת שלו (לא נכשל את כל הזרימה).
+- ה-Quality threshold לדילוג על תיקון: notes ריק או score === 10.
+
+## האם להוסיף את עמודות `revision_of` / `revision_index` ל-DB?
+זה ייתן לנו יכולת בעתיד להציג בדשבורד "מתוקן" וקישור הדדי. אם לא נוסיף, שני המסמכים פשוט יופיעו כעצמאיים עם שמות "— מקור" / "— מתוקן".
+
+המלצתי: כן להוסיף — זה זול וייתן UX טוב יותר בהמשך.

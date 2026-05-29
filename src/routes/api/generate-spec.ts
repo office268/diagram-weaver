@@ -12,6 +12,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const BodySchema = z.object({
   prompt: z.string().min(5).max(5000),
   model: z.enum(COMPARISON_MODELS),
+  previousSpec: z.record(z.string(), z.any()).optional(),
+  reviewerNotes: z.array(z.string()).max(50).optional(),
 });
 
 export const Route = createFileRoute("/api/generate-spec")({
@@ -54,9 +56,30 @@ export const Route = createFileRoute("/api/generate-spec")({
 
         try {
           const gateway = createLovableAiGatewayProvider(key);
+
+          const isRevision =
+            !!body.previousSpec &&
+            Array.isArray(body.reviewerNotes) &&
+            body.reviewerNotes.length > 0;
+
+          const userPrompt = isRevision
+            ? [
+                "פרומפט מקורי של המשתמש:",
+                body.prompt,
+                "",
+                "להלן מסמך אפיון קודם שיצרת (JSON):",
+                JSON.stringify(body.previousSpec),
+                "",
+                "הערות מבקר איכות לשיפור:",
+                ...body.reviewerNotes!.map((n, i) => `${i + 1}. ${n}`),
+                "",
+                "צור גרסה משופרת של מסמך האפיון שמטפלת בכל ההערות, שומרת ומחזקת את החוזקות הקיימות, ומחזירה JSON תקני באותה סכמה בדיוק.",
+              ].join("\n")
+            : body.prompt;
+
           const result = streamText({
             model: gateway(body.model),
-            prompt: body.prompt,
+            prompt: userPrompt,
             system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
             maxOutputTokens: 8000,
             onError: ({ error }) => {
