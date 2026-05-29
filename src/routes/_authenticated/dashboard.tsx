@@ -52,8 +52,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 type ModelState =
   | { status: "loading" }
-  | { status: "success"; spec: SpecOutput }
-  | { status: "error"; error: string };
+  | { status: "saving"; spec: SpecOutput }
+  | { status: "success"; spec: SpecOutput; specId: string }
+  | { status: "error"; error: string; spec?: SpecOutput; canRetrySaveOnly?: boolean };
 
 type CompareState = Record<SpecModel, ModelState>;
 
