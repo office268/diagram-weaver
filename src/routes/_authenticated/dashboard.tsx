@@ -665,6 +665,26 @@ function DashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!deleteGroupId} onOpenChange={(o) => !o && setDeleteGroupId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>למחוק את כל הקבוצה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              כל הגרסאות שנוצרו באותה הרצת אפיון יימחקו. לא ניתן לבטל פעולה זו.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteGroupId && deleteGroupMut.mutate(deleteGroupId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              מחק קבוצה
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
