@@ -14,39 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      diagrams: {
-        Row: {
-          code: string
-          created_at: string
-          diagram_type: string
-          id: string
-          positions: Json
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          code?: string
-          created_at?: string
-          diagram_type?: string
-          id?: string
-          positions?: Json
-          title?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          diagram_type?: string
-          id?: string
-          positions?: Json
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -68,6 +35,36 @@ export type Database = {
           display_name?: string | null
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      spec_documents: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          prompt: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          prompt?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          prompt?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
