@@ -552,7 +552,13 @@ function ComparisonDialog({
 
 
 
-function ResultPreview({ spec }: { spec: SpecOutput }) {
+function ResultPreview({
+  spec,
+  review,
+}: {
+  spec: SpecOutput;
+  review: SpecReview | null;
+}) {
   const stats = [
     { label: "מטרות", n: spec.goals.length },
     { label: "Personas", n: spec.personas.length },
@@ -568,6 +574,7 @@ function ResultPreview({ spec }: { spec: SpecOutput }) {
         <h3 className="font-semibold text-foreground">{spec.title}</h3>
         <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{spec.overview}</p>
       </div>
+      {review ? <ReviewPanel review={review} /> : null}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-md border border-border bg-muted/30 p-2 text-center">
@@ -585,3 +592,32 @@ function ResultPreview({ spec }: { spec: SpecOutput }) {
     </div>
   );
 }
+
+export function ReviewPanel({ review }: { review: SpecReview }) {
+  const tone =
+    review.score >= 8
+      ? "border-primary/40 bg-primary/5"
+      : review.score >= 5
+        ? "border-amber-500/40 bg-amber-500/5"
+        : "border-destructive/40 bg-destructive/5";
+  return (
+    <div className={`rounded-md border p-3 ${tone}`}>
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium text-foreground">סוכן מבקר איכות</div>
+        <div className="rounded-full border border-border bg-background px-2 py-0.5 text-xs font-semibold">
+          ציון: {review.score}/10
+        </div>
+      </div>
+      {review.notes.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">אין הערות — המסמך מצוין.</p>
+      ) : (
+        <ul className="mt-2 list-disc space-y-1 pr-5 text-xs text-foreground">
+          {review.notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
