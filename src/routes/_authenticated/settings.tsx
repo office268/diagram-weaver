@@ -150,15 +150,21 @@ function SettingsPage() {
         <CardHeader>
           <CardTitle>תבנית הפרומפט הנשלח ל-LLM</CardTitle>
           <CardDescription>
-            יצירת המסמך מתבצעת בקריאה אחת ל-LLM עם פלט מובנה (structured JSON).
+            יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <div>
-            <div className="text-xs font-semibold text-muted-foreground">מודל</div>
-            <code className="mt-1 inline-block rounded bg-muted px-2 py-1 text-xs" dir="ltr">
-              {SPEC_MODEL}
-            </code>
+            <div className="text-xs font-semibold text-muted-foreground">מודלים (מקבילית)</div>
+            <ul className="mt-1 space-y-1">
+              {COMPARISON_MODELS.map((m) => (
+                <li key={m}>
+                  <code className="inline-block rounded bg-muted px-2 py-1 text-xs" dir="ltr">
+                    {m}
+                  </code>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div>
