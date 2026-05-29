@@ -550,12 +550,12 @@ function ComparisonDialog({
               return (
                 <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
                   {m.split("/")[1]}
-                  {s.status === "loading" || s.status === "saving" ? (
-                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
-                  ) : s.status === "error" ? (
+                  {s.status === "error" ? (
                     <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
-                  ) : (
+                  ) : s.status === "success" ? (
                     <Check className="ml-1 h-3 w-3 text-primary" />
+                  ) : (
+                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
                   )}
                 </TabsTrigger>
               );
@@ -570,42 +570,7 @@ function ComparisonDialog({
                 value={m}
                 className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
               >
-                {s.status === "loading" ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                    <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
-                  </div>
-                ) : s.status === "reviewing" ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      סוכן הביקורת בודק את האפיון…
-                    </div>
-                    <ResultPreview spec={s.spec} review={null} />
-                  </div>
-                ) : s.status === "saving" ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      שומר את המסמך…
-                    </div>
-                    <ResultPreview spec={s.spec} review={s.review} />
-                  </div>
-                ) : s.status === "error" ? (
-                  <div className="space-y-3">
-                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-                      <div className="font-medium">המודל נכשל</div>
-                      <div className="mt-1 text-xs">{s.error}</div>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => onRetry(m)}>
-                      <RefreshCw className="mr-1.5 h-4 w-4" />
-                      נסה שוב
-                    </Button>
-                    {s.spec ? <ResultPreview spec={s.spec} review={s.review ?? null} /> : null}
-                  </div>
-                ) : (
-                  <ResultPreview spec={s.spec} review={s.review} />
-                )}
+                <ModelTabBody state={s} onRetry={() => onRetry(m)} />
               </TabsContent>
             );
           })}
@@ -619,19 +584,31 @@ function ComparisonDialog({
             const s = state[m];
             if (s.status !== "success") return null;
             return (
-              <Button
-                key={m}
-                size="sm"
-                variant="outline"
-                onClick={() => onPick(s.specId)}
-                dir="ltr"
-              >
-                <Check className="mr-1.5 h-4 w-4" />
-                פתח: {m.split("/")[1]}
-              </Button>
+              <div key={m} className="flex gap-1.5">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onPick(s.originalSpecId)}
+                  dir="ltr"
+                >
+                  <Check className="mr-1.5 h-4 w-4" />
+                  {s.revisedSpecId ? "מקור" : "פתח"}: {m.split("/")[1]}
+                </Button>
+                {s.revisedSpecId ? (
+                  <Button
+                    size="sm"
+                    onClick={() => onPick(s.revisedSpecId!)}
+                    dir="ltr"
+                  >
+                    <Check className="mr-1.5 h-4 w-4" />
+                    מתוקן: {m.split("/")[1]}
+                  </Button>
+                ) : null}
+              </div>
             );
           })}
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
