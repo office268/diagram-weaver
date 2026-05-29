@@ -1,7 +1,6 @@
 export const COMPARISON_MODELS = [
   "google/gemini-2.5-pro",
   "google/gemini-3-flash-preview",
-  "openai/gpt-5-mini",
 ] as const;
 
 export type SpecModel = (typeof COMPARISON_MODELS)[number];
