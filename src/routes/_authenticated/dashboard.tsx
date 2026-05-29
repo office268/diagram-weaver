@@ -106,9 +106,11 @@ function DashboardPage() {
   
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [compareState, setCompareState] = useState<CompareState | null>(null);
+  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
