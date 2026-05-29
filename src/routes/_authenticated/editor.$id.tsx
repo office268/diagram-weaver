@@ -332,6 +332,22 @@ function EditorPage() {
           )}
           addLabel="הוסף סיכון"
         />
+
+        {typeof data.spec.review_score === "number" ? (
+          <section className="space-y-3">
+            <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+              ביקורת הסוכן המבקר
+            </h2>
+            <ReviewPanel
+              review={{
+                score: data.spec.review_score,
+                notes: Array.isArray(data.spec.review_notes)
+                  ? (data.spec.review_notes as string[])
+                  : [],
+              }}
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   );
