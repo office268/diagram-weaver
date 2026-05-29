@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -29,6 +30,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
+  id: '/api/review-spec',
+  path: '/api/review-spec',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateSpecRoute = ApiGenerateSpecRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/review-spec': typeof ApiReviewSpecRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/review-spec'
     | '/editor/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/review-spec'
     | '/editor/$id'
   id:
     | '__root__'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
     | '/api/generate-spec'
+    | '/api/review-spec'
     | '/_authenticated/editor/$id'
   fileRoutesById: FileRoutesById
 }
@@ -111,6 +123,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
+  ApiReviewSpecRoute: typeof ApiReviewSpecRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +147,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/review-spec': {
+      id: '/api/review-spec'
+      path: '/api/review-spec'
+      fullPath: '/api/review-spec'
+      preLoaderRoute: typeof ApiReviewSpecRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate-spec': {
@@ -188,7 +208,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
+  ApiReviewSpecRoute: ApiReviewSpecRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
