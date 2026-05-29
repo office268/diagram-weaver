@@ -60,15 +60,15 @@ export const Route = createFileRoute("/api/review-spec")({
             JSON.stringify(body.spec),
           ].join("\n");
 
-          const { experimental_output } = await generateText({
+          const { object } = await generateObject({
             model: gateway(COMPARISON_MODELS[0]),
             system: REVIEWER_SYSTEM,
             prompt: userPrompt,
             maxOutputTokens: 2000,
-            experimental_output: Output.object({ schema: ReviewSchema }),
+            schema: ReviewSchema,
           });
 
-          return Response.json(experimental_output);
+          return Response.json(object);
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           console.error("[review-spec] failed:", e);
