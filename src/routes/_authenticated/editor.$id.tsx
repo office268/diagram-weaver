@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Check, Plus, Trash2 } from "lucide-react";
 
 import { getSpec, updateSpec } from "@/lib/spec.functions";
+import { ReviewPanel } from "@/routes/_authenticated/dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EditableText } from "@/components/editable-text";
