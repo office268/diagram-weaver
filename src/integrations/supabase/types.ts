@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          created_at: string
+          system_instruction: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          system_instruction: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          system_instruction?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
