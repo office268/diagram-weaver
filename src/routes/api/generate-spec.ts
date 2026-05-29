@@ -58,10 +58,20 @@ export const Route = createFileRoute("/api/generate-spec")({
             model: gateway(body.model),
             system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
             prompt: body.prompt,
+            onError: ({ error }) => {
+              console.error(`[generate-spec] streamText error (${body.model}):`, error);
+            },
           });
-          return result.toTextStreamResponse();
+          return result.toTextStreamResponse({
+            onError: (error) => {
+              const msg = error instanceof Error ? error.message : String(error);
+              console.error(`[generate-spec] stream error (${body.model}): ${msg}`);
+              return `__STREAM_ERROR__:${msg}`;
+            },
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
+          console.error(`[generate-spec] thrown (${body.model}):`, e);
           let status = 500;
           let friendly = msg;
           if (msg.includes("429")) {
