@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers } from "lucide-react";
 import {
   listSpecs,
   createSpec,
   deleteSpec,
+  deleteSpecGroup,
 } from "@/lib/spec.functions";
 import {
   SpecOutputSchema,
