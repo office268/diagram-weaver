@@ -1,18 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { COMPARISON_MODELS } from "@/lib/ai-spec-defaults";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { extractJson } from "@/lib/spec-output-schema";
 
 const BodySchema = z.object({
   prompt: z.string().min(1).max(5000),
   spec: z.record(z.string(), z.any()),
 });
 
-const ReviewSchema = z.object({
-  score: z.number().int().min(1).max(10),
-  notes: z.array(z.string().min(1).max(500)).max(20),
+const ReviewParseSchema = z.object({
+  score: z.coerce.number(),
+  notes: z.array(z.string()).default([]),
 });
 
 const REVIEWER_SYSTEM = [
@@ -20,8 +21,11 @@ const REVIEWER_SYSTEM = [
   "קיבלת את הפרומפט המקורי של המשתמש ואת מסמך האפיון שהופק (JSON).",
   "תפקידך: לדרג את המסמך בציון שלם בין 1 ל-10 על בסיס: שלמות, עקביות, רמת פירוט, בהירות, וכיסוי הפרומפט.",
   "כתוב עד 8 הערות שיפור — קצרות, קונקרטיות, מעשיות, בעברית.",
-  "אם המסמך מצוין באמת — החזר רשימת הערות ריקה.",
-  "החזר אך ורק את האובייקט במבנה שביקשנו, ללא טקסט נוסף.",
+  "אם המסמך מצוין באמת — החזר רשימת notes ריקה.",
+  "",
+  "פורמט הפלט — חובה:",
+  'החזר אך ורק אובייקט JSON תקני יחיד במבנה: { "score": <מספר שלם 1-10>, "notes": [<מחרוזות בעברית>] }.',
+  "ללא טקסט נוסף לפני או אחרי, ללא הסברים, וללא עטיפה ב-```json``` או בכל סימן markdown.",
 ].join("\n");
 
 export const Route = createFileRoute("/api/review-spec")({
@@ -60,15 +64,26 @@ export const Route = createFileRoute("/api/review-spec")({
             JSON.stringify(body.spec),
           ].join("\n");
 
-          const { object } = await generateObject({
+          const { text } = await generateText({
             model: gateway(COMPARISON_MODELS[0]),
             system: REVIEWER_SYSTEM,
             prompt: userPrompt,
             maxOutputTokens: 2000,
-            schema: ReviewSchema,
           });
 
-          return Response.json(object);
+          try {
+            const raw = JSON.parse(extractJson(text));
+            const parsed = ReviewParseSchema.parse(raw);
+            const score = Math.max(1, Math.min(10, Math.round(parsed.score)));
+            const notes = parsed.notes
+              .filter((n) => typeof n === "string" && n.trim().length > 0)
+              .slice(0, 20)
+              .map((n) => n.slice(0, 500));
+            return Response.json({ score, notes });
+          } catch (parseErr) {
+            console.error("[review-spec] parse failed:", parseErr, "raw:", text);
+            return Response.json({ score: null, notes: [] });
+          }
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           console.error("[review-spec] failed:", e);
