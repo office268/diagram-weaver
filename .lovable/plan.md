@@ -1,35 +1,43 @@
+## דף הגדרות — System Instruction & Prompt
 
-# מסמך אפיון על — תוכנית
+### מטרה
+דף `/settings` שמציג ומאפשר לערוך את ה-system instruction, ומציג (קריאה בלבד) את תבנית הפרומפט שנשלחת ל-LLM בעת יצירת מסמך אפיון.
 
-## מה הולך לקרות
+### שינויים
 
-האפליקציה תשתנה מ"עורך תרשימים" ל"מחולל מסמכי אפיון על". המשתמש כותב פרומפט אחד → ה-AI מייצר במכה אחת מסמך מלא הכולל: דרישות, הנחות יסוד, וכל סעיפי האפיון לפי מבנה סטנדרטי קבוע. תרשימי Mermaid משובצים בתוך הסעיפים הרלוונטיים. המשתמש יכול לערוך/למחוק/להוסיף כל דרישה, הנחה, סעיף ותרשים.
+**1. טבלה חדשה: `ai_settings`** (לכל משתמש)
+- `user_id` (PK, unique)
+- `system_instruction` (text)
+- RLS: רק הבעלים יכול לקרוא/לעדכן.
 
-הכלי הקיים של ניהול תרשימים בודדים יוסר.
+**2. ברירת מחדל משותפת (`src/lib/ai-spec-defaults.ts`)**
+- מייצא את `DEFAULT_SYSTEM_INSTRUCTION` (המחרוזת שכעת hard-coded ב-`ai-spec.functions.ts` שורות 68-81).
+- מייצא את `PROMPT_TEMPLATE` — תיאור קריא של מה נשלח: `{user_prompt}` של המשתמש מועבר as-is כ-user message, יחד עם ה-system instruction וסכמת ה-JSON המובנית. (תצוגה בלבד.)
 
-## מבנה המסמך הסטנדרטי
+**3. שרת: `src/lib/ai-settings.functions.ts`**
+- `getAiSettings()` — מחזיר את ה-row של המשתמש, או את ברירת המחדל אם אין.
+- `updateAiSettings({ system_instruction })` — upsert.
+- `resetAiSettings()` — מחיקה / חזרה לברירת מחדל.
 
-כל מסמך אפיון יכיל את הסעיפים הבאים בסדר קבוע:
+**4. עדכון `ai-spec.functions.ts`**
+- בתחילת ה-handler: לטעון את ה-system instruction של המשתמש מ-`ai_settings`, ואם לא קיים — להשתמש ב-`DEFAULT_SYSTEM_INSTRUCTION`.
+- שאר הלוגיקה (קריאה אחת ל-Gemini 2.5 Pro עם structured output) נשארת זהה.
 
-1. **סקירה כללית** (Overview) — תיאור קצר של המערכת ומטרותיה
-2. **מטרות** (Goals) — מה המערכת באה לפתור
-3. **משתמשי קצה** (Personas) — מי משתמש במערכת
-4. **דרישות פונקציונליות** (Functional Requirements) — רשימה ניתנת לעריכה
-5. **דרישות לא-פונקציונליות** (Non-Functional Requirements) — ביצועים, אבטחה, נגישות
-6. **הנחות יסוד** (Assumptions) — רשימה ניתנת לעריכה
-7. **תרחישי שימוש** (Use Cases) — תרחישים מרכזיים, כל אחד יכול לכלול תרשים sequence/flow משובץ
-8. **ארכיטקטורה** (Architecture) — תיאור + תרשים flowchart משובץ
-9. **מודל נתונים** (Data Model) — תיאור + תרשים ER משובץ
-10. **סיכונים** (Risks) — רשימה ניתנת לעריכה
+**5. דף חדש: `src/routes/_authenticated/settings.tsx`**
+- כותרת + הסבר קצר.
+- **בלוק א — System Instruction**: `Textarea` גדול ערוך, כפתורי "שמור" ו"שחזר לברירת מחדל". מציג גם את ברירת המחדל בקריאה בלבד (collapsible) להשוואה.
+- **בלוק ב — תבנית הפרומפט**: כרטיס קריאה-בלבד שמציג:
+  - "System message:" (תוכן ה-system instruction הנוכחי)
+  - "User message:" — מסביר שזה הפרומפט שהמשתמש מקליד בדיאלוג "מסמך אפיון חדש" (placeholder `{user_prompt}`)
+  - "Output schema:" — שמות השדות במסמך המובנה (overview, goals, personas, וכו').
+  - "מודל: google/gemini-2.5-pro".
 
-## זרימת המשתמש
+**6. ניווט**
+- ב-`src/routes/_authenticated.tsx` להוסיף קישור "הגדרות" בהדר לצד אימייל המשתמש.
 
-```text
-דשבורד → "מסמך אפיון חדש"
-   ↓
-דיאלוג: כתיבת פרומפט (תיאור המערכת בחופשי)
-   ↓
-קריאה אחת ל-AI שמחזירה את כל המסמך במבנה JSON מובנה
-(דרישות + הנחות יסוד + כל הסעיפים + תרשימי Mermaid לסעיפים הרלוונטיים)
-   ↓
-עמוד עורך המסמך — מציג את המסמך המלא בצד ש
+### לא משתנה
+- מבנה המסמך, ה-editor, ה-dashboard, הזרימה של פנייה אחת ל-LLM.
+
+### קבצים
+- חדש: migration `ai_settings`, `src/lib/ai-spec-defaults.ts`, `src/lib/ai-settings.functions.ts`, `src/routes/_authenticated/settings.tsx`
+- עריכה: `src/lib/ai-spec.functions.ts`, `src/routes/_authenticated.tsx`

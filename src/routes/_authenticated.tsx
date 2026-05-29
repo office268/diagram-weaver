@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { GitBranch, LogOut, Loader2 } from "lucide-react";
+import { GitBranch, LogOut, Loader2, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,12 @@ function AuthenticatedLayout() {
             <span className="hidden text-sm text-muted-foreground sm:inline">
               {user.email}
             </span>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/settings">
+                <Settings className="mr-1.5 h-4 w-4" />
+                הגדרות
+              </Link>
+            </Button>
             <Button
               variant="ghost"
               size="sm"
