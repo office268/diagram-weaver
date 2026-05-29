@@ -295,87 +295,119 @@ function DashboardPage() {
 }
 
 function ComparisonDialog({
-  results,
+  state,
+  anyLoading,
   onClose,
   onPick,
+  onRetry,
   savingModel,
 }: {
-  results: CompareResult[] | null;
+  state: CompareState | null;
+  anyLoading: boolean;
   onClose: () => void;
-  onPick: (r: CompareResult) => void;
-  savingModel: string | null;
+  onPick: (model: SpecModel, spec: SpecOutput) => void;
+  onRetry: (model: SpecModel) => void;
+  savingModel: SpecModel | null;
 }) {
-  if (!results) return null;
+  if (!state) return null;
+  const models = COMPARISON_MODELS;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>השוואת תוצאות מ-3 מודלים</DialogTitle>
+          <DialogTitle>
+            השוואת תוצאות מ-3 מודלים
+            {anyLoading ? (
+              <Loader2 className="inline-block mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+            ) : null}
+          </DialogTitle>
           <DialogDescription>
-            עיינו בכל תוצאה ובחרו את המסמך לשמירה. ניתן לערוך אותו אחר כך.
+            תוצאות מופיעות ברגע שכל מודל מסיים. ניתן לבחור גם בזמן שהאחרים עוד רצים.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={results[0]?.model} className="flex-1 overflow-hidden flex flex-col">
+        <Tabs defaultValue={models[0]} className="flex-1 overflow-hidden flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
-            {results.map((r) => (
-              <TabsTrigger key={r.model} value={r.model} className="text-xs" dir="ltr">
-                {r.model.split("/")[1]}
-                {r.error ? (
-                  <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
-                ) : (
-                  <Check className="ml-1 h-3 w-3 text-primary" />
-                )}
-              </TabsTrigger>
-            ))}
+            {models.map((m) => {
+              const s = state[m];
+              return (
+                <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
+                  {m.split("/")[1]}
+                  {s.status === "loading" ? (
+                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
+                  ) : s.status === "error" ? (
+                    <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
+                  ) : (
+                    <Check className="ml-1 h-3 w-3 text-primary" />
+                  )}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
-          {results.map((r) => (
-            <TabsContent
-              key={r.model}
-              value={r.model}
-              className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
-            >
-              {r.error ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-                  <div className="font-medium">המודל נכשל</div>
-                  <div className="mt-1 text-xs">{r.error}</div>
-                </div>
-              ) : r.spec ? (
-                <ResultPreview spec={r.spec} />
-              ) : null}
-            </TabsContent>
-          ))}
+          {models.map((m) => {
+            const s = state[m];
+            return (
+              <TabsContent
+                key={m}
+                value={m}
+                className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
+              >
+                {s.status === "loading" ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <div className="mt-3 text-sm">המודל עובד… עשוי לקחת עד דקה.</div>
+                  </div>
+                ) : s.status === "error" ? (
+                  <div className="space-y-3">
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+                      <div className="font-medium">המודל נכשל</div>
+                      <div className="mt-1 text-xs">{s.error}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => onRetry(m)}>
+                      <RefreshCw className="mr-1.5 h-4 w-4" />
+                      נסה שוב
+                    </Button>
+                  </div>
+                ) : (
+                  <ResultPreview spec={s.spec} />
+                )}
+              </TabsContent>
+            );
+          })}
         </Tabs>
 
         <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
           <Button variant="ghost" onClick={onClose} disabled={!!savingModel}>
-            ביטול
+            סגור
           </Button>
-          {results.map((r) =>
-            r.spec ? (
+          {models.map((m) => {
+            const s = state[m];
+            if (s.status !== "success") return null;
+            return (
               <Button
-                key={r.model}
+                key={m}
                 size="sm"
-                variant={savingModel === r.model ? "default" : "outline"}
-                onClick={() => onPick(r)}
+                variant={savingModel === m ? "default" : "outline"}
+                onClick={() => onPick(m, s.spec)}
                 disabled={!!savingModel}
                 dir="ltr"
               >
-                {savingModel === r.model ? (
+                {savingModel === m ? (
                   <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 ) : (
                   <Check className="mr-1.5 h-4 w-4" />
                 )}
-                בחר: {r.model.split("/")[1]}
+                בחר: {m.split("/")[1]}
               </Button>
-            ) : null,
-          )}
+            );
+          })}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 function ResultPreview({ spec }: { spec: SpecOutput }) {
   const stats = [
