@@ -9,8 +9,12 @@ import {
   createSpec,
   deleteSpec,
 } from "@/lib/spec.functions";
-import { generateSpecFromModel } from "@/lib/ai-spec.functions";
-import type { SpecOutput } from "@/lib/ai-spec.functions";
+import {
+  SpecOutputSchema,
+  extractJson,
+  type SpecOutput,
+} from "@/lib/spec-output-schema";
+import { supabase } from "@/integrations/supabase/client";
 import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
