@@ -76,12 +76,50 @@ function DashboardPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [compareState, setCompareState] = useState<CompareState | null>(null);
-  const [savingModel, setSavingModel] = useState<SpecModel | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["specs"],
     queryFn: () => listFn(),
   });
+
+  const saveSpec = useCallback(
+    async (model: SpecModel, spec: SpecOutput, promptText: string) => {
+      setCompareState((prev) =>
+        prev ? { ...prev, [model]: { status: "saving", spec } } : prev,
+      );
+      try {
+        const { spec: row } = await createFn({
+          data: {
+            title: `${spec.title} — ${model}`,
+            prompt: promptText,
+            content: spec,
+          },
+        });
+        setCompareState((prev) =>
+          prev
+            ? { ...prev, [model]: { status: "success", spec, specId: row.id } }
+            : prev,
+        );
+        qc.invalidateQueries({ queryKey: ["specs"] });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "שמירה נכשלה";
+        setCompareState((prev) =>
+          prev
+            ? {
+                ...prev,
+                [model]: {
+                  status: "error",
+                  error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
+                  spec,
+                  canRetrySaveOnly: true,
+                },
+              }
+            : prev,
+        );
+      }
+    },
+    [createFn, qc],
+  );
 
   const runModel = useCallback(
     async (model: SpecModel, promptText: string) => {
@@ -91,9 +129,7 @@ function DashboardPage() {
       }));
       try {
         const { spec } = await genFn({ data: { prompt: promptText, model } });
-        setCompareState((prev) =>
-          prev ? { ...prev, [model]: { status: "success", spec } } : prev,
-        );
+        await saveSpec(model, spec, promptText);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "יצירה נכשלה";
         setCompareState((prev) =>
@@ -101,7 +137,20 @@ function DashboardPage() {
         );
       }
     },
-    [genFn],
+    [genFn, saveSpec],
+  );
+
+  const retryModel = useCallback(
+    (model: SpecModel) => {
+      if (!compareState) return;
+      const s = compareState[model];
+      if (s.status === "error" && s.canRetrySaveOnly && s.spec) {
+        void saveSpec(model, s.spec, prompt);
+      } else {
+        void runModel(model, prompt);
+      }
+    },
+    [compareState, prompt, runModel, saveSpec],
   );
 
   const startCompare = useCallback(() => {
@@ -114,34 +163,21 @@ function DashboardPage() {
     });
   }, [prompt, runModel]);
 
-  const pickMut = useMutation({
-    mutationFn: async ({ model, spec }: { model: SpecModel; spec: SpecOutput }) => {
-      setSavingModel(model);
-      const { spec: row } = await createFn({
-        data: {
-          title: `${spec.title} — ${model}`,
-          prompt,
-          content: spec,
-        },
-      });
-      return row;
-    },
-    onSuccess: (row) => {
-      qc.invalidateQueries({ queryKey: ["specs"] });
+  const handlePick = useCallback(
+    (specId: string) => {
       setCompareState(null);
       setPrompt("");
-      setSavingModel(null);
-      navigate({ to: "/editor/$id", params: { id: row.id } });
+      navigate({ to: "/editor/$id", params: { id: specId } });
     },
-    onError: (e) => {
-      setSavingModel(null);
-      toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
-    },
-  });
+    [navigate],
+  );
 
-  const anyLoading = compareState
-    ? Object.values(compareState).some((s) => s.status === "loading")
+  const anyBusy = compareState
+    ? Object.values(compareState).some(
+        (s) => s.status === "loading" || s.status === "saving",
+      )
     : false;
+
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
