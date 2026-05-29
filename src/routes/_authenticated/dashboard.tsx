@@ -383,6 +383,42 @@ function DashboardPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
 
+  const deleteGroupMut = useMutation({
+    mutationFn: (groupId: string) => deleteGroupFn({ data: { groupId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("הקבוצה נמחקה");
+      setDeleteGroupId(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
+  });
+
+  type SpecRow = NonNullable<typeof data>["specs"][number];
+  const groups = useMemo(() => {
+    if (!data?.specs.length) return [] as { key: string; groupId: string | null; items: SpecRow[] }[];
+    const map = new Map<string, SpecRow[]>();
+    const order: string[] = [];
+    for (const s of data.specs) {
+      const k = s.group_id ?? `__solo__:${s.id}`;
+      if (!map.has(k)) {
+        map.set(k, []);
+        order.push(k);
+      }
+      map.get(k)!.push(s);
+    }
+    return order.map((k) => {
+      const items = map.get(k)!;
+      // Sort variants: original first, then revised, then anything else.
+      items.sort((a, b) => {
+        const rank = (v: string | null) =>
+          v === "original" ? 0 : v === "single" ? 1 : v === "revised" ? 2 : 3;
+        return rank(a.variant) - rank(b.variant);
+      });
+      return { key: k, groupId: items[0].group_id, items };
+    });
+  }, [data]);
+
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
