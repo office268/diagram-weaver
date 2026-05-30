@@ -12,6 +12,7 @@ export type AppMetadata = {
   og_type: string;
   favicon_url: string;
   og_image_url: string;
+  apple_touch_icon_url: string;
 };
 
 const DEFAULTS: AppMetadata = {
@@ -24,6 +25,7 @@ const DEFAULTS: AppMetadata = {
   og_type: "website",
   favicon_url: "",
   og_image_url: "",
+  apple_touch_icon_url: "",
 };
 
 export const getAppMetadata = createServerFn({ method: "GET" }).handler(async () => {
