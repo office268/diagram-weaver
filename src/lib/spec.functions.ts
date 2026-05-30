@@ -108,7 +108,7 @@ export const updateSpec = createServerFn({ method: "POST" })
     if (userNotes !== undefined) patch.user_notes = userNotes;
     const { data: row, error } = await supabase
       .from("spec_documents")
-      .update(patch)
+      .update(patch as never)
       .eq("id", id)
       .eq("user_id", userId)
       .select()
