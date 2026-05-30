@@ -107,6 +107,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     if (m?.favicon_url) {
       links.push({ rel: "icon", href: m.favicon_url });
     }
+    if (m?.apple_touch_icon_url) {
+      links.push({ rel: "apple-touch-icon", href: m.apple_touch_icon_url });
+    }
 
     return { meta, links };
   },
