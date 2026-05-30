@@ -81,15 +81,15 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content });
+    const snapshot = JSON.stringify({ title, content, userNotes });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content });
+      saveMut.mutate({ title, content, userNotes });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content]);
+  }, [title, content, userNotes]);
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
