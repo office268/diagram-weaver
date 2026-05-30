@@ -350,6 +350,21 @@ function EditorPage() {
             />
           </section>
         ) : null}
+
+        <section className="space-y-3">
+          <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+            ההערות שלי
+          </h2>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <Textarea
+              value={userNotes}
+              onChange={(e) => setUserNotes(e.target.value)}
+              rows={6}
+              placeholder="כתוב כאן הערות אישיות לגבי המסמך... (נשמר אוטומטית)"
+              className="resize-y"
+            />
+          </div>
+        </section>
       </div>
     </div>
   );
