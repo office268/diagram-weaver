@@ -187,7 +187,7 @@ function AssetField({
   onChange,
 }: {
   label: string;
-  kind: "favicon" | "og";
+  kind: "favicon" | "og" | "apple_touch_icon";
   value: string;
   onChange: (url: string) => void;
 }) {
