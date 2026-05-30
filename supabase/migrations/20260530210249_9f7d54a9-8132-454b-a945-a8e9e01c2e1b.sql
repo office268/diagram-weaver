@@ -1,0 +1,1 @@
+ALTER TABLE public.app_metadata ADD COLUMN IF NOT EXISTS apple_touch_icon_url text NOT NULL DEFAULT '';
