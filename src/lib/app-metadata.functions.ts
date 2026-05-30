@@ -37,8 +37,8 @@ export const getAppMetadata = createServerFn({ method: "GET" }).handler(async ()
 });
 
 const UpdateSchema = z.object({
-  title: z.string().min(1).max(200),
-  description: z.string().min(1).max(500),
+  title: z.string().max(200).default(""),
+  description: z.string().max(500).default(""),
   og_title: z.string().max(200).default(""),
   og_description: z.string().max(500).default(""),
   og_site_name: z.string().max(200).default(""),
