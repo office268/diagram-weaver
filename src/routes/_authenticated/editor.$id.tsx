@@ -49,6 +49,7 @@ function EditorPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
+  const [userNotes, setUserNotes] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
 
@@ -57,12 +58,13 @@ function EditorPage() {
       setTitle(data.spec.title);
       const normalized = normalizeSpec(data.spec.content);
       setContent(normalized);
-      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized });
+      setUserNotes((data.spec as { user_notes?: string }).user_notes ?? "");
+      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "" });
     }
   }, [data?.spec]);
 
   const saveMut = useMutation({
-    mutationFn: (patch: { title?: string; content?: SpecContent }) =>
+    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string }) =>
       updateFn({ data: { id, ...patch } }),
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
