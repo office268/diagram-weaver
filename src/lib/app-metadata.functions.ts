@@ -74,10 +74,12 @@ export const generateAppImage = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY missing");
 
-    const isFavicon = data.kind === "favicon";
-    const enhancedPrompt = isFavicon
-      ? `Create a clean, simple, recognizable app icon / favicon: ${data.prompt}. Centered subject, solid background, bold shapes, minimal detail, suitable for small sizes.`
-      : `Create a social share image (landscape, 1200x630 feel): ${data.prompt}. Visually appealing, modern, suitable as Open Graph preview.`;
+    const enhancedPrompt =
+      data.kind === "favicon"
+        ? `Create a clean, simple, recognizable app icon / favicon: ${data.prompt}. Centered subject, solid background, bold shapes, minimal detail, suitable for small sizes.`
+        : data.kind === "apple_touch_icon"
+          ? `Create a clean, bold mobile app icon (square, ~512x512): ${data.prompt}. Solid background, centered subject, no transparency, no text, suitable for iOS/Android home screen.`
+          : `Create a social share image (landscape, 1200x630 feel): ${data.prompt}. Visually appealing, modern, suitable as Open Graph preview.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
