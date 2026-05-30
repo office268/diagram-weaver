@@ -234,7 +234,7 @@ function AssetField({
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  יצירת {kind === "favicon" ? "אייקון" : "תמונת שיתוף"} עם AI
+                  יצירת {kind === "favicon" ? "פאביקון" : kind === "apple_touch_icon" ? "אייקון התקנה" : "תמונת שיתוף"} עם AI
                 </DialogTitle>
                 <DialogDescription>
                   תאר במילים את התמונה הרצויה. היא תיווצר ותשובץ אוטומטית.
@@ -247,7 +247,9 @@ function AssetField({
                 placeholder={
                   kind === "favicon"
                     ? "לדוגמה: אייקון מינימליסטי של מסמך עם ניצוץ סגול"
-                    : "לדוגמה: רקע אבסטרקטי כחול-סגול עם הכיתוב 'סוכן ניתוח מערכות'"
+                    : kind === "apple_touch_icon"
+                      ? "לדוגמה: ריבוע סגול עם אות 'ס' לבנה במרכז"
+                      : "לדוגמה: רקע אבסטרקטי כחול-סגול עם הכיתוב 'סוכן ניתוח מערכות'"
                 }
               />
               <DialogFooter>
