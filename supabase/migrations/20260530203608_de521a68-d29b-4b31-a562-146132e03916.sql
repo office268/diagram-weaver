@@ -1,0 +1,1 @@
+ALTER TABLE public.spec_documents ADD COLUMN IF NOT EXISTS user_notes text NOT NULL DEFAULT '';
