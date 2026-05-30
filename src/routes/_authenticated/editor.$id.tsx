@@ -9,6 +9,7 @@ import { getSpec, updateSpec } from "@/lib/spec.functions";
 import { ReviewPanel } from "@/components/review-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { EditableText } from "@/components/editable-text";
 import { SpecDiagram } from "@/components/spec-diagram";
 import {
