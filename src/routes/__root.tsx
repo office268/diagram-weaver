@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { getAppMetadata } from "@/lib/app-metadata.functions";
 
 function NotFoundComponent() {
   return (
@@ -68,21 +69,47 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
+  loader: async () => {
+    try {
+      return { meta: await getAppMetadata() };
+    } catch {
+      return { meta: null };
+    }
+  },
+  head: ({ loaderData }) => {
+    const m = loaderData?.meta;
+    const title = m?.title || "סוכן ניתוח מערכות — תרשימים מתוך טקסט";
+    const description =
+      m?.description ||
+      "סוכן AI לאנליסטים: הופך דרישות וטקסט חופשי לתרשימי זרימה, swim-lanes, ER ורצף — עם עריכה ויזואלית וקוד Mermaid.";
+    const ogTitle = m?.og_title || title;
+    const ogDescription = m?.og_description || description;
+    const siteName = m?.og_site_name || "סוכן ניתוח מערכות";
+    const ogType = m?.og_type || "website";
+
+    const meta: Array<Record<string, string>> = [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "סוכן ניתוח מערכות — תרשימים מתוך טקסט" },
-      {
-        name: "description",
-        content:
-          "סוכן AI לאנליסטים: הופך דרישות וטקסט חופשי לתרשימי זרימה, swim-lanes, ER ורצף — עם עריכה ויזואלית וקוד Mermaid.",
-      },
-      { property: "og:site_name", content: "סוכן ניתוח מערכות" },
-      { property: "og:type", content: "website" },
-    ],
-    links: [{ rel: "stylesheet", href: appCss }],
-  }),
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: ogTitle },
+      { property: "og:description", content: ogDescription },
+      { property: "og:site_name", content: siteName },
+      { property: "og:type", content: ogType },
+    ];
+    if (m?.og_image_url) {
+      meta.push({ property: "og:image", content: m.og_image_url });
+      meta.push({ name: "twitter:image", content: m.og_image_url });
+      meta.push({ name: "twitter:card", content: "summary_large_image" });
+    }
+
+    const links: Array<Record<string, string>> = [{ rel: "stylesheet", href: appCss }];
+    if (m?.favicon_url) {
+      links.push({ rel: "icon", href: m.favicon_url });
+    }
+
+    return { meta, links };
+  },
 
   shellComponent: RootShell,
   component: RootComponent,

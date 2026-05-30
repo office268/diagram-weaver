@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { AppMetadataCard } from "@/components/app-metadata-card";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -84,6 +85,9 @@ function SettingsPage() {
           נהלו את ה-system instruction וצפו במבנה הפרומפט שנשלח ליצירת מסמכי האפיון.
         </p>
       </div>
+
+      <AppMetadataCard />
+
 
       <Card>
         <CardHeader>
