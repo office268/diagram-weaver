@@ -35,6 +35,45 @@ export type Database = {
         }
         Relationships: []
       }
+      app_metadata: {
+        Row: {
+          description: string
+          favicon_url: string
+          id: string
+          og_description: string
+          og_image_url: string
+          og_site_name: string
+          og_title: string
+          og_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          description?: string
+          favicon_url?: string
+          id?: string
+          og_description?: string
+          og_image_url?: string
+          og_site_name?: string
+          og_title?: string
+          og_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string
+          favicon_url?: string
+          id?: string
+          og_description?: string
+          og_image_url?: string
+          og_site_name?: string
+          og_title?: string
+          og_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
