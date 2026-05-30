@@ -104,7 +104,7 @@ export const updateSpec = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { id, userNotes, ...rest } = data;
-    const patch: Record<string, unknown> = { ...rest };
+    const patch: { title?: string; content?: Record<string, unknown>; user_notes?: string } = { ...rest };
     if (userNotes !== undefined) patch.user_notes = userNotes;
     const { data: row, error } = await supabase
       .from("spec_documents")
