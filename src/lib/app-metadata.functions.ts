@@ -47,6 +47,7 @@ const UpdateSchema = z.object({
   og_type: z.string().max(50).default("website"),
   favicon_url: z.string().max(2000).default(""),
   og_image_url: z.string().max(2000).default(""),
+  apple_touch_icon_url: z.string().max(2000).default(""),
 });
 
 export const updateAppMetadata = createServerFn({ method: "POST" })
