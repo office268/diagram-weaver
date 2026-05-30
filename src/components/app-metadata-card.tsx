@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn, useRouter } from "@tanstack/react-router";
-// Note: useServerFn comes from @tanstack/react-start
-import { useServerFn as useSFn } from "@tanstack/react-start";
-import { useRouter as useTSRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Save, Wand2, Image as ImageIcon, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
