@@ -33,9 +33,9 @@ import {
 
 export function AppMetadataCard() {
   const qc = useQueryClient();
-  const router = useTSRouter();
-  const getFn = useSFn(getAppMetadata);
-  const updateFn = useSFn(updateAppMetadata);
+  const router = useRouter();
+  const getFn = useServerFn(getAppMetadata);
+  const updateFn = useServerFn(updateAppMetadata);
 
   const { data, isLoading } = useQuery({
     queryKey: ["app-metadata"],
@@ -185,7 +185,7 @@ function AssetField({
   value: string;
   onChange: (url: string) => void;
 }) {
-  const genFn = useSFn(generateAppImage);
+  const genFn = useServerFn(generateAppImage);
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
 
