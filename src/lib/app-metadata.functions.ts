@@ -97,21 +97,17 @@ export const generateAppImage = createServerFn({ method: "POST" })
       throw new Error(`יצירת תמונה נכשלה: ${txt.slice(0, 200)}`);
     }
 
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
-    };
-    const dataUrl = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!dataUrl || !dataUrl.startsWith("data:")) {
+    const json = (await res.json()) as { data?: Array<{ b64_json?: string }> };
+    const b64 = json.data?.[0]?.b64_json;
+    if (!b64) {
       throw new Error("המודל לא החזיר תמונה");
     }
-    const commaIdx = dataUrl.indexOf(",");
-    const base64 = dataUrl.slice(commaIdx + 1);
-    const mimeMatch = /data:([^;]+);base64/.exec(dataUrl);
-    const mime = mimeMatch?.[1] ?? "image/png";
-    const ext = mime.includes("png") ? "png" : mime.includes("jpeg") ? "jpg" : "webp";
+    const mime = "image/png";
+    const ext = "png";
 
-    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const path = `${data.kind}/${Date.now()}.${ext}`;
+
 
     const up = await supabaseAdmin.storage
       .from("app-assets")
