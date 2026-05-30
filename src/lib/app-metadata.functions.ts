@@ -12,6 +12,7 @@ export type AppMetadata = {
   og_type: string;
   favicon_url: string;
   og_image_url: string;
+  apple_touch_icon_url: string;
 };
 
 const DEFAULTS: AppMetadata = {
@@ -24,6 +25,7 @@ const DEFAULTS: AppMetadata = {
   og_type: "website",
   favicon_url: "",
   og_image_url: "",
+  apple_touch_icon_url: "",
 };
 
 export const getAppMetadata = createServerFn({ method: "GET" }).handler(async () => {
@@ -45,6 +47,7 @@ const UpdateSchema = z.object({
   og_type: z.string().max(50).default("website"),
   favicon_url: z.string().max(2000).default(""),
   og_image_url: z.string().max(2000).default(""),
+  apple_touch_icon_url: z.string().max(2000).default(""),
 });
 
 export const updateAppMetadata = createServerFn({ method: "POST" })
@@ -60,7 +63,7 @@ export const updateAppMetadata = createServerFn({ method: "POST" })
 
 const GenerateSchema = z.object({
   prompt: z.string().min(3).max(1000),
-  kind: z.enum(["favicon", "og"]),
+  kind: z.enum(["favicon", "og", "apple_touch_icon"]),
 });
 
 // Generate an image via Lovable AI Gateway and upload to storage; returns public URL.
@@ -71,10 +74,12 @@ export const generateAppImage = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY missing");
 
-    const isFavicon = data.kind === "favicon";
-    const enhancedPrompt = isFavicon
-      ? `Create a clean, simple, recognizable app icon / favicon: ${data.prompt}. Centered subject, solid background, bold shapes, minimal detail, suitable for small sizes.`
-      : `Create a social share image (landscape, 1200x630 feel): ${data.prompt}. Visually appealing, modern, suitable as Open Graph preview.`;
+    const enhancedPrompt =
+      data.kind === "favicon"
+        ? `Create a clean, simple, recognizable app icon / favicon: ${data.prompt}. Centered subject, solid background, bold shapes, minimal detail, suitable for small sizes.`
+        : data.kind === "apple_touch_icon"
+          ? `Create a clean, bold mobile app icon (square, ~512x512): ${data.prompt}. Solid background, centered subject, no transparency, no text, suitable for iOS/Android home screen.`
+          : `Create a social share image (landscape, 1200x630 feel): ${data.prompt}. Visually appealing, modern, suitable as Open Graph preview.`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",

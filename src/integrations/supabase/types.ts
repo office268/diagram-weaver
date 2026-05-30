@@ -37,6 +37,7 @@ export type Database = {
       }
       app_metadata: {
         Row: {
+          apple_touch_icon_url: string
           description: string
           favicon_url: string
           id: string
@@ -49,6 +50,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apple_touch_icon_url?: string
           description?: string
           favicon_url?: string
           id?: string
@@ -61,6 +63,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apple_touch_icon_url?: string
           description?: string
           favicon_url?: string
           id?: string
