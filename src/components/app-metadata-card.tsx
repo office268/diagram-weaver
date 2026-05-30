@@ -132,6 +132,12 @@ export function AppMetadataCard() {
           onChange={(url) => setField("favicon_url", url)}
         />
         <AssetField
+          label="אייקון התקנה בטלפון (apple-touch-icon)"
+          kind="apple_touch_icon"
+          value={current.apple_touch_icon_url}
+          onChange={(url) => setField("apple_touch_icon_url", url)}
+        />
+        <AssetField
           label="תמונת שיתוף (og:image)"
           kind="og"
           value={current.og_image_url}
