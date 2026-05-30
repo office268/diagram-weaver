@@ -63,7 +63,7 @@ export const updateAppMetadata = createServerFn({ method: "POST" })
 
 const GenerateSchema = z.object({
   prompt: z.string().min(3).max(1000),
-  kind: z.enum(["favicon", "og"]),
+  kind: z.enum(["favicon", "og", "apple_touch_icon"]),
 });
 
 // Generate an image via Lovable AI Gateway and upload to storage; returns public URL.
