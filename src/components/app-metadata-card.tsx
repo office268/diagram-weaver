@@ -191,7 +191,7 @@ function AssetField({
 
   const genMut = useMutation({
     mutationFn: () => genFn({ data: { prompt, kind } }),
-    onSuccess: (res) => {
+    onSuccess: (res: { url: string }) => {
       onChange(res.url);
       setOpen(false);
       setPrompt("");
