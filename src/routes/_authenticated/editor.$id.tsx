@@ -9,6 +9,7 @@ import { getSpec, updateSpec } from "@/lib/spec.functions";
 import { ReviewPanel } from "@/components/review-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { EditableText } from "@/components/editable-text";
 import { SpecDiagram } from "@/components/spec-diagram";
 import {
@@ -49,6 +50,7 @@ function EditorPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
+  const [userNotes, setUserNotes] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
 
@@ -57,12 +59,13 @@ function EditorPage() {
       setTitle(data.spec.title);
       const normalized = normalizeSpec(data.spec.content);
       setContent(normalized);
-      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized });
+      setUserNotes((data.spec as { user_notes?: string }).user_notes ?? "");
+      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "" });
     }
   }, [data?.spec]);
 
   const saveMut = useMutation({
-    mutationFn: (patch: { title?: string; content?: SpecContent }) =>
+    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string }) =>
       updateFn({ data: { id, ...patch } }),
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
@@ -79,15 +82,15 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content });
+    const snapshot = JSON.stringify({ title, content, userNotes });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content });
+      saveMut.mutate({ title, content, userNotes });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content]);
+  }, [title, content, userNotes]);
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
@@ -348,6 +351,21 @@ function EditorPage() {
             />
           </section>
         ) : null}
+
+        <section className="space-y-3">
+          <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+            ההערות שלי
+          </h2>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <Textarea
+              value={userNotes}
+              onChange={(e) => setUserNotes(e.target.value)}
+              rows={6}
+              placeholder="כתוב כאן הערות אישיות לגבי המסמך... (נשמר אוטומטית)"
+              className="resize-y"
+            />
+          </div>
+        </section>
       </div>
     </div>
   );

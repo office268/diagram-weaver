@@ -72,6 +72,7 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          user_notes: string
           variant: string | null
         }
         Insert: {
@@ -86,6 +87,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id: string
+          user_notes?: string
           variant?: string | null
         }
         Update: {
@@ -100,6 +102,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          user_notes?: string
           variant?: string | null
         }
         Relationships: []

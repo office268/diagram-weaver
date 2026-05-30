@@ -97,15 +97,18 @@ export const updateSpec = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         title: z.string().min(1).max(200).optional(),
         content: z.record(z.string(), z.any()).optional(),
+        userNotes: z.string().max(10000).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { id, ...patch } = data;
+    const { id, userNotes, ...rest } = data;
+    const patch: { title?: string; content?: Record<string, unknown>; user_notes?: string } = { ...rest };
+    if (userNotes !== undefined) patch.user_notes = userNotes;
     const { data: row, error } = await supabase
       .from("spec_documents")
-      .update(patch)
+      .update(patch as never)
       .eq("id", id)
       .eq("user_id", userId)
       .select()
