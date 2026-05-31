@@ -132,6 +132,8 @@ export type Database = {
           prompt: string
           review_notes: Json
           review_score: number | null
+          section_order: Json
+          section_titles: Json
           title: string
           updated_at: string
           user_id: string
@@ -148,6 +150,8 @@ export type Database = {
           prompt?: string
           review_notes?: Json
           review_score?: number | null
+          section_order?: Json
+          section_titles?: Json
           title?: string
           updated_at?: string
           user_id: string
@@ -164,6 +168,8 @@ export type Database = {
           prompt?: string
           review_notes?: Json
           review_score?: number | null
+          section_order?: Json
+          section_titles?: Json
           title?: string
           updated_at?: string
           user_id?: string
