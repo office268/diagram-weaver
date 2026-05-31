@@ -152,7 +152,7 @@ export function OnboardingOverlay() {
           />
           {/* spotlight ring */}
           <div
-            className="pointer-events-none absolute rounded-lg ring-2 ring-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.25)] transition-all"
+            className="pointer-events-none absolute rounded-lg ring-2 ring-primary ring-offset-4 ring-offset-background/0 transition-all"
             style={{
               top: rect.top,
               left: rect.left,
