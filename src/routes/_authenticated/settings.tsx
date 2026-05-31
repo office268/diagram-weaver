@@ -72,66 +72,14 @@ function SettingsPage() {
         </>
       ) : null}
 
-      <SettingsSection
-        title="הוראות מערכת ל-AI"
-        description="ה-System Instruction שמופנה למודל בעת יצירת מסמך אפיון."
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <EditableSiteText textKey="settings.sys.title" defaultValue="System Instruction" />
-            </CardTitle>
-            <CardDescription>
-              <EditableSiteText
-                textKey="settings.sys.desc"
-                defaultValue="ההוראות שמופנות למודל בעת יצירת מסמך אפיון."
-              />
-              {data.is_default && " (כרגע בשימוש: ברירת המחדל)"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Label htmlFor="sys" className="sr-only">System instruction</Label>
-            <Textarea
-              id="sys"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={18}
-              className="font-mono text-xs leading-relaxed"
-              dir="auto"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground" dir="ltr">
-                {draft.length} chars
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => resetMut.mutate()}
-                  disabled={resetMut.isPending || saveMut.isPending}
-                >
-                  <RotateCcw className="mr-1.5 h-4 w-4" />
-                  שחזר לברירת מחדל
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => saveMut.mutate()}
-                  disabled={!isDirty || draft.trim().length < 10 || saveMut.isPending}
-                >
-                  {saveMut.isPending ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-1.5 h-4 w-4" />
-                  )}
-                  שמור
-                </Button>
-              </div>
-            </div>
-
-          </CardContent>
-        </Card>
-      </SettingsSection>
+      {isAdmin ? (
+        <SettingsSection
+          title="הוראות מערכת לפי סוג מסמך"
+          description="ה-System Instruction שמופנה למודל לכל סוג מסמך — גלובלי לכל המשתמשים."
+        >
+          <DocTypeInstructionsCard />
+        </SettingsSection>
+      ) : null}
     </div>
   );
 }
