@@ -121,9 +121,17 @@ async function handleTransactionCompleted(
   if (priceId === "credits_100") {
     await grantCredits(
       userId,
-      PACK_CREDITS,
+      PACK_CREDITS_100,
       "purchase",
       "רכישת חבילת 100 קרדיטים",
+      `tx_${data.id}`,
+    );
+  } else if (priceId === "credits_250") {
+    await grantCredits(
+      userId,
+      PACK_CREDITS_250,
+      "purchase",
+      "רכישת חבילת 250 קרדיטים",
       `tx_${data.id}`,
     );
   } else if (priceId === "monthly_subscription" && data.origin === "subscription_recurring") {
