@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
+import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
   id: '/api/review-spec',
   path: '/api/review-spec',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiImproveSectionRoute = ApiImproveSectionRouteImport.update({
+  id: '/api/improve-section',
+  path: '/api/improve-section',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateSpecRoute = ApiGenerateSpecRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/improve-section'
     | '/api/review-spec'
     | '/editor/$id'
     | '/projects/$projectId'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/improve-section'
     | '/api/review-spec'
     | '/editor/$id'
     | '/projects/$projectId'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
     | '/api/generate-spec'
+    | '/api/improve-section'
     | '/api/review-spec'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
@@ -149,6 +161,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
+  ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
 }
 
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/api/review-spec'
       fullPath: '/api/review-spec'
       preLoaderRoute: typeof ApiReviewSpecRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/improve-section': {
+      id: '/api/improve-section'
+      path: '/api/improve-section'
+      fullPath: '/api/improve-section'
+      preLoaderRoute: typeof ApiImproveSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate-spec': {
@@ -252,6 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
+  ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
 }
 export const routeTree = rootRouteImport
