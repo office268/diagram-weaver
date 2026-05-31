@@ -26,46 +26,6 @@ export const Route = createFileRoute("/_authenticated/settings")({
 function SettingsPage() {
   const { isAdmin } = useSiteTexts();
 
-
-  const { data, isLoading } = useQuery({
-    queryKey: ["ai-settings"],
-    queryFn: () => getFn(),
-  });
-
-  const [draft, setDraft] = useState("");
-
-  useEffect(() => {
-    if (data?.system_instruction) setDraft(data.system_instruction);
-  }, [data?.system_instruction]);
-
-  const saveMut = useMutation({
-    mutationFn: () => updateFn({ data: { system_instruction: draft } }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ai-settings"] });
-      toast.success("ההגדרות נשמרו");
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שמירה נכשלה"),
-  });
-
-  const resetMut = useMutation({
-    mutationFn: () => resetFn(),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ai-settings"] });
-      toast.success("שוחזר לברירת מחדל");
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שחזור נכשל"),
-  });
-
-  if (isLoading || !data) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  const isDirty = draft !== data.system_instruction;
-
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
       <AppBreadcrumb items={[{ label: "פרויקטים", to: "/projects" }, { label: "הגדרות" }]} />
