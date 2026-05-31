@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers } from "lucide-react";
+import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   listProjects,
   createProject,
@@ -56,6 +57,7 @@ function ProjectsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["projects"],
