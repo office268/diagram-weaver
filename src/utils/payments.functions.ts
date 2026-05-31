@@ -39,7 +39,7 @@ export const createPortalSession = createServerFn({ method: "POST" })
     const paddle = getPaddleClient(data.environment);
     const session = await paddle.customerPortalSessions.create(
       sub.paddle_customer_id,
-      sub.paddle_subscription_id ? [sub.paddle_subscription_id] : undefined,
+      sub.paddle_subscription_id ? [sub.paddle_subscription_id] : [],
     );
     return { url: session.urls.general.overview };
   });
