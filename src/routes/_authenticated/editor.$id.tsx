@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,6 +17,23 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getDocTypeVisual } from "@/lib/doc-types";
 import { getProject } from "@/lib/project.functions";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
