@@ -413,7 +413,7 @@ function EditorPage() {
           return null;
       }
     };
-  }, [content, prompt, userNotes, updateContent, data?.spec]);
+  }, [content, prompt, userNotes, updateContent, data?.spec, selectedNoteIds, improving, improveDoc, navigate]);
 
   if (isLoading) {
     return (
