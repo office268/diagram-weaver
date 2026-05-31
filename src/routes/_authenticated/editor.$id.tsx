@@ -811,27 +811,43 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
-        {visibleSections.map((key, index) => {
-          const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
-          const titleValue = sectionTitles[key] ?? def.defaultTitle;
-          return (
-            <SectionShell
-              key={key}
-              title={titleValue}
-              onTitleChange={(v) => setSectionTitle(key, v)}
-              onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
-              onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
-              onDelete={() => deleteSection(key)}
-              onAiImprove={
-                key === "review"
-                  ? undefined
-                  : (instruction) => improveSection(key, titleValue, instruction)
-              }
-            >
-              {renderBody(key)}
-            </SectionShell>
-          );
-        })}
+        <DndContext
+          sensors={dndSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(e: DragEndEvent) => {
+            const { active, over } = e;
+            if (!over || active.id === over.id) return;
+            reorderSections(String(active.id), String(over.id));
+          }}
+        >
+          <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+            {visibleSections.map((key, index) => {
+              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+              const titleValue = sectionTitles[key] ?? def.defaultTitle;
+              return (
+                <SortableSection key={key} id={key}>
+                  {(dragHandle) => (
+                    <SectionShell
+                      title={titleValue}
+                      dragHandle={dragHandle}
+                      onTitleChange={(v) => setSectionTitle(key, v)}
+                      onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                      onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                      onDelete={() => deleteSection(key)}
+                      onAiImprove={
+                        key === "review"
+                          ? undefined
+                          : (instruction) => improveSection(key, titleValue, instruction)
+                      }
+                    >
+                      {renderBody(key)}
+                    </SectionShell>
+                  )}
+                </SortableSection>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );
