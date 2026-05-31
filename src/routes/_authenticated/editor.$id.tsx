@@ -70,6 +70,7 @@ function EditorPage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getSpec);
   const updateFn = useServerFn(updateSpec);
+  const createFn = useServerFn(createSpec);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
@@ -78,6 +79,8 @@ function EditorPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
+  const [improving, setImproving] = useState(false);
   const [userNotes, setUserNotes] = useState("");
   const [prompt, setPrompt] = useState("");
   const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_KEYS);
