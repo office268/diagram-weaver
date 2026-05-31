@@ -5,6 +5,7 @@ import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_MODEL } from "@/lib/ai-spec-defaults.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJson } from "@/lib/spec-output-schema";
+import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
 const BodySchema = z.object({
   sectionKey: z.string().min(1).max(100),
@@ -14,7 +15,9 @@ const BodySchema = z.object({
   contextPrompt: z.string().max(5000).optional(),
   docType: z.string().max(100).optional(),
   valueShape: z.enum(["string", "array", "object"]),
+  projectId: z.string().uuid().optional(),
 });
+
 
 const SYSTEM = [
   "אתה עוזר AI מומחה בכתיבת מסמכי אפיון מערכת.",
@@ -58,22 +61,29 @@ export const Route = createFileRoute("/api/improve-section")({
 
         try {
           const gateway = createLovableAiGatewayProvider(key);
-          const userPrompt = [
-            body.contextPrompt
-              ? `הקשר המסמך (פרומפט מקורי): ${body.contextPrompt}`
-              : "",
-            body.docType ? `סוג מסמך: ${body.docType}` : "",
-            `שם הסעיף: ${body.sectionLabel} (key: ${body.sectionKey})`,
-            `מבנה הערך: ${body.valueShape}`,
-            "",
-            "הערך הנוכחי (JSON):",
-            JSON.stringify(body.sectionValue, null, 2),
-            "",
-            "הנחיית המשתמש לשיפור הסעיף:",
-            body.instruction,
-          ]
-            .filter(Boolean)
-            .join("\n");
+          const knowledgeBlock = await loadKnowledgeContextBlock(
+            userData.user.id,
+            body.projectId,
+          );
+          const userPrompt =
+            knowledgeBlock +
+            [
+              body.contextPrompt
+                ? `הקשר המסמך (פרומפט מקורי): ${body.contextPrompt}`
+                : "",
+              body.docType ? `סוג מסמך: ${body.docType}` : "",
+              `שם הסעיף: ${body.sectionLabel} (key: ${body.sectionKey})`,
+              `מבנה הערך: ${body.valueShape}`,
+              "",
+              "הערך הנוכחי (JSON):",
+              JSON.stringify(body.sectionValue, null, 2),
+              "",
+              "הנחיית המשתמש לשיפור הסעיף:",
+              body.instruction,
+            ]
+              .filter(Boolean)
+              .join("\n");
+
 
           const { text } = await generateText({
             model: gateway(DEFAULT_MODEL),

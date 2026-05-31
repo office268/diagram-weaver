@@ -108,6 +108,7 @@ export const updateProject = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         name: z.string().min(1).max(200).optional(),
         description: z.string().max(2000).optional(),
+        business_knowledge: z.string().max(10000).optional(),
       })
       .parse(input),
   )
@@ -124,6 +125,7 @@ export const updateProject = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { project: row };
   });
+
 
 export const deleteProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

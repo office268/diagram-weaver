@@ -21,7 +21,15 @@ import {
   updateSpec,
   updateGroupPrompt,
 } from "@/lib/spec.functions";
-import { getProject } from "@/lib/project.functions";
+import { getProject, updateProject } from "@/lib/project.functions";
+import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronRight, BookOpen } from "lucide-react";
+
 
 import {
   SpecOutputSchema,
@@ -112,6 +120,8 @@ function ProjectPage() {
   const deleteFn = useServerFn(deleteSpec);
   const deleteGroupFn = useServerFn(deleteSpecGroup);
   const listDtsFn = useServerFn(listDocTypeSettings);
+  const updateProjectFn = useServerFn(updateProject);
+
 
   const { data: dtsData } = useQuery({
     queryKey: ["doc-type-settings"],
@@ -154,9 +164,11 @@ function ProjectPage() {
           prompt: params.promptText,
           model: params.model,
           docType: params.docTypeKey,
+          projectId,
           ...(params.previousSpec ? { previousSpec: params.previousSpec } : {}),
           ...(params.reviewerNotes ? { reviewerNotes: params.reviewerNotes } : {}),
         }),
+
       });
       if (!res.ok || !res.body) {
         const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
@@ -189,7 +201,8 @@ function ProjectPage() {
       }
       return SpecOutputSchema.parse(parsed);
     },
-    [],
+    [projectId],
+
   );
 
   /** Low-level: one review call. Returns null on failure (toast-warned). */
@@ -206,7 +219,7 @@ function ProjectPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: promptText, spec }),
+          body: JSON.stringify({ prompt: promptText, spec, projectId }),
         });
         if (!revRes.ok) {
           const t = await revRes.text().catch(() => "");
@@ -224,7 +237,8 @@ function ProjectPage() {
         return null;
       }
     },
-    [],
+    [projectId],
+
   );
 
   const saveIteration = useCallback(
@@ -564,6 +578,22 @@ function ProjectPage() {
         </Button>
 
       </div>
+
+      <ProjectKnowledgeSection
+        value={
+          (data?.project as { business_knowledge?: string } | undefined)
+            ?.business_knowledge ?? ""
+        }
+        isLoading={isLoading}
+        onSave={async (next) => {
+          await updateProjectFn({
+            data: { id: projectId, business_knowledge: next },
+          });
+          qc.invalidateQueries({ queryKey: ["project", projectId] });
+        }}
+      />
+
+
 
       <div className="mt-8">
         {isLoading ? (
@@ -1306,3 +1336,57 @@ function EditableGroupPrompt({
   );
 }
 
+
+function ProjectKnowledgeSection({
+  value,
+  isLoading,
+  onSave,
+}: {
+  value: string;
+  isLoading: boolean;
+  onSave: (next: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasContent = (value ?? "").trim().length > 0;
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <section className="mt-6 rounded-lg border border-border bg-card">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 px-4 py-3 text-right hover:bg-muted/40"
+          >
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+            />
+            <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-foreground">
+                ידע על הפרויקט
+                {hasContent ? (
+                  <span className="mr-2 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                    פעיל
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                ידע ספציפי לפרויקט זה שיישלח ל-AI עם כל יצירה/ביקורת/שיפור של מסמך בפרויקט.
+              </div>
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-border p-4">
+            <BusinessKnowledgeCard
+              label="ידע על הפרויקט"
+              description="לדוגמה: יעדי הפרויקט, מערכות שאיתן הוא משתלב, אילוצי לקוח, מונחים פנימיים לפרויקט."
+              value={value}
+              isLoading={isLoading}
+              onSave={onSave}
+            />
+          </div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
+  );
+}

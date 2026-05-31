@@ -9,13 +9,16 @@ import {
 import { resolveSystemInstruction } from "@/lib/doc-type-instructions.server";
 import { DOC_TYPE_KEYS } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
 const BodySchema = z.object({
   prompt: z.string().min(5).max(5000),
   previousSpec: z.record(z.string(), z.any()).optional(),
   reviewerNotes: z.array(z.string()).max(50).optional(),
   docType: z.enum(DOC_TYPE_KEYS).optional(),
+  projectId: z.string().uuid().optional(),
 });
+
 
 export const Route = createFileRoute("/api/generate-spec")({
   server: {
@@ -75,7 +78,12 @@ export const Route = createFileRoute("/api/generate-spec")({
             Array.isArray(body.reviewerNotes) &&
             body.reviewerNotes.length > 0;
 
-          const userPrompt = isRevision
+          const knowledgeBlock = await loadKnowledgeContextBlock(
+            userId,
+            body.projectId,
+          );
+
+          const baseUserPrompt = isRevision
             ? [
                 "פרומפט מקורי של המשתמש:",
                 body.prompt,
@@ -89,6 +97,9 @@ export const Route = createFileRoute("/api/generate-spec")({
                 "צור גרסה משופרת של מסמך האפיון שמטפלת בכל ההערות, שומרת ומחזקת את החוזקות הקיימות, ומחזירה JSON תקני באותה סכמה בדיוק.",
               ].join("\n")
             : body.prompt;
+
+          const userPrompt = knowledgeBlock + baseUserPrompt;
+
 
           const result = streamText({
             model: gateway(model),

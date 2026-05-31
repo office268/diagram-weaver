@@ -486,7 +486,9 @@ function EditorPage() {
             instruction,
             contextPrompt: prompt,
             docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
+            projectId: projectId ?? undefined,
           }),
+
         });
         if (!res.ok) {
           const t = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
@@ -499,7 +501,7 @@ function EditorPage() {
         return null;
       }
     },
-    [getSectionValue, prompt, data?.spec],
+    [getSectionValue, prompt, data?.spec, projectId],
   );
 
   const applyImprovement = useCallback(
@@ -556,9 +558,11 @@ function EditorPage() {
           prompt: promptText,
           model,
           docType,
+          projectId: spec.project_id ?? undefined,
           previousSpec: content,
           reviewerNotes: selectedTexts,
         }),
+
       });
       if (!genRes.ok || !genRes.body) {
         const t = (await genRes.text().catch(() => "")) || `שגיאה ${genRes.status}`;
@@ -587,7 +591,7 @@ function EditorPage() {
         const revRes = await fetch("/api/review-spec", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ prompt: promptText, spec: newSpec }),
+          body: JSON.stringify({ prompt: promptText, spec: newSpec, projectId: spec.project_id ?? undefined }),
         });
         if (revRes.ok) {
           const j = await revRes.json();

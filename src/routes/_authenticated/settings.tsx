@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +10,15 @@ import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card";
+import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
+import {
+  getAiSettings,
+  updateBusinessKnowledge,
+} from "@/lib/ai-settings.functions";
+
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -25,6 +33,14 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const { isAdmin } = useSiteTexts();
+  const qc = useQueryClient();
+  const getSettingsFn = useServerFn(getAiSettings);
+  const updateKnowledgeFn = useServerFn(updateBusinessKnowledge);
+  const { data: aiSettings, isLoading: aiLoading } = useQuery({
+    queryKey: ["ai-settings"],
+    queryFn: () => getSettingsFn(),
+  });
+
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
@@ -56,6 +72,24 @@ function SettingsPage() {
           </CardContent>
         </Card>
       </SettingsSection>
+
+      <SettingsSection
+        title="ידע ארגוני / עסקי שלי"
+        description="ידע שיישלח ל-AI עבור כל מסמך שלך — בכל הפרויקטים."
+      >
+        <BusinessKnowledgeCard
+          label="הידע הארגוני / עסקי שלי"
+          description="תיאור של הארגון, התחום, מונחים פנימיים, אילוצים וכל דבר שכדאי שה-AI יכיר ברקע."
+          value={aiSettings?.business_knowledge ?? ""}
+          isLoading={aiLoading}
+          onSave={async (next) => {
+            await updateKnowledgeFn({ data: { business_knowledge: next } });
+            qc.invalidateQueries({ queryKey: ["ai-settings"] });
+          }}
+        />
+      </SettingsSection>
+
+
 
       {isAdmin ? (
         <>

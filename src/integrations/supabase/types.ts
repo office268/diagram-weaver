@@ -16,18 +16,21 @@ export type Database = {
     Tables: {
       ai_settings: {
         Row: {
+          business_knowledge: string
           created_at: string
           system_instruction: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          business_knowledge?: string
           created_at?: string
           system_instruction: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          business_knowledge?: string
           created_at?: string
           system_instruction?: string
           updated_at?: string
@@ -202,6 +205,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          business_knowledge: string
           created_at: string
           description: string
           id: string
@@ -211,6 +215,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          business_knowledge?: string
           created_at?: string
           description?: string
           id?: string
@@ -220,6 +225,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          business_knowledge?: string
           created_at?: string
           description?: string
           id?: string
