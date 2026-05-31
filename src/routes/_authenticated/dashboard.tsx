@@ -9,6 +9,7 @@ import {
   createSpec,
   deleteSpec,
   deleteSpecGroup,
+  updateSpec,
 } from "@/lib/spec.functions";
 import {
   SpecOutputSchema,
