@@ -1014,7 +1014,8 @@ function EditableDocTitle({
     }
     try {
       await updateFn({ data: { id, title: next } });
-      qc.invalidateQueries({ queryKey: ["project", projectId] });
+      qc.invalidateQueries({ queryKey: ["project"] });
+
       toast.success("השם עודכן");
     } catch (e) {
       setDraft(value);
