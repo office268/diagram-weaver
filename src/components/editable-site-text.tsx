@@ -87,7 +87,7 @@ export function EditableSiteText({
     );
   }
 
-  const Comp = as as React.ElementType;
+  const Comp = as as ElementType;
   return (
     <Comp
       className={cn(
