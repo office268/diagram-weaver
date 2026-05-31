@@ -662,28 +662,32 @@ function ProjectPage() {
                         return (
                           <li
                             key={g.key}
-                            className="group hover-lift relative flex flex-col rounded-xl border border-border bg-card p-4"
+                            className="group hover-lift relative flex flex-col rounded-xl border border-border bg-card"
                           >
-                            <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
-                              <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-                                <TypeIcon className={`h-4 w-4 ${typeVisual.colorClass}`} />
-                                <EditableDocTitle id={d.id} value={d.title} className="truncate font-medium text-foreground" />
+                            <SwipeableRow onDelete={() => setDeleteId(d.id)} className="rounded-xl">
+                              <div className="relative p-4">
+                                <Link to="/editor/$id" params={{ id: d.id }} className="flex-1 block">
+                                  <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                                    <TypeIcon className={`h-4 w-4 ${typeVisual.colorClass}`} />
+                                    <EditableDocTitle id={d.id} value={d.title} className="truncate font-medium text-foreground" />
+                                  </div>
+                                  <div className="mt-3 text-xs text-muted-foreground">
+                                    עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
+                                  </div>
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute left-2 top-2 h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setDeleteId(d.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                               </div>
-                              <div className="mt-3 text-xs text-muted-foreground">
-                                עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
-                              </div>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute left-2 top-2 h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setDeleteId(d.id);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
+                            </SwipeableRow>
                           </li>
                         );
                       }
