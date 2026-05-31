@@ -18,7 +18,8 @@ function getSupabase(): SupabaseClient {
 }
 
 const MONTHLY_CREDITS = 125;
-const PACK_CREDITS = 100;
+const PACK_CREDITS_100 = 100;
+const PACK_CREDITS_250 = 250;
 
 async function grantCredits(
   userId: string,
