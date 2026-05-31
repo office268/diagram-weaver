@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+
 
 import {
   createSpec,
@@ -551,10 +553,11 @@ function ProjectPage() {
             </p>
           )}
         </div>
-        <Button onClick={() => setTypePickerOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setTypePickerOpen(true)} className="btn-gradient w-full border-0 sm:w-auto">
           <Sparkles className="mr-2 h-4 w-4" />
           מסמך חדש
         </Button>
+
       </div>
 
       <div className="mt-8">
@@ -575,13 +578,19 @@ function ProjectPage() {
             {(error as Error).message}
           </div>
         ) : !data?.specs.length ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 font-medium text-foreground">עדיין אין מסמכים בפרויקט</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              לחצו על "מסמך חדש" ובחרו את סוג המסמך הרצוי.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="עדיין אין מסמכים בפרויקט"
+            description='לחצו על "מסמך חדש", בחרו את סוג המסמך — והסוכן יבנה לכם את הסעיפים אוטומטית.'
+            action={
+              <Button onClick={() => setTypePickerOpen(true)} className="btn-gradient border-0">
+                <Sparkles className="mr-2 h-4 w-4" />
+                צרו מסמך ראשון
+              </Button>
+            }
+          />
+
+
 
         ) : (
           <>
@@ -595,11 +604,12 @@ function ProjectPage() {
               />
             </div>
             {!hasFilterMatches ? (
-              <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-                <Search className="mx-auto h-8 w-8 text-muted-foreground" />
-                <h3 className="mt-3 font-medium text-foreground">לא נמצאו מסמכים</h3>
-                <p className="mt-1 text-sm text-muted-foreground">נסו מילת חיפוש אחרת.</p>
-              </div>
+              <EmptyState
+                icon={Search}
+                title="לא נמצאו מסמכים"
+                description="נסו מילת חיפוש אחרת או נקו את שדה החיפוש."
+              />
+
             ) : (
               <div className="space-y-8">
                 {DOC_TYPE_KEYS.map((typeKey) => {
