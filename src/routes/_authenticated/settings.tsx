@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/app-metadata-card";
+import { EditableSiteText } from "@/components/editable-site-text";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
