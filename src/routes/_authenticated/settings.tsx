@@ -25,6 +25,8 @@ import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
+import { AppBreadcrumb } from "@/components/app-breadcrumb";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -84,6 +86,8 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
+      <AppBreadcrumb items={[{ label: "פרויקטים", to: "/projects" }, { label: "הגדרות" }]} />
+
       <div>
         <EditableSiteText
           as="h1"
