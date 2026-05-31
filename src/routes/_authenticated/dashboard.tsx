@@ -567,11 +567,9 @@ function DashboardPage() {
                             params={{ id: d.id }}
                             className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
                           >
-                            <div className="flex min-w-0 items-center gap-2">
+                            <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
                               <FileText className="h-4 w-4 shrink-0 text-primary" />
-                              <span className="truncate text-sm text-foreground">
-                                {d.model ?? "מסמך"}
-                              </span>
+                              <EditableDocTitle id={d.id} value={d.title} className="truncate text-sm text-foreground" />
                               {variantLabel && (
                                 <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
                                   {variantLabel}
