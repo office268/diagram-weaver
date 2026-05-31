@@ -12,7 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { listRecentItems } from "@/lib/recent.functions";
 
-export function RecentItemsMenu() {
+interface RecentItemsMenuProps {
+  trigger?: React.ReactNode;
+}
+
+export function RecentItemsMenu({ trigger }: RecentItemsMenuProps = {}) {
   const listFn = useServerFn(listRecentItems);
   const { data } = useQuery({
     queryKey: ["recent-items"],
@@ -26,14 +30,16 @@ export function RecentItemsMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="פריטים אחרונים"
-        >
-          <Clock className="h-4 w-4" />
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="פריטים אחרונים"
+          >
+            <Clock className="h-4 w-4" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel>פריטים אחרונים</DropdownMenuLabel>
