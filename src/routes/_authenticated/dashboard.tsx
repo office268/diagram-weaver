@@ -521,9 +521,17 @@ function DashboardPage() {
                     <div className="flex items-start gap-2 min-w-0">
                       <Layers className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground line-clamp-2">
-                          {topic}
-                        </h3>
+                        {g.groupId ? (
+                          <EditableGroupPrompt
+                            groupId={g.groupId}
+                            value={topic}
+                            className="font-semibold text-foreground line-clamp-2 block"
+                          />
+                        ) : (
+                          <h3 className="font-semibold text-foreground line-clamp-2">
+                            {topic}
+                          </h3>
+                        )}
                         <p className="mt-1 text-xs text-muted-foreground">
                           {g.items.length} גרסאות · עודכן ב-
                           {new Date(updated).toLocaleDateString("he-IL")}
