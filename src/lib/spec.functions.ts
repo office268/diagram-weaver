@@ -51,6 +51,7 @@ export const createSpec = createServerFn({ method: "POST" })
         docType: z.string().max(60).optional(),
         sectionOrder: z.array(z.string().max(60)).max(50).optional(),
         sectionTitles: z.record(z.string().max(60), z.string().max(200)).optional(),
+        projectId: z.string().uuid().optional(),
       })
       .parse(input),
   )
@@ -71,12 +72,14 @@ export const createSpec = createServerFn({ method: "POST" })
         doc_type: data.docType ?? "spec_overview",
         section_order: data.sectionOrder ?? [],
         section_titles: data.sectionTitles ?? {},
+        project_id: data.projectId ?? null,
       } as never)
       .select()
       .single();
     if (error) throw new Error(error.message);
     return { spec: row };
   });
+
 
 export const deleteSpecGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
