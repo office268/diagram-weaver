@@ -216,6 +216,67 @@ function EditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
 
+  // Dirty = pending unsaved changes (debounce hasn't flushed yet)
+  const dirty = useMemo(() => {
+    if (!content) return false;
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+    return snapshot !== lastSentRef.current;
+  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
+
+  // Warn before unload if there are pending changes
+  useEffect(() => {
+    if (!dirty && saveState !== "saving") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty, saveState]);
+
+  // Refresh "saved X ago" label every 30s
+  useEffect(() => {
+    if (!lastSavedAt) return;
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [lastSavedAt]);
+
+  const savedAgoLabel = useMemo(() => {
+    if (!lastSavedAt) return null;
+    try {
+      return formatDistanceToNow(lastSavedAt, { addSuffix: true, locale: he });
+    } catch {
+      return null;
+    }
+  }, [lastSavedAt]);
+
+  const flushSave = useCallback(() => {
+    if (!content) return;
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+    if (snapshot === lastSentRef.current) return;
+    lastSentRef.current = snapshot;
+    saveMut.mutate({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles, saveMut]);
+
+  // Keyboard shortcuts: Cmd/Ctrl+S to save, Cmd/Ctrl+K to open section search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "s" || e.key === "S") {
+        e.preventDefault();
+        flushSave();
+      } else if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [flushSave]);
+
+
+
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
   }, []);
