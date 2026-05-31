@@ -99,15 +99,14 @@ function initialCompareState(): CompareState {
   ) as CompareState;
 }
 
-function DashboardPage() {
+function ProjectPage() {
+  const { projectId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const listFn = useServerFn(listSpecs);
+  const getProjectFn = useServerFn(getProject);
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
   const deleteGroupFn = useServerFn(deleteSpecGroup);
-  
-  
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
@@ -119,9 +118,10 @@ function DashboardPage() {
   const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["specs"],
-    queryFn: () => listFn(),
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectFn({ data: { id: projectId } }),
   });
+
 
   const runModel = useCallback(
     async (model: SpecModel, promptText: string, groupId: string, docTypeKey: DocTypeKey) => {
