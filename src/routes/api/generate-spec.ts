@@ -4,10 +4,9 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import {
   DEFAULT_MODEL,
-  DEFAULT_SYSTEM_INSTRUCTION,
   JSON_OUTPUT_INSTRUCTION,
 } from "@/lib/ai-spec-defaults.server";
-import { getDocTypeSystemInstruction } from "@/lib/doc-types.server";
+import { resolveSystemInstruction } from "@/lib/doc-type-instructions.server";
 import { DOC_TYPE_KEYS } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
