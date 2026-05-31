@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,9 +10,15 @@ import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card";
+import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
+import {
+  getAiSettings,
+  updateBusinessKnowledge,
+} from "@/lib/ai-settings.functions";
+
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
