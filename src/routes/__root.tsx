@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
 import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
 import { SiteTextsProvider } from "@/lib/site-texts-context";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 function NotFoundComponent() {
   return (
@@ -170,6 +171,7 @@ function RootComponent() {
         initialTexts={loaderData?.siteTexts ?? {}}
         isAdmin={loaderData?.isAdmin ?? false}
       >
+        <PaymentTestModeBanner />
         <Outlet />
       </SiteTextsProvider>
       <Toaster richColors position="top-right" />

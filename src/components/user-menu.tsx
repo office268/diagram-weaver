@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useCredits } from "@/hooks/use-credits";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ function initialsFromEmail(email: string | null | undefined): string {
 
 export function UserMenu({ user }: { user: User }) {
   const navigate = useNavigate();
+  const { balance } = useCredits();
   const email = user.email ?? "";
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ||
@@ -51,9 +53,23 @@ export function UserMenu({ user }: { user: User }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/billing">
+            <Zap className="ml-2 h-4 w-4 text-amber-500" />
+            <span className="flex-1">קרדיטים וחיוב</span>
+            <span className="text-xs font-semibold tabular-nums text-muted-foreground">{balance}</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
           <Link to="/settings">
             <Settings className="ml-2 h-4 w-4" />
             הגדרות
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/pricing">
+            <CreditCard className="ml-2 h-4 w-4" />
+            מחירים
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
