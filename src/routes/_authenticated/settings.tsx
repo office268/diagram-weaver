@@ -73,6 +73,24 @@ function SettingsPage() {
         </Card>
       </SettingsSection>
 
+      <SettingsSection
+        title="ידע ארגוני / עסקי שלי"
+        description="ידע שיישלח ל-AI עבור כל מסמך שלך — בכל הפרויקטים."
+      >
+        <BusinessKnowledgeCard
+          label="הידע הארגוני / עסקי שלי"
+          description="תיאור של הארגון, התחום, מונחים פנימיים, אילוצים וכל דבר שכדאי שה-AI יכיר ברקע."
+          value={aiSettings?.business_knowledge ?? ""}
+          isLoading={aiLoading}
+          onSave={async (next) => {
+            await updateKnowledgeFn({ data: { business_knowledge: next } });
+            qc.invalidateQueries({ queryKey: ["ai-settings"] });
+          }}
+        />
+      </SettingsSection>
+
+
+
       {isAdmin ? (
         <>
           <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
