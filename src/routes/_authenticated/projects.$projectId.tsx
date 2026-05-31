@@ -865,6 +865,26 @@ function ProjectPage() {
 
           <div className="space-y-2">
             <Label htmlFor="spec-prompt">תיאור / פרומפט</Label>
+            {DOC_TEMPLATES[docType]?.length ? (
+              <div className="space-y-1.5">
+                <div className="text-[11px] text-muted-foreground">
+                  או התחילו מתבנית מוכנה:
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {DOC_TEMPLATES[docType].map((tpl) => (
+                    <button
+                      key={tpl.label}
+                      type="button"
+                      onClick={() => setPrompt(tpl.prompt)}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      {tpl.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <Textarea
               id="spec-prompt"
               value={prompt}
@@ -878,6 +898,7 @@ function ProjectPage() {
               {prompt.length} / 5000
             </div>
           </div>
+
 
           <DialogFooter>
             <Button
