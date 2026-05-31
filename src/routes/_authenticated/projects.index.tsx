@@ -279,6 +279,7 @@ function ProjectsPage() {
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   </div>
+                  </div>
                 </SwipeableRow>
               </li>
             );
