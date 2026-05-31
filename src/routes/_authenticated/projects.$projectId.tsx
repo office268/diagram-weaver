@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewPanel } from "@/components/review-panel";
 
 import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
+import { listDocTypeSettings, effectiveDocTypeConfig } from "@/lib/doc-type-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
