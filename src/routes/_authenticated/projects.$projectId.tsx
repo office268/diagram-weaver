@@ -1081,7 +1081,8 @@ function EditableGroupPrompt({
     }
     try {
       await updateFn({ data: { groupId, prompt: next } });
-      qc.invalidateQueries({ queryKey: ["project", projectId] });
+      qc.invalidateQueries({ queryKey: ["project"] });
+
       toast.success("התיאור עודכן");
     } catch (e) {
       setDraft(value);
