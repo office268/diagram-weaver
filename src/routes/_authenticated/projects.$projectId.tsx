@@ -3,15 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers, ArrowRight } from "lucide-react";
 import {
-  listSpecs,
   createSpec,
   deleteSpec,
   deleteSpecGroup,
   updateSpec,
   updateGroupPrompt,
 } from "@/lib/spec.functions";
+import { getProject } from "@/lib/project.functions";
+
 import {
   SpecOutputSchema,
   extractJson,
