@@ -23,6 +23,7 @@ function initialsFromEmail(email: string | null | undefined): string {
 
 export function UserMenu({ user }: { user: User }) {
   const navigate = useNavigate();
+  const { balance } = useCredits();
   const email = user.email ?? "";
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ||
