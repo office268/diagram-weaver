@@ -73,6 +73,10 @@ function ProjectsPage() {
     queryFn: () => listFn(),
   });
 
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => qc.invalidateQueries({ queryKey: ["projects"] }),
+  });
+
   const createMut = useMutation({
     mutationFn: () => createFn({ data: { name: name.trim(), description: description.trim() } }),
     onSuccess: (res) => {
