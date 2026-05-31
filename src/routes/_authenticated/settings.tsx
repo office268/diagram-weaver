@@ -98,132 +98,183 @@ function SettingsPage() {
         />
       </div>
 
-      <AppMetadataCard />
+      <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
+        <AppMetadataCard />
+      </SettingsSection>
 
-      <DocTypeSectionsCard />
+      <SettingsSection
+        title="סוגי מסמכים וסעיפי ברירת מחדל"
+        description="ניהול הסעיפים שיופיעו בכל סוג מסמך חדש."
+      >
+        <DocTypeSectionsCard />
+      </SettingsSection>
 
-
-
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <EditableSiteText textKey="settings.sys.title" defaultValue="System Instruction" />
-          </CardTitle>
-          <CardDescription>
-            <EditableSiteText
-              textKey="settings.sys.desc"
-              defaultValue="ההוראות שמופנות למודל בעת יצירת מסמך אפיון."
+      <SettingsSection
+        title="הוראות מערכת ל-AI"
+        description="ה-System Instruction שמופנה למודל בעת יצירת מסמך אפיון."
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <EditableSiteText textKey="settings.sys.title" defaultValue="System Instruction" />
+            </CardTitle>
+            <CardDescription>
+              <EditableSiteText
+                textKey="settings.sys.desc"
+                defaultValue="ההוראות שמופנות למודל בעת יצירת מסמך אפיון."
+              />
+              {data.is_default && " (כרגע בשימוש: ברירת המחדל)"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Label htmlFor="sys" className="sr-only">System instruction</Label>
+            <Textarea
+              id="sys"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={18}
+              className="font-mono text-xs leading-relaxed"
+              dir="auto"
             />
-            {data.is_default && " (כרגע בשימוש: ברירת המחדל)"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Label htmlFor="sys" className="sr-only">System instruction</Label>
-          <Textarea
-            id="sys"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={18}
-            className="font-mono text-xs leading-relaxed"
-            dir="auto"
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground" dir="ltr">
-              {draft.length} chars
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => resetMut.mutate()}
-                disabled={resetMut.isPending || saveMut.isPending}
-              >
-                <RotateCcw className="mr-1.5 h-4 w-4" />
-                שחזר לברירת מחדל
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => saveMut.mutate()}
-                disabled={!isDirty || draft.trim().length < 10 || saveMut.isPending}
-              >
-                {saveMut.isPending ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-1.5 h-4 w-4" />
-                )}
-                שמור
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground" dir="ltr">
+                {draft.length} chars
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => resetMut.mutate()}
+                  disabled={resetMut.isPending || saveMut.isPending}
+                >
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  שחזר לברירת מחדל
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => saveMut.mutate()}
+                  disabled={!isDirty || draft.trim().length < 10 || saveMut.isPending}
+                >
+                  {saveMut.isPending ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-1.5 h-4 w-4" />
+                  )}
+                  שמור
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {!data.is_default && (
-            <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-              <summary className="cursor-pointer font-medium">הצג ברירת מחדל מקורית</summary>
-              <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] text-muted-foreground" dir="auto">
-                {data.default_system_instruction}
+            {!data.is_default && (
+              <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
+                <summary className="cursor-pointer font-medium">הצג ברירת מחדל מקורית</summary>
+                <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] text-muted-foreground" dir="auto">
+                  {data.default_system_instruction}
+                </pre>
+              </details>
+            )}
+          </CardContent>
+        </Card>
+      </SettingsSection>
+
+      <SettingsSection
+        title="תבנית הפרומפט הנשלח ל-LLM"
+        description="מבנה ההודעות והסכמת הפלט שנשלחים למודל."
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <EditableSiteText
+                textKey="settings.prompt.title"
+                defaultValue="תבנית הפרומפט הנשלח ל-LLM"
+              />
+            </CardTitle>
+            <CardDescription>
+              <EditableSiteText
+                textKey="settings.prompt.desc"
+                defaultValue="יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה."
+              />
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">מודלים (מקבילית)</div>
+              <ul className="mt-1 space-y-1">
+                {COMPARISON_MODELS.map((m) => (
+                  <li key={m}>
+                    <code className="inline-block rounded bg-muted px-2 py-1 text-xs" dir="ltr">
+                      {m}
+                    </code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">System message</div>
+              <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
+                {draft}
               </pre>
-            </details>
-          )}
-        </CardContent>
-      </Card>
+            </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <EditableSiteText
-              textKey="settings.prompt.title"
-              defaultValue="תבנית הפרומפט הנשלח ל-LLM"
-            />
-          </CardTitle>
-          <CardDescription>
-            <EditableSiteText
-              textKey="settings.prompt.desc"
-              defaultValue="יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה."
-            />
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground">מודלים (מקבילית)</div>
-            <ul className="mt-1 space-y-1">
-              {COMPARISON_MODELS.map((m) => (
-                <li key={m}>
-                  <code className="inline-block rounded bg-muted px-2 py-1 text-xs" dir="ltr">
-                    {m}
-                  </code>
-                </li>
-              ))}
-            </ul>
-          </div>
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">User message</div>
+              <pre className="mt-1 rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
+                {`{user_prompt}  ← הטקסט שהמשתמש מקליד בדיאלוג "מסמך אפיון חדש"`}
+              </pre>
+            </div>
 
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground">System message</div>
-            <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
-              {draft}
-            </pre>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground">User message</div>
-            <pre className="mt-1 rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
-              {`{user_prompt}  ← הטקסט שהמשתמש מקליד בדיאלוג "מסמך אפיון חדש"`}
-            </pre>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold text-muted-foreground">Output schema (structured)</div>
-            <ul className="mt-1 list-disc space-y-0.5 rounded-md border border-border bg-muted/30 p-3 pr-6 text-[12px]" dir="auto">
-              {OUTPUT_SCHEMA_FIELDS.map((f) => (
-                <li key={f}>
-                  <code className="text-[11px]">{f}</code>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+            <div>
+              <div className="text-xs font-semibold text-muted-foreground">Output schema (structured)</div>
+              <ul className="mt-1 list-disc space-y-0.5 rounded-md border border-border bg-muted/30 p-3 pr-6 text-[12px]" dir="auto">
+                {OUTPUT_SCHEMA_FIELDS.map((f) => (
+                  <li key={f}>
+                    <code className="text-[11px]">{f}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </SettingsSection>
     </div>
+  );
+}
+
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <section className="rounded-lg border border-border bg-card">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 px-4 py-3 text-right hover:bg-muted/40"
+          >
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+            />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-foreground">{title}</div>
+              {description ? (
+                <div className="mt-0.5 text-xs text-muted-foreground">{description}</div>
+              ) : null}
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-border p-4">{children}</div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
