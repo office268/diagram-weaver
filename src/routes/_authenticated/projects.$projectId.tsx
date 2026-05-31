@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight } from "lucide-react";
-import { getDocTypeVisual } from "@/lib/doc-types";
+
 import {
   createSpec,
   deleteSpec,
@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 
-import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
+import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, getDocTypeVisual, type DocTypeKey } from "@/lib/doc-types";
 import { listDocTypeSettings, effectiveDocTypeConfig } from "@/lib/doc-type-settings.functions";
 
 
