@@ -456,10 +456,18 @@ function DashboardPage() {
         ) : !data?.specs.length ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 font-medium text-foreground">עדיין אין מסמכים</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              לחצו על "מסמך אפיון חדש" כדי להתחיל.
-            </p>
+            <EditableSiteText
+              as="h3"
+              textKey="dashboard.empty.title"
+              defaultValue="עדיין אין מסמכים"
+              className="mt-4 font-medium text-foreground block"
+            />
+            <EditableSiteText
+              as="p"
+              textKey="dashboard.empty.text"
+              defaultValue={'לחצו על "מסמך אפיון חדש" כדי להתחיל.'}
+              className="mt-1 text-sm text-muted-foreground block"
+            />
           </div>
         ) : (
           <ul className="space-y-4">
