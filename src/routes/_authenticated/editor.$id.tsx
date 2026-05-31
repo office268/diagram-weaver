@@ -1539,14 +1539,14 @@ function ListBody<T extends { id: string }>({
         {items.map((item, idx) => (
           <li
             key={item.id}
-            className="group relative rounded-lg border border-border bg-card p-4"
+            className="group relative rounded-lg border border-border bg-card p-4 focus-within:border-primary/40"
           >
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">#{idx + 1}</span>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="hidden h-7 text-destructive hover:bg-destructive/10 hover:text-destructive group-focus-within:inline-flex"
                 onClick={() => onChange(items.filter((it) => it.id !== item.id))}
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" /> מחק
