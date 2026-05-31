@@ -112,7 +112,17 @@ function ProjectsPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+    <div
+      className="relative mx-auto w-full max-w-6xl px-4 py-8"
+      onTouchStart={pullToRefresh.bind.onTouchStart}
+      onTouchMove={pullToRefresh.bind.onTouchMove}
+      onTouchEnd={pullToRefresh.bind.onTouchEnd}
+    >
+      <PullToRefreshIndicator
+        pullDistance={pullToRefresh.pullDistance}
+        refreshing={pullToRefresh.refreshing}
+        threshold={pullToRefresh.threshold}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">הפרויקטים שלי</h1>
