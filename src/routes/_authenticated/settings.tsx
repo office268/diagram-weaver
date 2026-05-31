@@ -165,9 +165,17 @@ function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>תבנית הפרומפט הנשלח ל-LLM</CardTitle>
+          <CardTitle>
+            <EditableSiteText
+              textKey="settings.prompt.title"
+              defaultValue="תבנית הפרומפט הנשלח ל-LLM"
+            />
+          </CardTitle>
           <CardDescription>
-            יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה.
+            <EditableSiteText
+              textKey="settings.prompt.desc"
+              defaultValue="יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה."
+            />
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
