@@ -347,9 +347,9 @@ function DashboardPage() {
   const retryModel = useCallback(
     (model: SpecModel) => {
       if (!compareState || !compareGroupId) return;
-      void runModel(model, prompt, compareGroupId);
+      void runModel(model, prompt, compareGroupId, docType);
     },
-    [compareState, compareGroupId, prompt, runModel],
+    [compareState, compareGroupId, prompt, runModel, docType],
   );
 
   const startCompare = useCallback(() => {
@@ -360,9 +360,9 @@ function DashboardPage() {
     setCompareGroupId(gid);
     setCompareState(initialCompareState());
     COMPARISON_MODELS.forEach((m) => {
-      void runModel(m, p, gid);
+      void runModel(m, p, gid, docType);
     });
-  }, [prompt, runModel]);
+  }, [prompt, runModel, docType]);
 
   const handlePick = useCallback(
     (specId: string) => {
