@@ -1002,6 +1002,15 @@ function EditorPage() {
             </>
           )}
         </div>
+        <ExportMenu
+          title={title || "מסמך"}
+          content={content}
+          userPrompt={prompt}
+          userNotes={userNotes}
+          sectionOrder={visibleSections}
+          sectionTitles={sectionTitles}
+          reviewScore={data.spec.review_score ?? null}
+        />
         <Button
           type="button"
           variant="ghost"
