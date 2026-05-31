@@ -1261,19 +1261,6 @@ function SectionShell({
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
           {dragHandle}
-          <CollapsibleTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              aria-label={open ? "סגור סעיף" : "פתח סעיף"}
-            >
-              <ChevronRight
-                className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`}
-              />
-            </Button>
-          </CollapsibleTrigger>
           {editing ? (
             <Input
               value={draft}
