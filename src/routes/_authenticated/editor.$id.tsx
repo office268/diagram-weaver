@@ -6,9 +6,17 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-import { getSpec, updateSpec } from "@/lib/spec.functions";
-import { ReviewPanel } from "@/components/review-panel";
-import { normalizeReviewNotes } from "@/lib/spec-output-schema";
+import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
+import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
+import {
+  normalizeReviewNotes,
+  SpecOutputSchema,
+  extractJson,
+  type SpecOutput,
+  type SpecReview,
+} from "@/lib/spec-output-schema";
+import { supabase } from "@/integrations/supabase/client";
+import { COMPARISON_MODELS } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,6 +70,7 @@ function EditorPage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getSpec);
   const updateFn = useServerFn(updateSpec);
+  const createFn = useServerFn(createSpec);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
@@ -70,6 +79,8 @@ function EditorPage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
+  const [improving, setImproving] = useState(false);
   const [userNotes, setUserNotes] = useState("");
   const [prompt, setPrompt] = useState("");
   const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_KEYS);
@@ -164,6 +175,118 @@ function EditorPage() {
       return next;
     });
   }, []);
+
+  const improveDoc = useCallback(async () => {
+    if (!data?.spec || !content) return;
+    const reviewNotes = normalizeReviewNotes(
+      (data.spec as { review_notes?: unknown }).review_notes,
+    );
+    const selectedTexts = reviewNotes
+      .filter((n) => selectedNoteIds.has(n.id))
+      .map((n) => n.text);
+    if (selectedTexts.length === 0) {
+      toast.warning("בחר/י לפחות הצעה אחת להטמיע");
+      return;
+    }
+    setImproving(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("נדרשת התחברות מחדש");
+
+      const spec = data.spec as unknown as {
+        prompt: string;
+        title: string;
+        doc_type?: string;
+        group_id?: string | null;
+        project_id?: string | null;
+        section_order?: string[];
+        section_titles?: Record<string, string>;
+        model?: string | null;
+      };
+      const model = (spec.model as typeof COMPARISON_MODELS[number]) ?? COMPARISON_MODELS[0];
+      const promptText = spec.prompt ?? "";
+      const docType = spec.doc_type ?? "spec_overview";
+
+      // 1) Generate revised spec
+      const genRes = await fetch("/api/generate-spec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          prompt: promptText,
+          model,
+          docType,
+          previousSpec: content,
+          reviewerNotes: selectedTexts,
+        }),
+      });
+      if (!genRes.ok || !genRes.body) {
+        const t = (await genRes.text().catch(() => "")) || `שגיאה ${genRes.status}`;
+        throw new Error(t);
+      }
+      const reader = genRes.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+      fullText += decoder.decode();
+      const errIdx = fullText.indexOf("__STREAM_ERROR__:");
+      if (errIdx >= 0) {
+        throw new Error(fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim() || "שגיאת זרם");
+      }
+      const parsed = JSON.parse(extractJson(fullText));
+      const newSpec: SpecOutput = SpecOutputSchema.parse(parsed);
+
+      // 2) Review
+      let newReview: SpecReview | null = null;
+      try {
+        const revRes = await fetch("/api/review-spec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ prompt: promptText, spec: newSpec }),
+        });
+        if (revRes.ok) {
+          const j = await revRes.json();
+          if (j?.score != null) {
+            newReview = { score: Number(j.score), notes: normalizeReviewNotes(j.notes) };
+          }
+        }
+      } catch {
+        // non-fatal
+      }
+
+      // 3) Save as new revised version under same group
+      const { spec: row } = await createFn({
+        data: {
+          title: `${newSpec.title} — גרסה משופרת`,
+          prompt: promptText,
+          content: newSpec,
+          reviewScore: newReview?.score ?? null,
+          reviewNotes: newReview?.notes ?? [],
+          groupId: spec.group_id ?? null,
+          model,
+          variant: "revised",
+          docType,
+          sectionOrder: spec.section_order ?? [],
+          sectionTitles: spec.section_titles ?? {},
+          projectId: spec.project_id ?? null,
+        },
+      });
+
+      qc.invalidateQueries({ queryKey: ["project"] });
+      toast.success("נוצרה גרסה משופרת");
+      setSelectedNoteIds(new Set());
+      navigate({ to: "/editor/$id", params: { id: row.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "יצירת גרסה משופרת נכשלה");
+    } finally {
+      setImproving(false);
+    }
+  }, [data?.spec, content, selectedNoteIds, createFn, qc, navigate]);
 
   // Build a body renderer for each section key.
   const renderBody = useMemo(() => {
@@ -357,16 +480,34 @@ function EditorPage() {
               addLabel="הוסף סיכון"
             />
           );
-        case "review":
+        case "review": {
           if (typeof data?.spec.review_score !== "number") return null;
+          const review: SpecReview = {
+            score: data.spec.review_score,
+            notes: normalizeReviewNotes(data.spec.review_notes),
+          };
           return (
-            <ReviewPanel
-              review={{
-                score: data.spec.review_score,
-                notes: normalizeReviewNotes(data.spec.review_notes),
-              }}
+            <ReviewSuggestionsPanel
+              review={review}
+              selected={selectedNoteIds}
+              onToggle={(noteId) =>
+                setSelectedNoteIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(noteId)) next.delete(noteId);
+                  else next.add(noteId);
+                  return next;
+                })
+              }
+              onSelectAll={() =>
+                setSelectedNoteIds(new Set(review.notes.map((n) => n.id)))
+              }
+              onClear={() => setSelectedNoteIds(new Set())}
+              onImprove={improveDoc}
+              onFinish={() => navigate({ to: "/projects" })}
+              improving={improving}
             />
           );
+        }
 
         case "user_notes":
           return (
@@ -384,7 +525,7 @@ function EditorPage() {
           return null;
       }
     };
-  }, [content, prompt, userNotes, updateContent, data?.spec]);
+  }, [content, prompt, userNotes, updateContent, data?.spec, selectedNoteIds, improving, improveDoc, navigate]);
 
   if (isLoading) {
     return (
