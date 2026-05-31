@@ -867,30 +867,19 @@ function EditorPage() {
     };
   }, [content, prompt, userNotes, updateContent, data?.spec, selectedNoteIds, improving, improveDoc, navigate]);
 
-  if (isLoading) {
-    return <EditorSkeleton />;
-  }
-  if (error || !data?.spec || !content || !renderBody) {
-    return (
-      <div className="mx-auto max-w-md p-8 text-center">
-        <p className="text-sm text-destructive">
-          {(error as Error)?.message ?? "המסמך לא נמצא"}
-        </p>
-        <Link to="/projects" className="mt-4 inline-block text-sm text-primary underline">
-          חזרה לרשימת המסמכים
-        </Link>
-      </div>
-    );
-  }
-
-  // Filter out sections that render nothing (e.g. review when no score).
-  const visibleSections = sectionOrder.filter((key) => {
-    if (key === "review" && typeof data.spec.review_score !== "number") return false;
-    return DEFAULT_KEYS.includes(key);
-  });
+  // Filter out sections that render nothing (must be before any early return to keep hook order stable)
+  const visibleSections = useMemo(
+    () =>
+      sectionOrder.filter((key) => {
+        if (key === "review" && typeof data?.spec?.review_score !== "number") return false;
+        return DEFAULT_KEYS.includes(key);
+      }),
+    [sectionOrder, data?.spec?.review_score],
+  );
 
   // Word & fill stats for status bar / progress
   const { wordCount, filledCount } = useMemo(() => {
+    if (!content) return { wordCount: 0, filledCount: 0 };
     const countWords = (s: string) => {
       const trimmed = (s ?? "").trim();
       if (!trimmed) return 0;
@@ -923,6 +912,22 @@ function EditorPage() {
     }
     return { wordCount: words, filledCount: filled };
   }, [content, prompt, userNotes, visibleSections]);
+
+  if (isLoading) {
+    return <EditorSkeleton />;
+  }
+  if (error || !data?.spec || !content || !renderBody) {
+    return (
+      <div className="mx-auto max-w-md p-8 text-center">
+        <p className="text-sm text-destructive">
+          {(error as Error)?.message ?? "המסמך לא נמצא"}
+        </p>
+        <Link to="/projects" className="mt-4 inline-block text-sm text-primary underline">
+          חזרה לרשימת המסמכים
+        </Link>
+      </div>
+    );
+  }
 
 
 
