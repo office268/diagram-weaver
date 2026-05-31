@@ -84,11 +84,11 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content, userNotes, prompt });
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content, userNotes, prompt });
+      saveMut.mutate({ title, content, userNotes, userPrompt: prompt });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
