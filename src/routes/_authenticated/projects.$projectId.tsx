@@ -554,10 +554,13 @@ function ProjectPage() {
               const typeGroups = groupsByType[typeKey];
               if (!typeGroups || typeGroups.length === 0) return null;
               const def = DOC_TYPES[typeKey];
+              const typeVisual = getDocTypeVisual(typeKey);
+              const TypeIcon = typeVisual.icon;
               return (
                 <section key={typeKey}>
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
+                      <TypeIcon className={`h-4 w-4 ${typeVisual.colorClass}`} />
                       <h2 className="text-sm font-semibold text-foreground">{def.label}</h2>
                       <span className="text-xs text-muted-foreground">
                         ({typeGroups.length})
@@ -593,7 +596,7 @@ function ProjectPage() {
                           >
                             <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
                               <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-                                <FileText className="h-4 w-4 text-primary" />
+                                <TypeIcon className={`h-4 w-4 ${typeVisual.colorClass}`} />
                                 <EditableDocTitle id={d.id} value={d.title} className="truncate font-medium text-foreground" />
                               </div>
                               <div className="mt-3 text-xs text-muted-foreground">
@@ -603,7 +606,7 @@ function ProjectPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="absolute left-2 top-2 h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                              className="absolute left-2 top-2 h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
                               onClick={(e) => {
                                 e.preventDefault();
                                 setDeleteId(d.id);
@@ -678,7 +681,7 @@ function ProjectPage() {
                                     className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
                                   >
                                     <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
-                                      <FileText className="h-4 w-4 shrink-0 text-primary" />
+                                      <TypeIcon className={`h-4 w-4 shrink-0 ${typeVisual.colorClass}`} />
                                       <EditableDocTitle id={d.id} value={d.title} className="truncate text-sm text-foreground" />
                                       {variantLabel && (
                                         <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
@@ -696,7 +699,7 @@ function ProjectPage() {
                                         asChild={false}
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 opacity-0 transition-opacity group-hover/item:opacity-100"
+                                        className="h-7 w-7 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/item:opacity-100"
                                         onClick={(e) => {
                                           e.preventDefault();
                                           e.stopPropagation();
@@ -750,13 +753,19 @@ function ProjectPage() {
                   }}
                   className="group rounded-lg border border-border bg-card p-4 text-right transition-colors hover:border-primary hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <div className="flex items-start gap-2">
-                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      <div className="font-medium text-foreground">{t.label}</div>
-                      <div className="text-xs text-muted-foreground">{t.description}</div>
-                    </div>
-                  </div>
+                  {(() => {
+                    const v = getDocTypeVisual(k);
+                    const Icon = v.icon;
+                    return (
+                      <div className="flex items-start gap-2">
+                        <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${v.colorClass}`} />
+                        <div className="space-y-1">
+                          <div className="font-medium text-foreground">{t.label}</div>
+                          <div className="text-xs text-muted-foreground">{t.description}</div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </button>
               );
             })}
