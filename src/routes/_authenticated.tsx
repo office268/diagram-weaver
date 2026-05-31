@@ -1,9 +1,9 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { GitBranch, LogOut, Loader2, Settings } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { FileText, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/user-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -30,37 +30,29 @@ function AuthenticatedLayout() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
           <Link to="/projects" className="flex items-center gap-2 font-semibold text-foreground">
-            <GitBranch className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" />
             סוכן ניתוח מערכות
           </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {user.email}
-            </span>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/settings">
-                <Settings className="mr-1.5 h-4 w-4" />
-                הגדרות
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/login", replace: true });
-              }}
-            >
-              <LogOut className="mr-1.5 h-4 w-4" />
-              Sign out
-            </Button>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <UserMenu user={user} />
           </div>
         </div>
       </header>
       <main className="flex-1">
         <Outlet />
       </main>
+      <footer className="border-t border-border bg-card">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
+          <span>סוכן ניתוח מערכות · Lovable Cloud</span>
+          <nav className="flex items-center gap-4">
+            <Link to="/about" className="hover:text-foreground">אודות</Link>
+            <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
+            <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

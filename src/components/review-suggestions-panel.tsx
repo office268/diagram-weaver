@@ -1,8 +1,22 @@
 import { useMemo } from "react";
-import { Loader2, Sparkles, Check } from "lucide-react";
+import { Loader2, Sparkles, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SpecReview, ReviewNote } from "@/lib/spec-output-schema";
+
+const SCORE_CRITERIA = [
+  "שלמות — האם כל הסעיפים הנדרשים מכוסים",
+  "בהירות — האם הניסוחים חד-משמעיים",
+  "עקביות — אין סתירות פנימיות בין סעיפים",
+  "ישימות — ניתן לממש מבחינה טכנית/עסקית",
+  "בדיקות — קל לגזור קריטריוני קבלה ובדיקות",
+];
 
 function importanceTone(importance: number): string {
   if (importance >= 8) return "bg-destructive/15 text-destructive border-destructive/40";
@@ -47,9 +61,26 @@ export function ReviewSuggestionsPanel({
             הצעות לשיפור מסוכן הביקורת
           </span>
         </div>
-        <span className="rounded-full border border-border bg-background px-2 py-0.5 text-xs font-semibold">
-          ציון: {review.score}/10
-        </span>
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-help items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-xs font-semibold">
+                ציון: {review.score}/10
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end" className="max-w-xs">
+              <div className="space-y-1 text-right">
+                <div className="font-semibold">קריטריונים לציון</div>
+                <ul className="space-y-0.5 text-[11px] opacity-90">
+                  {SCORE_CRITERIA.map((c) => (
+                    <li key={c}>• {c}</li>
+                  ))}
+                </ul>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {!hasNotes ? (

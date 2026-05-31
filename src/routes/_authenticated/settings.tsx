@@ -24,6 +24,7 @@ import {
 import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
+import { useSiteTexts } from "@/lib/site-texts-context";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -40,6 +41,7 @@ function SettingsPage() {
   const getFn = useServerFn(getAiSettings);
   const updateFn = useServerFn(updateAiSettings);
   const resetFn = useServerFn(resetAiSettings);
+  const { isAdmin } = useSiteTexts();
 
   const { data, isLoading } = useQuery({
     queryKey: ["ai-settings"],
@@ -98,16 +100,20 @@ function SettingsPage() {
         />
       </div>
 
-      <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
-        <AppMetadataCard />
-      </SettingsSection>
+      {isAdmin ? (
+        <>
+          <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
+            <AppMetadataCard />
+          </SettingsSection>
 
-      <SettingsSection
-        title="סוגי מסמכים וסעיפי ברירת מחדל"
-        description="ניהול הסעיפים שיופיעו בכל סוג מסמך חדש."
-      >
-        <DocTypeSectionsCard />
-      </SettingsSection>
+          <SettingsSection
+            title="סוגי מסמכים וסעיפי ברירת מחדל"
+            description="ניהול הסעיפים שיופיעו בכל סוג מסמך חדש."
+          >
+            <DocTypeSectionsCard />
+          </SettingsSection>
+        </>
+      ) : null}
 
       <SettingsSection
         title="הוראות מערכת ל-AI"

@@ -3,10 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { he } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -136,6 +146,9 @@ function EditorPage() {
   const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_KEYS);
   const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [, setTick] = useState(0);
+  const [cmdOpen, setCmdOpen] = useState(false);
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -180,6 +193,7 @@ function EditorPage() {
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
       setSaveState("saved");
+      setLastSavedAt(new Date());
       qc.invalidateQueries({ queryKey: ["specs"] });
       setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
     },
@@ -201,6 +215,67 @@ function EditorPage() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
+
+  // Dirty = pending unsaved changes (debounce hasn't flushed yet)
+  const dirty = useMemo(() => {
+    if (!content) return false;
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+    return snapshot !== lastSentRef.current;
+  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
+
+  // Warn before unload if there are pending changes
+  useEffect(() => {
+    if (!dirty && saveState !== "saving") return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty, saveState]);
+
+  // Refresh "saved X ago" label every 30s
+  useEffect(() => {
+    if (!lastSavedAt) return;
+    const id = setInterval(() => setTick((t) => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, [lastSavedAt]);
+
+  const savedAgoLabel = useMemo(() => {
+    if (!lastSavedAt) return null;
+    try {
+      return formatDistanceToNow(lastSavedAt, { addSuffix: true, locale: he });
+    } catch {
+      return null;
+    }
+  }, [lastSavedAt]);
+
+  const flushSave = useCallback(() => {
+    if (!content) return;
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+    if (snapshot === lastSentRef.current) return;
+    lastSentRef.current = snapshot;
+    saveMut.mutate({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles, saveMut]);
+
+  // Keyboard shortcuts: Cmd/Ctrl+S to save, Cmd/Ctrl+K to open section search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === "s" || e.key === "S") {
+        e.preventDefault();
+        flushSave();
+      } else if (e.key === "k" || e.key === "K") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [flushSave]);
+
+
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
@@ -832,6 +907,13 @@ function EditorPage() {
             <>
               <Check className="h-3 w-3 text-primary" /> <span className="hidden sm:inline">נשמר</span>
             </>
+          ) : savedAgoLabel ? (
+            <>
+              <Check className="h-3 w-3 text-primary" />
+              <span className="hidden sm:inline" title={lastSavedAt?.toLocaleString("he-IL") ?? ""}>
+                נשמר {savedAgoLabel}
+              </span>
+            </>
           ) : (
             <>
               <Save className="h-3 w-3" /> <span className="hidden sm:inline">שמירה אוטומטית</span>
@@ -839,6 +921,41 @@ function EditorPage() {
           )}
         </div>
       </div>
+
+      {/* Section quick-search (Cmd+K) */}
+      <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
+        <CommandInput placeholder="חפש סעיף... (Cmd/Ctrl+K)" />
+        <CommandList>
+          <CommandEmpty>לא נמצאו סעיפים</CommandEmpty>
+          <CommandGroup heading="סעיפים">
+            {visibleSections.map((key) => {
+              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+              const titleValue = sectionTitles[key] ?? def.defaultTitle;
+              return (
+                <CommandItem
+                  key={key}
+                  value={`${titleValue} ${key}`}
+                  onSelect={() => {
+                    setCmdOpen(false);
+                    requestAnimationFrame(() => {
+                      const el = document.getElementById(`section-${key}`);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        window.dispatchEvent(
+                          new CustomEvent("spec-open-section", { detail: key }),
+                        );
+                      }
+                    });
+                  }}
+                >
+                  <Search className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
+                  {titleValue}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
@@ -920,6 +1037,16 @@ function SectionShell({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [preview, setPreview] = useState<{ candidate: unknown; previous: unknown } | null>(null);
   const history = usePromptHistory(sectionKey ?? "default");
+
+  useEffect(() => {
+    if (!sectionKey) return;
+    const onOpen = (e: Event) => {
+      const ce = e as CustomEvent<string>;
+      if (ce.detail === sectionKey) setOpen(true);
+    };
+    window.addEventListener("spec-open-section", onOpen);
+    return () => window.removeEventListener("spec-open-section", onOpen);
+  }, [sectionKey]);
 
   const startEdit = () => {
     setDraft(title);
@@ -1346,7 +1473,7 @@ function SortableSection({
     </button>
   );
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} id={`section-${id}`} style={style} className="scroll-mt-20">
       {children(handle)}
     </div>
   );
