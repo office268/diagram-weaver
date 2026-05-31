@@ -253,6 +253,12 @@ function EditorPage() {
     });
   }, []);
 
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+
   const ensureIds = useCallback(<T extends { id?: string }>(items: unknown): T[] => {
     if (!Array.isArray(items)) return [];
     return items.map((it) => {
