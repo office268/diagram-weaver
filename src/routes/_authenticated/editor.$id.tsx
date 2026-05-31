@@ -6,9 +6,17 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-import { getSpec, updateSpec } from "@/lib/spec.functions";
-import { ReviewPanel } from "@/components/review-panel";
-import { normalizeReviewNotes } from "@/lib/spec-output-schema";
+import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
+import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
+import {
+  normalizeReviewNotes,
+  SpecOutputSchema,
+  extractJson,
+  type SpecOutput,
+  type SpecReview,
+} from "@/lib/spec-output-schema";
+import { supabase } from "@/integrations/supabase/client";
+import { COMPARISON_MODELS } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
