@@ -1,39 +1,39 @@
-תיקון ארבעה פריטים מסקירת ה-UX. שינויי frontend בלבד, ללא נגיעה ב-backend/DB.
+שינויי frontend בלבד; אין נגיעה ב-backend/DB.
 
-## 2 — חץ "חזרה" בכיוון נכון ל-RTL
+## 8 — Drag & drop לסידור סעיפים בעורך
 `src/routes/_authenticated/editor.$id.tsx`
-- ייבוא `ArrowRight` במקום `ArrowLeft`.
-- ה-icon יוטמע בתוך ה-Breadcrumb החדש (סעיף 5) ולא ככפתור נפרד.
+- התקנת `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (סטנדרט React, נגיש כולל מקלדת ו-touch).
+- עטיפת רשימת הסעיפים ב-`DndContext` + `SortableContext` (אסטרטגיה אנכית; פריטים = `visibleSections`).
+- wrapper `SortableSection` שמשתמש ב-`useSortable(key)` ומעביר drag-handle (`GripVertical`) ל-`SectionShell`. ה-handle ישולב משמאל לחיצים הקיימים, שיישארו כ-fallback נגיש.
+- ב-`onDragEnd` עדכון `sectionOrder` — autosave הקיים יתפוס את השינוי.
+- `PointerSensor` עם `activationConstraint: { distance: 5 }` כדי שלא יתנגש בקליק על הכותרת/חצים; `KeyboardSensor` לנגישות.
 
-## 4 — כפתורי מחיקה גלויים במובייל
-החלפת `opacity-0 group-hover:opacity-100` ב-`opacity-100 sm:opacity-0 sm:group-hover:opacity-100` — גלוי תמיד במובייל, hover-only בדסקטופ.
-- `src/routes/_authenticated/projects.$projectId.tsx`: 2 מקומות (כפתור מחיקת מסמך בודד, וכפתור מחיקת איטרציה בתוך קבוצה).
-- `src/components/editable-text.tsx`: כפתור העיפרון.
+## 11 — חיפוש וסינון
+### דף הפרויקטים — `src/routes/_authenticated/projects.index.tsx`
+- שדה חיפוש (`Input` + אייקון `Search`) מעל הרשת.
+- סינון client-side לפי `name`/`description` (case-insensitive).
+- empty state מותאם כשהשאילתה לא תואמת לאף פרויקט.
 
-## 5 — Breadcrumbs בעורך
+### בתוך פרויקט — `src/routes/_authenticated/projects.$projectId.tsx`
+- שדה חיפוש בראש רשימת המסמכים.
+- סינון client-side ברמת קבוצה לפי `title`/`prompt`/label של סוג המסמך. קבוצה תוצג אם פריט בה תואם.
+- סקציות של סוגי מסמכים שריקות אחרי סינון מוסתרות.
+
+## 12 — Skeleton loading
+שימוש ברכיב הקיים `@/components/ui/skeleton.tsx`. החלפת ה-`Loader2` המרוכז של טעינה ראשונית בלבד; `Loader2` של פעולות חיות (שמירה/יצירה/inline) נשארים.
+- `projects.index.tsx`: grid של 6 שלדי-כרטיס.
+- `projects.$projectId.tsx`: 2–3 שלדי סקציה (כותרת + שתי שורות).
+- `editor.$id.tsx`: שלד toolbar + 4 שלדי סעיפים (כותרת + תוכן).
+
+## 13 — Undo למחיקת סעיף בעורך
 `src/routes/_authenticated/editor.$id.tsx`
-- החלפת כפתור "חזרה" בסרגל הכלים ברכיב `Breadcrumb` הקיים מ-shadcn.
-- מבנה: `פרויקטים` → `{שם הפרויקט}` → `{אייקון סוג מסמך} {כותרת מקוצרת}`.
-- שליפת שם הפרויקט עם `useQuery(["project", spec.project_id], getProject)` כאשר קיים `project_id`; אחרת fallback ל-`פרויקטים → {כותרת}`.
-- separator מותאם RTL (חץ פונה שמאלה).
-- במובייל: הצגת חוליה ראשונה + ellipsis + חוליה אחרונה כדי לחסוך רוחב.
-
-## 7 — אייקון וצבע ייחודיים לכל סוג מסמך
-`src/lib/doc-types.ts` — להוסיף `DOC_TYPE_VISUALS` ופונקציית `getDocTypeVisual(key)`:
-
-```text
-business_requirements  → Briefcase     amber
-technical_requirements → Cpu           sky
-initiation             → Rocket        violet
-spec_overview          → LayoutTemplate primary
-spec_detailed          → FileCode2     emerald
-```
-
-החלפת `FileText` הקבוע ב-4 המקומות ב-`projects.$projectId.tsx` (כותרת סקציית סוג, פריט בודד, פריט בקבוצה, ב-type picker) באייקון הדינמי לפי `typeKey`/`doc_type`.
-שימוש באייקון גם בתוך ה-Breadcrumb בעורך.
-ה-empty state נשאר עם `FileText` גנרי.
+- ב-`deleteSection`: לשמור snapshot `(key, index)` ולהציג `toast.success("הסעיף נמחק", { action: { label: "בטל", onClick: restore } })`.
+- `restore` מחזיר את המפתח ל-`sectionOrder` באותו אינדקס (`splice`). אם בינתיים השתנה — fallback להוספה לסוף. הגנה מפני כפילות.
+- משך toast = 8 שניות.
+- אין צורך בשחזור תוכן: הסרת מפתח מהסדר אינה מאפסת את `content`/`sectionTitles`.
 
 ## טכני
-- אין שינוי schema/migrations/server functions.
-- `getProject` הקיים מספיק לשם הפרויקט בעורך.
-- צבעי אייקונים: tailwind utility colors בסגנון שכבר בשימוש בפרויקט; שאר הטוקנים נשארים semantic.
+- תלות חדשה: `@dnd-kit/core@^6`, `@dnd-kit/sortable@^8`, `@dnd-kit/utilities@^3`.
+- שלדים בנויים מ-tailwind classes על הרכיב הקיים — בלי שינוי `styles.css`.
+- אין שינויי schema, server functions או routing.
+- אימות חזותי בעורך לאחר ההטמעה (drag handle, skeletons, undo toast).
