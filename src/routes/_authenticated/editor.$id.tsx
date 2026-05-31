@@ -907,6 +907,13 @@ function EditorPage() {
             <>
               <Check className="h-3 w-3 text-primary" /> <span className="hidden sm:inline">נשמר</span>
             </>
+          ) : savedAgoLabel ? (
+            <>
+              <Check className="h-3 w-3 text-primary" />
+              <span className="hidden sm:inline" title={lastSavedAt?.toLocaleString("he-IL") ?? ""}>
+                נשמר {savedAgoLabel}
+              </span>
+            </>
           ) : (
             <>
               <Save className="h-3 w-3" /> <span className="hidden sm:inline">שמירה אוטומטית</span>
@@ -914,6 +921,41 @@ function EditorPage() {
           )}
         </div>
       </div>
+
+      {/* Section quick-search (Cmd+K) */}
+      <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
+        <CommandInput placeholder="חפש סעיף... (Cmd/Ctrl+K)" />
+        <CommandList>
+          <CommandEmpty>לא נמצאו סעיפים</CommandEmpty>
+          <CommandGroup heading="סעיפים">
+            {visibleSections.map((key) => {
+              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+              const titleValue = sectionTitles[key] ?? def.defaultTitle;
+              return (
+                <CommandItem
+                  key={key}
+                  value={`${titleValue} ${key}`}
+                  onSelect={() => {
+                    setCmdOpen(false);
+                    requestAnimationFrame(() => {
+                      const el = document.getElementById(`section-${key}`);
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        window.dispatchEvent(
+                          new CustomEvent("spec-open-section", { detail: key }),
+                        );
+                      }
+                    });
+                  }}
+                >
+                  <Search className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
+                  {titleValue}
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
