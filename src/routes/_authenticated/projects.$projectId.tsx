@@ -237,7 +237,8 @@ function ProjectPage() {
         return null;
       }
     },
-    [],
+    [projectId],
+
   );
 
   const saveIteration = useCallback(
