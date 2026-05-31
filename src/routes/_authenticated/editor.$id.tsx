@@ -723,11 +723,7 @@ function EditorPage() {
   }, [content, prompt, userNotes, updateContent, data?.spec, selectedNoteIds, improving, improveDoc, navigate]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-57px)] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EditorSkeleton />;
   }
   if (error || !data?.spec || !content || !renderBody) {
     return (
