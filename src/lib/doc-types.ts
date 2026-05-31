@@ -2,6 +2,41 @@
 // Each type has its own AI system instruction + default section list/titles
 // that seed the editor's section_order/section_titles on creation.
 
+// All section keys known to the editor. Must stay in sync with
+// DEFAULT_SECTIONS in src/routes/_authenticated/editor.$id.tsx.
+export const ALL_SECTION_KEYS = [
+  "user_prompt",
+  "overview",
+  "goals",
+  "personas",
+  "functional_requirements",
+  "non_functional_requirements",
+  "assumptions",
+  "use_cases",
+  "architecture",
+  "data_model",
+  "risks",
+  "review",
+  "user_notes",
+] as const;
+
+export const DEFAULT_SECTION_TITLES: Record<string, string> = {
+  user_prompt: "הפרומפט של המשתמש",
+  overview: "סקירה כללית",
+  goals: "מטרות",
+  personas: "משתמשי קצה",
+  functional_requirements: "דרישות פונקציונליות",
+  non_functional_requirements: "דרישות לא־פונקציונליות",
+  assumptions: "הנחות יסוד",
+  use_cases: "תרחישי שימוש",
+  architecture: "ארכיטקטורה",
+  data_model: "מודל נתונים",
+  risks: "סיכונים",
+  review: "ביקורת הסוכן המבקר",
+  user_notes: "ההערות שלי",
+};
+
+
 export const DOC_TYPE_KEYS = [
   "business_requirements",
   "technical_requirements",
