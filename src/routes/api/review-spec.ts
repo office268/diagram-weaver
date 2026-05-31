@@ -87,9 +87,22 @@ export const Route = createFileRoute("/api/review-spec")({
             const parsed = ReviewParseSchema.parse(raw);
             const score = Math.max(1, Math.min(10, Math.round(parsed.score)));
             const notes = parsed.notes
-              .filter((n) => typeof n === "string" && n.trim().length > 0)
-              .slice(0, 20)
-              .map((n) => n.slice(0, 500));
+              .map((n, i) => {
+                if (typeof n === "string") {
+                  const t = n.trim();
+                  if (!t) return null;
+                  return { id: `n-${i + 1}`, text: t.slice(0, 500), importance: 5 };
+                }
+                const t = (n.text ?? "").trim();
+                if (!t) return null;
+                const importance =
+                  typeof n.importance === "number" && isFinite(n.importance)
+                    ? Math.max(1, Math.min(10, Math.round(n.importance)))
+                    : 5;
+                return { id: `n-${i + 1}`, text: t.slice(0, 500), importance };
+              })
+              .filter((n): n is { id: string; text: string; importance: number } => n !== null)
+              .slice(0, 20);
             return Response.json({ score, notes });
           } catch (parseErr) {
             console.error("[review-spec] parse failed:", parseErr, "raw:", text);
