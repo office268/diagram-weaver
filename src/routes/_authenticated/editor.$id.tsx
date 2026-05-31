@@ -1263,29 +1263,7 @@ function SectionShell({
           {dragHandle}
           <div className="flex flex-col">
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-5 w-7 p-0"
-              disabled={!onMoveUp}
-              onClick={onMoveUp}
-              aria-label="הזז למעלה"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-5 w-7 p-0"
-              disabled={!onMoveDown}
-              onClick={onMoveDown}
-              aria-label="הזז למטה"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* up/down moved into the actions menu */}
           <CollapsibleTrigger asChild>
             <Button
               type="button"
