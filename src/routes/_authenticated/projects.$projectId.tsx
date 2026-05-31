@@ -120,6 +120,8 @@ function ProjectPage() {
   const deleteFn = useServerFn(deleteSpec);
   const deleteGroupFn = useServerFn(deleteSpecGroup);
   const listDtsFn = useServerFn(listDocTypeSettings);
+  const updateProjectFn = useServerFn(updateProject);
+
 
   const { data: dtsData } = useQuery({
     queryKey: ["doc-type-settings"],
