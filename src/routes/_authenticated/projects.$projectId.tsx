@@ -244,8 +244,10 @@ function ProjectPage() {
             docType: docTypeKey,
             sectionOrder: docTypeDef.sectionOrder,
             sectionTitles: docTypeDef.sectionTitles,
+            projectId,
           },
         });
+
         return row.id;
       };
 
