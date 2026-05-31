@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EditorStatusBar } from "@/components/editor-status-bar";
+import { ExportMenu } from "@/components/export-menu";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -1002,6 +1003,15 @@ function EditorPage() {
             </>
           )}
         </div>
+        <ExportMenu
+          title={title || "מסמך"}
+          content={content}
+          userPrompt={prompt}
+          userNotes={userNotes}
+          sectionOrder={visibleSections}
+          sectionTitles={sectionTitles}
+          reviewScore={data.spec.review_score ?? null}
+        />
         <Button
           type="button"
           variant="ghost"
