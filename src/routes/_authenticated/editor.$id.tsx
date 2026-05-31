@@ -1261,9 +1261,6 @@ function SectionShell({
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
           {dragHandle}
-          <div className="flex flex-col">
-
-          {/* up/down moved into the actions menu */}
           <CollapsibleTrigger asChild>
             <Button
               type="button"
