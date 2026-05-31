@@ -579,6 +579,22 @@ function ProjectPage() {
 
       </div>
 
+      <ProjectKnowledgeSection
+        value={
+          (data?.project as { business_knowledge?: string } | undefined)
+            ?.business_knowledge ?? ""
+        }
+        isLoading={isLoading}
+        onSave={async (next) => {
+          await updateProjectFn({
+            data: { id: projectId, business_knowledge: next },
+          });
+          qc.invalidateQueries({ queryKey: ["project", projectId] });
+        }}
+      />
+
+
+
       <div className="mt-8">
         {isLoading ? (
           <div className="space-y-8">
