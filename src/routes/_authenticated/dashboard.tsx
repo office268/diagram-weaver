@@ -626,20 +626,66 @@ function DashboardPage() {
       </div>
 
 
+      <Dialog open={typePickerOpen} onOpenChange={setTypePickerOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              בחר סוג מסמך ליצירה
+            </DialogTitle>
+            <DialogDescription>
+              כל סוג מסמך מייצר סעיפים מותאמים והנחיה ייעודית למודל ה-AI.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {DOC_TYPE_KEYS.map((k) => {
+              const t = DOC_TYPES[k];
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => {
+                    setDocType(k);
+                    setTypePickerOpen(false);
+                    setNewOpen(true);
+                  }}
+                  className="group rounded-lg border border-border bg-card p-4 text-right transition-colors hover:border-primary hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <div className="flex items-start gap-2">
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">{t.label}</div>
+                      <div className="text-xs text-muted-foreground">{t.description}</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTypePickerOpen(false)}>
+              ביטול
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={newOpen} onOpenChange={setNewOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              מסמך אפיון חדש
+              {DOC_TYPES[docType].label} — תיאור
             </DialogTitle>
             <DialogDescription>
-              תארו את המערכת — נריץ במקביל על 3 מודלים ותוכלו להשוות לפני בחירה.
+              {DOC_TYPES[docType].description}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label htmlFor="spec-prompt">תיאור המערכת</Label>
+            <Label htmlFor="spec-prompt">תיאור / פרומפט</Label>
             <Textarea
               id="spec-prompt"
               value={prompt}
@@ -655,12 +701,18 @@ function DashboardPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setNewOpen(false)}>
-              ביטול
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setNewOpen(false);
+                setTypePickerOpen(true);
+              }}
+            >
+              חזרה
             </Button>
             <Button onClick={startCompare} disabled={prompt.trim().length < 5}>
               <Sparkles className="mr-2 h-4 w-4" />
-              צור והשווה
+              צור מסמך
             </Button>
           </DialogFooter>
         </DialogContent>
