@@ -866,6 +866,7 @@ function SectionShell({
   onMoveDown,
   onDelete,
   onAiImprove,
+  dragHandle,
   children,
 }: {
   title: string;
@@ -874,6 +875,7 @@ function SectionShell({
   onMoveDown?: () => void;
   onDelete?: () => void;
   onAiImprove?: (instruction: string) => Promise<boolean>;
+  dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
