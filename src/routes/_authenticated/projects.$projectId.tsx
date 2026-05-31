@@ -654,7 +654,7 @@ function ProjectPage() {
                         return (
                           <li
                             key={g.key}
-                            className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                            className="group hover-lift relative flex flex-col rounded-xl border border-border bg-card p-4"
                           >
                             <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
                               <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
@@ -740,7 +740,7 @@ function ProjectPage() {
                                   <Link
                                     to="/editor/$id"
                                     params={{ id: d.id }}
-                                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
+                                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 hover:translate-x-[-2px]"
                                   >
                                     <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
                                       <TypeIcon className={`h-4 w-4 shrink-0 ${typeVisual.colorClass}`} />
