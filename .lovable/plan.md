@@ -1,86 +1,64 @@
-# שיפורי ניווט וארגון
+# מימוש שיפורי "עורך" (9–12)
 
-מימוש 4 ההצעות מקטגוריית "ניווט וארגון".
+כל השינויים frontend בלבד, בקובץ `src/routes/_authenticated/editor.$id.tsx` (+ קומפוננטה חדשה אחת). אין שינויי DB/backend.
 
----
+## 9 — Word & Section Count (Status Bar)
 
-## 5. Breadcrumbs בכל דפי האפליקציה
+הוספת bar תחתון דביק (`sticky bottom-0`) עם:
+- סך מילים במסמך (מצרף את כל הטקסטים מכל הסעיפים — `overview`, `goals`, `personas.description`, requirements `title+description`, `assumptions`, `use_cases`, `risks`, `user_notes`, `user_prompt`).
+- סעיפים שהושלמו vs ריקים (סעיף "מלא" = יש בו לפחות פריט אחד עם תוכן או טקסט חופשי לא־ריק).
+- helper `countWords(content)` ו-`sectionFillState(key, content)` ב-`useMemo`.
 
-**מצב נוכחי:** ב-editor כבר יש Breadcrumbs (Projects › Project › Doc). חסר בדפי הפרויקטים.
+עיצוב: `border-t bg-card/80 backdrop-blur text-xs text-muted-foreground px-4 py-1.5 flex gap-4 justify-between`. אייקונים מ-lucide (`Type`, `ListChecks`).
 
-**ליישם:**
-- `projects.$projectId.tsx` — להחליף את ה-back-link הקיים בקומפוננטת `Breadcrumb` (פרויקטים › שם פרויקט).
-- `settings.tsx` ו-`dashboard.tsx` — Breadcrumbs קצרים בראש הדף.
-- ליצור קומפוננטה `src/components/app-breadcrumb.tsx` שמקבלת `items` ומציגה אחיד.
+## 10 — Progress Indicator
 
-## 6. Command Palette גלובלי (Cmd+K מכל מקום)
+בתוך אותו status bar, וגם דק מעל ה-toolbar:
+- `Progress` (shadcn) דק (`h-1`) שמראה אחוז סעיפים שמולאו = `filled / visibleSections.length`.
+- ב-status bar טקסט מספרי: "5 / 12 סעיפים".
+- מתעדכן אוטומטית עם `useMemo` תלוי ב-`content + visibleSections`.
 
-**מצב נוכחי:** ב-editor בלבד, רק לחיפוש סעיפים.
+## 11 — Focus Mode
 
-**ליישם:**
-- ליצור `src/components/global-command-palette.tsx` שמרכיב `CommandDialog` מ-shadcn.
-- להוסיף ל-`_authenticated.tsx` (layout) — listener ל-`Cmd/Ctrl+K`, ניהול state, ו-rendering.
-- תוכן ה-palette:
-  - **פרויקטים** — שולף מ-`useQuery(["projects"])`, ניווט ל-`/projects/$projectId`.
-  - **מסמכים אחרונים** — שאילתה חדשה `listRecentDocs` (top 10 לפי `updated_at`), ניווט ל-`/editor/$id`.
-  - **פעולות** — "פרויקט חדש", "הגדרות", "החלף ערכה" (theme toggle).
-- ב-editor: ה-Cmd+K המקומי הופך לסגמנט נוסף ב-palette הגלובלי כשעורכים מסמך (חיפוש סעיפים בקובץ הנוכחי), או נשאר נפרד כ-`Cmd+/`. **החלטה:** נאחד — אם נמצאים ב-editor, ה-palette יציג גם section "סעיפים במסמך זה".
-- כפתור עזר ב-header: "🔍 חיפוש (Cmd+K)" כ-affordance ויזואלי.
+state חדש `focusMode: boolean` שנשמר ב-localStorage (`editor-focus-mode`).
+- כפתור ב-toolbar (`Maximize2` / `Minimize2`) + קיצור `f` כשלא בתוך input/textarea.
+- כשפעיל:
+  - toolbar עם `bg-transparent border-transparent` (שקוף יותר), breadcrumbs מוסתרים.
+  - status bar מוסתר.
+  - רוחב מסמך גדל (`max-w-4xl` → `max-w-3xl` מרוכז יותר).
+  - בכל סעיף — סעיפים אחרים מקבלים `opacity-40` עד שמרחפים מעליהם (`group-hover:opacity-100 transition-opacity`).
+  - אירוע `spec-open-section` נשמר כדי שגלילה לסעיף תפתח אותו.
 
-## 7. Recent items בדרופ-דאון מה-header
+## 12 — Split View (Desktop בלבד)
 
-**ליישם:**
-- ליצור `src/components/recent-items-menu.tsx` — `DropdownMenu` עם `Clock` icon ב-header.
-- מציג top 5 מסמכים אחרונים + top 3 פרויקטים אחרונים.
-- מקור נתונים: server fn חדש `listRecentItems` שמחזיר `{ docs: [...], projects: [...] }` (top 5+3 לפי `updated_at`).
-- שינוי קל ב-header של `_authenticated.tsx` להוספת הכפתור לפני ThemeToggle.
+state `splitSecondaryKey: string | null` ב-`useState`. הפעלה דרך:
+- כפתור `Columns2` בכל `SectionShell` (ה-action bar שלצד "מחק/שפר"). לחיצה קובעת את הסעיף כ"משני".
+- כאשר `splitSecondaryKey` קיים ויש `lg` (≥1024px): ה-container הופך ל-grid `lg:grid-cols-2 gap-6`, וקומפוננטה חדשה `<SplitPanel sectionKey={splitSecondaryKey} ... />` נדבקת כעמודה ימנית (`lg:sticky lg:top-14 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto`).
+- במובייל (<lg) הכפתור מוסתר; אם המסך מצטמצם, ה-split נסגר אוטומטית עם `useEffect` שמאזין ל-`window.matchMedia("(min-width: 1024px)")`.
+- כפתור `X` בראש העמודה המשנית כדי לסגור.
+- `SplitPanel` מקבל `renderBody(key)` ומציג כותרת + body, ללא drag handle ו-actions (read+edit אך לא מחיקה).
 
-## 8. Pinned projects
+## טכני / מבני
 
-**שינוי DB (migration):**
-- הוספת עמודה `pinned_at timestamptz NULL` לטבלת `projects`.
-- אינדקס חלקי `(user_id, pinned_at DESC NULLS LAST)`.
+- קומפוננטה חדשה: `src/components/editor-status-bar.tsx` — מקבל `wordCount`, `filledCount`, `totalCount`, `focusMode` (להסתרה).
+- helpers חדשים בקובץ העורך (לא קובץ נפרד כי תלויים ב-`SpecContent`):
+  ```ts
+  function getSectionText(key: string, content: SpecContent, userNotes: string, prompt: string): string
+  function countSectionWords(text: string): number
+  function isSectionFilled(key: string, content: SpecContent, ...): boolean
+  ```
+- אין שינוי ל-DB schema, לא ל-server functions, ולא ל-`spec-output-schema`.
+- `focusMode` ו-`splitSecondaryKey` נקיים מ-server state — frontend בלבד.
+- `Progress` הוא קומפוננטת shadcn קיימת ב-`@/components/ui/progress` (אם חסר — מוסיפים).
 
-**Server functions:**
-- עדכון `listProjects` להחזיר `pinned_at` ולסדר: `pinned_at DESC NULLS LAST, updated_at DESC`.
-- פעולה חדשה `toggleProjectPin({ id, pinned })` שמעדכנת `pinned_at = now() | null`.
+## קבצים
 
-**UI ב-`projects.index.tsx`:**
-- כפתור Pin/PinOff בכל כרטיס פרויקט (פינה — ליד Trash).
-- מצב מוצמד: ribbon קטן "מוצמד" עם אייקון Pin בצבע primary בראש הכרטיס.
-- חלוקה ויזואלית: אם יש פרויקטים מוצמדים, להציג section "מוצמדים" מעל ה-section הרגיל "כל הפרויקטים".
+- **נוצר**: `src/components/editor-status-bar.tsx`
+- **ערוך**: `src/routes/_authenticated/editor.$id.tsx`
+- **אולי נוצר** (אם חסר): `src/components/ui/progress.tsx` (shadcn standard)
 
----
+## תאימות מובייל (384px)
 
-## פירוט טכני
-
-**קבצים חדשים:**
-- `src/components/app-breadcrumb.tsx`
-- `src/components/global-command-palette.tsx`
-- `src/components/recent-items-menu.tsx`
-- `src/lib/recent.functions.ts` — `listRecentItems`
-- migration SQL לעמודת `pinned_at`
-
-**קבצים שיתעדכנו:**
-- `src/lib/project.functions.ts` — `listProjects` (select `pinned_at`, ordering), `toggleProjectPin` חדש
-- `src/routes/_authenticated.tsx` — Cmd+K global, RecentItemsMenu בheader
-- `src/routes/_authenticated/projects.index.tsx` — Pin button, sections (מוצמדים / כללי), Breadcrumb
-- `src/routes/_authenticated/projects.$projectId.tsx` — Breadcrumb במקום back-link
-- `src/routes/_authenticated/settings.tsx` — Breadcrumb
-- `src/routes/_authenticated/dashboard.tsx` — Breadcrumb
-- `src/routes/_authenticated/editor.$id.tsx` — להסיר את ה-Cmd+K המקומי (יוצא לגלובלי), או להשאיר את חיפוש הסעיפים בטריגר אחר
-
-**עיצוב:**
-- Breadcrumbs: שימוש בקומפוננטת `Breadcrumb` הקיימת מ-shadcn, RTL-friendly (ChevronLeft כמפריד).
-- Pinned ribbon: badge עם `bg-primary/10 text-primary` ואייקון `Pin`.
-- Command palette: רקע `bg-popover`, חיפוש fuzzy, קיצורי דרך מוצגים מימין.
-
-**עקרונות:**
-- אין שינוי בלוגיקה עסקית של ה-AI / generation.
-- כל ה-RLS policies על `projects` כבר מכסות את עמודת `pinned_at` (USING user_id).
-- אין breaking changes ל-API קיים (רק תוספות).
-
-**אימות:**
-- מובייל: Cmd+K הופך לכפתור חיפוש visible (touch).
-- Breadcrumbs מתקצרים במובייל (מציגים רק ההורה הקרוב + הדף הנוכחי).
-- Pin/Unpin עם optimistic update + invalidate.
+- Status bar: מציג רק מספרים, מסתיר labels (`hidden sm:inline`).
+- Focus mode: הכפתור נשאר נגיש; ב-toolbar הצפוף נוסיף `aria-label`.
+- Split view: כפתור מוסתר במובייל (`hidden lg:inline-flex`); ב-resize ל-mobile מסגר אוטומטית.

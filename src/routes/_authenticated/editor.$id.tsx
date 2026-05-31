@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { EditorStatusBar } from "@/components/editor-status-bar";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -149,6 +151,11 @@ function EditorPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("editor-focus-mode") === "1";
+  });
+  const [splitSecondaryKey, setSplitSecondaryKey] = useState<string | null>(null);
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -276,7 +283,36 @@ function EditorPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [flushSave]);
 
+  // Focus mode: persist + 'f' shortcut + auto-close split when shrinking below lg
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("editor-focus-mode", focusMode ? "1" : "0");
+  }, [focusMode]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (e.key !== "f" && e.key !== "F") return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || t?.isContentEditable) return;
+      e.preventDefault();
+      setFocusMode((v) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const apply = () => {
+      if (!mql.matches) setSplitSecondaryKey(null);
+    };
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
 
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
@@ -852,11 +888,55 @@ function EditorPage() {
     return DEFAULT_KEYS.includes(key);
   });
 
+  // Word & fill stats for status bar / progress
+  const { wordCount, filledCount } = useMemo(() => {
+    const countWords = (s: string) => {
+      const trimmed = (s ?? "").trim();
+      if (!trimmed) return 0;
+      return trimmed.split(/\s+/u).length;
+    };
+    const sectionText = (key: string): string => {
+      switch (key) {
+        case "user_prompt": return prompt;
+        case "user_notes": return userNotes;
+        case "overview": return content.overview;
+        case "goals": return content.goals.map((g) => g.text).join(" ");
+        case "assumptions": return content.assumptions.map((g) => g.text).join(" ");
+        case "risks": return content.risks.map((g) => g.text).join(" ");
+        case "personas": return content.personas.map((p) => `${p.name} ${p.description}`).join(" ");
+        case "functional_requirements": return content.functional_requirements.map((r) => `${r.title} ${r.description}`).join(" ");
+        case "non_functional_requirements": return content.non_functional_requirements.map((r) => `${r.title} ${r.description}`).join(" ");
+        case "use_cases": return content.use_cases.map((u) => `${u.title} ${u.description}`).join(" ");
+        case "architecture": return content.architecture.description;
+        case "data_model": return content.data_model.description;
+        default: return "";
+      }
+    };
+    let words = 0;
+    let filled = 0;
+    for (const key of visibleSections) {
+      const text = sectionText(key);
+      const w = countWords(text);
+      words += w;
+      if (w > 0) filled += 1;
+    }
+    return { wordCount: words, filledCount: filled };
+  }, [content, prompt, userNotes, visibleSections]);
+
+
+
   return (
-    <div className="flex flex-col">
+    <div className={cn("flex flex-col", focusMode && "bg-background")}>
       {/* Toolbar */}
-      <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <Breadcrumb className="min-w-0 flex-1">
+      <div
+        className={cn(
+          "sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b px-3 py-2 backdrop-blur transition-colors",
+          focusMode
+            ? "border-transparent bg-background/60 supports-[backdrop-filter]:bg-background/40"
+            : "border-border bg-card/95 supports-[backdrop-filter]:bg-card/80",
+        )}
+      >
+        <Breadcrumb className={cn("min-w-0 flex-1", focusMode && "hidden")}>
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -922,7 +1002,19 @@ function EditorPage() {
             </>
           )}
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setFocusMode((v) => !v)}
+          title={focusMode ? "יציאה ממצב מיקוד (F)" : "מצב מיקוד (F)"}
+          aria-label={focusMode ? "יציאה ממצב מיקוד" : "מצב מיקוד"}
+        >
+          {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
       </div>
+
 
       {/* Section quick-search (Cmd+K) */}
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
@@ -960,52 +1052,103 @@ function EditorPage() {
       </CommandDialog>
 
       {/* Document */}
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
-        <DndContext
-          sensors={dndSensors}
-          collisionDetection={closestCenter}
-          onDragEnd={(e: DragEndEvent) => {
-            const { active, over } = e;
-            if (!over || active.id === over.id) return;
-            reorderSections(String(active.id), String(over.id));
-          }}
-        >
-          <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
-            {visibleSections.map((key, index) => {
-              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
-              const titleValue = sectionTitles[key] ?? def.defaultTitle;
-              return (
-                <SortableSection key={key} id={key}>
-                  {(dragHandle) => (
-                    <SectionShell
-                      title={titleValue}
-                      dragHandle={dragHandle}
-                      onTitleChange={(v) => setSectionTitle(key, v)}
-                      onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
-                      onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
-                      onDelete={() => deleteSection(key)}
-                      sectionKey={key}
-                      onAiImprove={
-                        key === "review"
-                          ? undefined
-                          : (instruction) => improveSection(key, titleValue, instruction)
-                      }
-                      onApplyImprove={(candidate, previous) =>
-                        applyImprovement(key, candidate, previous)
-                      }
-                    >
-                      {renderBody(key)}
-                    </SectionShell>
-                  )}
-                </SortableSection>
-              );
-            })}
-          </SortableContext>
-        </DndContext>
+      <div
+        className={cn(
+          "mx-auto w-full px-4 py-8",
+          splitSecondaryKey
+            ? "max-w-7xl grid gap-6 lg:grid-cols-2"
+            : focusMode
+              ? "max-w-3xl space-y-8"
+              : "max-w-4xl space-y-8",
+        )}
+      >
+        <div className={cn(splitSecondaryKey && "space-y-8 min-w-0")}>
+          <DndContext
+            sensors={dndSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(e: DragEndEvent) => {
+              const { active, over } = e;
+              if (!over || active.id === over.id) return;
+              reorderSections(String(active.id), String(over.id));
+            }}
+          >
+            <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+              {visibleSections.map((key, index) => {
+                const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+                const titleValue = sectionTitles[key] ?? def.defaultTitle;
+                return (
+                  <SortableSection key={key} id={key}>
+                    {(dragHandle) => (
+                      <div
+                        className={cn(
+                          "group/section transition-opacity",
+                          focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
+                        )}
+                      >
+                        <SectionShell
+                          title={titleValue}
+                          dragHandle={dragHandle}
+                          onTitleChange={(v) => setSectionTitle(key, v)}
+                          onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                          onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                          onDelete={() => deleteSection(key)}
+                          sectionKey={key}
+                          onSplit={() => setSplitSecondaryKey(key)}
+                          splitActive={splitSecondaryKey === key}
+                          onAiImprove={
+                            key === "review"
+                              ? undefined
+                              : (instruction) => improveSection(key, titleValue, instruction)
+                          }
+                          onApplyImprove={(candidate, previous) =>
+                            applyImprovement(key, candidate, previous)
+                          }
+                        >
+                          {renderBody(key)}
+                        </SectionShell>
+                      </div>
+                    )}
+                  </SortableSection>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+        </div>
+        {splitSecondaryKey ? (
+          <aside className="hidden lg:block min-w-0">
+            <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto rounded-lg border border-primary/30 bg-card/40 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <Columns2 className="h-4 w-4 text-primary" />
+                  <span>תצוגת השוואה: {sectionTitles[splitSecondaryKey] ?? DEFAULT_SECTIONS.find((s) => s.key === splitSecondaryKey)?.defaultTitle ?? splitSecondaryKey}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setSplitSecondaryKey(null)}
+                  aria-label="סגור תצוגה משנית"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              {renderBody(splitSecondaryKey)}
+            </div>
+          </aside>
+        ) : null}
       </div>
+      {!focusMode ? (
+        <EditorStatusBar
+          wordCount={wordCount}
+          filledCount={filledCount}
+          totalCount={visibleSections.length}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 function SectionShell({
   title,
@@ -1016,6 +1159,8 @@ function SectionShell({
   sectionKey,
   onAiImprove,
   onApplyImprove,
+  onSplit,
+  splitActive,
   dragHandle,
   children,
 }: {
@@ -1027,6 +1172,8 @@ function SectionShell({
   sectionKey?: string;
   onAiImprove?: (instruction: string) => Promise<{ candidate: unknown; previous: unknown } | null>;
   onApplyImprove?: (candidate: unknown, previous: unknown) => void;
+  onSplit?: () => void;
+  splitActive?: boolean;
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -1169,6 +1316,25 @@ function SectionShell({
             >
               <Pencil className="h-4 w-4" />
             </Button>
+
+            {onSplit ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "hidden h-8 w-8 p-0 lg:inline-flex",
+                  splitActive && "bg-primary/10 text-primary",
+                )}
+                onClick={onSplit}
+                title="הצג בתצוגת השוואה (split view)"
+                aria-label="תצוגת השוואה"
+              >
+                <Columns2 className="h-4 w-4" />
+              </Button>
+            ) : null}
+
+
 
             {onAiImprove ? (
               <Popover
