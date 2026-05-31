@@ -18,7 +18,8 @@ function getSupabase(): SupabaseClient {
 }
 
 const MONTHLY_CREDITS = 125;
-const PACK_CREDITS = 100;
+const PACK_CREDITS_100 = 100;
+const PACK_CREDITS_250 = 250;
 
 async function grantCredits(
   userId: string,
@@ -120,9 +121,17 @@ async function handleTransactionCompleted(
   if (priceId === "credits_100") {
     await grantCredits(
       userId,
-      PACK_CREDITS,
+      PACK_CREDITS_100,
       "purchase",
       "רכישת חבילת 100 קרדיטים",
+      `tx_${data.id}`,
+    );
+  } else if (priceId === "credits_250") {
+    await grantCredits(
+      userId,
+      PACK_CREDITS_250,
+      "purchase",
+      "רכישת חבילת 250 קרדיטים",
       `tx_${data.id}`,
     );
   } else if (priceId === "monthly_subscription" && data.origin === "subscription_recurring") {
