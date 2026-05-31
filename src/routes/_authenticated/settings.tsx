@@ -33,6 +33,14 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const { isAdmin } = useSiteTexts();
+  const qc = useQueryClient();
+  const getSettingsFn = useServerFn(getAiSettings);
+  const updateKnowledgeFn = useServerFn(updateBusinessKnowledge);
+  const { data: aiSettings, isLoading: aiLoading } = useQuery({
+    queryKey: ["ai-settings"],
+    queryFn: () => getSettingsFn(),
+  });
+
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
