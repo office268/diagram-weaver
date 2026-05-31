@@ -434,25 +434,31 @@ function ProjectPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <Link
+        to="/projects"
+        className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <ArrowRight className="h-3.5 w-3.5" />
+        חזרה לרשימת הפרויקטים
+      </Link>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <EditableSiteText
-            as="h1"
-            textKey="dashboard.title"
-            defaultValue="מסמכי האפיון שלי"
-            className="text-2xl font-semibold tracking-tight text-foreground block"
-          />
-          <EditableSiteText
-            as="p"
-            multiline
-            textKey="dashboard.subtitle"
-            defaultValue="תארו מערכת בחופשי — ה-3 מודלים יבנו מסמך והשוו ביניהם."
-            className="mt-1 text-sm text-muted-foreground block"
-          />
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {data?.project?.name ?? "פרויקט"}
+          </h1>
+          {data?.project?.description ? (
+            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
+              {data.project.description}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              בחרו סוג מסמך ליצור — תחת הפרויקט יישמרו כל הסוגים והגרסאות.
+            </p>
+          )}
         </div>
         <Button onClick={() => setTypePickerOpen(true)} className="w-full sm:w-auto">
           <Sparkles className="mr-2 h-4 w-4" />
-          <EditableSiteText textKey="dashboard.new_btn" defaultValue="מסמך חדש" />
+          מסמך חדש
         </Button>
       </div>
 
@@ -468,19 +474,12 @@ function ProjectPage() {
         ) : !data?.specs.length ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-            <EditableSiteText
-              as="h3"
-              textKey="dashboard.empty.title"
-              defaultValue="עדיין אין מסמכים"
-              className="mt-4 font-medium text-foreground block"
-            />
-            <EditableSiteText
-              as="p"
-              textKey="dashboard.empty.text"
-              defaultValue={'לחצו על "מסמך אפיון חדש" כדי להתחיל.'}
-              className="mt-1 text-sm text-muted-foreground block"
-            />
+            <h3 className="mt-4 font-medium text-foreground">עדיין אין מסמכים בפרויקט</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              לחצו על "מסמך חדש" ובחרו את סוג המסמך הרצוי.
+            </p>
           </div>
+
         ) : (
           <ul className="space-y-4">
             {groups.map((g) => {
