@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight } from "lucide-react";
+import { getDocTypeVisual } from "@/lib/doc-types";
 import {
   createSpec,
   deleteSpec,
