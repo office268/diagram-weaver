@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/app-metadata-card";
+import { EditableSiteText } from "@/components/editable-site-text";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -80,10 +81,19 @@ function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">הגדרות AI</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          נהלו את ה-system instruction וצפו במבנה הפרומפט שנשלח ליצירת מסמכי האפיון.
-        </p>
+        <EditableSiteText
+          as="h1"
+          textKey="settings.title"
+          defaultValue="הגדרות AI"
+          className="text-2xl font-semibold tracking-tight text-foreground block"
+        />
+        <EditableSiteText
+          as="p"
+          multiline
+          textKey="settings.subtitle"
+          defaultValue="נהלו את ה-system instruction וצפו במבנה הפרומפט שנשלח ליצירת מסמכי האפיון."
+          className="mt-1 text-sm text-muted-foreground block"
+        />
       </div>
 
       <AppMetadataCard />
@@ -93,10 +103,13 @@ function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            System Instruction
+            <EditableSiteText textKey="settings.sys.title" defaultValue="System Instruction" />
           </CardTitle>
           <CardDescription>
-            ההוראות שמופנות למודל בעת יצירת מסמך אפיון.
+            <EditableSiteText
+              textKey="settings.sys.desc"
+              defaultValue="ההוראות שמופנות למודל בעת יצירת מסמך אפיון."
+            />
             {data.is_default && " (כרגע בשימוש: ברירת המחדל)"}
           </CardDescription>
         </CardHeader>
@@ -152,9 +165,17 @@ function SettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>תבנית הפרומפט הנשלח ל-LLM</CardTitle>
+          <CardTitle>
+            <EditableSiteText
+              textKey="settings.prompt.title"
+              defaultValue="תבנית הפרומפט הנשלח ל-LLM"
+            />
+          </CardTitle>
           <CardDescription>
-            יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה.
+            <EditableSiteText
+              textKey="settings.prompt.desc"
+              defaultValue="יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה."
+            />
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">

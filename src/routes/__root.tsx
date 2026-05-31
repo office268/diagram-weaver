@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
+import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
+import { SiteTextsProvider } from "@/lib/site-texts-context";
 
 function NotFoundComponent() {
   return (
@@ -70,11 +72,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async () => {
-    try {
-      return { meta: await getAppMetadata() };
-    } catch {
-      return { meta: null };
-    }
+    const [metaR, textsR, adminR] = await Promise.allSettled([
+      getAppMetadata(),
+      getSiteTexts(),
+      getIsAdmin(),
+    ]);
+    return {
+      meta: metaR.status === "fulfilled" ? metaR.value : null,
+      siteTexts: textsR.status === "fulfilled" ? textsR.value : {},
+      isAdmin: adminR.status === "fulfilled" ? adminR.value.isAdmin : false,
+    };
   },
   head: ({ loaderData }) => {
     const m = loaderData?.meta;
@@ -155,10 +162,16 @@ function AuthBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const loaderData = Route.useLoaderData();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBridge />
-      <Outlet />
+      <SiteTextsProvider
+        initialTexts={loaderData?.siteTexts ?? {}}
+        isAdmin={loaderData?.isAdmin ?? false}
+      >
+        <Outlet />
+      </SiteTextsProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );

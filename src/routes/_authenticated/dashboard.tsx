@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewPanel } from "@/components/review-panel";
+import { EditableSiteText } from "@/components/editable-site-text";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -423,16 +424,23 @@ function DashboardPage() {
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            מסמכי האפיון שלי
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            תארו מערכת בחופשי — ה-3 מודלים יבנו מסמך והשוו ביניהם.
-          </p>
+          <EditableSiteText
+            as="h1"
+            textKey="dashboard.title"
+            defaultValue="מסמכי האפיון שלי"
+            className="text-2xl font-semibold tracking-tight text-foreground block"
+          />
+          <EditableSiteText
+            as="p"
+            multiline
+            textKey="dashboard.subtitle"
+            defaultValue="תארו מערכת בחופשי — ה-3 מודלים יבנו מסמך והשוו ביניהם."
+            className="mt-1 text-sm text-muted-foreground block"
+          />
         </div>
         <Button onClick={() => setNewOpen(true)} className="w-full sm:w-auto">
           <Sparkles className="mr-2 h-4 w-4" />
-          מסמך אפיון חדש
+          <EditableSiteText textKey="dashboard.new_btn" defaultValue="מסמך אפיון חדש" />
         </Button>
       </div>
 
@@ -448,10 +456,18 @@ function DashboardPage() {
         ) : !data?.specs.length ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
             <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 font-medium text-foreground">עדיין אין מסמכים</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              לחצו על "מסמך אפיון חדש" כדי להתחיל.
-            </p>
+            <EditableSiteText
+              as="h3"
+              textKey="dashboard.empty.title"
+              defaultValue="עדיין אין מסמכים"
+              className="mt-4 font-medium text-foreground block"
+            />
+            <EditableSiteText
+              as="p"
+              textKey="dashboard.empty.text"
+              defaultValue={'לחצו על "מסמך אפיון חדש" כדי להתחיל.'}
+              className="mt-1 text-sm text-muted-foreground block"
+            />
           </div>
         ) : (
           <ul className="space-y-4">
