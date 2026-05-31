@@ -77,6 +77,33 @@ export type Database = {
         }
         Relationships: []
       }
+      doc_type_settings: {
+        Row: {
+          created_at: string
+          doc_type: string
+          section_order: Json
+          section_titles: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          section_order?: Json
+          section_titles?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          section_order?: Json
+          section_titles?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
