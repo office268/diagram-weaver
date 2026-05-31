@@ -1539,17 +1539,19 @@ function ListBody<T extends { id: string }>({
         {items.map((item, idx) => (
           <li
             key={item.id}
-            className="group relative rounded-lg border border-border bg-card p-4 focus-within:border-primary/40"
+            className="group relative rounded-lg border border-border bg-card p-4 pt-3 focus-within:border-primary/40"
           >
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">#{idx + 1}</span>
-            </div>
+            <span className="pointer-events-none absolute right-3 top-3 text-xs text-muted-foreground">
+              #{idx + 1}
+            </span>
             <EditableItemDeleteContext.Provider
               value={() => onChange(items.filter((it) => it.id !== item.id))}
             >
-              {renderItem(item, (next) =>
-                onChange(items.map((it) => (it.id === item.id ? next : it))),
-              )}
+              <div className="pr-8">
+                {renderItem(item, (next) =>
+                  onChange(items.map((it) => (it.id === item.id ? next : it))),
+                )}
+              </div>
             </EditableItemDeleteContext.Provider>
           </li>
         ))}
