@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pencil, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
@@ -48,18 +48,14 @@ export function EditableText({ value, onChange, multiline, placeholder, classNam
   }
 
   return (
-    <div className={`group flex items-start gap-2 ${className ?? ""}`}>
-      <div className="flex-1 whitespace-pre-wrap text-foreground">
-        {value || <span className="text-muted-foreground">{placeholder ?? "ריק"}</span>}
-      </div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-7 shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
-        onClick={() => { setDraft(value); setEditing(true); }}
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </Button>
-    </div>
+    <button
+      type="button"
+      data-editable-trigger="true"
+      onClick={() => { setDraft(value); setEditing(true); }}
+      className={`block w-full cursor-text whitespace-pre-wrap rounded-md p-1 text-right text-foreground transition-colors hover:bg-muted/50 ${className ?? ""}`}
+      title="לחץ לעריכה"
+    >
+      {value || <span className="text-muted-foreground">{placeholder ?? "ריק"}</span>}
+    </button>
   );
 }
