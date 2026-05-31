@@ -176,6 +176,118 @@ function EditorPage() {
     });
   }, []);
 
+  const improveDoc = useCallback(async () => {
+    if (!data?.spec || !content) return;
+    const reviewNotes = normalizeReviewNotes(
+      (data.spec as { review_notes?: unknown }).review_notes,
+    );
+    const selectedTexts = reviewNotes
+      .filter((n) => selectedNoteIds.has(n.id))
+      .map((n) => n.text);
+    if (selectedTexts.length === 0) {
+      toast.warning("בחר/י לפחות הצעה אחת להטמיע");
+      return;
+    }
+    setImproving(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error("נדרשת התחברות מחדש");
+
+      const spec = data.spec as unknown as {
+        prompt: string;
+        title: string;
+        doc_type?: string;
+        group_id?: string | null;
+        project_id?: string | null;
+        section_order?: string[];
+        section_titles?: Record<string, string>;
+        model?: string | null;
+      };
+      const model = (spec.model as typeof COMPARISON_MODELS[number]) ?? COMPARISON_MODELS[0];
+      const promptText = spec.prompt ?? "";
+      const docType = spec.doc_type ?? "spec_overview";
+
+      // 1) Generate revised spec
+      const genRes = await fetch("/api/generate-spec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          prompt: promptText,
+          model,
+          docType,
+          previousSpec: content,
+          reviewerNotes: selectedTexts,
+        }),
+      });
+      if (!genRes.ok || !genRes.body) {
+        const t = (await genRes.text().catch(() => "")) || `שגיאה ${genRes.status}`;
+        throw new Error(t);
+      }
+      const reader = genRes.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+      fullText += decoder.decode();
+      const errIdx = fullText.indexOf("__STREAM_ERROR__:");
+      if (errIdx >= 0) {
+        throw new Error(fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim() || "שגיאת זרם");
+      }
+      const parsed = JSON.parse(extractJson(fullText));
+      const newSpec: SpecOutput = SpecOutputSchema.parse(parsed);
+
+      // 2) Review
+      let newReview: SpecReview | null = null;
+      try {
+        const revRes = await fetch("/api/review-spec", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ prompt: promptText, spec: newSpec }),
+        });
+        if (revRes.ok) {
+          const j = await revRes.json();
+          if (j?.score != null) {
+            newReview = { score: Number(j.score), notes: normalizeReviewNotes(j.notes) };
+          }
+        }
+      } catch {
+        // non-fatal
+      }
+
+      // 3) Save as new revised version under same group
+      const { spec: row } = await createFn({
+        data: {
+          title: `${newSpec.title} — גרסה משופרת`,
+          prompt: promptText,
+          content: newSpec,
+          reviewScore: newReview?.score ?? null,
+          reviewNotes: newReview?.notes ?? [],
+          groupId: spec.group_id ?? null,
+          model,
+          variant: "revised",
+          docType,
+          sectionOrder: spec.section_order ?? [],
+          sectionTitles: spec.section_titles ?? {},
+          projectId: spec.project_id ?? null,
+        },
+      });
+
+      qc.invalidateQueries({ queryKey: ["project"] });
+      toast.success("נוצרה גרסה משופרת");
+      setSelectedNoteIds(new Set());
+      navigate({ to: "/editor/$id", params: { id: row.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "יצירת גרסה משופרת נכשלה");
+    } finally {
+      setImproving(false);
+    }
+  }, [data?.spec, content, selectedNoteIds, createFn, qc, navigate]);
+
   // Build a body renderer for each section key.
   const renderBody = useMemo(() => {
     if (!content) return null;
