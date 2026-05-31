@@ -1213,19 +1213,7 @@ function SectionShell({
   const [aiBusy, setAiBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [preview, setPreview] = useState<{ candidate: unknown; previous: unknown } | null>(null);
-  const contentRef = useRef<HTMLDivElement | null>(null);
   const history = usePromptHistory(sectionKey ?? "default");
-
-  const startEditContent = () => {
-    setOpen(true);
-    requestAnimationFrame(() => {
-      const el = contentRef.current?.querySelector<HTMLButtonElement>(
-        '[data-editable-trigger="true"]',
-      );
-      el?.click();
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  };
 
   useEffect(() => {
     if (!sectionKey) return;
