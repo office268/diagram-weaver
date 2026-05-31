@@ -77,6 +77,27 @@ export type Database = {
         }
         Relationships: []
       }
+      doc_type_instructions: {
+        Row: {
+          doc_type: string
+          system_instruction: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          doc_type: string
+          system_instruction: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          doc_type?: string
+          system_instruction?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       doc_type_settings: {
         Row: {
           created_at: string

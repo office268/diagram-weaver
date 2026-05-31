@@ -4,10 +4,9 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import {
   DEFAULT_MODEL,
-  DEFAULT_SYSTEM_INSTRUCTION,
   JSON_OUTPUT_INSTRUCTION,
 } from "@/lib/ai-spec-defaults.server";
-import { getDocTypeSystemInstruction } from "@/lib/doc-types.server";
+import { resolveSystemInstruction } from "@/lib/doc-type-instructions.server";
 import { DOC_TYPE_KEYS } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
@@ -49,14 +48,8 @@ export const Route = createFileRoute("/api/generate-spec")({
           return new Response("LOVABLE_API_KEY missing", { status: 500 });
         }
 
-        const { data: row } = await supabaseAdmin
-          .from("ai_settings")
-          .select("system_instruction")
-          .eq("user_id", userId)
-          .maybeSingle();
-        const baseSystem = row?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION;
-        const docTypeInstruction = getDocTypeSystemInstruction(body.docType);
-        const system = `${baseSystem}\n\n${docTypeInstruction}`;
+        void userId;
+        const system = await resolveSystemInstruction(body.docType);
         const model = DEFAULT_MODEL;
 
         try {
