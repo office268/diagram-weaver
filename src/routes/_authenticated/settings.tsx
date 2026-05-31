@@ -103,10 +103,13 @@ function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            System Instruction
+            <EditableSiteText textKey="settings.sys.title" defaultValue="System Instruction" />
           </CardTitle>
           <CardDescription>
-            ההוראות שמופנות למודל בעת יצירת מסמך אפיון.
+            <EditableSiteText
+              textKey="settings.sys.desc"
+              defaultValue="ההוראות שמופנות למודל בעת יצירת מסמך אפיון."
+            />
             {data.is_default && " (כרגע בשימוש: ברירת המחדל)"}
           </CardDescription>
         </CardHeader>
