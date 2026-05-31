@@ -5,6 +5,8 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { FileText, Trash2, Loader2, Sparkles, Layers, Search } from "lucide-react";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { ProjectActivityFeed } from "@/components/project-activity-feed";
+import { DOC_TEMPLATES } from "@/lib/doc-templates";
 
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
