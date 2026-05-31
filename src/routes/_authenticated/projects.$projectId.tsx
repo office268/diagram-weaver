@@ -807,7 +807,7 @@ function ProjectPage() {
             >
               חזרה
             </Button>
-            <Button onClick={startCompare} disabled={prompt.trim().length < 5}>
+            <Button onClick={startBuilder} disabled={prompt.trim().length < 5}>
               <Sparkles className="mr-2 h-4 w-4" />
               צור מסמך
             </Button>
@@ -815,13 +815,16 @@ function ProjectPage() {
         </DialogContent>
       </Dialog>
 
-      <ComparisonDialog
-        state={compareState}
-        anyBusy={anyBusy}
-        onClose={() => setCompareState(null)}
-        onPick={handlePick}
-        onRetry={retryModel}
+      <IterativeBuilderDialog
+        state={builder}
+        onClose={() => setBuilder(null)}
+        onToggleNote={toggleNote}
+        onSetSelection={setNoteSelection}
+        onImprove={improveBuilder}
+        onFinish={finishBuilder}
+        onRetry={retryBuilder}
       />
+
 
 
 
