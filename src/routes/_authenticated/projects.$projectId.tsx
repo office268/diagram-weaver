@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   createSpec,
@@ -116,6 +118,7 @@ function ProjectPage() {
   const [docType, setDocType] = useState<DocTypeKey>("spec_overview");
   const [prompt, setPrompt] = useState("");
   const [builder, setBuilder] = useState<BuilderState | null>(null);
+  const [query, setQuery] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["project", projectId],
