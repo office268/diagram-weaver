@@ -9,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -31,6 +39,9 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotBusy, setForgotBusy] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -49,13 +60,13 @@ function LoginPage() {
           options: { emailRedirectTo: window.location.origin + "/projects" },
         });
         if (error) throw error;
-        toast.success("Account created. Welcome!");
+        toast.success("החשבון נוצר. ברוכים הבאים!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Authentication failed");
+      toast.error(err instanceof Error ? err.message : "האימות נכשל");
     } finally {
       setBusy(false);
     }
@@ -69,8 +80,27 @@ function LoginPage() {
       });
       if (result.error) throw result.error;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+      toast.error(err instanceof Error ? err.message : "ההתחברות עם Google נכשלה");
       setBusy(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: window.location.origin + "/reset-password",
+      });
+      if (error) throw error;
+      toast.success("נשלח קישור לאיפוס סיסמה לכתובת המייל");
+      setForgotOpen(false);
+      setForgotEmail("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "שליחת המייל נכשלה");
+    } finally {
+      setForgotBusy(false);
     }
   };
 
@@ -101,7 +131,7 @@ function LoginPage() {
 
           <form onSubmit={handleEmail} className="mt-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">אימייל</Label>
               <Input
                 id="email"
                 type="email"
@@ -112,7 +142,21 @@ function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">סיסמה</Label>
+                {mode === "signin" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotEmail(email);
+                      setForgotOpen(true);
+                    }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    שכחתי סיסמה
+                  </button>
+                ) : null}
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -125,22 +169,56 @@ function LoginPage() {
             </div>
             <Button type="submit" className="w-full" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "signup" ? "Create account" : "Sign in"}
+              {mode === "signup" ? "יצירת חשבון" : "כניסה"}
             </Button>
           </form>
 
           <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
             <div className="h-px flex-1 bg-border" />
-            OR
+            או
             <div className="h-px flex-1 bg-border" />
           </div>
 
           <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={busy}>
             <GoogleIcon className="mr-2 h-4 w-4" />
-            Continue with Google
+            המשך עם Google
           </Button>
         </div>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>איפוס סיסמה</DialogTitle>
+            <DialogDescription>
+              הזן את כתובת המייל שלך ונשלח אליך קישור לאיפוס הסיסמה.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgot} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">אימייל</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                autoComplete="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+                disabled={forgotBusy}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setForgotOpen(false)} disabled={forgotBusy}>
+                ביטול
+              </Button>
+              <Button type="submit" disabled={forgotBusy || !forgotEmail}>
+                {forgotBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                שלח קישור
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
