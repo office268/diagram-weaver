@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers, ArrowRight } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight } from "lucide-react";
 import {
   createSpec,
   deleteSpec,
@@ -18,6 +18,8 @@ import {
   extractJson,
   type SpecOutput,
   type SpecReview,
+  type ReviewNote,
+  normalizeReviewNotes,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
@@ -42,11 +44,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReviewPanel } from "@/components/review-panel";
+import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 
 import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
 import { listDocTypeSettings, effectiveDocTypeConfig } from "@/lib/doc-type-settings.functions";
+
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
