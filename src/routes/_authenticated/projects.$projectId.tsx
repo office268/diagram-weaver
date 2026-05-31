@@ -11,6 +11,7 @@ import { DOC_TEMPLATES } from "@/lib/doc-templates";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { SwipeableRow } from "@/components/swipeable-row";
 
 
 import {
