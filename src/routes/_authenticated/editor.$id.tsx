@@ -952,6 +952,7 @@ function SectionShell({
   };
 
   return (
+    <>
     <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
