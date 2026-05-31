@@ -61,22 +61,29 @@ export const Route = createFileRoute("/api/improve-section")({
 
         try {
           const gateway = createLovableAiGatewayProvider(key);
-          const userPrompt = [
-            body.contextPrompt
-              ? `הקשר המסמך (פרומפט מקורי): ${body.contextPrompt}`
-              : "",
-            body.docType ? `סוג מסמך: ${body.docType}` : "",
-            `שם הסעיף: ${body.sectionLabel} (key: ${body.sectionKey})`,
-            `מבנה הערך: ${body.valueShape}`,
-            "",
-            "הערך הנוכחי (JSON):",
-            JSON.stringify(body.sectionValue, null, 2),
-            "",
-            "הנחיית המשתמש לשיפור הסעיף:",
-            body.instruction,
-          ]
-            .filter(Boolean)
-            .join("\n");
+          const knowledgeBlock = await loadKnowledgeContextBlock(
+            userData.user.id,
+            body.projectId,
+          );
+          const userPrompt =
+            knowledgeBlock +
+            [
+              body.contextPrompt
+                ? `הקשר המסמך (פרומפט מקורי): ${body.contextPrompt}`
+                : "",
+              body.docType ? `סוג מסמך: ${body.docType}` : "",
+              `שם הסעיף: ${body.sectionLabel} (key: ${body.sectionKey})`,
+              `מבנה הערך: ${body.valueShape}`,
+              "",
+              "הערך הנוכחי (JSON):",
+              JSON.stringify(body.sectionValue, null, 2),
+              "",
+              "הנחיית המשתמש לשיפור הסעיף:",
+              body.instruction,
+            ]
+              .filter(Boolean)
+              .join("\n");
+
 
           const { text } = await generateText({
             model: gateway(DEFAULT_MODEL),
