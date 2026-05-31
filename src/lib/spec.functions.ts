@@ -88,6 +88,28 @@ export const deleteSpecGroup = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateGroupPrompt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        groupId: z.string().uuid(),
+        prompt: z.string().min(1).max(5000),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("spec_documents")
+      .update({ prompt: data.prompt } as never)
+      .eq("group_id", data.groupId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 export const updateSpec = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
