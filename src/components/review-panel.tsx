@@ -7,6 +7,9 @@ export function ReviewPanel({ review }: { review: SpecReview }) {
       : review.score >= 5
         ? "border-amber-500/40 bg-amber-500/5"
         : "border-destructive/40 bg-destructive/5";
+  const sortedNotes = [...review.notes].sort(
+    (a, b) => b.importance - a.importance,
+  );
   return (
     <div className={`rounded-md border p-3 ${tone}`}>
       <div className="flex items-center justify-between">
@@ -15,15 +18,24 @@ export function ReviewPanel({ review }: { review: SpecReview }) {
           ציון: {review.score}/10
         </div>
       </div>
-      {review.notes.length === 0 ? (
+      {sortedNotes.length === 0 ? (
         <p className="mt-2 text-xs text-muted-foreground">אין הערות — המסמך מצוין.</p>
       ) : (
-        <ul className="mt-2 list-disc space-y-1 pr-5 text-xs text-foreground">
-          {review.notes.map((n, i) => (
-            <li key={i}>{n}</li>
+        <ul className="mt-2 space-y-1.5 text-xs text-foreground">
+          {sortedNotes.map((n) => (
+            <li key={n.id} className="flex items-start gap-2">
+              <span
+                className="mt-0.5 shrink-0 rounded-full border border-border bg-background px-1.5 py-0.5 text-[10px] font-semibold"
+                title="דירוג חשיבות 1-10"
+              >
+                {n.importance}
+              </span>
+              <span className="flex-1">{n.text}</span>
+            </li>
           ))}
         </ul>
       )}
     </div>
   );
 }
+

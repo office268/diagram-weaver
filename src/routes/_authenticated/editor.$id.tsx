@@ -362,12 +362,11 @@ function EditorPage() {
             <ReviewPanel
               review={{
                 score: data.spec.review_score,
-                notes: Array.isArray(data.spec.review_notes)
-                  ? (data.spec.review_notes as string[])
-                  : [],
+                notes: normalizeReviewNotes(data.spec.review_notes),
               }}
             />
           );
+
         case "user_notes":
           return (
             <div className="rounded-lg border border-border bg-card p-4">
