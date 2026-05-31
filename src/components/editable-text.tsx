@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { createContext, useContext, useState } from "react";
+import { Check, X, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
@@ -12,9 +12,12 @@ interface Props {
   className?: string;
 }
 
+export const EditableItemDeleteContext = createContext<(() => void) | null>(null);
+
 export function EditableText({ value, onChange, multiline, placeholder, className }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const onDelete = useContext(EditableItemDeleteContext);
 
   if (editing) {
     return (
@@ -35,7 +38,18 @@ export function EditableText({ value, onChange, multiline, placeholder, classNam
             autoFocus
           />
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex items-center justify-end gap-2">
+          {onDelete ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mr-auto h-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onDelete}
+            >
+              <Trash2 className="mr-1 h-3.5 w-3.5" /> מחק
+            </Button>
+          ) : null}
           <Button size="sm" variant="ghost" onClick={() => { setDraft(value); setEditing(false); }}>
             <X className="mr-1 h-3.5 w-3.5" /> ביטול
           </Button>
