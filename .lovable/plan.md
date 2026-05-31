@@ -1,32 +1,46 @@
-## תיקונים 14, 16, 17, 19
+# Plan: Implement remaining items (10, 11, 15, 18, 20, 21, 22, 23, 24, 25)
 
-### 14 — שחזור סיסמה ב-Login
-קובץ: `src/routes/login.tsx` + עמוד חדש `src/routes/reset-password.tsx`.
-- בטאב "כניסה" להוסיף קישור "שכחתי סיסמה" שפותח דיאלוג עם שדה אימייל וקורא ל-`supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/reset-password" })`.
-- אגב כך לתרגם את הטקסטים שנותרו באנגלית בעמוד (Email, Password, Sign in/Create account, OR, Continue with Google, ההודעות ב-toast) לעברית — נדרש בכל מקרה לעקביות עם בקשת השפה הקודמת.
-- ליצור עמוד ציבורי `/reset-password` (לא תחת `_authenticated`) עם טופס סיסמה חדשה הקורא ל-`supabase.auth.updateUser({ password })`. לאחר הצלחה — toast והפניה ל-`/projects`.
+## 10 — Auto-save robustness (`editor.$id.tsx`)
+- Add `beforeunload` listener that warns if there are pending unsaved changes (dirty state / pending debounce).
+- Display "נשמר לאחרונה לפני X" using `formatDistanceToNow` (date-fns, already in deps) next to the auto-save indicator, refreshed every 30s.
 
-### 16 — היסטוריית פרומפטים לכל סוג סעיף
-קובץ: `src/routes/_authenticated/editor.$id.tsx` (רכיב `SectionShell`) + hook חדש `src/hooks/use-prompt-history.ts`.
-- `usePromptHistory(key)` שומר ב-`localStorage` עד 5 פרומפטים אחרונים לכל מפתח (`spec-ai-prompt-history:<key>`), dedupe וסדר LRU.
-- ב-Popover של ה-AI בכל סעיף: מתחת ל-Textarea להציג רשימת shortcuts (אם קיימים) — כל פריט הוא chip קטן שלחיצה עליו ממלאת את ה-Textarea. כפתור X קטן ליד כל chip להסרה.
-- ב-`handleAiSubmit` להוסיף קריאה ל-`addPrompt(instruction)` עם הצלחה.
+## 11 — Logo consistency
+- Replace `GitBranch` icon usage with `FileText` (or a single chosen icon) wherever the brand mark appears so landing header, auth pages, and app header all match. Audit: `src/routes/index.tsx`, `src/routes/login.tsx`, `src/routes/_authenticated.tsx`.
 
-### 17 — Preview של שינויי AI לפני החלת התוצאה
-קובץ: `src/routes/_authenticated/editor.$id.tsx` — `improveSection` + `SectionShell`.
-- `improveSection` תחזיר את ה-`value` החדש במקום להחיל מיידית; ה-Shell יציג דיאלוג Preview עם:
-  - תצוגת התוצאה החדשה (משתמש ברנדרר הקיים `renderBody`-ל ערך מועמד; לפשטות — `<pre>` עם stringify לערכים מובְנים ו-Markdown/טקסט לערכי טקסט; שימוש ב-renderer הקיים אם אפשרי דרך state מקומי).
-  - שני כפתורים: "החל" → `applySectionValue(key, candidate)` + toast עם פעולת "בטל" (משחזרת את הערך הקודם), "בטל" → סוגר ללא שינוי.
-- שמירת snapshot של הערך הקודם לתמיכה ב-undo.
+## 15 — Keyboard shortcuts (`editor.$id.tsx`)
+- `Cmd/Ctrl+S` → trigger manual save (prevent default browser save).
+- `Cmd/Ctrl+K` → open a section quick-search `CommandDialog` (cmdk via existing `command.tsx`) listing sections; Enter scrolls to + focuses the section.
+- `Esc` → close any open AI Popover / Preview Dialog (already partly handled by Radix; ensure popover state closes).
 
-### 19 — Toolbar במובייל
-קובץ: `src/routes/_authenticated/editor.$id.tsx` — בלוק ה-toolbar (שורות 756–816).
-- ב-mobile: ה-Input של הכותרת תופס שורה שלמה מתחת ל-Breadcrumb (`order` ו-`basis-full sm:basis-auto`). ב-sm+ נשארת התנהגות נוכחית.
-- אינדיקטור "שמירה אוטומטית" → ב-mobile רק אייקון (טקסט `hidden sm:inline`).
-- `sticky top-0` נשאר; להוסיף `backdrop-blur` קל ולוודא `z-30` כדי שלא ידרס ע"י תוכן ארוך.
+## 18 — Score tooltip
+- Wrap the "X/10" badge (review panel / editor header) in a `Tooltip` explaining the rubric criteria (completeness, clarity, consistency, feasibility, testability). Pull the criteria list from a small constant.
 
-## פרטים טכניים
-- אין שינויי DB / server functions.
-- אין dependencies חדשות.
-- שינויים פרונט-אנד בלבד: 3 קבצים נערכים, 2 נוצרים (`/reset-password` route, hook).
-- אימות ויזואלי במובייל (384px) ובדסקטופ לאחר ההטמעה.
+## 20 — Landing meta consistency
+- Align `head().meta` `title` in `src/routes/index.tsx` with the H1 from site-texts default ("מסמכי אפיון שכותבים את עצמם.") and ensure description matches subtitle. Same for `og:title` / `og:description`.
+
+## 21 — Dark mode toggle
+- Add CSS variables for `.dark` in `src/styles.css` (mirror existing tokens with dark oklch values).
+- Create `src/hooks/use-theme.ts` — persists to `localStorage`, toggles `documentElement.classList`.
+- Add a `ThemeToggle` button (Sun/Moon icons) in the authenticated header (`_authenticated.tsx`) and landing header.
+
+## 22 — User avatar in header (`_authenticated.tsx`)
+- Replace the email text with an `Avatar` (initials fallback from email; `avatar_url` from `profiles` if present).
+- Wrap in a `DropdownMenu`: shows email, link to settings, logout. Fetch profile via existing query or add a lightweight `getMyProfile` server fn (only if not already available).
+
+## 23 — Footer on authenticated pages (`_authenticated.tsx`)
+- Add a small footer below `<Outlet />` with links: Privacy / Terms / About. Create placeholder routes `src/routes/privacy.tsx`, `src/routes/terms.tsx`, `src/routes/about.tsx`, each with proper `head()` and minimal Hebrew content.
+
+## 24 — Doc-type mini-badges in project cards (`projects.$projectId.tsx` + `projects.index.tsx`)
+- For each spec document card, show a colored `Badge` with the localized `doc_type` label (lookup from `src/lib/doc-types.ts`).
+- Assign each doc-type a token color (semantic CSS var → tailwind class).
+
+## 25 — Admin-only settings sections (`settings.tsx`)
+- Use `isAdmin` from `SiteTextsProvider` context (already loaded in root).
+- Hide `AppMetadataCard` and `DocTypeSectionsCard` sections when `!isAdmin`.
+- (No DB change needed — `app_metadata` write policies are already authenticated-only; if user wants hard server gating, add a follow-up migration to require `has_role(auth.uid(), 'admin')`. Out of scope unless user asks.)
+
+## Technical notes
+- All frontend-only; no migrations required.
+- Files created: `src/hooks/use-theme.ts`, `src/components/theme-toggle.tsx`, `src/components/user-menu.tsx`, `src/routes/privacy.tsx`, `src/routes/terms.tsx`, `src/routes/about.tsx`.
+- Files edited: `src/styles.css`, `src/routes/__root.tsx` (apply theme class on mount), `src/routes/_authenticated.tsx`, `src/routes/_authenticated/editor.$id.tsx`, `src/routes/_authenticated/settings.tsx`, `src/routes/_authenticated/projects.$projectId.tsx`, `src/routes/_authenticated/projects.index.tsx`, `src/routes/index.tsx`, `src/routes/login.tsx`.
+- Verification: visual check on mobile (384px) and desktop; Cmd+S / Cmd+K shortcuts; dark mode toggle persists across reload; admin gating with a non-admin account.
