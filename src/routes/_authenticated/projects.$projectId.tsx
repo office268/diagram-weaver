@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewPanel } from "@/components/review-panel";
 
 import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
+import { listDocTypeSettings, effectiveDocTypeConfig } from "@/lib/doc-type-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
@@ -107,6 +108,12 @@ function ProjectPage() {
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
   const deleteGroupFn = useServerFn(deleteSpecGroup);
+  const listDtsFn = useServerFn(listDocTypeSettings);
+
+  const { data: dtsData } = useQuery({
+    queryKey: ["doc-type-settings"],
+    queryFn: () => listDtsFn(),
+  });
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
@@ -231,6 +238,10 @@ function ProjectPage() {
         variant: "original" | "revised" | "single",
       ): Promise<string> => {
         const docTypeDef = getDocType(docTypeKey);
+        const effective = effectiveDocTypeConfig(
+          docTypeKey,
+          dtsData?.overrides[docTypeKey] ?? null,
+        );
         const { spec: row } = await createFn({
           data: {
             title: `${spec.title} — ${docTypeDef.label} — ${model} — ${suffix}`,
@@ -242,8 +253,8 @@ function ProjectPage() {
             model,
             variant,
             docType: docTypeKey,
-            sectionOrder: docTypeDef.sectionOrder,
-            sectionTitles: docTypeDef.sectionTitles,
+            sectionOrder: effective.sectionOrder,
+            sectionTitles: effective.sectionTitles,
             projectId,
           },
         });
