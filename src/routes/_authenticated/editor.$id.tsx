@@ -3,9 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,6 +17,23 @@ import {
 } from "@/components/ui/breadcrumb";
 import { getDocTypeVisual } from "@/lib/doc-types";
 import { getProject } from "@/lib/project.functions";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
@@ -200,8 +218,46 @@ function EditorPage() {
   }, []);
 
   const deleteSection = useCallback((key: string) => {
-    setSectionOrder((prev) => prev.filter((k) => k !== key));
+    let removedIndex = -1;
+    setSectionOrder((prev) => {
+      const idx = prev.indexOf(key);
+      if (idx < 0) return prev;
+      removedIndex = idx;
+      return prev.filter((k) => k !== key);
+    });
+    if (removedIndex < 0) return;
+    const restoreAt = removedIndex;
+    toast.success("הסעיף נמחק", {
+      duration: 8000,
+      action: {
+        label: "בטל",
+        onClick: () => {
+          setSectionOrder((cur) => {
+            if (cur.includes(key)) return cur;
+            const next = [...cur];
+            const at = Math.min(Math.max(restoreAt, 0), next.length);
+            next.splice(at, 0, key);
+            return next;
+          });
+        },
+      },
+    });
   }, []);
+
+  const reorderSections = useCallback((from: string, to: string) => {
+    setSectionOrder((prev) => {
+      const oldIndex = prev.indexOf(from);
+      const newIndex = prev.indexOf(to);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }, []);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
 
   const ensureIds = useCallback(<T extends { id?: string }>(items: unknown): T[] => {
     if (!Array.isArray(items)) return [];
@@ -673,11 +729,7 @@ function EditorPage() {
   }, [content, prompt, userNotes, updateContent, data?.spec, selectedNoteIds, improving, improveDoc, navigate]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-57px)] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EditorSkeleton />;
   }
   if (error || !data?.spec || !content || !renderBody) {
     return (
@@ -765,27 +817,43 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
-        {visibleSections.map((key, index) => {
-          const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
-          const titleValue = sectionTitles[key] ?? def.defaultTitle;
-          return (
-            <SectionShell
-              key={key}
-              title={titleValue}
-              onTitleChange={(v) => setSectionTitle(key, v)}
-              onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
-              onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
-              onDelete={() => deleteSection(key)}
-              onAiImprove={
-                key === "review"
-                  ? undefined
-                  : (instruction) => improveSection(key, titleValue, instruction)
-              }
-            >
-              {renderBody(key)}
-            </SectionShell>
-          );
-        })}
+        <DndContext
+          sensors={dndSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={(e: DragEndEvent) => {
+            const { active, over } = e;
+            if (!over || active.id === over.id) return;
+            reorderSections(String(active.id), String(over.id));
+          }}
+        >
+          <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+            {visibleSections.map((key, index) => {
+              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+              const titleValue = sectionTitles[key] ?? def.defaultTitle;
+              return (
+                <SortableSection key={key} id={key}>
+                  {(dragHandle) => (
+                    <SectionShell
+                      title={titleValue}
+                      dragHandle={dragHandle}
+                      onTitleChange={(v) => setSectionTitle(key, v)}
+                      onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                      onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                      onDelete={() => deleteSection(key)}
+                      onAiImprove={
+                        key === "review"
+                          ? undefined
+                          : (instruction) => improveSection(key, titleValue, instruction)
+                      }
+                    >
+                      {renderBody(key)}
+                    </SectionShell>
+                  )}
+                </SortableSection>
+              );
+            })}
+          </SortableContext>
+        </DndContext>
       </div>
     </div>
   );
@@ -798,6 +866,7 @@ function SectionShell({
   onMoveDown,
   onDelete,
   onAiImprove,
+  dragHandle,
   children,
 }: {
   title: string;
@@ -806,6 +875,7 @@ function SectionShell({
   onMoveDown?: () => void;
   onDelete?: () => void;
   onAiImprove?: (instruction: string) => Promise<boolean>;
+  dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
@@ -838,7 +908,9 @@ function SectionShell({
     <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
+          {dragHandle}
           <div className="flex flex-col">
+
             <Button
               type="button"
               variant="ghost"
@@ -1121,3 +1193,60 @@ function ListBody<T extends { id: string }>({
     </div>
   );
 }
+
+function SortableSection({
+  id,
+  children,
+}: {
+  id: string;
+  children: (dragHandle: React.ReactNode) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  const handle = (
+    <button
+      type="button"
+      className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      aria-label="גרור לסידור מחדש"
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="h-4 w-4" />
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children(handle)}
+    </div>
+  );
+}
+
+function EditorSkeleton() {
+  return (
+    <div className="flex flex-col">
+      <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-card px-3 py-2">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-8 w-full max-w-md" />
+        <Skeleton className="ml-auto h-4 w-20" />
+      </div>
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-border pb-2">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
