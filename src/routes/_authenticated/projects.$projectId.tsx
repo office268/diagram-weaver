@@ -21,7 +21,15 @@ import {
   updateSpec,
   updateGroupPrompt,
 } from "@/lib/spec.functions";
-import { getProject } from "@/lib/project.functions";
+import { getProject, updateProject } from "@/lib/project.functions";
+import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronRight, BookOpen } from "lucide-react";
+
 
 import {
   SpecOutputSchema,
