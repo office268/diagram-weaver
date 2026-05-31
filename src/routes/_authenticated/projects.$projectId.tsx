@@ -871,223 +871,195 @@ function ProjectPage() {
   );
 }
 
-function ComparisonDialog({
+function IterativeBuilderDialog({
   state,
-  anyBusy,
   onClose,
-  onPick,
+  onToggleNote,
+  onSetSelection,
+  onImprove,
+  onFinish,
   onRetry,
 }: {
-  state: CompareState | null;
-  anyBusy: boolean;
+  state: BuilderState | null;
   onClose: () => void;
-  onPick: (specId: string) => void;
-  onRetry: (model: SpecModel) => void;
+  onToggleNote: (version: number, noteId: string) => void;
+  onSetSelection: (version: number, ids: Set<string>) => void;
+  onImprove: () => void;
+  onFinish: (specId?: string) => void;
+  onRetry: () => void;
 }) {
   if (!state) return null;
-  const models = COMPARISON_MODELS;
+  const busy = state.phase === "generating" || state.phase === "reviewing";
+  const last = state.iterations[state.iterations.length - 1] ?? null;
+  const totalVersions = state.iterations.length;
+
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o && !busy) onClose();
+      }}
+    >
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            השוואת תוצאות מ-3 מודלים
-            {anyBusy ? (
-              <Loader2 className="inline-block mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            יצירה איטרטיבית של מסמך
+            {totalVersions > 0 ? (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                גרסה {totalVersions}
+              </span>
+            ) : null}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : null}
           </DialogTitle>
           <DialogDescription>
-            כל מסמך שמצליח נשמר אוטומטית ברשימה. כפתור "בחר" רק פותח את המסמך לעריכה.
+            כל גרסה נשמרת בפרויקט. סמנו את ההצעות שתרצו להטמיע ולחצו "צור גרסה משופרת".
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={models[0]} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
-            {models.map((m) => {
-              const s = state[m];
-              return (
-                <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
-                  {m.split("/")[1]}
-                  {s.status === "error" ? (
-                    <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
-                  ) : s.status === "success" ? (
-                    <Check className="ml-1 h-3 w-3 text-primary" />
-                  ) : (
-                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
-                  )}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+        <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+          {state.phase === "generating" ? (
+            <PhaseBanner
+              text={
+                totalVersions === 0
+                  ? "סוכן היצירה כותב את המסמך…"
+                  : `סוכן היצירה כותב גרסה ${totalVersions + 1}…`
+              }
+            />
+          ) : state.phase === "reviewing" ? (
+            <PhaseBanner text="סוכן הביקורת בודק את המסמך…" />
+          ) : null}
 
-          {models.map((m) => {
-            const s = state[m];
-            return (
-              <TabsContent
-                key={m}
-                value={m}
-                className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
-              >
-                <ModelTabBody state={s} onRetry={() => onRetry(m)} />
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+          {state.phase === "error" ? (
+            <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="font-medium">היצירה נכשלה</div>
+              <div className="text-xs">{state.error}</div>
+              <Button size="sm" variant="outline" onClick={onRetry}>
+                נסה שוב
+              </Button>
+            </div>
+          ) : null}
 
-        <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
-          <Button variant="ghost" onClick={onClose}>
+          {state.iterations.map((it) => (
+            <IterationCard
+              key={it.version}
+              iteration={it}
+              isLatest={it.version === totalVersions}
+              busy={busy}
+              onToggleNote={(noteId) => onToggleNote(it.version, noteId)}
+              onSelectAll={() =>
+                onSetSelection(
+                  it.version,
+                  new Set((it.review?.notes ?? []).map((n) => n.id)),
+                )
+              }
+              onClear={() => onSetSelection(it.version, new Set())}
+              onImprove={onImprove}
+              onFinish={() => onFinish(it.specId)}
+            />
+          ))}
+        </div>
+
+        <DialogFooter className="border-t border-border pt-3">
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
             סגור
           </Button>
-          {models.map((m) => {
-            const s = state[m];
-            if (s.status !== "success") return null;
-            return (
-              <div key={m} className="flex gap-1.5">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onPick(s.originalSpecId)}
-                  dir="ltr"
-                >
-                  <Check className="mr-1.5 h-4 w-4" />
-                  {s.revisedSpecId ? "מקור" : "פתח"}: {m.split("/")[1]}
-                </Button>
-                {s.revisedSpecId ? (
-                  <Button
-                    size="sm"
-                    onClick={() => onPick(s.revisedSpecId!)}
-                    dir="ltr"
-                  >
-                    <Check className="mr-1.5 h-4 w-4" />
-                    מתוקן: {m.split("/")[1]}
-                  </Button>
-                ) : null}
-              </div>
-            );
-          })}
+          {last ? (
+            <Button onClick={() => onFinish(last.specId)} disabled={busy}>
+              פתח את הגרסה האחרונה לעריכה
+            </Button>
+          ) : null}
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );
 }
 
-const STAGE_LABEL: Record<Stage, string> = {
-  loading: "המודל עובד… עשוי לקחת עד דקה.",
-  reviewing: "סוכן הביקורת בודק את האפיון…",
-  revising: "מריץ את סוכן הניתוח שוב עם הערות המבקר…",
-  "reviewing-revised": "סוכן הביקורת בודק את הגרסה המתוקנת…",
-  saving: "שומר את המסמכים…",
-};
-
-function ModelTabBody({
-  state,
-  onRetry,
-}: {
-  state: ModelState;
-  onRetry: () => void;
-}) {
-  if (state.status === "error") {
-    return (
-      <div className="space-y-3">
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="font-medium">המודל נכשל</div>
-          <div className="mt-1 text-xs">{state.error}</div>
-        </div>
-        <Button size="sm" variant="outline" onClick={onRetry}>
-          <RefreshCw className="mr-1.5 h-4 w-4" />
-          נסה שוב
-        </Button>
-        {state.revisedSpec ? (
-          <ResultPreview spec={state.revisedSpec} review={state.revisedReview ?? null} />
-        ) : state.originalSpec ? (
-          <ResultPreview spec={state.originalSpec} review={state.originalReview ?? null} />
-        ) : null}
-      </div>
-    );
-  }
-
-  if (state.status === "success") {
-    if (!state.revisedSpec) {
-      return <ResultPreview spec={state.originalSpec} review={state.originalReview} />;
-    }
-    return (
-      <Tabs defaultValue="revised" className="space-y-3">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="revised">מתוקן</TabsTrigger>
-          <TabsTrigger value="original">מקור</TabsTrigger>
-        </TabsList>
-        <TabsContent value="revised">
-          <ResultPreview spec={state.revisedSpec} review={state.revisedReview} />
-        </TabsContent>
-        <TabsContent value="original">
-          <ResultPreview spec={state.originalSpec} review={state.originalReview} />
-        </TabsContent>
-      </Tabs>
-    );
-  }
-
-  // In-flight stage
-  const label = STAGE_LABEL[state.status];
-  const partial = state.partialSpec;
+function PhaseBanner({ text }: { text: string }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {label}
-      </div>
-      {partial ? (
-        <ResultPreview spec={partial} review={state.partialReview ?? null} />
-      ) : (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+    <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <span>{text}</span>
     </div>
   );
 }
 
-
-function ResultPreview({
-  spec,
-  review,
+function IterationCard({
+  iteration,
+  isLatest,
+  busy,
+  onToggleNote,
+  onSelectAll,
+  onClear,
+  onImprove,
+  onFinish,
 }: {
-  spec: SpecOutput;
-  review: SpecReview | null;
+  iteration: Iteration;
+  isLatest: boolean;
+  busy: boolean;
+  onToggleNote: (noteId: string) => void;
+  onSelectAll: () => void;
+  onClear: () => void;
+  onImprove: () => void;
+  onFinish: () => void;
 }) {
+  const { spec, review, version } = iteration;
   const stats = [
     { label: "מטרות", n: spec.goals.length },
-    { label: "Personas", n: spec.personas.length },
     { label: "דרישות פונק'", n: spec.functional_requirements.length },
     { label: "דרישות לא-פונק'", n: spec.non_functional_requirements.length },
-    { label: "הנחות", n: spec.assumptions.length },
     { label: "תרחישים", n: spec.use_cases.length },
-    { label: "סיכונים", n: spec.risks.length },
   ];
   return (
-    <div className="space-y-4 text-sm">
-      <div>
-        <h3 className="font-semibold text-foreground">{spec.title}</h3>
-        <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{spec.overview}</p>
+    <div className="space-y-3 rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            v{version}
+          </span>
+          <h3 className="font-semibold text-foreground">{spec.title}</h3>
+        </div>
+        {typeof review?.score === "number" ? (
+          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+            ציון {review.score}/10
+          </span>
+        ) : null}
       </div>
-      {review ? <ReviewPanel review={review} /> : null}
+      {spec.overview ? (
+        <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">
+          {spec.overview}
+        </p>
+      ) : null}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-md border border-border bg-muted/30 p-2 text-center">
-            <div className="text-lg font-semibold text-foreground">{s.n}</div>
-            <div className="text-[11px] text-muted-foreground">{s.label}</div>
+          <div
+            key={s.label}
+            className="rounded-md border border-border bg-muted/30 p-2 text-center"
+          >
+            <div className="text-base font-semibold text-foreground">{s.n}</div>
+            <div className="text-[10px] text-muted-foreground">{s.label}</div>
           </div>
         ))}
       </div>
-      <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-        <summary className="cursor-pointer font-medium">הצג מסמך מלא (JSON)</summary>
-        <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[11px]" dir="ltr">
-          {JSON.stringify(spec, null, 2)}
-        </pre>
-      </details>
+
+      {isLatest && review ? (
+        <ReviewSuggestionsPanel
+          review={review}
+          selected={iteration.selectedNoteIds}
+          onToggle={onToggleNote}
+          onSelectAll={onSelectAll}
+          onClear={onClear}
+          onImprove={onImprove}
+          onFinish={onFinish}
+          improving={busy}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 function EditableDocTitle({
   id,
