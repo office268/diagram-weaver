@@ -1544,20 +1544,13 @@ function ListBody<T extends { id: string }>({
             <div className="mb-2 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">#{idx + 1}</span>
             </div>
-            {renderItem(item, (next) =>
-              onChange(items.map((it) => (it.id === item.id ? next : it))),
-            )}
-            <div className="mt-2 hidden justify-start group-focus-within:flex">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => onChange(items.filter((it) => it.id !== item.id))}
-              >
-                <Trash2 className="mr-1 h-3.5 w-3.5" /> מחק
-              </Button>
-            </div>
+            <EditableItemDeleteContext.Provider
+              value={() => onChange(items.filter((it) => it.id !== item.id))}
+            >
+              {renderItem(item, (next) =>
+                onChange(items.map((it) => (it.id === item.id ? next : it))),
+              )}
+            </EditableItemDeleteContext.Provider>
           </li>
         ))}
         {items.length === 0 && (
