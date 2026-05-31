@@ -820,21 +820,21 @@ function EditorPage() {
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="h-8 w-full max-w-md text-sm sm:flex-1"
+          className="order-3 h-8 w-full basis-full text-sm sm:order-none sm:flex-1 sm:basis-auto sm:max-w-md"
           placeholder="כותרת המסמך"
         />
         <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
           {saveState === "saving" ? (
             <>
-              <Loader2 className="h-3 w-3 animate-spin" /> שומר…
+              <Loader2 className="h-3 w-3 animate-spin" /> <span className="hidden sm:inline">שומר…</span>
             </>
           ) : saveState === "saved" ? (
             <>
-              <Check className="h-3 w-3 text-primary" /> נשמר
+              <Check className="h-3 w-3 text-primary" /> <span className="hidden sm:inline">נשמר</span>
             </>
           ) : (
             <>
-              <Save className="h-3 w-3" /> שמירה אוטומטית
+              <Save className="h-3 w-3" /> <span className="hidden sm:inline">שמירה אוטומטית</span>
             </>
           )}
         </div>
