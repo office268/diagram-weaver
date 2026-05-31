@@ -1,39 +1,32 @@
-שינויי frontend בלבד; אין נגיעה ב-backend/DB.
+## תיקונים 14, 16, 17, 19
 
-## 8 — Drag & drop לסידור סעיפים בעורך
-`src/routes/_authenticated/editor.$id.tsx`
-- התקנת `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (סטנדרט React, נגיש כולל מקלדת ו-touch).
-- עטיפת רשימת הסעיפים ב-`DndContext` + `SortableContext` (אסטרטגיה אנכית; פריטים = `visibleSections`).
-- wrapper `SortableSection` שמשתמש ב-`useSortable(key)` ומעביר drag-handle (`GripVertical`) ל-`SectionShell`. ה-handle ישולב משמאל לחיצים הקיימים, שיישארו כ-fallback נגיש.
-- ב-`onDragEnd` עדכון `sectionOrder` — autosave הקיים יתפוס את השינוי.
-- `PointerSensor` עם `activationConstraint: { distance: 5 }` כדי שלא יתנגש בקליק על הכותרת/חצים; `KeyboardSensor` לנגישות.
+### 14 — שחזור סיסמה ב-Login
+קובץ: `src/routes/login.tsx` + עמוד חדש `src/routes/reset-password.tsx`.
+- בטאב "כניסה" להוסיף קישור "שכחתי סיסמה" שפותח דיאלוג עם שדה אימייל וקורא ל-`supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/reset-password" })`.
+- אגב כך לתרגם את הטקסטים שנותרו באנגלית בעמוד (Email, Password, Sign in/Create account, OR, Continue with Google, ההודעות ב-toast) לעברית — נדרש בכל מקרה לעקביות עם בקשת השפה הקודמת.
+- ליצור עמוד ציבורי `/reset-password` (לא תחת `_authenticated`) עם טופס סיסמה חדשה הקורא ל-`supabase.auth.updateUser({ password })`. לאחר הצלחה — toast והפניה ל-`/projects`.
 
-## 11 — חיפוש וסינון
-### דף הפרויקטים — `src/routes/_authenticated/projects.index.tsx`
-- שדה חיפוש (`Input` + אייקון `Search`) מעל הרשת.
-- סינון client-side לפי `name`/`description` (case-insensitive).
-- empty state מותאם כשהשאילתה לא תואמת לאף פרויקט.
+### 16 — היסטוריית פרומפטים לכל סוג סעיף
+קובץ: `src/routes/_authenticated/editor.$id.tsx` (רכיב `SectionShell`) + hook חדש `src/hooks/use-prompt-history.ts`.
+- `usePromptHistory(key)` שומר ב-`localStorage` עד 5 פרומפטים אחרונים לכל מפתח (`spec-ai-prompt-history:<key>`), dedupe וסדר LRU.
+- ב-Popover של ה-AI בכל סעיף: מתחת ל-Textarea להציג רשימת shortcuts (אם קיימים) — כל פריט הוא chip קטן שלחיצה עליו ממלאת את ה-Textarea. כפתור X קטן ליד כל chip להסרה.
+- ב-`handleAiSubmit` להוסיף קריאה ל-`addPrompt(instruction)` עם הצלחה.
 
-### בתוך פרויקט — `src/routes/_authenticated/projects.$projectId.tsx`
-- שדה חיפוש בראש רשימת המסמכים.
-- סינון client-side ברמת קבוצה לפי `title`/`prompt`/label של סוג המסמך. קבוצה תוצג אם פריט בה תואם.
-- סקציות של סוגי מסמכים שריקות אחרי סינון מוסתרות.
+### 17 — Preview של שינויי AI לפני החלת התוצאה
+קובץ: `src/routes/_authenticated/editor.$id.tsx` — `improveSection` + `SectionShell`.
+- `improveSection` תחזיר את ה-`value` החדש במקום להחיל מיידית; ה-Shell יציג דיאלוג Preview עם:
+  - תצוגת התוצאה החדשה (משתמש ברנדרר הקיים `renderBody`-ל ערך מועמד; לפשטות — `<pre>` עם stringify לערכים מובְנים ו-Markdown/טקסט לערכי טקסט; שימוש ב-renderer הקיים אם אפשרי דרך state מקומי).
+  - שני כפתורים: "החל" → `applySectionValue(key, candidate)` + toast עם פעולת "בטל" (משחזרת את הערך הקודם), "בטל" → סוגר ללא שינוי.
+- שמירת snapshot של הערך הקודם לתמיכה ב-undo.
 
-## 12 — Skeleton loading
-שימוש ברכיב הקיים `@/components/ui/skeleton.tsx`. החלפת ה-`Loader2` המרוכז של טעינה ראשונית בלבד; `Loader2` של פעולות חיות (שמירה/יצירה/inline) נשארים.
-- `projects.index.tsx`: grid של 6 שלדי-כרטיס.
-- `projects.$projectId.tsx`: 2–3 שלדי סקציה (כותרת + שתי שורות).
-- `editor.$id.tsx`: שלד toolbar + 4 שלדי סעיפים (כותרת + תוכן).
+### 19 — Toolbar במובייל
+קובץ: `src/routes/_authenticated/editor.$id.tsx` — בלוק ה-toolbar (שורות 756–816).
+- ב-mobile: ה-Input של הכותרת תופס שורה שלמה מתחת ל-Breadcrumb (`order` ו-`basis-full sm:basis-auto`). ב-sm+ נשארת התנהגות נוכחית.
+- אינדיקטור "שמירה אוטומטית" → ב-mobile רק אייקון (טקסט `hidden sm:inline`).
+- `sticky top-0` נשאר; להוסיף `backdrop-blur` קל ולוודא `z-30` כדי שלא ידרס ע"י תוכן ארוך.
 
-## 13 — Undo למחיקת סעיף בעורך
-`src/routes/_authenticated/editor.$id.tsx`
-- ב-`deleteSection`: לשמור snapshot `(key, index)` ולהציג `toast.success("הסעיף נמחק", { action: { label: "בטל", onClick: restore } })`.
-- `restore` מחזיר את המפתח ל-`sectionOrder` באותו אינדקס (`splice`). אם בינתיים השתנה — fallback להוספה לסוף. הגנה מפני כפילות.
-- משך toast = 8 שניות.
-- אין צורך בשחזור תוכן: הסרת מפתח מהסדר אינה מאפסת את `content`/`sectionTitles`.
-
-## טכני
-- תלות חדשה: `@dnd-kit/core@^6`, `@dnd-kit/sortable@^8`, `@dnd-kit/utilities@^3`.
-- שלדים בנויים מ-tailwind classes על הרכיב הקיים — בלי שינוי `styles.css`.
-- אין שינויי schema, server functions או routing.
-- אימות חזותי בעורך לאחר ההטמעה (drag handle, skeletons, undo toast).
+## פרטים טכניים
+- אין שינויי DB / server functions.
+- אין dependencies חדשות.
+- שינויים פרונט-אנד בלבד: 3 קבצים נערכים, 2 נוצרים (`/reset-password` route, hook).
+- אימות ויזואלי במובייל (384px) ובדסקטופ לאחר ההטמעה.
