@@ -130,7 +130,11 @@ function ProjectsPage() {
             כל פרויקט מאגד את כל סוגי המסמכים והגרסאות שלו.
           </p>
         </div>
-        <Button onClick={() => setNewOpen(true)} className="btn-gradient w-full border-0 sm:w-auto">
+        <Button
+          onClick={() => setNewOpen(true)}
+          className="btn-gradient w-full border-0 sm:w-auto"
+          data-tour="new-project-btn"
+        >
           <FolderPlus className="mr-2 h-4 w-4" />
           פרויקט חדש
         </Button>

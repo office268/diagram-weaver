@@ -26,6 +26,7 @@ import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
