@@ -719,6 +719,12 @@ function EditorPage() {
               onTitleChange={(v) => setSectionTitle(key, v)}
               onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
               onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+              onDelete={() => deleteSection(key)}
+              onAiImprove={
+                key === "review"
+                  ? undefined
+                  : (instruction) => improveSection(key, titleValue, instruction)
+              }
             >
               {renderBody(key)}
             </SectionShell>
