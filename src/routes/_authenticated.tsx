@@ -4,6 +4,11 @@ import { FileText, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { RecentItemsMenu } from "@/components/recent-items-menu";
+import {
+  GlobalCommandPalette,
+  CommandTriggerButton,
+} from "@/components/global-command-palette";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -28,13 +33,15 @@ function AuthenticatedLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-          <Link to="/projects" className="flex items-center gap-2 font-semibold text-foreground">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <Link to="/projects" className="flex shrink-0 items-center gap-2 font-semibold text-foreground">
             <FileText className="h-5 w-5 text-primary" />
-            סוכן ניתוח מערכות
+            <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
           </Link>
 
           <div className="flex items-center gap-1.5">
+            <CommandTriggerButton />
+            <RecentItemsMenu />
             <ThemeToggle />
             <UserMenu user={user} />
           </div>
@@ -53,6 +60,7 @@ function AuthenticatedLayout() {
           </nav>
         </div>
       </footer>
+      <GlobalCommandPalette />
     </div>
   );
 }
