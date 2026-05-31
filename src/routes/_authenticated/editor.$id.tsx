@@ -591,7 +591,7 @@ function EditorPage() {
         const revRes = await fetch("/api/review-spec", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ prompt: promptText, spec: newSpec }),
+          body: JSON.stringify({ prompt: promptText, spec: newSpec, projectId: spec.project_id ?? undefined }),
         });
         if (revRes.ok) {
           const j = await revRes.json();
