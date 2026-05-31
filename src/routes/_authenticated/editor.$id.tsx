@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, Sparkles, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
@@ -175,6 +176,128 @@ function EditorPage() {
       return next;
     });
   }, []);
+
+  const deleteSection = useCallback((key: string) => {
+    setSectionOrder((prev) => prev.filter((k) => k !== key));
+  }, []);
+
+  const ensureIds = useCallback(<T extends { id?: string }>(items: unknown): T[] => {
+    if (!Array.isArray(items)) return [];
+    return items.map((it) => {
+      if (it && typeof it === "object") {
+        const obj = it as Record<string, unknown>;
+        if (typeof obj.id !== "string" || !obj.id) {
+          return { ...obj, id: newId() } as T;
+        }
+      }
+      return it as T;
+    });
+  }, []);
+
+  const getSectionValue = useCallback(
+    (key: string): { value: unknown; shape: "string" | "array" | "object" } | null => {
+      if (!content) return null;
+      switch (key) {
+        case "overview": return { value: content.overview, shape: "string" };
+        case "goals": return { value: content.goals, shape: "array" };
+        case "personas": return { value: content.personas, shape: "array" };
+        case "functional_requirements": return { value: content.functional_requirements, shape: "array" };
+        case "non_functional_requirements": return { value: content.non_functional_requirements, shape: "array" };
+        case "assumptions": return { value: content.assumptions, shape: "array" };
+        case "use_cases": return { value: content.use_cases, shape: "array" };
+        case "architecture": return { value: content.architecture, shape: "object" };
+        case "data_model": return { value: content.data_model, shape: "object" };
+        case "risks": return { value: content.risks, shape: "array" };
+        case "user_prompt": return { value: prompt, shape: "string" };
+        case "user_notes": return { value: userNotes, shape: "string" };
+        default: return null;
+      }
+    },
+    [content, prompt, userNotes],
+  );
+
+  const applySectionValue = useCallback(
+    (key: string, value: unknown) => {
+      const asString = () => (typeof value === "string" ? value : JSON.stringify(value));
+      const asObject = (fallback: { description: string; diagram: string }) => {
+        if (value && typeof value === "object") {
+          const obj = value as { description?: unknown; diagram?: unknown };
+          return {
+            description: typeof obj.description === "string" ? obj.description : fallback.description,
+            diagram: typeof obj.diagram === "string" ? obj.diagram : fallback.diagram,
+          };
+        }
+        return fallback;
+      };
+      switch (key) {
+        case "overview":
+          updateContent((c) => ({ ...c, overview: asString() })); break;
+        case "goals":
+          updateContent((c) => ({ ...c, goals: ensureIds<TextItem>(value) })); break;
+        case "personas":
+          updateContent((c) => ({ ...c, personas: ensureIds<Persona>(value) })); break;
+        case "functional_requirements":
+          updateContent((c) => ({ ...c, functional_requirements: ensureIds<Requirement>(value) })); break;
+        case "non_functional_requirements":
+          updateContent((c) => ({ ...c, non_functional_requirements: ensureIds<Requirement>(value) })); break;
+        case "assumptions":
+          updateContent((c) => ({ ...c, assumptions: ensureIds<TextItem>(value) })); break;
+        case "use_cases":
+          updateContent((c) => ({ ...c, use_cases: ensureIds<UseCase>(value) })); break;
+        case "architecture":
+          updateContent((c) => ({ ...c, architecture: asObject(c.architecture) })); break;
+        case "data_model":
+          updateContent((c) => ({ ...c, data_model: asObject(c.data_model) })); break;
+        case "risks":
+          updateContent((c) => ({ ...c, risks: ensureIds<TextItem>(value) })); break;
+        case "user_prompt":
+          setPrompt(asString()); break;
+        case "user_notes":
+          setUserNotes(asString()); break;
+      }
+    },
+    [updateContent, ensureIds],
+  );
+
+  const improveSection = useCallback(
+    async (key: string, label: string, instruction: string): Promise<boolean> => {
+      const cur = getSectionValue(key);
+      if (!cur) {
+        toast.error("לא ניתן לשפר סעיף זה");
+        return false;
+      }
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("נדרשת התחברות מחדש");
+        const res = await fetch("/api/improve-section", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            sectionKey: key,
+            sectionLabel: label,
+            sectionValue: cur.value,
+            valueShape: cur.shape,
+            instruction,
+            contextPrompt: prompt,
+            docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
+          }),
+        });
+        if (!res.ok) {
+          const t = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
+          throw new Error(t);
+        }
+        const json = (await res.json()) as { value: unknown };
+        applySectionValue(key, json.value);
+        toast.success("הסעיף עודכן");
+        return true;
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "שיפור הסעיף נכשל");
+        return false;
+      }
+    },
+    [getSectionValue, applySectionValue, prompt, data?.spec],
+  );
 
   const improveDoc = useCallback(async () => {
     if (!data?.spec || !content) return;
@@ -596,6 +719,12 @@ function EditorPage() {
               onTitleChange={(v) => setSectionTitle(key, v)}
               onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
               onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+              onDelete={() => deleteSection(key)}
+              onAiImprove={
+                key === "review"
+                  ? undefined
+                  : (instruction) => improveSection(key, titleValue, instruction)
+              }
             >
               {renderBody(key)}
             </SectionShell>
@@ -611,17 +740,43 @@ function SectionShell({
   onTitleChange,
   onMoveUp,
   onMoveDown,
+  onDelete,
+  onAiImprove,
   children,
 }: {
   title: string;
   onTitleChange: (v: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onDelete?: () => void;
+  onAiImprove?: (instruction: string) => Promise<boolean>;
   children: React.ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
   const [open, setOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const startEdit = () => {
+    setDraft(title);
+    setEditing(true);
+    setOpen(true);
+  };
+
+  const handleAiSubmit = async () => {
+    if (!onAiImprove || aiPrompt.trim().length < 3) return;
+    setAiBusy(true);
+    const ok = await onAiImprove(aiPrompt.trim());
+    setAiBusy(false);
+    if (ok) {
+      setAiPrompt("");
+      setAiOpen(false);
+      setOpen(true);
+    }
+  };
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
@@ -689,24 +844,144 @@ function SectionShell({
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              onDoubleClick={() => {
-                setDraft(title);
-                setEditing(true);
-              }}
+              onDoubleClick={startEdit}
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-              title="לחץ לפתיחה/סגירה. דאבל-קליק לעריכת שם הסעיף"
+              title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
             >
               <span>{title}</span>
-              <Pencil
-                className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDraft(title);
-                  setEditing(true);
-                }}
-              />
             </button>
           )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={startEdit}
+              title="עריכת שם הסעיף"
+              aria-label="עריכה"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+
+            {onAiImprove ? (
+              <Popover
+                open={aiOpen}
+                onOpenChange={(o) => {
+                  if (aiBusy) return;
+                  setAiOpen(o);
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-primary"
+                    title="שיפור הסעיף עם AI"
+                    aria-label="שיפור עם AI"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-foreground">
+                      שיפור עם AI
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setAiOpen(false)}
+                      disabled={aiBusy}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    תאר/י כיצד לשפר את הסעיף "{title}".
+                  </p>
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    rows={4}
+                    placeholder="למשל: הוסף פירוט תפעולי, תקן ניסוחים, פצל לסעיפים..."
+                    disabled={aiBusy}
+                    autoFocus
+                    dir="auto"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAiOpen(false)}
+                      disabled={aiBusy}
+                    >
+                      ביטול
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAiSubmit}
+                      disabled={aiBusy || aiPrompt.trim().length < 3}
+                    >
+                      {aiBusy ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      שפר
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : null}
+
+            {onDelete ? (
+              confirmDelete ? (
+                <div className="flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/5 px-1.5">
+                  <span className="text-[11px] text-destructive">למחוק?</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      onDelete();
+                      setConfirmDelete(false);
+                    }}
+                  >
+                    כן
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    לא
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                  title="מחיקת הסעיף מהמסמך"
+                  aria-label="מחיקה"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )
+            ) : null}
+          </div>
         </div>
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
