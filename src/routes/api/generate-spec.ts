@@ -9,13 +9,16 @@ import {
 import { resolveSystemInstruction } from "@/lib/doc-type-instructions.server";
 import { DOC_TYPE_KEYS } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
 const BodySchema = z.object({
   prompt: z.string().min(5).max(5000),
   previousSpec: z.record(z.string(), z.any()).optional(),
   reviewerNotes: z.array(z.string()).max(50).optional(),
   docType: z.enum(DOC_TYPE_KEYS).optional(),
+  projectId: z.string().uuid().optional(),
 });
+
 
 export const Route = createFileRoute("/api/generate-spec")({
   server: {
