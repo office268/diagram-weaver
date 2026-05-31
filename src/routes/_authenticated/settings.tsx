@@ -10,7 +10,7 @@ import {
   updateAiSettings,
   resetAiSettings,
 } from "@/lib/ai-settings.functions";
-import { COMPARISON_MODELS, OUTPUT_SCHEMA_FIELDS } from "@/lib/ai-spec-defaults";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -166,75 +166,6 @@ function SettingsPage() {
               </div>
             </div>
 
-            {!data.is_default && (
-              <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-                <summary className="cursor-pointer font-medium">הצג ברירת מחדל מקורית</summary>
-                <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] text-muted-foreground" dir="auto">
-                  {data.default_system_instruction}
-                </pre>
-              </details>
-            )}
-          </CardContent>
-        </Card>
-      </SettingsSection>
-
-      <SettingsSection
-        title="תבנית הפרומפט הנשלח ל-LLM"
-        description="מבנה ההודעות והסכמת הפלט שנשלחים למודל."
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <EditableSiteText
-                textKey="settings.prompt.title"
-                defaultValue="תבנית הפרומפט הנשלח ל-LLM"
-              />
-            </CardTitle>
-            <CardDescription>
-              <EditableSiteText
-                textKey="settings.prompt.desc"
-                defaultValue="יצירת המסמך מתבצעת במקביל על שלושה מודלים — התוצאות מוצגות זו לצד זו לבחירה."
-              />
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">מודלים (מקבילית)</div>
-              <ul className="mt-1 space-y-1">
-                {COMPARISON_MODELS.map((m) => (
-                  <li key={m}>
-                    <code className="inline-block rounded bg-muted px-2 py-1 text-xs" dir="ltr">
-                      {m}
-                    </code>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">System message</div>
-              <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
-                {draft}
-              </pre>
-            </div>
-
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">User message</div>
-              <pre className="mt-1 rounded-md border border-border bg-muted/30 p-3 font-mono text-[11px]" dir="auto">
-                {`{user_prompt}  ← הטקסט שהמשתמש מקליד בדיאלוג "מסמך אפיון חדש"`}
-              </pre>
-            </div>
-
-            <div>
-              <div className="text-xs font-semibold text-muted-foreground">Output schema (structured)</div>
-              <ul className="mt-1 list-disc space-y-0.5 rounded-md border border-border bg-muted/30 p-3 pr-6 text-[12px]" dir="auto">
-                {OUTPUT_SCHEMA_FIELDS.map((f) => (
-                  <li key={f}>
-                    <code className="text-[11px]">{f}</code>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </CardContent>
         </Card>
       </SettingsSection>
