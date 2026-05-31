@@ -1,25 +1,21 @@
-# תיקון גרירת סעיפי האפיון במובייל
+אעדכן את מנגנון הגרירה בעורך כך שיעבוד גם במסכי מגע, ואז אאמת אותו ישירות בתצוגה המקדימה.
 
-## הבעיה
-בעורך (`src/routes/_authenticated/editor.$id.tsx`) ה‑`DndContext` מוגדר עם `PointerSensor` ו‑`KeyboardSensor` בלבד. במובייל (הצפייה הנוכחית 384px), אירועי `pointer` של גרירה מתנגשים עם הגלילה הטבעית של הדפדפן ולכן הדפדפן מבטל את הגרירה מיד אחרי שהיא מתחילה — בדיוק מה שרואים ב‑session replay ("Dragging was cancelled" אחרי `Picked up draggable item`).
+## מה אשנה
+1. אחזק את אזור הגרירה של סעיפי האפיון ב־`src/routes/_authenticated/editor.$id.tsx` כך ש־TouchSensor לא יבוטל מיד על ידי גלילת הדף.
+2. אוסיף ל־drag handle ולמיכל הרלוונטי הגדרות מגע מתאימות (`touch-action`/מניעת מחוות מתנגשות) בלי לפגוע בגלילה הרגילה של העורך.
+3. אעדכן את חוויית הגרירה במובייל כדי שהמשתמש יוכל ללחוץ לחיצה קצרה/ארוכה על הידית ואז להזיז סעיף בפועל.
+4. אבדוק בתצוגה המקדימה במסך צר שהסעיף באמת מחליף מיקום ולא רק נכנס למצב drag ואז מתבטל.
 
-`@dnd-kit` מטפל בזה ע"י `TouchSensor` עם `activationConstraint.delay` — לחיצה ארוכה (~200ms) שמבדילה בין כוונה לגרור לבין גלילה.
+## למה זה כנראה קורה
+כרגע הגרירה כן מתחילה, אבל במובייל היא מתבטלת מיד. זה דפוס טיפוסי של `dnd-kit` כשאלמנט הגרירה לא מוגדר נכון למסכי מגע, ולכן הדפדפן נותן עדיפות לגלילה/gesture ומבטל את ה־drag.
 
-## השינוי
-ב‑`src/routes/_authenticated/editor.$id.tsx`:
-
-1. להוסיף `TouchSensor` ו‑`MouseSensor` לייבוא מ‑`@dnd-kit/core`.
-2. להחליף את הגדרת ה‑sensors כך:
-   - `MouseSensor` עם `activationConstraint: { distance: 5 }` (דסקטופ — גרירה מיידית אחרי 5px).
-   - `TouchSensor` עם `activationConstraint: { delay: 200, tolerance: 8 }` (מובייל — long‑press קצר, סובלנות תזוזה כדי לא לבטל בגלל רעש אצבע).
-   - להשאיר את `KeyboardSensor`.
-   - להסיר את ה‑`PointerSensor` (מיותר ויוצר את ההתנגשות).
-
-זה הדפוס הסטנדרטי של dnd-kit לסביבות עם מסך מגע + עכבר.
-
-## בדיקה
-- דסקטופ: גרירה רגילה של ידית הסעיף עדיין עובדת מיד.
-- מובייל: long‑press קצר על ידית ה‑grip ואז גרירה — בלי שהגלילה מבטלת את הפעולה.
-
-## קבצים מושפעים
-- `src/routes/_authenticated/editor.$id.tsx` (ייבוא + `dndSensors` בלבד; ללא שינויי לוגיקה אחרים).
+## פרטים טכניים
+- קובץ עיקרי: `src/routes/_authenticated/editor.$id.tsx`
+- אזורים רלוונטיים:
+  - `DndContext` + `useSensors`
+  - `SortableSection`
+  - `SectionShell`
+- תיקון צפוי:
+  - התאמת CSS/props לידית הגרירה עבור touch
+  - שמירה על `MouseSensor`/`TouchSensor`/`KeyboardSensor`
+  - אימות התנהגות במובייל אחרי השינוי
