@@ -13,7 +13,17 @@ const BodySchema = z.object({
 
 const ReviewParseSchema = z.object({
   score: z.coerce.number(),
-  notes: z.array(z.string()).default([]),
+  notes: z
+    .array(
+      z.union([
+        z.string(),
+        z.object({
+          text: z.string(),
+          importance: z.coerce.number().optional(),
+        }),
+      ]),
+    )
+    .default([]),
 });
 
 const REVIEWER_SYSTEM = [
@@ -21,10 +31,11 @@ const REVIEWER_SYSTEM = [
   "קיבלת את הפרומפט המקורי של המשתמש ואת מסמך האפיון שהופק (JSON).",
   "תפקידך: לדרג את המסמך בציון שלם בין 1 ל-10 על בסיס: שלמות, עקביות, רמת פירוט, בהירות, וכיסוי הפרומפט.",
   "כתוב עד 8 הערות שיפור — קצרות, קונקרטיות, מעשיות, בעברית.",
+  "לכל הערה הוסף דירוג חשיבות שלם בין 1 (שולי) ל-10 (קריטי לתיקון).",
   "אם המסמך מצוין באמת — החזר רשימת notes ריקה.",
   "",
   "פורמט הפלט — חובה:",
-  'החזר אך ורק אובייקט JSON תקני יחיד במבנה: { "score": <מספר שלם 1-10>, "notes": [<מחרוזות בעברית>] }.',
+  'החזר אך ורק אובייקט JSON תקני יחיד במבנה: { "score": <מספר שלם 1-10>, "notes": [ { "text": <מחרוזת בעברית>, "importance": <מספר שלם 1-10> } ] }.',
   "ללא טקסט נוסף לפני או אחרי, ללא הסברים, וללא עטיפה ב-```json``` או בכל סימן markdown.",
 ].join("\n");
 
@@ -76,9 +87,22 @@ export const Route = createFileRoute("/api/review-spec")({
             const parsed = ReviewParseSchema.parse(raw);
             const score = Math.max(1, Math.min(10, Math.round(parsed.score)));
             const notes = parsed.notes
-              .filter((n) => typeof n === "string" && n.trim().length > 0)
-              .slice(0, 20)
-              .map((n) => n.slice(0, 500));
+              .map((n, i) => {
+                if (typeof n === "string") {
+                  const t = n.trim();
+                  if (!t) return null;
+                  return { id: `n-${i + 1}`, text: t.slice(0, 500), importance: 5 };
+                }
+                const t = (n.text ?? "").trim();
+                if (!t) return null;
+                const importance =
+                  typeof n.importance === "number" && isFinite(n.importance)
+                    ? Math.max(1, Math.min(10, Math.round(n.importance)))
+                    : 5;
+                return { id: `n-${i + 1}`, text: t.slice(0, 500), importance };
+              })
+              .filter((n): n is { id: string; text: string; importance: number } => n !== null)
+              .slice(0, 20);
             return Response.json({ score, notes });
           } catch (parseErr) {
             console.error("[review-spec] parse failed:", parseErr, "raw:", text);

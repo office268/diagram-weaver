@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Check, AlertCircle, RefreshCw, Layers, ArrowRight } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight } from "lucide-react";
 import {
   createSpec,
   deleteSpec,
@@ -18,6 +18,8 @@ import {
   extractJson,
   type SpecOutput,
   type SpecReview,
+  type ReviewNote,
+  normalizeReviewNotes,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
@@ -42,11 +44,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReviewPanel } from "@/components/review-panel";
+import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 
 import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
 import { listDocTypeSettings, effectiveDocTypeConfig } from "@/lib/doc-type-settings.functions";
+
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
@@ -62,43 +64,34 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId")({
 
 });
 
-type Stage =
-  | "loading"
-  | "reviewing"
-  | "revising"
-  | "reviewing-revised"
-  | "saving";
-
-type ModelOk = {
-  status: "success";
-  originalSpec: SpecOutput;
-  originalSpecId: string;
-  originalReview: SpecReview | null;
-  revisedSpec: SpecOutput | null;
-  revisedSpecId: string | null;
-  revisedReview: SpecReview | null;
+/**
+ * One generated version inside an iterative build session.
+ * Each iteration is saved to the DB and shows up in the project history.
+ */
+type Iteration = {
+  version: number;
+  specId: string;
+  spec: SpecOutput;
+  review: SpecReview | null;
+  /** Note ids the user picked to feed into the NEXT iteration. */
+  selectedNoteIds: Set<string>;
 };
 
-type ModelState =
-  | { status: Stage; partialSpec?: SpecOutput; partialReview?: SpecReview | null }
-  | ModelOk
-  | {
-      status: "error";
-      error: string;
-      originalSpec?: SpecOutput;
-      originalReview?: SpecReview | null;
-      revisedSpec?: SpecOutput;
-      revisedReview?: SpecReview | null;
-      canRetry?: boolean;
-    };
+type BuilderPhase =
+  | "generating"
+  | "reviewing"
+  | "ready"
+  | "error";
 
-type CompareState = Record<SpecModel, ModelState>;
-
-function initialCompareState(): CompareState {
-  return Object.fromEntries(
-    COMPARISON_MODELS.map((m) => [m, { status: "loading" } as ModelState]),
-  ) as CompareState;
-}
+type BuilderState = {
+  groupId: string;
+  prompt: string;
+  docType: DocTypeKey;
+  model: SpecModel;
+  iterations: Iteration[];
+  phase: BuilderPhase;
+  error?: string;
+};
 
 function ProjectPage() {
   const { projectId } = Route.useParams();
@@ -121,278 +114,336 @@ function ProjectPage() {
   const [typePickerOpen, setTypePickerOpen] = useState(false);
   const [docType, setDocType] = useState<DocTypeKey>("spec_overview");
   const [prompt, setPrompt] = useState("");
-  const [compareState, setCompareState] = useState<CompareState | null>(null);
-  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
+  const [builder, setBuilder] = useState<BuilderState | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProjectFn({ data: { id: projectId } }),
   });
 
+  /** Low-level: one streamed generation call. */
+  const generateOnce = useCallback(
+    async (
+      token: string,
+      params: {
+        promptText: string;
+        model: SpecModel;
+        docTypeKey: DocTypeKey;
+        previousSpec?: SpecOutput;
+        reviewerNotes?: string[];
+      },
+    ): Promise<SpecOutput> => {
+      const res = await fetch("/api/generate-spec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: params.promptText,
+          model: params.model,
+          docType: params.docTypeKey,
+          ...(params.previousSpec ? { previousSpec: params.previousSpec } : {}),
+          ...(params.reviewerNotes ? { reviewerNotes: params.reviewerNotes } : {}),
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
+        throw new Error(errText);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+      fullText += decoder.decode();
 
-  const runModel = useCallback(
-    async (model: SpecModel, promptText: string, groupId: string, docTypeKey: DocTypeKey) => {
-      const setS = (next: ModelState) =>
-        setCompareState((prev) =>
-          prev ? { ...prev, [model]: next } : prev,
-        );
+      const errIdx = fullText.indexOf("__STREAM_ERROR__:");
+      if (errIdx >= 0) {
+        const errMsg = fullText
+          .slice(errIdx + "__STREAM_ERROR__:".length)
+          .trim();
+        throw new Error(errMsg || "שגיאת זרם מהמודל");
+      }
+      if (!fullText.trim()) throw new Error("המודל החזיר תשובה ריקה");
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(extractJson(fullText));
+      } catch {
+        throw new Error(`המודל לא החזיר JSON תקני (אורך ${fullText.length})`);
+      }
+      return SpecOutputSchema.parse(parsed);
+    },
+    [],
+  );
 
-      setS({ status: "loading" });
-
-      const getToken = async () => {
-        const { data: sess } = await supabase.auth.getSession();
-        const t = sess.session?.access_token;
-        if (!t) throw new Error("נדרשת התחברות מחדש");
-        return t;
-      };
-
-      const generateOnce = async (
-        token: string,
-        previousSpec?: SpecOutput,
-        reviewerNotes?: string[],
-      ): Promise<SpecOutput> => {
-        const res = await fetch("/api/generate-spec", {
+  /** Low-level: one review call. Returns null on failure (toast-warned). */
+  const reviewOnce = useCallback(
+    async (
+      token: string,
+      promptText: string,
+      spec: SpecOutput,
+    ): Promise<SpecReview | null> => {
+      try {
+        const revRes = await fetch("/api/review-spec", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            prompt: promptText,
-            model,
-            docType: docTypeKey,
-            ...(previousSpec ? { previousSpec } : {}),
-            ...(reviewerNotes ? { reviewerNotes } : {}),
-          }),
+          body: JSON.stringify({ prompt: promptText, spec }),
         });
-        if (!res.ok || !res.body) {
-          const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
-          throw new Error(errText);
+        if (!revRes.ok) {
+          const t = await revRes.text().catch(() => "");
+          throw new Error(t || `שגיאה ${revRes.status}`);
         }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let fullText = "";
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          fullText += decoder.decode(value, { stream: true });
-        }
-        fullText += decoder.decode();
-
-        const errIdx = fullText.indexOf("__STREAM_ERROR__:");
-        if (errIdx >= 0) {
-          const errMsg = fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim();
-          throw new Error(errMsg || "שגיאת זרם מהמודל");
-        }
-        if (!fullText.trim()) {
-          throw new Error("המודל החזיר תשובה ריקה");
-        }
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(extractJson(fullText));
-        } catch {
-          const head = fullText.slice(0, 200).replace(/\s+/g, " ");
-          const tail = fullText.slice(-200).replace(/\s+/g, " ");
-          throw new Error(
-            `המודל לא החזיר JSON תקני (אורך ${fullText.length}). התחלה: ${head} ... סוף: ${tail}`,
-          );
-        }
-        return SpecOutputSchema.parse(parsed);
-      };
-
-      const reviewOnce = async (
-        token: string,
-        spec: SpecOutput,
-      ): Promise<SpecReview | null> => {
-        try {
-          const revRes = await fetch("/api/review-spec", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ prompt: promptText, spec }),
-          });
-          if (!revRes.ok) {
-            const t = await revRes.text().catch(() => "");
-            throw new Error(t || `שגיאה ${revRes.status}`);
-          }
-          const json = await revRes.json();
-          if (json?.score == null) return null;
-          return {
-            score: Number(json.score),
-            notes: Array.isArray(json.notes) ? json.notes.map(String) : [],
-          };
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          toast.warning(`סוכן הביקורת נכשל (${model}): ${msg}`);
-          return null;
-        }
-      };
-
-      const saveOne = async (
-        spec: SpecOutput,
-        review: SpecReview | null,
-        suffix: string,
-        variant: "original" | "revised" | "single",
-      ): Promise<string> => {
-        const docTypeDef = getDocType(docTypeKey);
-        const effective = effectiveDocTypeConfig(
-          docTypeKey,
-          dtsData?.overrides[docTypeKey] ?? null,
-        );
-        const { spec: row } = await createFn({
-          data: {
-            title: `${spec.title} — ${docTypeDef.label} — ${model} — ${suffix}`,
-            prompt: promptText,
-            content: spec,
-            reviewScore: review?.score ?? null,
-            reviewNotes: review?.notes ?? [],
-            groupId,
-            model,
-            variant,
-            docType: docTypeKey,
-            sectionOrder: effective.sectionOrder,
-            sectionTitles: effective.sectionTitles,
-            projectId,
-          },
-        });
-
-        return row.id;
-      };
-
-      try {
-        const token = await getToken();
-
-        // Stage 1: original generation
-        const originalSpec = await generateOnce(token);
-
-        // Stage 2: first review
-        setS({ status: "reviewing", partialSpec: originalSpec });
-        const originalReview = await reviewOnce(token, originalSpec);
-
-        // Decide whether to revise
-        const shouldRevise =
-          originalReview != null &&
-          originalReview.notes.length > 0 &&
-          originalReview.score < 10;
-
-        let revisedSpec: SpecOutput | null = null;
-        let revisedReview: SpecReview | null = null;
-
-        if (shouldRevise) {
-          // Stage 3: revised generation
-          setS({
-            status: "revising",
-            partialSpec: originalSpec,
-            partialReview: originalReview,
-          });
-          try {
-            revisedSpec = await generateOnce(
-              token,
-              originalSpec,
-              originalReview!.notes,
-            );
-
-            // Stage 4: review the revised spec
-            setS({
-              status: "reviewing-revised",
-              partialSpec: revisedSpec,
-              partialReview: originalReview,
-            });
-            revisedReview = await reviewOnce(token, revisedSpec);
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.warning(`יצירת הגרסה המתוקנת נכשלה (${model}): ${msg}`);
-            revisedSpec = null;
-            revisedReview = null;
-          }
-        }
-
-        // Stage 5: save
-        setS({
-          status: "saving",
-          partialSpec: revisedSpec ?? originalSpec,
-          partialReview: revisedReview ?? originalReview,
-        });
-        try {
-          const originalSpecId = await saveOne(
-            originalSpec,
-            originalReview,
-            revisedSpec ? "מקור" : "מסמך",
-            revisedSpec ? "original" : "single",
-          );
-          let revisedSpecId: string | null = null;
-          if (revisedSpec) {
-            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן", "revised");
-          }
-          setS({
-            status: "success",
-            originalSpec,
-            originalSpecId,
-            originalReview,
-            revisedSpec,
-            revisedSpecId,
-            revisedReview,
-          });
-          qc.invalidateQueries({ queryKey: ["project", projectId] });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "שמירה נכשלה";
-          setS({
-            status: "error",
-            error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
-            originalSpec,
-            originalReview,
-            revisedSpec: revisedSpec ?? undefined,
-            revisedReview: revisedReview ?? undefined,
-            canRetry: true,
-          });
-        }
+        const json = await revRes.json();
+        if (json?.score == null) return null;
+        return {
+          score: Number(json.score),
+          notes: normalizeReviewNotes(json.notes),
+        };
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "יצירה נכשלה";
-        setS({ status: "error", error: msg, canRetry: true });
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.warning(`סוכן הביקורת נכשל: ${msg}`);
+        return null;
       }
     },
-    [createFn, qc, projectId],
+    [],
   );
 
-  const retryModel = useCallback(
-    (model: SpecModel) => {
-      if (!compareState || !compareGroupId) return;
-      void runModel(model, prompt, compareGroupId, docType);
+  const saveIteration = useCallback(
+    async (params: {
+      groupId: string;
+      promptText: string;
+      docTypeKey: DocTypeKey;
+      model: SpecModel;
+      version: number;
+      spec: SpecOutput;
+      review: SpecReview | null;
+    }): Promise<string> => {
+      const docTypeDef = getDocType(params.docTypeKey);
+      const effective = effectiveDocTypeConfig(
+        params.docTypeKey,
+        dtsData?.overrides[params.docTypeKey] ?? null,
+      );
+      const suffix = params.version === 1 ? "v1" : `v${params.version}`;
+      const variant: "original" | "revised" =
+        params.version === 1 ? "original" : "revised";
+      const { spec: row } = await createFn({
+        data: {
+          title: `${params.spec.title} — ${docTypeDef.label} — ${suffix}`,
+          prompt: params.promptText,
+          content: params.spec,
+          reviewScore: params.review?.score ?? null,
+          reviewNotes: params.review?.notes ?? [],
+          groupId: params.groupId,
+          model: params.model,
+          variant,
+          docType: params.docTypeKey,
+          sectionOrder: effective.sectionOrder,
+          sectionTitles: effective.sectionTitles,
+          projectId,
+        },
+      });
+      return row.id;
     },
-    [compareState, compareGroupId, prompt, runModel, docType],
+    [createFn, dtsData, projectId],
   );
 
-  const startCompare = useCallback(() => {
+  const getToken = useCallback(async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    const t = sess.session?.access_token;
+    if (!t) throw new Error("נדרשת התחברות מחדש");
+    return t;
+  }, []);
+
+  /** Start a new iterative build session (v1). */
+  const startBuilder = useCallback(async () => {
     const p = prompt.trim();
     if (p.length < 5) return;
     setNewOpen(false);
-    const gid = crypto.randomUUID();
-    setCompareGroupId(gid);
-    setCompareState(initialCompareState());
-    COMPARISON_MODELS.forEach((m) => {
-      void runModel(m, p, gid, docType);
-    });
-  }, [prompt, runModel, docType]);
+    const groupId = crypto.randomUUID();
+    const model = COMPARISON_MODELS[0];
+    const initialState: BuilderState = {
+      groupId,
+      prompt: p,
+      docType,
+      model,
+      iterations: [],
+      phase: "generating",
+    };
+    setBuilder(initialState);
 
-  const handlePick = useCallback(
-    (specId: string) => {
-      setCompareState(null);
-      setPrompt("");
-      navigate({ to: "/editor/$id", params: { id: specId } });
+    try {
+      const token = await getToken();
+      const spec = await generateOnce(token, {
+        promptText: p,
+        model,
+        docTypeKey: docType,
+      });
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "reviewing" } : prev,
+      );
+      const review = await reviewOnce(token, p, spec);
+      const specId = await saveIteration({
+        groupId,
+        promptText: p,
+        docTypeKey: docType,
+        model,
+        version: 1,
+        spec,
+        review,
+      });
+      const iteration: Iteration = {
+        version: 1,
+        specId,
+        spec,
+        review,
+        selectedNoteIds: new Set(),
+      };
+      setBuilder((prev) =>
+        prev ? { ...prev, iterations: [iteration], phase: "ready" } : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "error", error: msg } : prev,
+      );
+    }
+  }, [
+    prompt,
+    docType,
+    generateOnce,
+    reviewOnce,
+    saveIteration,
+    getToken,
+    qc,
+    projectId,
+  ]);
+
+  /** Generate the next iteration using user-selected suggestions. */
+  const improveBuilder = useCallback(async () => {
+    if (!builder || builder.phase !== "ready") return;
+    const last = builder.iterations[builder.iterations.length - 1];
+    if (!last || !last.review) return;
+    const selectedNotes: ReviewNote[] = last.review.notes.filter((n) =>
+      last.selectedNoteIds.has(n.id),
+    );
+    if (selectedNotes.length === 0) return;
+    const reviewerNotes = selectedNotes.map((n) => n.text);
+    const nextVersion = last.version + 1;
+
+    setBuilder((prev) => (prev ? { ...prev, phase: "generating" } : prev));
+    try {
+      const token = await getToken();
+      const spec = await generateOnce(token, {
+        promptText: builder.prompt,
+        model: builder.model,
+        docTypeKey: builder.docType,
+        previousSpec: last.spec,
+        reviewerNotes,
+      });
+      setBuilder((prev) => (prev ? { ...prev, phase: "reviewing" } : prev));
+      const review = await reviewOnce(token, builder.prompt, spec);
+      const specId = await saveIteration({
+        groupId: builder.groupId,
+        promptText: builder.prompt,
+        docTypeKey: builder.docType,
+        model: builder.model,
+        version: nextVersion,
+        spec,
+        review,
+      });
+      const nextIteration: Iteration = {
+        version: nextVersion,
+        specId,
+        spec,
+        review,
+        selectedNoteIds: new Set(),
+      };
+      setBuilder((prev) =>
+        prev
+          ? {
+              ...prev,
+              iterations: [...prev.iterations, nextIteration],
+              phase: "ready",
+            }
+          : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "error", error: msg } : prev,
+      );
+    }
+  }, [
+    builder,
+    generateOnce,
+    reviewOnce,
+    saveIteration,
+    getToken,
+    qc,
+    projectId,
+  ]);
+
+  const toggleNote = useCallback((version: number, noteId: string) => {
+    setBuilder((prev) => {
+      if (!prev) return prev;
+      const iterations = prev.iterations.map((it) => {
+        if (it.version !== version) return it;
+        const next = new Set(it.selectedNoteIds);
+        if (next.has(noteId)) next.delete(noteId);
+        else next.add(noteId);
+        return { ...it, selectedNoteIds: next };
+      });
+      return { ...prev, iterations };
+    });
+  }, []);
+
+  const setNoteSelection = useCallback(
+    (version: number, ids: Set<string>) => {
+      setBuilder((prev) => {
+        if (!prev) return prev;
+        const iterations = prev.iterations.map((it) =>
+          it.version === version ? { ...it, selectedNoteIds: ids } : it,
+        );
+        return { ...prev, iterations };
+      });
     },
-    [navigate],
+    [],
   );
 
-  const anyBusy = compareState
-    ? Object.values(compareState).some((s) =>
-        ["loading", "reviewing", "revising", "reviewing-revised", "saving"].includes(
-          s.status,
-        ),
-      )
-    : false;
+  const finishBuilder = useCallback(
+    (specId?: string) => {
+      const target =
+        specId ??
+        builder?.iterations[builder.iterations.length - 1]?.specId ??
+        null;
+      setBuilder(null);
+      setPrompt("");
+      if (target) navigate({ to: "/editor/$id", params: { id: target } });
+    },
+    [builder, navigate],
+  );
+
+  const retryBuilder = useCallback(() => {
+    if (!builder) return;
+    // If the failure happened mid-improvement, just resume from selected notes.
+    if (builder.iterations.length > 0) {
+      void improveBuilder();
+    } else {
+      void startBuilder();
+    }
+  }, [builder, improveBuilder, startBuilder]);
+
+
 
 
 
@@ -756,7 +807,7 @@ function ProjectPage() {
             >
               חזרה
             </Button>
-            <Button onClick={startCompare} disabled={prompt.trim().length < 5}>
+            <Button onClick={startBuilder} disabled={prompt.trim().length < 5}>
               <Sparkles className="mr-2 h-4 w-4" />
               צור מסמך
             </Button>
@@ -764,13 +815,16 @@ function ProjectPage() {
         </DialogContent>
       </Dialog>
 
-      <ComparisonDialog
-        state={compareState}
-        anyBusy={anyBusy}
-        onClose={() => setCompareState(null)}
-        onPick={handlePick}
-        onRetry={retryModel}
+      <IterativeBuilderDialog
+        state={builder}
+        onClose={() => setBuilder(null)}
+        onToggleNote={toggleNote}
+        onSetSelection={setNoteSelection}
+        onImprove={improveBuilder}
+        onFinish={finishBuilder}
+        onRetry={retryBuilder}
       />
+
 
 
 
@@ -817,223 +871,195 @@ function ProjectPage() {
   );
 }
 
-function ComparisonDialog({
+function IterativeBuilderDialog({
   state,
-  anyBusy,
   onClose,
-  onPick,
+  onToggleNote,
+  onSetSelection,
+  onImprove,
+  onFinish,
   onRetry,
 }: {
-  state: CompareState | null;
-  anyBusy: boolean;
+  state: BuilderState | null;
   onClose: () => void;
-  onPick: (specId: string) => void;
-  onRetry: (model: SpecModel) => void;
+  onToggleNote: (version: number, noteId: string) => void;
+  onSetSelection: (version: number, ids: Set<string>) => void;
+  onImprove: () => void;
+  onFinish: (specId?: string) => void;
+  onRetry: () => void;
 }) {
   if (!state) return null;
-  const models = COMPARISON_MODELS;
+  const busy = state.phase === "generating" || state.phase === "reviewing";
+  const last = state.iterations[state.iterations.length - 1] ?? null;
+  const totalVersions = state.iterations.length;
+
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o && !busy) onClose();
+      }}
+    >
+      <DialogContent className="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            השוואת תוצאות מ-3 מודלים
-            {anyBusy ? (
-              <Loader2 className="inline-block mr-2 h-4 w-4 animate-spin text-muted-foreground" />
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            יצירה איטרטיבית של מסמך
+            {totalVersions > 0 ? (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                גרסה {totalVersions}
+              </span>
+            ) : null}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : null}
           </DialogTitle>
           <DialogDescription>
-            כל מסמך שמצליח נשמר אוטומטית ברשימה. כפתור "בחר" רק פותח את המסמך לעריכה.
+            כל גרסה נשמרת בפרויקט. סמנו את ההצעות שתרצו להטמיע ולחצו "צור גרסה משופרת".
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue={models[0]} className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
-            {models.map((m) => {
-              const s = state[m];
-              return (
-                <TabsTrigger key={m} value={m} className="text-xs" dir="ltr">
-                  {m.split("/")[1]}
-                  {s.status === "error" ? (
-                    <AlertCircle className="ml-1 h-3 w-3 text-destructive" />
-                  ) : s.status === "success" ? (
-                    <Check className="ml-1 h-3 w-3 text-primary" />
-                  ) : (
-                    <Loader2 className="ml-1 h-3 w-3 animate-spin text-muted-foreground" />
-                  )}
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
+        <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+          {state.phase === "generating" ? (
+            <PhaseBanner
+              text={
+                totalVersions === 0
+                  ? "סוכן היצירה כותב את המסמך…"
+                  : `סוכן היצירה כותב גרסה ${totalVersions + 1}…`
+              }
+            />
+          ) : state.phase === "reviewing" ? (
+            <PhaseBanner text="סוכן הביקורת בודק את המסמך…" />
+          ) : null}
 
-          {models.map((m) => {
-            const s = state[m];
-            return (
-              <TabsContent
-                key={m}
-                value={m}
-                className="flex-1 overflow-auto mt-3 rounded-md border border-border p-4"
-              >
-                <ModelTabBody state={s} onRetry={() => onRetry(m)} />
-              </TabsContent>
-            );
-          })}
-        </Tabs>
+          {state.phase === "error" ? (
+            <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="font-medium">היצירה נכשלה</div>
+              <div className="text-xs">{state.error}</div>
+              <Button size="sm" variant="outline" onClick={onRetry}>
+                נסה שוב
+              </Button>
+            </div>
+          ) : null}
 
-        <DialogFooter className="border-t border-border pt-4 flex-wrap gap-2">
-          <Button variant="ghost" onClick={onClose}>
+          {state.iterations.map((it) => (
+            <IterationCard
+              key={it.version}
+              iteration={it}
+              isLatest={it.version === totalVersions}
+              busy={busy}
+              onToggleNote={(noteId) => onToggleNote(it.version, noteId)}
+              onSelectAll={() =>
+                onSetSelection(
+                  it.version,
+                  new Set((it.review?.notes ?? []).map((n) => n.id)),
+                )
+              }
+              onClear={() => onSetSelection(it.version, new Set())}
+              onImprove={onImprove}
+              onFinish={() => onFinish(it.specId)}
+            />
+          ))}
+        </div>
+
+        <DialogFooter className="border-t border-border pt-3">
+          <Button variant="ghost" onClick={onClose} disabled={busy}>
             סגור
           </Button>
-          {models.map((m) => {
-            const s = state[m];
-            if (s.status !== "success") return null;
-            return (
-              <div key={m} className="flex gap-1.5">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onPick(s.originalSpecId)}
-                  dir="ltr"
-                >
-                  <Check className="mr-1.5 h-4 w-4" />
-                  {s.revisedSpecId ? "מקור" : "פתח"}: {m.split("/")[1]}
-                </Button>
-                {s.revisedSpecId ? (
-                  <Button
-                    size="sm"
-                    onClick={() => onPick(s.revisedSpecId!)}
-                    dir="ltr"
-                  >
-                    <Check className="mr-1.5 h-4 w-4" />
-                    מתוקן: {m.split("/")[1]}
-                  </Button>
-                ) : null}
-              </div>
-            );
-          })}
+          {last ? (
+            <Button onClick={() => onFinish(last.specId)} disabled={busy}>
+              פתח את הגרסה האחרונה לעריכה
+            </Button>
+          ) : null}
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );
 }
 
-const STAGE_LABEL: Record<Stage, string> = {
-  loading: "המודל עובד… עשוי לקחת עד דקה.",
-  reviewing: "סוכן הביקורת בודק את האפיון…",
-  revising: "מריץ את סוכן הניתוח שוב עם הערות המבקר…",
-  "reviewing-revised": "סוכן הביקורת בודק את הגרסה המתוקנת…",
-  saving: "שומר את המסמכים…",
-};
-
-function ModelTabBody({
-  state,
-  onRetry,
-}: {
-  state: ModelState;
-  onRetry: () => void;
-}) {
-  if (state.status === "error") {
-    return (
-      <div className="space-y-3">
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          <div className="font-medium">המודל נכשל</div>
-          <div className="mt-1 text-xs">{state.error}</div>
-        </div>
-        <Button size="sm" variant="outline" onClick={onRetry}>
-          <RefreshCw className="mr-1.5 h-4 w-4" />
-          נסה שוב
-        </Button>
-        {state.revisedSpec ? (
-          <ResultPreview spec={state.revisedSpec} review={state.revisedReview ?? null} />
-        ) : state.originalSpec ? (
-          <ResultPreview spec={state.originalSpec} review={state.originalReview ?? null} />
-        ) : null}
-      </div>
-    );
-  }
-
-  if (state.status === "success") {
-    if (!state.revisedSpec) {
-      return <ResultPreview spec={state.originalSpec} review={state.originalReview} />;
-    }
-    return (
-      <Tabs defaultValue="revised" className="space-y-3">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="revised">מתוקן</TabsTrigger>
-          <TabsTrigger value="original">מקור</TabsTrigger>
-        </TabsList>
-        <TabsContent value="revised">
-          <ResultPreview spec={state.revisedSpec} review={state.revisedReview} />
-        </TabsContent>
-        <TabsContent value="original">
-          <ResultPreview spec={state.originalSpec} review={state.originalReview} />
-        </TabsContent>
-      </Tabs>
-    );
-  }
-
-  // In-flight stage
-  const label = STAGE_LABEL[state.status];
-  const partial = state.partialSpec;
+function PhaseBanner({ text }: { text: string }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {label}
-      </div>
-      {partial ? (
-        <ResultPreview spec={partial} review={state.partialReview ?? null} />
-      ) : (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      )}
+    <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <span>{text}</span>
     </div>
   );
 }
 
-
-function ResultPreview({
-  spec,
-  review,
+function IterationCard({
+  iteration,
+  isLatest,
+  busy,
+  onToggleNote,
+  onSelectAll,
+  onClear,
+  onImprove,
+  onFinish,
 }: {
-  spec: SpecOutput;
-  review: SpecReview | null;
+  iteration: Iteration;
+  isLatest: boolean;
+  busy: boolean;
+  onToggleNote: (noteId: string) => void;
+  onSelectAll: () => void;
+  onClear: () => void;
+  onImprove: () => void;
+  onFinish: () => void;
 }) {
+  const { spec, review, version } = iteration;
   const stats = [
     { label: "מטרות", n: spec.goals.length },
-    { label: "Personas", n: spec.personas.length },
     { label: "דרישות פונק'", n: spec.functional_requirements.length },
     { label: "דרישות לא-פונק'", n: spec.non_functional_requirements.length },
-    { label: "הנחות", n: spec.assumptions.length },
     { label: "תרחישים", n: spec.use_cases.length },
-    { label: "סיכונים", n: spec.risks.length },
   ];
   return (
-    <div className="space-y-4 text-sm">
-      <div>
-        <h3 className="font-semibold text-foreground">{spec.title}</h3>
-        <p className="mt-1 text-muted-foreground whitespace-pre-wrap">{spec.overview}</p>
+    <div className="space-y-3 rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+            v{version}
+          </span>
+          <h3 className="font-semibold text-foreground">{spec.title}</h3>
+        </div>
+        {typeof review?.score === "number" ? (
+          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+            ציון {review.score}/10
+          </span>
+        ) : null}
       </div>
-      {review ? <ReviewPanel review={review} /> : null}
+      {spec.overview ? (
+        <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-3">
+          {spec.overview}
+        </p>
+      ) : null}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-md border border-border bg-muted/30 p-2 text-center">
-            <div className="text-lg font-semibold text-foreground">{s.n}</div>
-            <div className="text-[11px] text-muted-foreground">{s.label}</div>
+          <div
+            key={s.label}
+            className="rounded-md border border-border bg-muted/30 p-2 text-center"
+          >
+            <div className="text-base font-semibold text-foreground">{s.n}</div>
+            <div className="text-[10px] text-muted-foreground">{s.label}</div>
           </div>
         ))}
       </div>
-      <details className="rounded-md border border-border bg-muted/30 p-3 text-xs">
-        <summary className="cursor-pointer font-medium">הצג מסמך מלא (JSON)</summary>
-        <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[11px]" dir="ltr">
-          {JSON.stringify(spec, null, 2)}
-        </pre>
-      </details>
+
+      {isLatest && review ? (
+        <ReviewSuggestionsPanel
+          review={review}
+          selected={iteration.selectedNoteIds}
+          onToggle={onToggleNote}
+          onSelectAll={onSelectAll}
+          onClear={onClear}
+          onImprove={onImprove}
+          onFinish={onFinish}
+          improving={busy}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 function EditableDocTitle({
   id,

@@ -44,7 +44,19 @@ export const createSpec = createServerFn({ method: "POST" })
         prompt: z.string().max(5000).default(""),
         content: z.record(z.string(), z.any()).default({}),
         reviewScore: z.number().int().min(1).max(10).nullable().optional(),
-        reviewNotes: z.array(z.string()).max(50).optional(),
+        reviewNotes: z
+          .array(
+            z.union([
+              z.string(),
+              z.object({
+                id: z.string().max(40),
+                text: z.string().max(1000),
+                importance: z.number().int().min(1).max(10),
+              }),
+            ]),
+          )
+          .max(50)
+          .optional(),
         groupId: z.string().uuid().optional(),
         model: z.string().max(100).optional(),
         variant: z.enum(["original", "revised", "single"]).optional(),
