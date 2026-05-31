@@ -1308,186 +1308,156 @@ function SectionShell({
           )}
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={startEdit}
-              title="עריכת שם הסעיף"
-              aria-label="עריכה"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-
-            {onSplit ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "hidden h-8 w-8 p-0 lg:inline-flex",
-                  splitActive && "bg-primary/10 text-primary",
-                )}
-                onClick={onSplit}
-                title="הצג בתצוגת השוואה (split view)"
-                aria-label="תצוגת השוואה"
-              >
-                <Columns2 className="h-4 w-4" />
-              </Button>
-            ) : null}
-
-
-
-            {onAiImprove ? (
-              <Popover
-                open={aiOpen}
-                onOpenChange={(o) => {
-                  if (aiBusy) return;
-                  setAiOpen(o);
-                }}
-              >
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-primary"
-                    title="שיפור הסעיף עם AI"
-                    aria-label="שיפור עם AI"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-foreground">
-                      שיפור עם AI
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => setAiOpen(false)}
-                      disabled={aiBusy}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    תאר/י כיצד לשפר את הסעיף "{title}".
-                  </p>
-                  <Textarea
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    rows={4}
-                    placeholder="למשל: הוסף פירוט תפעולי, תקן ניסוחים, פצל לסעיפים..."
-                    disabled={aiBusy}
-                    autoFocus
-                    dir="auto"
-                  />
-                  {history.items.length > 0 ? (
-                    <div className="space-y-1">
-                      <div className="text-[11px] text-muted-foreground">פרומפטים אחרונים</div>
-                      <div className="flex flex-wrap gap-1">
-                        {history.items.map((p) => (
-                          <div
-                            key={p}
-                            className="group inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 pr-2 text-[11px]"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => setAiPrompt(p)}
-                              disabled={aiBusy}
-                              className="max-w-[14rem] truncate py-0.5 text-foreground hover:text-primary"
-                              title={p}
-                            >
-                              {p}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => history.remove(p)}
-                              disabled={aiBusy}
-                              className="rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                              aria-label="הסר מההיסטוריה"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setAiOpen(false)}
-                      disabled={aiBusy}
-                    >
-                      ביטול
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleAiSubmit}
-                      disabled={aiBusy || aiPrompt.trim().length < 3}
-                    >
-                      {aiBusy ? (
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                      )}
-                      שפר
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            ) : null}
-
-            {onDelete ? (
-              confirmDelete ? (
-                <div className="flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/5 px-1.5">
-                  <span className="text-[11px] text-destructive">למחוק?</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      onDelete();
-                      setConfirmDelete(false);
-                    }}
-                  >
-                    כן
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setConfirmDelete(false)}
-                  >
-                    לא
-                  </Button>
-                </div>
-              ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setConfirmDelete(true)}
-                  title="מחיקת הסעיף מהמסמך"
-                  aria-label="מחיקה"
+                  className="h-8 w-8 p-0"
+                  title="פעולות"
+                  aria-label="פעולות"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <MoreVertical className="h-4 w-4" />
                 </Button>
-              )
-            ) : null}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onSelect={startEdit}>
+                  <Pencil className="ml-2 h-4 w-4" />
+                  עריכת שם
+                </DropdownMenuItem>
+                {onAiImprove ? (
+                  <DropdownMenuItem onSelect={() => setAiOpen(true)} className="text-primary">
+                    <Sparkles className="ml-2 h-4 w-4" />
+                    שיפור עם AI
+                  </DropdownMenuItem>
+                ) : null}
+                {onSplit ? (
+                  <DropdownMenuItem onSelect={onSplit}>
+                    <Columns2 className="ml-2 h-4 w-4" />
+                    {splitActive ? "סגור תצוגת השוואה" : "תצוגת השוואה"}
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled={!onMoveUp} onSelect={() => onMoveUp?.()}>
+                  <ChevronUp className="ml-2 h-4 w-4" />
+                  הזז למעלה
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={!onMoveDown} onSelect={() => onMoveDown?.()}>
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                  הזז למטה
+                </DropdownMenuItem>
+                {onDelete ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => setConfirmDelete(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="ml-2 h-4 w-4" />
+                      מחיקה
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+        </div>
+        <CollapsibleContent>{children}</CollapsibleContent>
+      </section>
+    </Collapsible>
+    {onAiImprove ? (
+      <Dialog open={aiOpen} onOpenChange={(o) => { if (aiBusy) return; setAiOpen(o); }}>
+        <DialogContent className="max-w-lg space-y-2">
+          <DialogHeader>
+            <DialogTitle>שיפור עם AI</DialogTitle>
+            <DialogDescription>תאר/י כיצד לשפר את הסעיף "{title}".</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            rows={4}
+            placeholder="למשל: הוסף פירוט תפעולי, תקן ניסוחים, פצל לסעיפים..."
+            disabled={aiBusy}
+            autoFocus
+            dir="auto"
+          />
+          {history.items.length > 0 ? (
+            <div className="space-y-1">
+              <div className="text-[11px] text-muted-foreground">פרומפטים אחרונים</div>
+              <div className="flex flex-wrap gap-1">
+                {history.items.map((p) => (
+                  <div
+                    key={p}
+                    className="group inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 pr-2 text-[11px]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setAiPrompt(p)}
+                      disabled={aiBusy}
+                      className="max-w-[14rem] truncate py-0.5 text-foreground hover:text-primary"
+                      title={p}
+                    >
+                      {p}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => history.remove(p)}
+                      disabled={aiBusy}
+                      className="rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="הסר מההיסטוריה"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setAiOpen(false)} disabled={aiBusy}>
+              ביטול
+            </Button>
+            <Button type="button" size="sm" onClick={handleAiSubmit} disabled={aiBusy || aiPrompt.trim().length < 3}>
+              {aiBusy ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              שפר
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    ) : null}
+    {onDelete ? (
+      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>למחוק את הסעיף?</DialogTitle>
+            <DialogDescription>
+              פעולה זו תמחק את "{title}" מהמסמך.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+              ביטול
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={() => {
+                onDelete();
+                setConfirmDelete(false);
+              }}
+            >
+              מחק
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    ) : null}
         </div>
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
