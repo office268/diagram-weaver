@@ -22,7 +22,7 @@ import {
   normalizeReviewNotes,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
-import { COMPARISON_MODELS, type SpecModel } from "@/lib/ai-spec-defaults";
+import type { SpecModel } from "@/lib/ai-spec-defaults";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -268,7 +268,7 @@ function ProjectPage() {
     if (p.length < 5) return;
     setNewOpen(false);
     const groupId = crypto.randomUUID();
-    const model = COMPARISON_MODELS[0];
+    const model: SpecModel = "";
     const initialState: BuilderState = {
       groupId,
       prompt: p,
