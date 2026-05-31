@@ -343,7 +343,7 @@ function ProjectPage() {
         setS({ status: "error", error: msg, canRetry: true });
       }
     },
-    [createFn, qc],
+    [createFn, qc, projectId],
   );
 
   const retryModel = useCallback(
