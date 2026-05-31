@@ -530,22 +530,111 @@ function SectionShell({
             className="h-9 max-w-md text-xl font-semibold"
           />
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(title);
-              setEditing(true);
-            }}
-            className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-            title="לחץ לעריכת שם הסעיף"
-          >
-            <span>{title}</span>
-            <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60" />
-          </button>
-        )}
-      </div>
-      {children}
-    </section>
+function SectionShell({
+  title,
+  onTitleChange,
+  onMoveUp,
+  onMoveDown,
+  children,
+}: {
+  title: string;
+  onTitleChange: (v: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  children: React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <div className="flex flex-col">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-5 w-7 p-0"
+              disabled={!onMoveUp}
+              onClick={onMoveUp}
+              aria-label="הזז למעלה"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-5 w-7 p-0"
+              disabled={!onMoveDown}
+              onClick={onMoveDown}
+              aria-label="הזז למטה"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </div>
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              aria-label={open ? "סגור סעיף" : "פתח סעיף"}
+            >
+              <ChevronRight
+                className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          {editing ? (
+            <Input
+              value={draft}
+              autoFocus
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => {
+                onTitleChange(draft);
+                setEditing(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onTitleChange(draft);
+                  setEditing(false);
+                } else if (e.key === "Escape") {
+                  setDraft(title);
+                  setEditing(false);
+                }
+              }}
+              className="h-9 max-w-md text-xl font-semibold"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              onDoubleClick={() => {
+                setDraft(title);
+                setEditing(true);
+              }}
+              className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
+              title="לחץ לפתיחה/סגירה. דאבל-קליק לעריכת שם הסעיף"
+            >
+              <span>{title}</span>
+              <Pencil
+                className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDraft(title);
+                  setEditing(true);
+                }}
+              />
+            </button>
+          )}
+        </div>
+        <CollapsibleContent>{children}</CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
 
