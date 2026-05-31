@@ -1463,7 +1463,7 @@ function SortableSection({
     </button>
   );
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} id={`section-${id}`} style={style} className="scroll-mt-20">
       {children(handle)}
     </div>
   );
