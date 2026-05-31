@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save, Check, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from "lucide-react";
 
 import { getSpec, updateSpec } from "@/lib/spec.functions";
 import { ReviewPanel } from "@/components/review-panel";
@@ -36,6 +36,24 @@ export const Route = createFileRoute("/_authenticated/editor/$id")({
   component: EditorPage,
 });
 
+// Default ordered list of section keys + their default Hebrew titles.
+const DEFAULT_SECTIONS: { key: string; defaultTitle: string }[] = [
+  { key: "user_prompt", defaultTitle: "הפרומפט של המשתמש" },
+  { key: "overview", defaultTitle: "סקירה כללית" },
+  { key: "goals", defaultTitle: "מטרות" },
+  { key: "personas", defaultTitle: "משתמשי קצה" },
+  { key: "functional_requirements", defaultTitle: "דרישות פונקציונליות" },
+  { key: "non_functional_requirements", defaultTitle: "דרישות לא־פונקציונליות" },
+  { key: "assumptions", defaultTitle: "הנחות יסוד" },
+  { key: "use_cases", defaultTitle: "תרחישי שימוש" },
+  { key: "architecture", defaultTitle: "ארכיטקטורה" },
+  { key: "data_model", defaultTitle: "מודל נתונים" },
+  { key: "risks", defaultTitle: "סיכונים" },
+  { key: "review", defaultTitle: "ביקורת הסוכן המבקר" },
+  { key: "user_notes", defaultTitle: "ההערות שלי" },
+];
+const DEFAULT_KEYS = DEFAULT_SECTIONS.map((s) => s.key);
+
 function EditorPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -52,6 +70,8 @@ function EditorPage() {
   const [content, setContent] = useState<SpecContent | null>(null);
   const [userNotes, setUserNotes] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_KEYS);
+  const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
 
@@ -60,15 +80,40 @@ function EditorPage() {
       setTitle(data.spec.title);
       const normalized = normalizeSpec(data.spec.content);
       setContent(normalized);
-      setUserNotes((data.spec as { user_notes?: string }).user_notes ?? "");
-      setPrompt((data.spec as { user_prompt?: string }).user_prompt ?? "");
-      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "", userPrompt: (data.spec as { user_prompt?: string }).user_prompt ?? "" });
+      const notes = (data.spec as { user_notes?: string }).user_notes ?? "";
+      const uPrompt = (data.spec as { user_prompt?: string }).user_prompt ?? "";
+      const savedOrder = (data.spec as { section_order?: string[] }).section_order;
+      const savedTitles = (data.spec as { section_titles?: Record<string, string> }).section_titles ?? {};
+      // Reconcile: keep saved order, append any new default keys missing, drop unknown keys.
+      const validSaved = Array.isArray(savedOrder) && savedOrder.length > 0
+        ? savedOrder.filter((k) => DEFAULT_KEYS.includes(k))
+        : [];
+      const missing = DEFAULT_KEYS.filter((k) => !validSaved.includes(k));
+      const order = validSaved.length > 0 ? [...validSaved, ...missing] : DEFAULT_KEYS;
+      setSectionOrder(order);
+      setSectionTitles(savedTitles);
+      setUserNotes(notes);
+      setPrompt(uPrompt);
+      lastSentRef.current = JSON.stringify({
+        title: data.spec.title,
+        content: normalized,
+        userNotes: notes,
+        userPrompt: uPrompt,
+        sectionOrder: order,
+        sectionTitles: savedTitles,
+      });
     }
   }, [data?.spec]);
 
   const saveMut = useMutation({
-    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string; userPrompt?: string }) =>
-      updateFn({ data: { id, ...patch } }),
+    mutationFn: (patch: {
+      title?: string;
+      content?: SpecContent;
+      userNotes?: string;
+      userPrompt?: string;
+      sectionOrder?: string[];
+      sectionTitles?: Record<string, string>;
+    }) => updateFn({ data: { id, ...patch } }),
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
       setSaveState("saved");
@@ -84,19 +129,261 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt });
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content, userNotes, userPrompt: prompt });
+      saveMut.mutate({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content, userNotes, prompt]);
+  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
   }, []);
+
+  const moveSection = useCallback((key: string, dir: -1 | 1) => {
+    setSectionOrder((prev) => {
+      const idx = prev.indexOf(key);
+      const j = idx + dir;
+      if (idx < 0 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  }, []);
+
+  const setSectionTitle = useCallback((key: string, value: string) => {
+    setSectionTitles((prev) => {
+      const next = { ...prev };
+      if (!value.trim()) delete next[key];
+      else next[key] = value;
+      return next;
+    });
+  }, []);
+
+  // Build a body renderer for each section key.
+  const renderBody = useMemo(() => {
+    if (!content) return null;
+    return (key: string): React.ReactNode => {
+      switch (key) {
+        case "user_prompt":
+          return (
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={Math.max(3, Math.min(15, prompt.split("\n").length + 1))}
+              placeholder="הפרומפט של המשתמש... (נשמר אוטומטית, משפיע רק על המסמך הזה)"
+              dir="auto"
+              className="resize-y text-sm"
+            />
+          );
+        case "overview":
+          return (
+            <EditableText
+              value={content.overview}
+              onChange={(v) => updateContent((c) => ({ ...c, overview: v }))}
+              multiline
+              placeholder="תיאור כללי של המערכת..."
+            />
+          );
+        case "goals":
+          return (
+            <ListBody<TextItem>
+              items={content.goals}
+              onChange={(items) => updateContent((c) => ({ ...c, goals: items }))}
+              newItem={() => ({ id: newId(), text: "" })}
+              renderItem={(item, onChange) => (
+                <EditableText
+                  value={item.text}
+                  onChange={(v) => onChange({ ...item, text: v })}
+                  multiline
+                  placeholder="מטרה..."
+                />
+              )}
+              addLabel="הוסף מטרה"
+            />
+          );
+        case "personas":
+          return (
+            <ListBody<Persona>
+              items={content.personas}
+              onChange={(items) => updateContent((c) => ({ ...c, personas: items }))}
+              newItem={() => ({ id: newId(), name: "", description: "" })}
+              renderItem={(item, onChange) => (
+                <div className="space-y-2">
+                  <EditableText
+                    value={item.name}
+                    onChange={(v) => onChange({ ...item, name: v })}
+                    placeholder="שם הפרסונה"
+                    className="font-medium"
+                  />
+                  <EditableText
+                    value={item.description}
+                    onChange={(v) => onChange({ ...item, description: v })}
+                    multiline
+                    placeholder="תיאור..."
+                  />
+                </div>
+              )}
+              addLabel="הוסף פרסונה"
+            />
+          );
+        case "functional_requirements":
+          return (
+            <ListBody<Requirement>
+              items={content.functional_requirements}
+              onChange={(items) => updateContent((c) => ({ ...c, functional_requirements: items }))}
+              newItem={() => ({ id: newId(), title: "", description: "" })}
+              renderItem={(item, onChange) => <RequirementCard item={item} onChange={onChange} />}
+              addLabel="הוסף דרישה"
+            />
+          );
+        case "non_functional_requirements":
+          return (
+            <ListBody<Requirement>
+              items={content.non_functional_requirements}
+              onChange={(items) => updateContent((c) => ({ ...c, non_functional_requirements: items }))}
+              newItem={() => ({ id: newId(), title: "", description: "" })}
+              renderItem={(item, onChange) => <RequirementCard item={item} onChange={onChange} />}
+              addLabel="הוסף דרישה"
+            />
+          );
+        case "assumptions":
+          return (
+            <ListBody<TextItem>
+              items={content.assumptions}
+              onChange={(items) => updateContent((c) => ({ ...c, assumptions: items }))}
+              newItem={() => ({ id: newId(), text: "" })}
+              renderItem={(item, onChange) => (
+                <EditableText
+                  value={item.text}
+                  onChange={(v) => onChange({ ...item, text: v })}
+                  multiline
+                  placeholder="הנחת יסוד..."
+                />
+              )}
+              addLabel="הוסף הנחה"
+            />
+          );
+        case "use_cases":
+          return (
+            <ListBody<UseCase>
+              items={content.use_cases}
+              onChange={(items) => updateContent((c) => ({ ...c, use_cases: items }))}
+              newItem={() => ({ id: newId(), title: "", description: "", diagram: "" })}
+              renderItem={(item, onChange) => (
+                <div className="space-y-3">
+                  <EditableText
+                    value={item.title}
+                    onChange={(v) => onChange({ ...item, title: v })}
+                    placeholder="כותרת התרחיש"
+                    className="font-medium"
+                  />
+                  <EditableText
+                    value={item.description}
+                    onChange={(v) => onChange({ ...item, description: v })}
+                    multiline
+                    placeholder="תיאור התרחיש..."
+                  />
+                  <SpecDiagram
+                    code={item.diagram ?? ""}
+                    onChange={(code) => onChange({ ...item, diagram: code })}
+                  />
+                </div>
+              )}
+              addLabel="הוסף תרחיש"
+            />
+          );
+        case "architecture":
+          return (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <EditableText
+                value={content.architecture.description}
+                onChange={(v) =>
+                  updateContent((c) => ({ ...c, architecture: { ...c.architecture, description: v } }))
+                }
+                multiline
+                placeholder="תיאור הארכיטקטורה..."
+              />
+              <div className="mt-4">
+                <SpecDiagram
+                  code={content.architecture.diagram ?? ""}
+                  onChange={(code) =>
+                    updateContent((c) => ({ ...c, architecture: { ...c.architecture, diagram: code } }))
+                  }
+                />
+              </div>
+            </div>
+          );
+        case "data_model":
+          return (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <EditableText
+                value={content.data_model.description}
+                onChange={(v) =>
+                  updateContent((c) => ({ ...c, data_model: { ...c.data_model, description: v } }))
+                }
+                multiline
+                placeholder="תיאור מודל הנתונים..."
+              />
+              <div className="mt-4">
+                <SpecDiagram
+                  code={content.data_model.diagram ?? ""}
+                  onChange={(code) =>
+                    updateContent((c) => ({ ...c, data_model: { ...c.data_model, diagram: code } }))
+                  }
+                />
+              </div>
+            </div>
+          );
+        case "risks":
+          return (
+            <ListBody<TextItem>
+              items={content.risks}
+              onChange={(items) => updateContent((c) => ({ ...c, risks: items }))}
+              newItem={() => ({ id: newId(), text: "" })}
+              renderItem={(item, onChange) => (
+                <EditableText
+                  value={item.text}
+                  onChange={(v) => onChange({ ...item, text: v })}
+                  multiline
+                  placeholder="סיכון..."
+                />
+              )}
+              addLabel="הוסף סיכון"
+            />
+          );
+        case "review":
+          if (typeof data?.spec.review_score !== "number") return null;
+          return (
+            <ReviewPanel
+              review={{
+                score: data.spec.review_score,
+                notes: Array.isArray(data.spec.review_notes)
+                  ? (data.spec.review_notes as string[])
+                  : [],
+              }}
+            />
+          );
+        case "user_notes":
+          return (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <Textarea
+                value={userNotes}
+                onChange={(e) => setUserNotes(e.target.value)}
+                rows={6}
+                placeholder="כתוב כאן הערות אישיות לגבי המסמך... (נשמר אוטומטית)"
+                className="resize-y"
+              />
+            </div>
+          );
+        default:
+          return null;
+      }
+    };
+  }, [content, prompt, userNotes, updateContent, data?.spec]);
 
   if (isLoading) {
     return (
@@ -105,7 +392,7 @@ function EditorPage() {
       </div>
     );
   }
-  if (error || !data?.spec || !content) {
+  if (error || !data?.spec || !content || !renderBody) {
     return (
       <div className="mx-auto max-w-md p-8 text-center">
         <p className="text-sm text-destructive">
@@ -117,6 +404,12 @@ function EditorPage() {
       </div>
     );
   }
+
+  // Filter out sections that render nothing (e.g. review when no score).
+  const visibleSections = sectionOrder.filter((key) => {
+    if (key === "review" && typeof data.spec.review_score !== "number") return false;
+    return DEFAULT_KEYS.includes(key);
+  });
 
   return (
     <div className="flex flex-col">
@@ -150,242 +443,107 @@ function EditorPage() {
       </div>
 
       {/* Document */}
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-10">
-        <section className="space-y-3">
-          <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-            הפרומפט של המשתמש
-          </h2>
-          <div className="rounded-lg border border-border bg-muted/30 p-4">
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={Math.max(3, Math.min(15, prompt.split("\n").length + 1))}
-              placeholder="הפרומפט של המשתמש... (נשמר אוטומטית, משפיע רק על המסמך הזה)"
-              dir="auto"
-              className="resize-y text-sm"
-            />
-          </div>
-        </section>
-
-
-
-        {/* Overview */}
-        <Section title="1. סקירה כללית">
-          <EditableText
-            value={content.overview}
-            onChange={(v) => updateContent((c) => ({ ...c, overview: v }))}
-            multiline
-            placeholder="תיאור כללי של המערכת..."
-          />
-        </Section>
-
-        {/* Goals */}
-        <ListSection<TextItem>
-          title="2. מטרות"
-          items={content.goals}
-          onChange={(items) => updateContent((c) => ({ ...c, goals: items }))}
-          newItem={() => ({ id: newId(), text: "" })}
-          renderItem={(item, onChange) => (
-            <EditableText
-              value={item.text}
-              onChange={(v) => onChange({ ...item, text: v })}
-              multiline
-              placeholder="מטרה..."
-            />
-          )}
-          addLabel="הוסף מטרה"
-        />
-
-        {/* Personas */}
-        <ListSection<Persona>
-          title="3. משתמשי קצה"
-          items={content.personas}
-          onChange={(items) => updateContent((c) => ({ ...c, personas: items }))}
-          newItem={() => ({ id: newId(), name: "", description: "" })}
-          renderItem={(item, onChange) => (
-            <div className="space-y-2">
-              <EditableText
-                value={item.name}
-                onChange={(v) => onChange({ ...item, name: v })}
-                placeholder="שם הפרסונה"
-                className="font-medium"
-              />
-              <EditableText
-                value={item.description}
-                onChange={(v) => onChange({ ...item, description: v })}
-                multiline
-                placeholder="תיאור..."
-              />
-            </div>
-          )}
-          addLabel="הוסף פרסונה"
-        />
-
-        {/* Functional Requirements */}
-        <ListSection<Requirement>
-          title="4. דרישות פונקציונליות"
-          items={content.functional_requirements}
-          onChange={(items) => updateContent((c) => ({ ...c, functional_requirements: items }))}
-          newItem={() => ({ id: newId(), title: "", description: "" })}
-          renderItem={(item, onChange) => <RequirementCard item={item} onChange={onChange} />}
-          addLabel="הוסף דרישה"
-        />
-
-        {/* Non-Functional Requirements */}
-        <ListSection<Requirement>
-          title="5. דרישות לא־פונקציונליות"
-          items={content.non_functional_requirements}
-          onChange={(items) => updateContent((c) => ({ ...c, non_functional_requirements: items }))}
-          newItem={() => ({ id: newId(), title: "", description: "" })}
-          renderItem={(item, onChange) => <RequirementCard item={item} onChange={onChange} />}
-          addLabel="הוסף דרישה"
-        />
-
-        {/* Assumptions */}
-        <ListSection<TextItem>
-          title="6. הנחות יסוד"
-          items={content.assumptions}
-          onChange={(items) => updateContent((c) => ({ ...c, assumptions: items }))}
-          newItem={() => ({ id: newId(), text: "" })}
-          renderItem={(item, onChange) => (
-            <EditableText
-              value={item.text}
-              onChange={(v) => onChange({ ...item, text: v })}
-              multiline
-              placeholder="הנחת יסוד..."
-            />
-          )}
-          addLabel="הוסף הנחה"
-        />
-
-        {/* Use Cases */}
-        <ListSection<UseCase>
-          title="7. תרחישי שימוש"
-          items={content.use_cases}
-          onChange={(items) => updateContent((c) => ({ ...c, use_cases: items }))}
-          newItem={() => ({ id: newId(), title: "", description: "", diagram: "" })}
-          renderItem={(item, onChange) => (
-            <div className="space-y-3">
-              <EditableText
-                value={item.title}
-                onChange={(v) => onChange({ ...item, title: v })}
-                placeholder="כותרת התרחיש"
-                className="font-medium"
-              />
-              <EditableText
-                value={item.description}
-                onChange={(v) => onChange({ ...item, description: v })}
-                multiline
-                placeholder="תיאור התרחיש..."
-              />
-              <SpecDiagram
-                code={item.diagram ?? ""}
-                onChange={(code) => onChange({ ...item, diagram: code })}
-              />
-            </div>
-          )}
-          addLabel="הוסף תרחיש"
-        />
-
-        {/* Architecture */}
-        <Section title="8. ארכיטקטורה">
-          <EditableText
-            value={content.architecture.description}
-            onChange={(v) =>
-              updateContent((c) => ({ ...c, architecture: { ...c.architecture, description: v } }))
-            }
-            multiline
-            placeholder="תיאור הארכיטקטורה..."
-          />
-          <div className="mt-4">
-            <SpecDiagram
-              code={content.architecture.diagram ?? ""}
-              onChange={(code) =>
-                updateContent((c) => ({ ...c, architecture: { ...c.architecture, diagram: code } }))
-              }
-            />
-          </div>
-        </Section>
-
-        {/* Data Model */}
-        <Section title="9. מודל נתונים">
-          <EditableText
-            value={content.data_model.description}
-            onChange={(v) =>
-              updateContent((c) => ({ ...c, data_model: { ...c.data_model, description: v } }))
-            }
-            multiline
-            placeholder="תיאור מודל הנתונים..."
-          />
-          <div className="mt-4">
-            <SpecDiagram
-              code={content.data_model.diagram ?? ""}
-              onChange={(code) =>
-                updateContent((c) => ({ ...c, data_model: { ...c.data_model, diagram: code } }))
-              }
-            />
-          </div>
-        </Section>
-
-        {/* Risks */}
-        <ListSection<TextItem>
-          title="10. סיכונים"
-          items={content.risks}
-          onChange={(items) => updateContent((c) => ({ ...c, risks: items }))}
-          newItem={() => ({ id: newId(), text: "" })}
-          renderItem={(item, onChange) => (
-            <EditableText
-              value={item.text}
-              onChange={(v) => onChange({ ...item, text: v })}
-              multiline
-              placeholder="סיכון..."
-            />
-          )}
-          addLabel="הוסף סיכון"
-        />
-
-        {typeof data.spec.review_score === "number" ? (
-          <section className="space-y-3">
-            <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-              ביקורת הסוכן המבקר
-            </h2>
-            <ReviewPanel
-              review={{
-                score: data.spec.review_score,
-                notes: Array.isArray(data.spec.review_notes)
-                  ? (data.spec.review_notes as string[])
-                  : [],
-              }}
-            />
-          </section>
-        ) : null}
-
-        <section className="space-y-3">
-          <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-            ההערות שלי
-          </h2>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <Textarea
-              value={userNotes}
-              onChange={(e) => setUserNotes(e.target.value)}
-              rows={6}
-              placeholder="כתוב כאן הערות אישיות לגבי המסמך... (נשמר אוטומטית)"
-              className="resize-y"
-            />
-          </div>
-        </section>
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
+        {visibleSections.map((key, index) => {
+          const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+          const titleValue = sectionTitles[key] ?? def.defaultTitle;
+          return (
+            <SectionShell
+              key={key}
+              title={titleValue}
+              onTitleChange={(v) => setSectionTitle(key, v)}
+              onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+              onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+            >
+              {renderBody(key)}
+            </SectionShell>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionShell({
+  title,
+  onTitleChange,
+  onMoveUp,
+  onMoveDown,
+  children,
+}: {
+  title: string;
+  onTitleChange: (v: string) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  children: React.ReactNode;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+
   return (
     <section className="space-y-3">
-      <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-        {title}
-      </h2>
-      <div className="rounded-lg border border-border bg-card p-4">{children}</div>
+      <div className="flex items-center gap-2 border-b border-border pb-2">
+        <div className="flex flex-col">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-5 w-7 p-0"
+            disabled={!onMoveUp}
+            onClick={onMoveUp}
+            aria-label="הזז למעלה"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-5 w-7 p-0"
+            disabled={!onMoveDown}
+            onClick={onMoveDown}
+            aria-label="הזז למטה"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </div>
+        {editing ? (
+          <Input
+            value={draft}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onTitleChange(draft);
+              setEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onTitleChange(draft);
+                setEditing(false);
+              } else if (e.key === "Escape") {
+                setDraft(title);
+                setEditing(false);
+              }
+            }}
+            className="h-9 max-w-md text-xl font-semibold"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(title);
+              setEditing(true);
+            }}
+            className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
+            title="לחץ לעריכת שם הסעיף"
+          >
+            <span>{title}</span>
+            <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60" />
+          </button>
+        )}
+      </div>
+      {children}
     </section>
   );
 }
@@ -415,8 +573,7 @@ function RequirementCard({
   );
 }
 
-interface ListSectionProps<T extends { id: string }> {
-  title: string;
+interface ListBodyProps<T extends { id: string }> {
   items: T[];
   onChange: (items: T[]) => void;
   newItem: () => T;
@@ -424,19 +581,15 @@ interface ListSectionProps<T extends { id: string }> {
   addLabel: string;
 }
 
-function ListSection<T extends { id: string }>({
-  title,
+function ListBody<T extends { id: string }>({
   items,
   onChange,
   newItem,
   renderItem,
   addLabel,
-}: ListSectionProps<T>) {
+}: ListBodyProps<T>) {
   return (
-    <section className="space-y-3">
-      <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-        {title}
-      </h2>
+    <div className="space-y-3">
       <ul className="space-y-3">
         {items.map((item, idx) => (
           <li
@@ -468,6 +621,6 @@ function ListSection<T extends { id: string }>({
       <Button variant="outline" size="sm" onClick={() => onChange([...items, newItem()])}>
         <Plus className="mr-1.5 h-4 w-4" /> {addLabel}
       </Button>
-    </section>
+    </div>
   );
 }

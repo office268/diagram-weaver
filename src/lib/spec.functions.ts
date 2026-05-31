@@ -121,15 +121,26 @@ export const updateSpec = createServerFn({ method: "POST" })
         content: z.record(z.string(), z.any()).optional(),
         userNotes: z.string().max(10000).optional(),
         userPrompt: z.string().max(5000).optional(),
+        sectionOrder: z.array(z.string().max(60)).max(50).optional(),
+        sectionTitles: z.record(z.string().max(60), z.string().max(200)).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { id, userNotes, userPrompt, ...rest } = data;
-    const patch: { title?: string; content?: Record<string, unknown>; user_notes?: string; user_prompt?: string } = { ...rest };
+    const { id, userNotes, userPrompt, sectionOrder, sectionTitles, ...rest } = data;
+    const patch: {
+      title?: string;
+      content?: Record<string, unknown>;
+      user_notes?: string;
+      user_prompt?: string;
+      section_order?: string[];
+      section_titles?: Record<string, string>;
+    } = { ...rest };
     if (userNotes !== undefined) patch.user_notes = userNotes;
     if (userPrompt !== undefined) patch.user_prompt = userPrompt;
+    if (sectionOrder !== undefined) patch.section_order = sectionOrder;
+    if (sectionTitles !== undefined) patch.section_titles = sectionTitles;
     const { data: row, error } = await supabase
       .from("spec_documents")
       .update(patch as never)
