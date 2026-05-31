@@ -26,6 +26,7 @@ import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
 
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -103,6 +104,17 @@ function SettingsPage() {
           className="mt-1 text-sm text-muted-foreground block"
         />
       </div>
+
+      <SettingsSection title="סיור מודרך" description="חזרה על המדריך לשימוש במערכת.">
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <div className="text-sm text-muted-foreground">
+              הפעלה מחדש של הסיור המקוצר על תכונות המערכת.
+            </div>
+            <RestartTourButton />
+          </CardContent>
+        </Card>
+      </SettingsSection>
 
       {isAdmin ? (
         <>

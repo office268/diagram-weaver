@@ -10,6 +10,8 @@ import {
   CommandTriggerButton,
 } from "@/components/global-command-palette";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
+import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -32,39 +34,50 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-          <Link to="/projects" className="flex shrink-0 items-center gap-2 font-semibold text-foreground">
-            <FileText className="h-5 w-5 text-primary" />
-            <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
-          </Link>
+    <OnboardingProvider>
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="border-b border-border bg-card">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
+            <Link to="/projects" className="flex shrink-0 items-center gap-2 font-semibold text-foreground">
+              <FileText className="h-5 w-5 text-primary" />
+              <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
+            </Link>
 
-          <div className="flex items-center gap-1.5">
-            <div className="hidden md:flex items-center gap-1.5">
-              <CommandTriggerButton />
-              <RecentItemsMenu />
+            <div className="flex items-center gap-1.5">
+              <div className="hidden md:flex items-center gap-1.5">
+                <div data-tour="header-search">
+                  <CommandTriggerButton />
+                </div>
+                <div data-tour="header-recent">
+                  <RecentItemsMenu />
+                </div>
+              </div>
+              <ThemeToggle />
+              <div data-tour="user-menu">
+                <UserMenu user={user} />
+              </div>
             </div>
-            <ThemeToggle />
-            <UserMenu user={user} />
           </div>
+        </header>
+        <main className="flex-1 pb-16 md:pb-0">
+          <Outlet />
+        </main>
+        <footer className="hidden md:block border-t border-border bg-card">
+          <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
+            <span>סוכן ניתוח מערכות · Lovable Cloud</span>
+            <nav className="flex items-center gap-4">
+              <Link to="/about" className="hover:text-foreground">אודות</Link>
+              <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
+              <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
+            </nav>
+          </div>
+        </footer>
+        <div data-tour="mobile-nav">
+          <MobileBottomNav />
         </div>
-      </header>
-      <main className="flex-1 pb-16 md:pb-0">
-        <Outlet />
-      </main>
-      <footer className="hidden md:block border-t border-border bg-card">
-        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
-          <span>סוכן ניתוח מערכות · Lovable Cloud</span>
-          <nav className="flex items-center gap-4">
-            <Link to="/about" className="hover:text-foreground">אודות</Link>
-            <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
-            <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
-          </nav>
-        </div>
-      </footer>
-      <MobileBottomNav />
-      <GlobalCommandPalette />
-    </div>
+        <GlobalCommandPalette />
+        <OnboardingOverlay />
+      </div>
+    </OnboardingProvider>
   );
 }
