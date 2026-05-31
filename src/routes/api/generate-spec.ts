@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/generate-spec")({
           return new Response("LOVABLE_API_KEY missing", { status: 500 });
         }
 
-        const { data: userId } = { data: userData.user.id };
+        void userId;
         const system = await resolveSystemInstruction(body.docType);
         const model = DEFAULT_MODEL;
 
