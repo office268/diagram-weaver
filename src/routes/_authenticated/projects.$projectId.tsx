@@ -773,9 +773,12 @@ function ProjectPage() {
                 </section>
               );
             })}
-          </div>
+                </div>
+                )}
+              </>
         )}
       </div>
+
 
 
 
