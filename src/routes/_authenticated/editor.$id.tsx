@@ -146,6 +146,9 @@ function EditorPage() {
   const [sectionOrder, setSectionOrder] = useState<string[]>(DEFAULT_KEYS);
   const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [, setTick] = useState(0);
+  const [cmdOpen, setCmdOpen] = useState(false);
   const lastSentRef = useRef<string>("");
 
   useEffect(() => {
@@ -190,6 +193,7 @@ function EditorPage() {
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
       setSaveState("saved");
+      setLastSavedAt(new Date());
       qc.invalidateQueries({ queryKey: ["specs"] });
       setTimeout(() => setSaveState((s) => (s === "saved" ? "idle" : s)), 1500);
     },
