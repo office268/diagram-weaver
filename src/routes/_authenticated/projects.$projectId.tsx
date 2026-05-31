@@ -219,7 +219,7 @@ function ProjectPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: promptText, spec }),
+          body: JSON.stringify({ prompt: promptText, spec, projectId }),
         });
         if (!revRes.ok) {
           const t = await revRes.text().catch(() => "");
