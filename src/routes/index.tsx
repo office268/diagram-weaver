@@ -2,24 +2,26 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Sparkles, ListChecks, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EditableSiteText } from "@/components/editable-site-text";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "סוכן ניתוח מערכות | מסמכי אפיון על מתוך פרומפט" },
+      { title: "מסמכי אפיון שכותבים את עצמם — סוכן ניתוח מערכות" },
       {
         name: "description",
         content:
-          "תארו מערכת במילים חופשיות — קבלו מסמך אפיון על מלא: דרישות, הנחות יסוד, תרחישים, ארכיטקטורה ומודל נתונים. הכל ניתן לעריכה.",
+          "תארו את המערכת במילים שלכם — הסוכן יבנה דרישות פונקציונליות, הנחות יסוד, פרסונות, תרחישי שימוש, ארכיטקטורה ומודל נתונים. כל סעיף ניתן לעריכה.",
       },
-      { property: "og:title", content: "סוכן ניתוח מערכות" },
+      { property: "og:title", content: "מסמכי אפיון שכותבים את עצמם — סוכן ניתוח מערכות" },
       {
         property: "og:description",
         content:
-          "סוכן AI לאנליסטים שמייצר מסמכי אפיון על מלאים מתוך תיאור מילולי של המערכת.",
+          "תארו את המערכת במילים שלכם — הסוכן יבנה אפיון על מלא: דרישות, פרסונות, ארכיטקטורה ומודל נתונים.",
       },
       { property: "og:url", content: "/" },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Landing,
 });
@@ -36,11 +38,14 @@ function Landing() {
               defaultValue="סוכן ניתוח מערכות"
             />
           </div>
-          <Link to="/login">
-            <Button variant="ghost" size="sm">
-              <EditableSiteText textKey="landing.header.login" defaultValue="כניסה" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <Link to="/login">
+              <Button variant="ghost" size="sm">
+                <EditableSiteText textKey="landing.header.login" defaultValue="כניסה" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
