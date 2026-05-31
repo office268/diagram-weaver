@@ -1317,6 +1317,25 @@ function SectionShell({
               <Pencil className="h-4 w-4" />
             </Button>
 
+            {onSplit ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "hidden h-8 w-8 p-0 lg:inline-flex",
+                  splitActive && "bg-primary/10 text-primary",
+                )}
+                onClick={onSplit}
+                title="הצג בתצוגת השוואה (split view)"
+                aria-label="תצוגת השוואה"
+              >
+                <Columns2 className="h-4 w-4" />
+              </Button>
+            ) : null}
+
+
+
             {onAiImprove ? (
               <Popover
                 open={aiOpen}
