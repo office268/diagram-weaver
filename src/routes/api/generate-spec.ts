@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/generate-spec")({
         // Consume 1 credit atomically. Returns NULL if balance < 1.
         const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
           "consume_credit",
-          { _user_id: userId, _doc_id: null },
+          { _user_id: userId, _doc_id: undefined as unknown as string },
         );
         if (creditErr) {
           console.error("[generate-spec] consume_credit error:", creditErr);
