@@ -559,8 +559,16 @@ function ProjectPage() {
 
       <div className="mt-8">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="space-y-8">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-5 w-48" />
+                <div className="space-y-2">
+                  <Skeleton className="h-14 w-full rounded-xl" />
+                  <Skeleton className="h-14 w-full rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
@@ -576,13 +584,30 @@ function ProjectPage() {
           </div>
 
         ) : (
-          <div className="space-y-8">
-            {DOC_TYPE_KEYS.map((typeKey) => {
-              const typeGroups = groupsByType[typeKey];
-              if (!typeGroups || typeGroups.length === 0) return null;
-              const def = DOC_TYPES[typeKey];
-              const typeVisual = getDocTypeVisual(typeKey);
-              const TypeIcon = typeVisual.icon;
+          <>
+            <div className="relative mb-4">
+              <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="חפש בכותרת, פרומפט או סוג מסמך..."
+                className="pr-9"
+              />
+            </div>
+            {!hasFilterMatches ? (
+              <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+                <Search className="mx-auto h-8 w-8 text-muted-foreground" />
+                <h3 className="mt-3 font-medium text-foreground">לא נמצאו מסמכים</h3>
+                <p className="mt-1 text-sm text-muted-foreground">נסו מילת חיפוש אחרת.</p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {DOC_TYPE_KEYS.map((typeKey) => {
+                  const typeGroups = filteredGroupsByType[typeKey];
+                  if (!typeGroups || typeGroups.length === 0) return null;
+                  const def = DOC_TYPES[typeKey];
+                  const typeVisual = getDocTypeVisual(typeKey);
+                  const TypeIcon = typeVisual.icon;
               return (
                 <section key={typeKey}>
                   <div className="mb-3 flex items-center justify-between gap-2">
