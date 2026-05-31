@@ -32,7 +32,32 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 70%, oklch(0.75 0.18 310)) 100%);
+  --gradient-hero: linear-gradient(180deg, color-mix(in oklab, var(--primary) 5%, transparent) 0%, transparent 70%);
+  --shadow-elegant: 0 8px 24px -10px color-mix(in oklab, var(--primary) 35%, transparent);
+  --shadow-card-hover: 0 10px 30px -12px color-mix(in oklab, var(--foreground) 18%, transparent);
 }
+
+@utility btn-gradient {
+  background-image: var(--gradient-primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-elegant);
+  transition: filter 200ms ease-out, box-shadow 200ms ease-out, transform 100ms ease-out;
+}
+@utility btn-gradient {
+  &:hover { filter: brightness(1.08); }
+  &:active { transform: scale(0.97); }
+}
+@utility hover-lift {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out;
+}
+@utility hover-lift {
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
 
 :root {
   --radius: 0.625rem;
