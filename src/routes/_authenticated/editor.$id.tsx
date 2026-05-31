@@ -41,7 +41,8 @@ import { getDocTypeVisual } from "@/lib/doc-types";
 import { getProject } from "@/lib/project.functions";
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
