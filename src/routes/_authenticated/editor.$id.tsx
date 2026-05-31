@@ -8,6 +8,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { usePromptHistory } from "@/hooks/use-prompt-history";
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -338,11 +347,15 @@ function EditorPage() {
   );
 
   const improveSection = useCallback(
-    async (key: string, label: string, instruction: string): Promise<boolean> => {
+    async (
+      key: string,
+      label: string,
+      instruction: string,
+    ): Promise<{ candidate: unknown; previous: unknown } | null> => {
       const cur = getSectionValue(key);
       if (!cur) {
         toast.error("לא ניתן לשפר סעיף זה");
-        return false;
+        return null;
       }
       try {
         const { data: sess } = await supabase.auth.getSession();
@@ -366,15 +379,27 @@ function EditorPage() {
           throw new Error(t);
         }
         const json = (await res.json()) as { value: unknown };
-        applySectionValue(key, json.value);
-        toast.success("הסעיף עודכן");
-        return true;
+        return { candidate: json.value, previous: cur.value };
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "שיפור הסעיף נכשל");
-        return false;
+        return null;
       }
     },
-    [getSectionValue, applySectionValue, prompt, data?.spec],
+    [getSectionValue, prompt, data?.spec],
+  );
+
+  const applyImprovement = useCallback(
+    (key: string, candidate: unknown, previous: unknown) => {
+      applySectionValue(key, candidate);
+      toast.success("הסעיף עודכן", {
+        duration: 8000,
+        action: {
+          label: "בטל",
+          onClick: () => applySectionValue(key, previous),
+        },
+      });
+    },
+    [applySectionValue],
   );
 
   const improveDoc = useCallback(async () => {
@@ -753,7 +778,7 @@ function EditorPage() {
   return (
     <div className="flex flex-col">
       {/* Toolbar */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
+      <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <Breadcrumb className="min-w-0 flex-1">
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
@@ -795,21 +820,21 @@ function EditorPage() {
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="h-8 w-full max-w-md text-sm sm:flex-1"
+          className="order-3 h-8 w-full basis-full text-sm sm:order-none sm:flex-1 sm:basis-auto sm:max-w-md"
           placeholder="כותרת המסמך"
         />
         <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
           {saveState === "saving" ? (
             <>
-              <Loader2 className="h-3 w-3 animate-spin" /> שומר…
+              <Loader2 className="h-3 w-3 animate-spin" /> <span className="hidden sm:inline">שומר…</span>
             </>
           ) : saveState === "saved" ? (
             <>
-              <Check className="h-3 w-3 text-primary" /> נשמר
+              <Check className="h-3 w-3 text-primary" /> <span className="hidden sm:inline">נשמר</span>
             </>
           ) : (
             <>
-              <Save className="h-3 w-3" /> שמירה אוטומטית
+              <Save className="h-3 w-3" /> <span className="hidden sm:inline">שמירה אוטומטית</span>
             </>
           )}
         </div>
@@ -840,10 +865,14 @@ function EditorPage() {
                       onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
                       onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
                       onDelete={() => deleteSection(key)}
+                      sectionKey={key}
                       onAiImprove={
                         key === "review"
                           ? undefined
                           : (instruction) => improveSection(key, titleValue, instruction)
+                      }
+                      onApplyImprove={(candidate, previous) =>
+                        applyImprovement(key, candidate, previous)
                       }
                     >
                       {renderBody(key)}
@@ -865,7 +894,9 @@ function SectionShell({
   onMoveUp,
   onMoveDown,
   onDelete,
+  sectionKey,
   onAiImprove,
+  onApplyImprove,
   dragHandle,
   children,
 }: {
@@ -874,7 +905,9 @@ function SectionShell({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
-  onAiImprove?: (instruction: string) => Promise<boolean>;
+  sectionKey?: string;
+  onAiImprove?: (instruction: string) => Promise<{ candidate: unknown; previous: unknown } | null>;
+  onApplyImprove?: (candidate: unknown, previous: unknown) => void;
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -885,6 +918,8 @@ function SectionShell({
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [preview, setPreview] = useState<{ candidate: unknown; previous: unknown } | null>(null);
+  const history = usePromptHistory(sectionKey ?? "default");
 
   const startEdit = () => {
     setDraft(title);
@@ -894,17 +929,30 @@ function SectionShell({
 
   const handleAiSubmit = async () => {
     if (!onAiImprove || aiPrompt.trim().length < 3) return;
+    const instr = aiPrompt.trim();
     setAiBusy(true);
-    const ok = await onAiImprove(aiPrompt.trim());
+    const result = await onAiImprove(instr);
     setAiBusy(false);
-    if (ok) {
+    if (result) {
+      history.add(instr);
       setAiPrompt("");
       setAiOpen(false);
-      setOpen(true);
+      setPreview(result);
+    }
+  };
+
+  const formatValue = (v: unknown): string => {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
     }
   };
 
   return (
+    <>
     <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
@@ -1041,6 +1089,38 @@ function SectionShell({
                     autoFocus
                     dir="auto"
                   />
+                  {history.items.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-muted-foreground">פרומפטים אחרונים</div>
+                      <div className="flex flex-wrap gap-1">
+                        {history.items.map((p) => (
+                          <div
+                            key={p}
+                            className="group inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 pr-2 text-[11px]"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setAiPrompt(p)}
+                              disabled={aiBusy}
+                              className="max-w-[14rem] truncate py-0.5 text-foreground hover:text-primary"
+                              title={p}
+                            >
+                              {p}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => history.remove(p)}
+                              disabled={aiBusy}
+                              className="rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              aria-label="הסר מההיסטוריה"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
@@ -1114,6 +1194,51 @@ function SectionShell({
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
     </Collapsible>
+    <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>תצוגה מקדימה — שיפור AI</DialogTitle>
+          <DialogDescription>
+            השווה בין הגרסה הנוכחית להצעת ה-AI ל-"{title}". ניתן לבטל גם לאחר ההחלה.
+          </DialogDescription>
+        </DialogHeader>
+        {preview ? (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-muted-foreground">נוכחי</div>
+              <pre className="max-h-[50vh] overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap" dir="auto">
+                {formatValue(preview.previous)}
+              </pre>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-primary">הצעת AI</div>
+              <pre className="max-h-[50vh] overflow-auto rounded-md border border-primary/40 bg-primary/5 p-3 text-xs whitespace-pre-wrap" dir="auto">
+                {formatValue(preview.candidate)}
+              </pre>
+            </div>
+          </div>
+        ) : null}
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setPreview(null)}>
+            ביטול
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              if (preview && onApplyImprove) {
+                onApplyImprove(preview.candidate, preview.previous);
+              }
+              setPreview(null);
+              setOpen(true);
+            }}
+          >
+            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+            החל שינוי
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
