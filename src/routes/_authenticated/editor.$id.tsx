@@ -1088,6 +1088,38 @@ function SectionShell({
                     autoFocus
                     dir="auto"
                   />
+                  {history.items.length > 0 ? (
+                    <div className="space-y-1">
+                      <div className="text-[11px] text-muted-foreground">פרומפטים אחרונים</div>
+                      <div className="flex flex-wrap gap-1">
+                        {history.items.map((p) => (
+                          <div
+                            key={p}
+                            className="group inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-muted/40 pr-2 text-[11px]"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => setAiPrompt(p)}
+                              disabled={aiBusy}
+                              className="max-w-[14rem] truncate py-0.5 text-foreground hover:text-primary"
+                              title={p}
+                            >
+                              {p}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => history.remove(p)}
+                              disabled={aiBusy}
+                              className="rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              aria-label="הסר מההיסטוריה"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="flex justify-end gap-2">
                     <Button
                       type="button"
