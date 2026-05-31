@@ -1,11 +1,10 @@
 // Server-only helpers for resolving per-doc-type system instructions.
 
-import { DEFAULT_SYSTEM_INSTRUCTION } from "./ai-spec-defaults.server";
 import { getDocTypeSystemInstruction } from "./doc-types.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export function getDefaultFullInstruction(docType: string | null | undefined): string {
-  return `${DEFAULT_SYSTEM_INSTRUCTION}\n\n${getDocTypeSystemInstruction(docType)}`;
+  return getDocTypeSystemInstruction(docType);
 }
 
 /**
