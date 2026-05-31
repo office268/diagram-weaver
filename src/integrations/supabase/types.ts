@@ -126,6 +126,7 @@ export type Database = {
         Row: {
           content: Json
           created_at: string
+          doc_type: string
           group_id: string | null
           id: string
           model: string | null
@@ -144,6 +145,7 @@ export type Database = {
         Insert: {
           content?: Json
           created_at?: string
+          doc_type?: string
           group_id?: string | null
           id?: string
           model?: string | null
@@ -162,6 +164,7 @@ export type Database = {
         Update: {
           content?: Json
           created_at?: string
+          doc_type?: string
           group_id?: string | null
           id?: string
           model?: string | null

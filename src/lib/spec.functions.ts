@@ -48,6 +48,9 @@ export const createSpec = createServerFn({ method: "POST" })
         groupId: z.string().uuid().optional(),
         model: z.string().max(100).optional(),
         variant: z.enum(["original", "revised", "single"]).optional(),
+        docType: z.string().max(60).optional(),
+        sectionOrder: z.array(z.string().max(60)).max(50).optional(),
+        sectionTitles: z.record(z.string().max(60), z.string().max(200)).optional(),
       })
       .parse(input),
   )
@@ -65,7 +68,10 @@ export const createSpec = createServerFn({ method: "POST" })
         group_id: data.groupId ?? null,
         model: data.model ?? null,
         variant: data.variant ?? null,
-      })
+        doc_type: data.docType ?? "spec_overview",
+        section_order: data.sectionOrder ?? [],
+        section_titles: data.sectionTitles ?? {},
+      } as never)
       .select()
       .single();
     if (error) throw new Error(error.message);
