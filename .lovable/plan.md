@@ -1,46 +1,89 @@
-# Plan: Implement remaining items (10, 11, 15, 18, 20, 21, 22, 23, 24, 25)
+# שיפורים ויזואליים וחווייתיים
 
-## 10 — Auto-save robustness (`editor.$id.tsx`)
-- Add `beforeunload` listener that warns if there are pending unsaved changes (dirty state / pending debounce).
-- Display "נשמר לאחרונה לפני X" using `formatDistanceToNow` (date-fns, already in deps) next to the auto-save indicator, refreshed every 30s.
+מימוש 4 ההצעות מקטגוריית "ויזואלי וחווייתי" באופן רוחבי, ללא שינוי לוגיקה עסקית.
 
-## 11 — Logo consistency
-- Replace `GitBranch` icon usage with `FileText` (or a single chosen icon) wherever the brand mark appears so landing header, auth pages, and app header all match. Audit: `src/routes/index.tsx`, `src/routes/login.tsx`, `src/routes/_authenticated.tsx`.
+---
 
-## 15 — Keyboard shortcuts (`editor.$id.tsx`)
-- `Cmd/Ctrl+S` → trigger manual save (prevent default browser save).
-- `Cmd/Ctrl+K` → open a section quick-search `CommandDialog` (cmdk via existing `command.tsx`) listing sections; Enter scrolls to + focuses the section.
-- `Esc` → close any open AI Popover / Preview Dialog (already partly handled by Radix; ensure popover state closes).
+## 1. Empty States מאוירים
 
-## 18 — Score tooltip
-- Wrap the "X/10" badge (review panel / editor header) in a `Tooltip` explaining the rubric criteria (completeness, clarity, consistency, feasibility, testability). Pull the criteria list from a small constant.
+**איפה:**
+- `projects.index.tsx` — כשאין פרויקטים
+- `projects.$projectId.tsx` — כשאין מסמכים בפרויקט
+- `editor.$id.tsx` — סעיפים ריקים / אין הצעות AI
 
-## 20 — Landing meta consistency
-- Align `head().meta` `title` in `src/routes/index.tsx` with the H1 from site-texts default ("מסמכי אפיון שכותבים את עצמם.") and ensure description matches subtitle. Same for `og:title` / `og:description`.
+**איך:**
+- ליצור קומפוננטה משותפת `src/components/empty-state.tsx` עם props: `icon`, `title`, `description`, `action`.
+- שימוש באייקוני Lucide גדולים (size 48-64) עטופים במעגל עם רקע `bg-muted/50` ו-`text-muted-foreground`.
+- מתחת: כותרת + תיאור קצר + כפתור CTA primary.
+- אנימציית כניסה: `animate-fade-in`.
 
-## 21 — Dark mode toggle
-- Add CSS variables for `.dark` in `src/styles.css` (mirror existing tokens with dark oklch values).
-- Create `src/hooks/use-theme.ts` — persists to `localStorage`, toggles `documentElement.classList`.
-- Add a `ThemeToggle` button (Sun/Moon icons) in the authenticated header (`_authenticated.tsx`) and landing header.
+## 2. Skeleton Loaders
 
-## 22 — User avatar in header (`_authenticated.tsx`)
-- Replace the email text with an `Avatar` (initials fallback from email; `avatar_url` from `profiles` if present).
-- Wrap in a `DropdownMenu`: shows email, link to settings, logout. Fetch profile via existing query or add a lightweight `getMyProfile` server fn (only if not already available).
+**איפה (להחליף `Loader2` / `animate-spin`):**
+- `projects.index.tsx` — רשת של 6 skeleton cards
+- `projects.$projectId.tsx` — רשימת skeleton items למסמכים
+- `editor.$id.tsx` — skeleton למבנה הסעיפים (כותרת + 3 שורות)
+- `review-suggestions-panel.tsx` — skeleton להצעות
 
-## 23 — Footer on authenticated pages (`_authenticated.tsx`)
-- Add a small footer below `<Outlet />` with links: Privacy / Terms / About. Create placeholder routes `src/routes/privacy.tsx`, `src/routes/terms.tsx`, `src/routes/about.tsx`, each with proper `head()` and minimal Hebrew content.
+**איך:**
+- שימוש בקומפוננטת `Skeleton` הקיימת מ-shadcn (`@/components/ui/skeleton`).
+- ליצור 2 קומפוננטות עזר: `src/components/skeletons/project-card-skeleton.tsx` ו-`document-row-skeleton.tsx`.
+- להציג בזמן `isLoading` במקום ספינר.
 
-## 24 — Doc-type mini-badges in project cards (`projects.$projectId.tsx` + `projects.index.tsx`)
-- For each spec document card, show a colored `Badge` with the localized `doc_type` label (lookup from `src/lib/doc-types.ts`).
-- Assign each doc-type a token color (semantic CSS var → tailwind class).
+## 3. Micro-interactions
 
-## 25 — Admin-only settings sections (`settings.tsx`)
-- Use `isAdmin` from `SiteTextsProvider` context (already loaded in root).
-- Hide `AppMetadataCard` and `DocTypeSectionsCard` sections when `!isAdmin`.
-- (No DB change needed — `app_metadata` write policies are already authenticated-only; if user wants hard server gating, add a follow-up migration to require `has_role(auth.uid(), 'admin')`. Out of scope unless user asks.)
+**איפה:**
+- כרטיסי פרויקט (`projects.index.tsx`) ומסמך (`projects.$projectId.tsx`)
+- כפתורי פעולה ראשיים
+- פריטי רשימה (סעיפים בעורך, הצעות review)
 
-## Technical notes
-- All frontend-only; no migrations required.
-- Files created: `src/hooks/use-theme.ts`, `src/components/theme-toggle.tsx`, `src/components/user-menu.tsx`, `src/routes/privacy.tsx`, `src/routes/terms.tsx`, `src/routes/about.tsx`.
-- Files edited: `src/styles.css`, `src/routes/__root.tsx` (apply theme class on mount), `src/routes/_authenticated.tsx`, `src/routes/_authenticated/editor.$id.tsx`, `src/routes/_authenticated/settings.tsx`, `src/routes/_authenticated/projects.$projectId.tsx`, `src/routes/_authenticated/projects.index.tsx`, `src/routes/index.tsx`, `src/routes/login.tsx`.
-- Verification: visual check on mobile (384px) and desktop; Cmd+S / Cmd+K shortcuts; dark mode toggle persists across reload; admin gating with a non-admin account.
+**איך:**
+- כרטיסים: להוסיף `transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30`.
+- כפתורים: כבר יש transitions ב-shadcn; להוסיף `active:scale-95` ל-CTAs ראשיים.
+- פריטי רשימה: `transition-colors hover:bg-accent/50`.
+- מעברים בין מצבים (פתיחת popover/dialog): כבר מטופל ע"י Radix; לוודא `animate-in fade-in-0 zoom-in-95`.
+- אנימציות כניסה לרשימות: `animate-fade-in` על כרטיסים עם `style={{ animationDelay: ${i * 50}ms }}` עד 6 פריטים.
+
+## 4. Gradient Accents
+
+**איפה:**
+- כפתורי primary CTA ראשיים (יצירת פרויקט/מסמך, "בנה איתי")
+- כותרת hero בלנדינג (`index.tsx`)
+- Header של דפי פרויקט/עורך
+
+**איך:**
+- להוסיף ל-`src/styles.css` תחת `@theme`:
+  - `--gradient-primary: linear-gradient(135deg, oklch(from var(--primary) l c h), oklch(from var(--primary) calc(l + 0.08) c calc(h + 20)))`
+  - `--gradient-subtle: linear-gradient(180deg, oklch(from var(--background) l c h), oklch(from var(--muted) l c h))`
+- ליצור variant חדש `premium` בכפתור (או class utility `.btn-gradient`): `bg-[image:var(--gradient-primary)] text-primary-foreground shadow-md hover:shadow-lg hover:brightness-110`.
+- כותרת hero בלנדינג: `bg-gradient-to-l from-primary via-primary to-primary/70 bg-clip-text text-transparent` (RTL-friendly).
+- רקע hero: שכבת `bg-[image:var(--gradient-subtle)]` עדינה.
+
+---
+
+## פירוט טכני
+
+**קבצים שייווצרו:**
+- `src/components/empty-state.tsx`
+- `src/components/skeletons/project-card-skeleton.tsx`
+- `src/components/skeletons/document-row-skeleton.tsx`
+
+**קבצים שיתעדכנו:**
+- `src/styles.css` — gradient tokens
+- `src/components/ui/button.tsx` — variant `gradient` (אופציונלי, אם לא — class utility)
+- `src/routes/index.tsx` — gradient hero
+- `src/routes/_authenticated/projects.index.tsx` — empty state, skeletons, hover micro-interactions, stagger
+- `src/routes/_authenticated/projects.$projectId.tsx` — אותו דבר למסמכים
+- `src/routes/_authenticated/editor.$id.tsx` — skeleton למבנה + hover עדין לסעיפים
+- `src/components/review-suggestions-panel.tsx` — skeleton להצעות
+
+**עקרונות:**
+- שימוש בטוקנים סמנטיים בלבד (אין צבעים hardcoded).
+- כל האנימציות עד 300ms, `ease-out`.
+- תמיכה מלאה ב-RTL וב-dark mode (gradients משתמשים בטוקני oklch).
+- אין שינוי בלוגיקה עסקית / API / DB.
+
+**אימות:**
+- בדיקה במובייל (384px) ובדסקטופ.
+- וידוא ש-skeletons תואמים את הגובה האמיתי (אין layout shift).
+- בדיקת ניגודיות gradient text במצב כהה ובהיר.
