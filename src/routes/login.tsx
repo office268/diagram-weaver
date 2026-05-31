@@ -46,7 +46,7 @@ function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard" },
+          options: { emailRedirectTo: window.location.origin + "/projects" },
         });
         if (error) throw error;
         toast.success("Account created. Welcome!");
@@ -65,7 +65,7 @@ function LoginPage() {
     setBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/dashboard",
+        redirect_uri: window.location.origin + "/projects",
       });
       if (result.error) throw result.error;
     } catch (err) {
