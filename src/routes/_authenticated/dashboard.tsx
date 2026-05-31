@@ -112,6 +112,8 @@ function DashboardPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [typePickerOpen, setTypePickerOpen] = useState(false);
+  const [docType, setDocType] = useState<DocTypeKey>("spec_overview");
   const [prompt, setPrompt] = useState("");
   const [compareState, setCompareState] = useState<CompareState | null>(null);
   const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
