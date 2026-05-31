@@ -55,7 +55,7 @@ export function EditableText({ value, onChange, multiline, placeholder, classNam
       <Button
         size="sm"
         variant="ghost"
-        className="h-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+        className="h-7 shrink-0 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
         onClick={() => { setDraft(value); setEditing(true); }}
       >
         <Pencil className="h-3.5 w-3.5" />
