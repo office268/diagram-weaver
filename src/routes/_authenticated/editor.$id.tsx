@@ -1002,7 +1002,19 @@ function EditorPage() {
             </>
           )}
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setFocusMode((v) => !v)}
+          title={focusMode ? "יציאה ממצב מיקוד (F)" : "מצב מיקוד (F)"}
+          aria-label={focusMode ? "יציאה ממצב מיקוד" : "מצב מיקוד"}
+        >
+          {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
       </div>
+
 
       {/* Section quick-search (Cmd+K) */}
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
