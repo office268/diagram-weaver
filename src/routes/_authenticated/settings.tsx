@@ -105,6 +105,17 @@ function SettingsPage() {
         />
       </div>
 
+      <SettingsSection title="סיור מודרך" description="חזרה על המדריך לשימוש במערכת.">
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+            <div className="text-sm text-muted-foreground">
+              הפעלה מחדש של הסיור המקוצר על תכונות המערכת.
+            </div>
+            <RestartTourButton />
+          </CardContent>
+        </Card>
+      </SettingsSection>
+
       {isAdmin ? (
         <>
           <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
