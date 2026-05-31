@@ -920,4 +920,71 @@ function ResultPreview({
   );
 }
 
+function EditableDocTitle({
+  id,
+  value,
+  className,
+}: {
+  id: string;
+  value: string;
+  className?: string;
+}) {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateSpec);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  const commit = async () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (!next || next === value) {
+      setDraft(value);
+      return;
+    }
+    try {
+      await updateFn({ data: { id, title: next } });
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("השם עודכן");
+    } catch (e) {
+      setDraft(value);
+      toast.error(e instanceof Error ? e.message : "עדכון השם נכשל");
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") { e.preventDefault(); void commit(); }
+          if (e.key === "Escape") { e.preventDefault(); setDraft(value); setEditing(false); }
+        }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        dir="auto"
+        className={`min-w-0 flex-1 rounded border border-primary bg-background px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-primary/40 ${className ?? ""}`}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`${className ?? ""} cursor-text rounded outline-dashed outline-1 outline-transparent transition-colors hover:outline-primary/40`}
+      title="דאבל-קליק לעריכת שם"
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDraft(value);
+        setEditing(true);
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
+
 
