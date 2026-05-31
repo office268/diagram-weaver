@@ -488,11 +488,9 @@ function DashboardPage() {
                     className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
                   >
                     <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
                         <FileText className="h-4 w-4 text-primary" />
-                        <span className="truncate font-medium text-foreground">
-                          {d.title}
-                        </span>
+                        <EditableDocTitle id={d.id} value={d.title} className="truncate font-medium text-foreground" />
                       </div>
                       <div className="mt-3 text-xs text-muted-foreground">
                         עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
