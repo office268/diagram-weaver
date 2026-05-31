@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { getSpec, updateSpec } from "@/lib/spec.functions";
 import { ReviewPanel } from "@/components/review-panel";
@@ -479,72 +480,96 @@ function SectionShell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
+  const [open, setOpen] = useState(false);
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2 border-b border-border pb-2">
-        <div className="flex flex-col">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-5 w-7 p-0"
-            disabled={!onMoveUp}
-            onClick={onMoveUp}
-            aria-label="הזז למעלה"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-5 w-7 p-0"
-            disabled={!onMoveDown}
-            onClick={onMoveDown}
-            aria-label="הזז למטה"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
-        {editing ? (
-          <Input
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              onTitleChange(draft);
-              setEditing(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <div className="flex flex-col">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-5 w-7 p-0"
+              disabled={!onMoveUp}
+              onClick={onMoveUp}
+              aria-label="הזז למעלה"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-5 w-7 p-0"
+              disabled={!onMoveDown}
+              onClick={onMoveDown}
+              aria-label="הזז למטה"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </div>
+          <CollapsibleTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              aria-label={open ? "סגור סעיף" : "פתח סעיף"}
+            >
+              <ChevronRight
+                className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          {editing ? (
+            <Input
+              value={draft}
+              autoFocus
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => {
                 onTitleChange(draft);
                 setEditing(false);
-              } else if (e.key === "Escape") {
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onTitleChange(draft);
+                  setEditing(false);
+                } else if (e.key === "Escape") {
+                  setDraft(title);
+                  setEditing(false);
+                }
+              }}
+              className="h-9 max-w-md text-xl font-semibold"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpen((o) => !o)}
+              onDoubleClick={() => {
                 setDraft(title);
-                setEditing(false);
-              }
-            }}
-            className="h-9 max-w-md text-xl font-semibold"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setDraft(title);
-              setEditing(true);
-            }}
-            className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-            title="לחץ לעריכת שם הסעיף"
-          >
-            <span>{title}</span>
-            <Pencil className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60" />
-          </button>
-        )}
-      </div>
-      {children}
-    </section>
+                setEditing(true);
+              }}
+              className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
+              title="לחץ לפתיחה/סגירה. דאבל-קליק לעריכת שם הסעיף"
+            >
+              <span>{title}</span>
+              <Pencil
+                className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDraft(title);
+                  setEditing(true);
+                }}
+              />
+            </button>
+          )}
+        </div>
+        <CollapsibleContent>{children}</CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
 
