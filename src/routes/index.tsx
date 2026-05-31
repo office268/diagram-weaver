@@ -50,8 +50,15 @@ function Landing() {
       </header>
 
       <main>
-        <section className="mx-auto max-w-4xl px-6 pt-24 pb-16 text-center">
-          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+        <section
+          className="relative mx-auto max-w-4xl px-6 pt-24 pb-16 text-center"
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -top-10 -z-10 h-[420px]"
+            style={{ background: "var(--gradient-hero)" }}
+          />
+          <div className="animate-fade-in mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
             <Sparkles className="h-3 w-3" />
             <EditableSiteText
               textKey="landing.hero.badge"
@@ -62,18 +69,18 @@ function Landing() {
             as="h1"
             textKey="landing.hero.title"
             defaultValue="מסמכי אפיון שכותבים את עצמם."
-            className="text-balance text-5xl font-bold tracking-tight text-foreground sm:text-6xl block"
+            className="animate-fade-in text-balance bg-gradient-to-l from-foreground via-foreground to-primary bg-clip-text text-5xl font-bold tracking-tight text-transparent sm:text-6xl block"
           />
           <EditableSiteText
             as="p"
             multiline
             textKey="landing.hero.subtitle"
             defaultValue="תארו את המערכת במילים שלכם — הסוכן יבנה דרישות פונקציונליות, הנחות יסוד, פרסונות, תרחישי שימוש, ארכיטקטורה ומודל נתונים. כל סעיף ניתן לעריכה, מחיקה והוספה."
-            className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground block"
+            className="animate-fade-in mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground block"
           />
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="animate-fade-in mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link to="/login">
-              <Button size="lg">
+              <Button size="lg" className="btn-gradient border-0">
                 <EditableSiteText
                   textKey="landing.hero.cta"
                   defaultValue="התחילו עכשיו"
@@ -82,6 +89,7 @@ function Landing() {
             </Link>
           </div>
         </section>
+
 
         <section className="mx-auto grid max-w-5xl grid-cols-1 gap-4 px-6 pb-24 sm:grid-cols-3">
           <Feature
