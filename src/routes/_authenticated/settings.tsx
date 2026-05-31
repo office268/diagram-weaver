@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
+import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
