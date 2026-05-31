@@ -70,13 +70,20 @@ export const Route = createFileRoute("/api/review-spec")({
 
         try {
           const gateway = createLovableAiGatewayProvider(key);
-          const userPrompt = [
-            "פרומפט מקורי של המשתמש:",
-            body.prompt,
-            "",
-            "מסמך האפיון שהופק (JSON):",
-            JSON.stringify(body.spec),
-          ].join("\n");
+          const knowledgeBlock = await loadKnowledgeContextBlock(
+            userData.user.id,
+            body.projectId,
+          );
+          const userPrompt =
+            knowledgeBlock +
+            [
+              "פרומפט מקורי של המשתמש:",
+              body.prompt,
+              "",
+              "מסמך האפיון שהופק (JSON):",
+              JSON.stringify(body.spec),
+            ].join("\n");
+
 
           const { text } = await generateText({
             model: gateway(DEFAULT_MODEL),
