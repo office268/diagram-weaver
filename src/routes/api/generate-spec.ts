@@ -55,8 +55,9 @@ export const Route = createFileRoute("/api/generate-spec")({
           .eq("user_id", userId)
           .maybeSingle();
         const baseSystem = row?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION;
-        const docType = getDocType(body.docType);
-        const system = `${baseSystem}\n\n${docType.systemInstruction}`;
+        const docTypeInstruction = getDocTypeSystemInstruction(body.docType);
+        const system = `${baseSystem}\n\n${docTypeInstruction}`;
+        const model = DEFAULT_MODEL;
 
         try {
           const gateway = createLovableAiGatewayProvider(key);
