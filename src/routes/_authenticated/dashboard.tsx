@@ -9,6 +9,7 @@ import {
   createSpec,
   deleteSpec,
   deleteSpecGroup,
+  updateSpec,
 } from "@/lib/spec.functions";
 import {
   SpecOutputSchema,
@@ -487,11 +488,9 @@ function DashboardPage() {
                     className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
                   >
                     <Link to="/editor/$id" params={{ id: d.id }} className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
                         <FileText className="h-4 w-4 text-primary" />
-                        <span className="truncate font-medium text-foreground">
-                          {d.title}
-                        </span>
+                        <EditableDocTitle id={d.id} value={d.title} className="truncate font-medium text-foreground" />
                       </div>
                       <div className="mt-3 text-xs text-muted-foreground">
                         עודכן ב-{new Date(d.updated_at).toLocaleDateString("he-IL")}
@@ -568,11 +567,9 @@ function DashboardPage() {
                             params={{ id: d.id }}
                             className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-colors hover:border-primary/40"
                           >
-                            <div className="flex min-w-0 items-center gap-2">
+                            <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
                               <FileText className="h-4 w-4 shrink-0 text-primary" />
-                              <span className="truncate text-sm text-foreground">
-                                {d.model ?? "מסמך"}
-                              </span>
+                              <EditableDocTitle id={d.id} value={d.title} className="truncate text-sm text-foreground" />
                               {variantLabel && (
                                 <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
                                   {variantLabel}
@@ -922,5 +919,72 @@ function ResultPreview({
     </div>
   );
 }
+
+function EditableDocTitle({
+  id,
+  value,
+  className,
+}: {
+  id: string;
+  value: string;
+  className?: string;
+}) {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateSpec);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  const commit = async () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (!next || next === value) {
+      setDraft(value);
+      return;
+    }
+    try {
+      await updateFn({ data: { id, title: next } });
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("השם עודכן");
+    } catch (e) {
+      setDraft(value);
+      toast.error(e instanceof Error ? e.message : "עדכון השם נכשל");
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") { e.preventDefault(); void commit(); }
+          if (e.key === "Escape") { e.preventDefault(); setDraft(value); setEditing(false); }
+        }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        dir="auto"
+        className={`min-w-0 flex-1 rounded border border-primary bg-background px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-primary/40 ${className ?? ""}`}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={`${className ?? ""} cursor-text rounded outline-dashed outline-1 outline-transparent transition-colors hover:outline-primary/40`}
+      title="דאבל-קליק לעריכת שם"
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDraft(value);
+        setEditing(true);
+      }}
+    >
+      {value}
+    </span>
+  );
+}
+
 
 
