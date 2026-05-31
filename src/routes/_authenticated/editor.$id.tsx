@@ -702,14 +702,48 @@ function EditorPage() {
     <div className="flex flex-col">
       {/* Toolbar */}
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/projects" })}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          <span className="hidden sm:inline">חזרה</span>
-        </Button>
+        <Breadcrumb className="min-w-0 flex-1">
+          <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/projects">פרויקטים</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {projectId ? (
+              <>
+                <BreadcrumbSeparator>
+                  <ChevronLeft />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem className="hidden sm:inline-flex min-w-0">
+                  <BreadcrumbLink asChild>
+                    <Link
+                      to="/projects/$projectId"
+                      params={{ projectId }}
+                      className="truncate max-w-[14rem] inline-block align-bottom"
+                    >
+                      {projectName ?? "פרויקט"}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            ) : null}
+            <BreadcrumbSeparator>
+              <ChevronLeft />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="flex min-w-0 items-center gap-1.5">
+                <DocIcon className={`h-3.5 w-3.5 shrink-0 ${docVisual.colorClass}`} />
+                <span className="truncate max-w-[10rem] sm:max-w-[20rem]">
+                  {title || "מסמך"}
+                </span>
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="h-8 max-w-md flex-1 text-sm"
+          className="h-8 w-full max-w-md text-sm sm:flex-1"
           placeholder="כותרת המסמך"
         />
         <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
