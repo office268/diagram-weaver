@@ -1,39 +1,38 @@
-## תוכנית הטמעת תשלומים
+## הוספת ידע ארגוני/עסקי ברמת המשתמש וברמת הפרויקט
 
-### מודל עסקי
-- **מנוי חודשי**: $20/חודש → מעניק 125 קרדיטים כל חודש
-- **חבילת קרדיטים חד-פעמית**: 100 קרדיטים ב-$20 (לא מתחדש)
-- **צריכה**: יצירת כל מסמך אפיון = 1 קרדיט
+### מה המשתמש יקבל
+- שדה "ידע ארגוני / עסקי" אישי בהגדרות (חל על כל המסמכים של המשתמש).
+- שדה "ידע על הפרויקט" בתוך כל פרויקט (חל רק על מסמכים בפרויקט הזה).
+- בעת יצירת/שיפור/ביקורת מסמך אפיון — הידע הזה נשלח אוטומטית למודל כקונטקסט נוסף, כך שהפלט מותאם לעסק ולפרויקט.
 
-### שלבי הביצוע
+### שינויי מסד נתונים (מיגרציה)
+- `ai_settings`: הוספת עמודה `business_knowledge text not null default ''` (עד ~10,000 תווים — נאכף בולידציה).
+- `projects`: הוספת עמודה `business_knowledge text not null default ''`.
+- אין צורך בשינויי RLS — המדיניות הקיימת על שתי הטבלאות כבר מגנה לפי `user_id`.
 
-**1. מסד נתונים** (migration)
-- `subscriptions` — מעקב מנויים (לפי סכמת Paddle הסטנדרטית)
-- `credits` — יתרת קרדיטים לכל משתמש (`user_id`, `balance`)
-- `credit_transactions` — היסטוריה (סוג: `subscription_grant` / `purchase` / `consumption`, סכום, מסמך מקושר)
-- RLS: משתמש רואה רק את שלו; כתיבה רק ל-service role
-- פונקציית `consume_credit(user_id, doc_id)` אטומית
+### Backend (server functions + API)
+1. `src/lib/ai-settings.functions.ts` — להרחיב את `getAiSettings`/`updateAiSettings` עם שדה `business_knowledge` (Zod: `max(10000)`, מאפשר ריק).
+2. `src/lib/project.functions.ts` — להוסיף `updateProjectKnowledge({ projectId, businessKnowledge })` ולהחזיר את השדה גם ב-`getProject`.
+3. `src/routes/api/generate-spec.ts` (וגם `review-spec.ts`, `improve-section.ts`):
+   - להוסיף ל-Body: `projectId?: uuid`.
+   - לפני הקריאה למודל, לטעון מ-Supabase (admin client): `ai_settings.business_knowledge` של המשתמש, וכן `projects.business_knowledge` (רק אם ה-projectId שייך למשתמש).
+   - להזריק לפני ה-userPrompt בלוק:
+     ```
+     ## ידע ארגוני של המשתמש
+     {user.business_knowledge}
 
-**2. מוצרים ב-Paddle** (test env)
-- `monthly_subscription` — $20/חודש
-- `credits_100` — $20 חד-פעמי
+     ## ידע על הפרויקט
+     {project.business_knowledge}
+     ```
+     רק אם השדה לא ריק. נשאר לפני הפרומפט המקורי של המשתמש כדי שלא להחליף את ה-system instruction של סוג המסמך.
+4. בקריאות לקליינט (יצירה/שיפור/ביקורת) — להעביר את `projectId` הקיים (זמין בעמוד הפרויקט/העורך).
 
-**3. Webhook** (`/api/public/payments/webhook`)
-- `subscription.created/updated` → עדכון טבלת subscriptions + הענקת 125 קרדיטים בחידוש
-- `transaction.completed` של חבילת קרדיטים → הוספת 100 קרדיטים
+### UI
+1. רכיב חדש `src/components/business-knowledge-card.tsx` — `Textarea` עם כותרת/תיאור/שמירה (debounced) + טוסט.
+2. `src/routes/_authenticated/settings.tsx` — להוסיף סקשן "ידע ארגוני / עסקי שלי" עם הרכיב במצב user-level (גם למשתמשים שאינם אדמין).
+3. `src/routes/_authenticated/projects.$projectId.tsx` — להוסיף סקשן "ידע על הפרויקט" עם אותו רכיב במצב project-level.
+4. UX: placeholder עם דוגמאות (תחום, מוצרים, מונחים פנימיים, אילוצים רגולטוריים), מונה תווים, ומידע שזה נשלח ל-AI עם כל יצירה.
 
-**4. דפי UI**
-- `/pricing` — שני מסלולים עם כפתורי checkout
-- `/billing` (תחת `_authenticated`) — סטטוס מנוי, יתרת קרדיטים, היסטוריה, ניהול מנוי (Paddle portal)
-- באנר test mode
-- הצגת יתרת קרדיטים בתפריט המשתמש
-
-**5. שילוב באפליקציה**
-- לפני יצירת מסמך (ב-`generate-spec.ts`): בדיקת יתרה; אם 0 → 402 עם הודעה ידידותית + לינק ל-pricing
-- אחרי הצלחה: ניכוי 1 קרדיט (transaction)
-
-**6. עמודי מדיניות** (דרישת Paddle)
-- עדכון `/terms`, `/privacy`, ויצירת `/refund-policy`
-
-### שאלה אחת לפני יציאה לדרך
-**שם עסקי רשום** — Paddle דורש שזה יופיע ב-Terms וב-Privacy. האם להשתמש ב-"Make-IT" / "make-i-tec" או שם רשום אחר?
+### נקודות שכדאי לוודא איתי לפני בנייה
+- מגבלת אורך: 10,000 תווים לכל שדה — מתאים, או להגדיל/להקטין?
+- האם להוסיף שדה "ידע עסקי" גם כקטע ערוך לכל מסמך, או לעצור ברמות user + project?
