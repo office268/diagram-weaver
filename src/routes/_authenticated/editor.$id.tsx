@@ -1458,10 +1458,6 @@ function SectionShell({
         </DialogContent>
       </Dialog>
     ) : null}
-        </div>
-        <CollapsibleContent>{children}</CollapsibleContent>
-      </section>
-    </Collapsible>
     <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
