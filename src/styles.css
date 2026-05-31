@@ -43,20 +43,18 @@
   color: var(--primary-foreground);
   box-shadow: var(--shadow-elegant);
   transition: filter 200ms ease-out, box-shadow 200ms ease-out, transform 100ms ease-out;
-}
-@utility btn-gradient {
   &:hover { filter: brightness(1.08); }
   &:active { transform: scale(0.97); }
 }
+
 @utility hover-lift {
   transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out;
-}
-@utility hover-lift {
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-card-hover);
   }
 }
+
 
 
 :root {
