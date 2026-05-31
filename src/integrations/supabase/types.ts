@@ -134,6 +134,7 @@ export type Database = {
           description: string
           id: string
           name: string
+          pinned_at: string | null
           updated_at: string
           user_id: string
         }
@@ -142,6 +143,7 @@ export type Database = {
           description?: string
           id?: string
           name?: string
+          pinned_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -150,6 +152,7 @@ export type Database = {
           description?: string
           id?: string
           name?: string
+          pinned_at?: string | null
           updated_at?: string
           user_id?: string
         }

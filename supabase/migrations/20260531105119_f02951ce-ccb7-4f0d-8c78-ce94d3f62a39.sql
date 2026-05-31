@@ -1,0 +1,2 @@
+ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS pinned_at timestamptz NULL;
+CREATE INDEX IF NOT EXISTS projects_user_pinned_idx ON public.projects (user_id, pinned_at DESC NULLS LAST, updated_at DESC);

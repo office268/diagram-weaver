@@ -258,7 +258,8 @@ function EditorPage() {
     saveMut.mutate({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
   }, [title, content, userNotes, prompt, sectionOrder, sectionTitles, saveMut]);
 
-  // Keyboard shortcuts: Cmd/Ctrl+S to save, Cmd/Ctrl+K to open section search
+  // Keyboard shortcuts: Cmd/Ctrl+S to save, Cmd/Ctrl+Shift+K to open section search
+  // (Cmd+K is reserved for the global command palette.)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -266,7 +267,7 @@ function EditorPage() {
       if (e.key === "s" || e.key === "S") {
         e.preventDefault();
         flushSave();
-      } else if (e.key === "k" || e.key === "K") {
+      } else if ((e.key === "k" || e.key === "K") && e.shiftKey) {
         e.preventDefault();
         setCmdOpen((o) => !o);
       }
@@ -274,6 +275,7 @@ function EditorPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [flushSave]);
+
 
 
 

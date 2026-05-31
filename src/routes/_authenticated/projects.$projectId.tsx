@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { FileText, Trash2, Loader2, Sparkles, Layers, ArrowRight, Search } from "lucide-react";
+import { FileText, Trash2, Loader2, Sparkles, Layers, Search } from "lucide-react";
+import { AppBreadcrumb } from "@/components/app-breadcrumb";
+
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
@@ -531,14 +533,14 @@ function ProjectPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <Link
-        to="/projects"
-        className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ArrowRight className="h-3.5 w-3.5" />
-        חזרה לרשימת הפרויקטים
-      </Link>
+      <AppBreadcrumb
+        items={[
+          { label: "פרויקטים", to: "/projects" },
+          { label: data?.project?.name ?? "פרויקט" },
+        ]}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {data?.project?.name ?? "פרויקט"}
