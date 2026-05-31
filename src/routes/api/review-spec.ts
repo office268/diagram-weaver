@@ -5,11 +5,14 @@ import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_MODEL } from "@/lib/ai-spec-defaults.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJson } from "@/lib/spec-output-schema";
+import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
 const BodySchema = z.object({
   prompt: z.string().min(1).max(5000),
   spec: z.record(z.string(), z.any()),
+  projectId: z.string().uuid().optional(),
 });
+
 
 const ReviewParseSchema = z.object({
   score: z.coerce.number(),
