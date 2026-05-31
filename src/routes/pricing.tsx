@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, Sparkles, Zap } from "lucide-react";
+import { Check, Gift, Sparkles, Zap, Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/pricing")({
       { title: "מחירים — סוכן ניתוח מערכות" },
       {
         name: "description",
-        content: "מנוי חודשי $20 (125 קרדיטים) או חבילה חד-פעמית של 100 קרדיטים ב-$20.",
+        content: "התחל חינם עם 30 קרדיטים. מנוי חודשי $20 (125 קרדיטים), חבילה $20 (100 קרדיטים) או חבילה $50 (250 קרדיטים).",
       },
       { property: "og:title", content: "מחירים — סוכן ניתוח מערכות" },
       { property: "og:url", content: "/pricing" },
@@ -44,6 +44,11 @@ function PricingPage() {
     }
   };
 
+  const handleFree = () => {
+    if (!user) navigate({ to: "/signup" });
+    else navigate({ to: "/projects" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <PaymentTestModeBanner />
@@ -55,7 +60,7 @@ function PricingPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-16">
+      <main className="mx-auto max-w-7xl px-6 py-16">
         <div className="text-center">
           <h1 className="text-4xl font-semibold tracking-tight text-foreground">
             תוכניות ומחירים
@@ -65,7 +70,36 @@ function PricingPage() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {/* Free */}
+          <div className="rounded-2xl border border-border bg-card p-8">
+            <div className="flex items-center gap-2">
+              <Gift className="h-5 w-5 text-emerald-500" />
+              <h2 className="text-xl font-semibold text-foreground">חינם</h2>
+            </div>
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-foreground">$0</span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">30 קרדיטים להתחלה</p>
+            <ul className="mt-6 space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>30 מסמכי אפיון</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>ללא כרטיס אשראי</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>מתנה חד-פעמית בהרשמה</span>
+              </li>
+            </ul>
+            <Button variant="outline" className="mt-8 w-full" size="lg" onClick={handleFree}>
+              {user ? "המשך לאפליקציה" : "התחל עכשיו"}
+            </Button>
+          </div>
+
           {/* Monthly subscription */}
           <div className="relative rounded-2xl border-2 border-primary bg-card p-8 shadow-lg">
             <div className="absolute -top-3 right-6 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
@@ -104,11 +138,11 @@ function PricingPage() {
             </Button>
           </div>
 
-          {/* One-time pack */}
+          {/* 100 pack */}
           <div className="rounded-2xl border border-border bg-card p-8">
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-500" />
-              <h2 className="text-xl font-semibold text-foreground">חבילת קרדיטים</h2>
+              <h2 className="text-xl font-semibold text-foreground">חבילה קטנה</h2>
             </div>
             <div className="mt-4 flex items-baseline gap-1">
               <span className="text-4xl font-bold text-foreground">$20</span>
@@ -137,6 +171,45 @@ function PricingPage() {
               disabled={loadingId === "credits_100"}
             >
               {loadingId === "credits_100" ? "טוען..." : "קנה חבילה"}
+            </Button>
+          </div>
+
+          {/* 250 pack */}
+          <div className="relative rounded-2xl border border-border bg-card p-8">
+            <div className="absolute -top-3 right-6 rounded-full bg-amber-500 px-3 py-1 text-xs font-medium text-white">
+              משתלם
+            </div>
+            <div className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-amber-600" />
+              <h2 className="text-xl font-semibold text-foreground">חבילה גדולה</h2>
+            </div>
+            <div className="mt-4 flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-foreground">$50</span>
+              <span className="text-muted-foreground">/ חד-פעמי</span>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">250 קרדיטים, ללא תפוגה</p>
+            <ul className="mt-6 space-y-3 text-sm">
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>250 מסמכי אפיון</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>חיסכון של 20% לעומת החבילה הקטנה</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 text-primary" />
+                <span>קרדיטים נשארים לתמיד</span>
+              </li>
+            </ul>
+            <Button
+              variant="outline"
+              className="mt-8 w-full"
+              size="lg"
+              onClick={() => handleBuy("credits_250")}
+              disabled={loadingId === "credits_250"}
+            >
+              {loadingId === "credits_250" ? "טוען..." : "קנה חבילה"}
             </Button>
           </div>
         </div>
