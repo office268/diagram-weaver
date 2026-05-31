@@ -13,7 +13,7 @@ import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card
 import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
-import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
+import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
 import {
   getAiSettings,
   updateBusinessKnowledge,
