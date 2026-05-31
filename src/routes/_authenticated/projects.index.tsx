@@ -210,9 +210,11 @@ function ProjectsPage() {
             return (
               <li
                 key={p.id}
-                className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card p-4"
+                className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card"
                 style={i < 12 ? { animationDelay: `${i * 40}ms`, animationFillMode: "backwards" } : undefined}
               >
+                <SwipeableRow onDelete={() => setDeleteId(p.id)} className="rounded-xl">
+                  <div className="p-4">
                 <Link
                   to="/projects/$projectId"
                   params={{ projectId: p.id }}
@@ -276,7 +278,8 @@ function ProjectsPage() {
                   >
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                </div>
+                  </div>
+                </SwipeableRow>
               </li>
             );
           };
