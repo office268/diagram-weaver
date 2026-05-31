@@ -7,6 +7,7 @@ import {
   DEFAULT_SYSTEM_INSTRUCTION,
   JSON_OUTPUT_INSTRUCTION,
 } from "@/lib/ai-spec-defaults";
+import { getDocType, DOC_TYPE_KEYS } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BodySchema = z.object({
@@ -14,6 +15,7 @@ const BodySchema = z.object({
   model: z.enum(COMPARISON_MODELS),
   previousSpec: z.record(z.string(), z.any()).optional(),
   reviewerNotes: z.array(z.string()).max(50).optional(),
+  docType: z.enum(DOC_TYPE_KEYS).optional(),
 });
 
 export const Route = createFileRoute("/api/generate-spec")({
