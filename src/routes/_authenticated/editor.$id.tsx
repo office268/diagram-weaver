@@ -894,7 +894,9 @@ function SectionShell({
   onMoveUp,
   onMoveDown,
   onDelete,
+  sectionKey,
   onAiImprove,
+  onApplyImprove,
   dragHandle,
   children,
 }: {
@@ -903,7 +905,9 @@ function SectionShell({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
-  onAiImprove?: (instruction: string) => Promise<boolean>;
+  sectionKey?: string;
+  onAiImprove?: (instruction: string) => Promise<{ candidate: unknown; previous: unknown } | null>;
+  onApplyImprove?: (candidate: unknown, previous: unknown) => void;
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -914,6 +918,8 @@ function SectionShell({
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [preview, setPreview] = useState<{ candidate: unknown; previous: unknown } | null>(null);
+  const history = usePromptHistory(sectionKey ?? "default");
 
   const startEdit = () => {
     setDraft(title);
@@ -923,13 +929,25 @@ function SectionShell({
 
   const handleAiSubmit = async () => {
     if (!onAiImprove || aiPrompt.trim().length < 3) return;
+    const instr = aiPrompt.trim();
     setAiBusy(true);
-    const ok = await onAiImprove(aiPrompt.trim());
+    const result = await onAiImprove(instr);
     setAiBusy(false);
-    if (ok) {
+    if (result) {
+      history.add(instr);
       setAiPrompt("");
       setAiOpen(false);
-      setOpen(true);
+      setPreview(result);
+    }
+  };
+
+  const formatValue = (v: unknown): string => {
+    if (v == null) return "";
+    if (typeof v === "string") return v;
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
     }
   };
 
