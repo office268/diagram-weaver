@@ -171,6 +171,7 @@ function RootComponent() {
         initialTexts={loaderData?.siteTexts ?? {}}
         isAdmin={loaderData?.isAdmin ?? false}
       >
+        <PaymentTestModeBanner />
         <Outlet />
       </SiteTextsProvider>
       <Toaster richColors position="top-right" />
