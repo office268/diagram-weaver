@@ -44,6 +44,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewPanel } from "@/components/review-panel";
 import { EditableSiteText } from "@/components/editable-site-text";
+import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc-types";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
