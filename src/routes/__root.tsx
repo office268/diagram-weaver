@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
+import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
+import { SiteTextsProvider } from "@/lib/site-texts-context";
 
 function NotFoundComponent() {
   return (
