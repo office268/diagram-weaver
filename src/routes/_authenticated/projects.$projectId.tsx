@@ -325,7 +325,7 @@ function ProjectPage() {
             revisedSpecId,
             revisedReview,
           });
-          qc.invalidateQueries({ queryKey: ["specs"] });
+          qc.invalidateQueries({ queryKey: ["project", projectId] });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "שמירה נכשלה";
           setS({
@@ -389,7 +389,7 @@ function ProjectPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["specs"] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
       toast.success("המסמך נמחק");
       setDeleteId(null);
     },
@@ -399,7 +399,7 @@ function ProjectPage() {
   const deleteGroupMut = useMutation({
     mutationFn: (groupId: string) => deleteGroupFn({ data: { groupId } }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["specs"] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
       toast.success("הקבוצה נמחקה");
       setDeleteGroupId(null);
     },
@@ -1014,7 +1014,7 @@ function EditableDocTitle({
     }
     try {
       await updateFn({ data: { id, title: next } });
-      qc.invalidateQueries({ queryKey: ["specs"] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
       toast.success("השם עודכן");
     } catch (e) {
       setDraft(value);
@@ -1080,7 +1080,7 @@ function EditableGroupPrompt({
     }
     try {
       await updateFn({ data: { groupId, prompt: next } });
-      qc.invalidateQueries({ queryKey: ["specs"] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
       toast.success("התיאור עודכן");
     } catch (e) {
       setDraft(value);
