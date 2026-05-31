@@ -81,10 +81,19 @@ function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">הגדרות AI</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          נהלו את ה-system instruction וצפו במבנה הפרומפט שנשלח ליצירת מסמכי האפיון.
-        </p>
+        <EditableSiteText
+          as="h1"
+          textKey="settings.title"
+          defaultValue="הגדרות AI"
+          className="text-2xl font-semibold tracking-tight text-foreground block"
+        />
+        <EditableSiteText
+          as="p"
+          multiline
+          textKey="settings.subtitle"
+          defaultValue="נהלו את ה-system instruction וצפו במבנה הפרומפט שנשלח ליצירת מסמכי האפיון."
+          className="mt-1 text-sm text-muted-foreground block"
+        />
       </div>
 
       <AppMetadataCard />
