@@ -87,9 +87,9 @@ export function EditableSiteText({
     );
   }
 
-  const Tag = as as keyof JSX.IntrinsicElements;
+  const Comp = as as React.ElementType;
   return (
-    <Tag
+    <Comp
       className={cn(
         className,
         isAdmin &&
@@ -99,6 +99,6 @@ export function EditableSiteText({
       onDoubleClick={isAdmin ? () => setEditing(true) : undefined}
     >
       {current}
-    </Tag>
+    </Comp>
   );
 }
