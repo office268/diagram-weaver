@@ -230,9 +230,10 @@ function DashboardPage() {
         suffix: string,
         variant: "original" | "revised" | "single",
       ): Promise<string> => {
+        const docTypeDef = getDocType(docTypeKey);
         const { spec: row } = await createFn({
           data: {
-            title: `${spec.title} — ${model} — ${suffix}`,
+            title: `${spec.title} — ${docTypeDef.label} — ${model} — ${suffix}`,
             prompt: promptText,
             content: spec,
             reviewScore: review?.score ?? null,
@@ -240,6 +241,9 @@ function DashboardPage() {
             groupId,
             model,
             variant,
+            docType: docTypeKey,
+            sectionOrder: docTypeDef.sectionOrder,
+            sectionTitles: docTypeDef.sectionTitles,
           },
         });
         return row.id;
