@@ -740,17 +740,43 @@ function SectionShell({
   onTitleChange,
   onMoveUp,
   onMoveDown,
+  onDelete,
+  onAiImprove,
   children,
 }: {
   title: string;
   onTitleChange: (v: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onDelete?: () => void;
+  onAiImprove?: (instruction: string) => Promise<boolean>;
   children: React.ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
   const [open, setOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const startEdit = () => {
+    setDraft(title);
+    setEditing(true);
+    setOpen(true);
+  };
+
+  const handleAiSubmit = async () => {
+    if (!onAiImprove || aiPrompt.trim().length < 3) return;
+    setAiBusy(true);
+    const ok = await onAiImprove(aiPrompt.trim());
+    setAiBusy(false);
+    if (ok) {
+      setAiPrompt("");
+      setAiOpen(false);
+      setOpen(true);
+    }
+  };
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} asChild>
@@ -818,24 +844,144 @@ function SectionShell({
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              onDoubleClick={() => {
-                setDraft(title);
-                setEditing(true);
-              }}
+              onDoubleClick={startEdit}
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-              title="לחץ לפתיחה/סגירה. דאבל-קליק לעריכת שם הסעיף"
+              title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
             >
               <span>{title}</span>
-              <Pencil
-                className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-60"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDraft(title);
-                  setEditing(true);
-                }}
-              />
             </button>
           )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={startEdit}
+              title="עריכת שם הסעיף"
+              aria-label="עריכה"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+
+            {onAiImprove ? (
+              <Popover
+                open={aiOpen}
+                onOpenChange={(o) => {
+                  if (aiBusy) return;
+                  setAiOpen(o);
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-primary"
+                    title="שיפור הסעיף עם AI"
+                    aria-label="שיפור עם AI"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium text-foreground">
+                      שיפור עם AI
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => setAiOpen(false)}
+                      disabled={aiBusy}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    תאר/י כיצד לשפר את הסעיף "{title}".
+                  </p>
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    rows={4}
+                    placeholder="למשל: הוסף פירוט תפעולי, תקן ניסוחים, פצל לסעיפים..."
+                    disabled={aiBusy}
+                    autoFocus
+                    dir="auto"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAiOpen(false)}
+                      disabled={aiBusy}
+                    >
+                      ביטול
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAiSubmit}
+                      disabled={aiBusy || aiPrompt.trim().length < 3}
+                    >
+                      {aiBusy ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      שפר
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            ) : null}
+
+            {onDelete ? (
+              confirmDelete ? (
+                <div className="flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/5 px-1.5">
+                  <span className="text-[11px] text-destructive">למחוק?</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      onDelete();
+                      setConfirmDelete(false);
+                    }}
+                  >
+                    כן
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    לא
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setConfirmDelete(true)}
+                  title="מחיקת הסעיף מהמסמך"
+                  aria-label="מחיקה"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )
+            ) : null}
+          </div>
         </div>
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
