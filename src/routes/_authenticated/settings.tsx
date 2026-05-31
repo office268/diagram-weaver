@@ -99,6 +99,10 @@ function SettingsPage() {
 
       <AppMetadataCard />
 
+      <DocTypeSectionsCard />
+
+
+
 
       <Card>
         <CardHeader>
