@@ -1193,3 +1193,60 @@ function ListBody<T extends { id: string }>({
     </div>
   );
 }
+
+function SortableSection({
+  id,
+  children,
+}: {
+  id: string;
+  children: (dragHandle: React.ReactNode) => React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  const handle = (
+    <button
+      type="button"
+      className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      aria-label="גרור לסידור מחדש"
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical className="h-4 w-4" />
+    </button>
+  );
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children(handle)}
+    </div>
+  );
+}
+
+function EditorSkeleton() {
+  return (
+    <div className="flex flex-col">
+      <div className="sticky top-0 z-20 flex items-center gap-2 border-b border-border bg-card px-3 py-2">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-8 w-full max-w-md" />
+        <Skeleton className="ml-auto h-4 w-20" />
+      </div>
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="space-y-3">
+            <div className="flex items-center gap-2 border-b border-border pb-2">
+              <Skeleton className="h-6 w-6" />
+              <Skeleton className="h-6 w-48" />
+            </div>
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
