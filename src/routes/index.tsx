@@ -142,7 +142,7 @@ function Feature({
   textDefault: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="hover-lift animate-fade-in rounded-xl border border-border bg-card p-5">
       <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
         {icon}
       </div>
