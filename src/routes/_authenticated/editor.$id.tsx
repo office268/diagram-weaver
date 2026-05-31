@@ -3,9 +3,19 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, Sparkles, X } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { getDocTypeVisual } from "@/lib/doc-types";
+import { getProject } from "@/lib/project.functions";
 
 import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
@@ -72,11 +82,23 @@ function EditorPage() {
   const getFn = useServerFn(getSpec);
   const updateFn = useServerFn(updateSpec);
   const createFn = useServerFn(createSpec);
+  const getProjectFn = useServerFn(getProject);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
     queryFn: () => getFn({ data: { id } }),
   });
+
+  const projectId = (data?.spec as { project_id?: string | null } | undefined)?.project_id ?? null;
+  const docType = (data?.spec as { doc_type?: string } | undefined)?.doc_type ?? null;
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectFn({ data: { id: projectId as string } }),
+    enabled: !!projectId,
+  });
+  const projectName = projectData?.project?.name ?? null;
+  const docVisual = getDocTypeVisual(docType);
+  const DocIcon = docVisual.icon;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
@@ -680,14 +702,48 @@ function EditorPage() {
     <div className="flex flex-col">
       {/* Toolbar */}
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/projects" })}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" />
-          <span className="hidden sm:inline">חזרה</span>
-        </Button>
+        <Breadcrumb className="min-w-0 flex-1">
+          <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/projects">פרויקטים</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            {projectId ? (
+              <>
+                <BreadcrumbSeparator>
+                  <ChevronLeft />
+                </BreadcrumbSeparator>
+                <BreadcrumbItem className="hidden sm:inline-flex min-w-0">
+                  <BreadcrumbLink asChild>
+                    <Link
+                      to="/projects/$projectId"
+                      params={{ projectId }}
+                      className="truncate max-w-[14rem] inline-block align-bottom"
+                    >
+                      {projectName ?? "פרויקט"}
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </>
+            ) : null}
+            <BreadcrumbSeparator>
+              <ChevronLeft />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="flex min-w-0 items-center gap-1.5">
+                <DocIcon className={`h-3.5 w-3.5 shrink-0 ${docVisual.colorClass}`} />
+                <span className="truncate max-w-[10rem] sm:max-w-[20rem]">
+                  {title || "מסמך"}
+                </span>
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="h-8 max-w-md flex-1 text-sm"
+          className="h-8 w-full max-w-md text-sm sm:flex-1"
           placeholder="כותרת המסמך"
         />
         <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">

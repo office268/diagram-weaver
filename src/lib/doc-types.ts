@@ -183,3 +183,26 @@ export function getDocType(key: string | null | undefined): DocTypeDef {
   }
   return DOC_TYPES.spec_overview;
 }
+
+import { Briefcase, Cpu, Rocket, LayoutTemplate, FileCode2, type LucideIcon } from "lucide-react";
+
+export interface DocTypeVisual {
+  icon: LucideIcon;
+  /** Tailwind text-color class for the icon. */
+  colorClass: string;
+}
+
+export const DOC_TYPE_VISUALS: Record<DocTypeKey, DocTypeVisual> = {
+  business_requirements: { icon: Briefcase, colorClass: "text-amber-500" },
+  technical_requirements: { icon: Cpu, colorClass: "text-sky-500" },
+  initiation: { icon: Rocket, colorClass: "text-violet-500" },
+  spec_overview: { icon: LayoutTemplate, colorClass: "text-primary" },
+  spec_detailed: { icon: FileCode2, colorClass: "text-emerald-500" },
+};
+
+export function getDocTypeVisual(key: string | null | undefined): DocTypeVisual {
+  if (key && (DOC_TYPE_KEYS as readonly string[]).includes(key)) {
+    return DOC_TYPE_VISUALS[key as DocTypeKey];
+  }
+  return DOC_TYPE_VISUALS.spec_overview;
+}
