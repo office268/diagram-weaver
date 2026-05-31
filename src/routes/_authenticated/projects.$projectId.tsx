@@ -201,7 +201,8 @@ function ProjectPage() {
       }
       return SpecOutputSchema.parse(parsed);
     },
-    [],
+    [projectId],
+
   );
 
   /** Low-level: one review call. Returns null on failure (toast-warned). */
