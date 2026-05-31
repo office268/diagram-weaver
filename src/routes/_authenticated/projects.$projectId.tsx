@@ -50,16 +50,15 @@ import { DOC_TYPES, DOC_TYPE_KEYS, getDocType, type DocTypeKey } from "@/lib/doc
 export const Route = createFileRoute("/_authenticated/projects/$projectId")({
   head: () => ({
     meta: [
-      { title: "המסמכים שלי — סוכן ניתוח מערכות" },
+      { title: "פרויקט — סוכן ניתוח מערכות" },
       {
         name: "description",
-        content: "כל מסמכי האפיון על שלך במקום אחד — צרו חדש מתוך תיאור חופשי של המערכת.",
+        content: "ניהול סוגי מסמכים וגרסאות בתוך פרויקט בודד.",
       },
-      { property: "og:title", content: "המסמכים שלי — סוכן ניתוח מערכות" },
-      { property: "og:url", content: "/dashboard" },
     ],
   }),
-  component: DashboardPage,
+  component: ProjectPage,
+
 });
 
 type Stage =
