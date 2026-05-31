@@ -398,7 +398,7 @@ function EditorPage() {
         <p className="text-sm text-destructive">
           {(error as Error)?.message ?? "המסמך לא נמצא"}
         </p>
-        <Link to="/dashboard" className="mt-4 inline-block text-sm text-primary underline">
+        <Link to="/projects" className="mt-4 inline-block text-sm text-primary underline">
           חזרה לרשימת המסמכים
         </Link>
       </div>
@@ -415,7 +415,7 @@ function EditorPage() {
     <div className="flex flex-col">
       {/* Toolbar */}
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
-        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
+        <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/projects" })}>
           <ArrowLeft className="mr-1.5 h-4 w-4" />
           <span className="hidden sm:inline">חזרה</span>
         </Button>

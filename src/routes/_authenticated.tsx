@@ -29,7 +29,7 @@ function AuthenticatedLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold text-foreground">
+          <Link to="/projects" className="flex items-center gap-2 font-semibold text-foreground">
             <GitBranch className="h-5 w-5 text-primary" />
             סוכן ניתוח מערכות
           </Link>

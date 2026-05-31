@@ -1,0 +1,137 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const idSchema = z.object({ id: z.string().uuid() });
+
+export const listProjects = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: projects, error } = await supabase
+      .from("projects")
+      .select("id, name, description, created_at, updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(error.message);
+
+    // Aggregate doc counts per project
+    const { data: docs, error: dErr } = await supabase
+      .from("spec_documents")
+      .select("project_id, doc_type, group_id")
+      .eq("user_id", userId);
+    if (dErr) throw new Error(dErr.message);
+
+    const counts = new Map<string, { docs: number; groups: Set<string> }>();
+    for (const d of docs ?? []) {
+      const pid = (d as { project_id: string | null }).project_id;
+      if (!pid) continue;
+      if (!counts.has(pid)) counts.set(pid, { docs: 0, groups: new Set() });
+      const c = counts.get(pid)!;
+      c.docs += 1;
+      const gid = (d as { group_id: string | null }).group_id;
+      if (gid) c.groups.add(gid);
+    }
+
+    return {
+      projects: (projects ?? []).map((p) => {
+        const c = counts.get(p.id);
+        return {
+          ...p,
+          doc_count: c?.docs ?? 0,
+          group_count: c?.groups.size ?? 0,
+        };
+      }),
+    };
+  });
+
+export const getProject = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: project, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!project) throw new Error("Project not found");
+
+    const { data: specs, error: sErr } = await supabase
+      .from("spec_documents")
+      .select(
+        "id, title, updated_at, created_at, prompt, group_id, model, variant, review_score, doc_type",
+      )
+      .eq("user_id", userId)
+      .eq("project_id", data.id)
+      .order("updated_at", { ascending: false });
+    if (sErr) throw new Error(sErr.message);
+
+    return { project, specs: specs ?? [] };
+  });
+
+export const createProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1).max(200),
+        description: z.string().max(2000).default(""),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
+      .from("projects")
+      .insert({
+        user_id: userId,
+        name: data.name,
+        description: data.description,
+      } as never)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { project: row };
+  });
+
+export const updateProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).max(200).optional(),
+        description: z.string().max(2000).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { id, ...patch } = data;
+    const { data: row, error } = await supabase
+      .from("projects")
+      .update(patch as never)
+      .eq("id", id)
+      .eq("user_id", userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { project: row };
+  });
+
+export const deleteProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
