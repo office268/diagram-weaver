@@ -936,7 +936,7 @@ function EditorPage() {
             : "border-border bg-card/95 supports-[backdrop-filter]:bg-card/80",
         )}
       >
-        <Breadcrumb className="min-w-0 flex-1">
+        <Breadcrumb className={cn("min-w-0 flex-1", focusMode && "hidden")}>
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
