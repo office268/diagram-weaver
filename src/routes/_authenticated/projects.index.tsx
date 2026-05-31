@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { SwipeableRow } from "@/components/swipeable-row";
+import { PullToRefreshIndicator } from "@/components/pull-to-refresh-indicator";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 
 import {
   listProjects,
@@ -70,6 +73,10 @@ function ProjectsPage() {
     queryFn: () => listFn(),
   });
 
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: () => qc.invalidateQueries({ queryKey: ["projects"] }),
+  });
+
   const createMut = useMutation({
     mutationFn: () => createFn({ data: { name: name.trim(), description: description.trim() } }),
     onSuccess: (res) => {
@@ -105,7 +112,17 @@ function ProjectsPage() {
 
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+    <div
+      className="relative mx-auto w-full max-w-6xl px-4 py-8"
+      onTouchStart={pullToRefresh.bind.onTouchStart}
+      onTouchMove={pullToRefresh.bind.onTouchMove}
+      onTouchEnd={pullToRefresh.bind.onTouchEnd}
+    >
+      <PullToRefreshIndicator
+        pullDistance={pullToRefresh.pullDistance}
+        refreshing={pullToRefresh.refreshing}
+        threshold={pullToRefresh.threshold}
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">הפרויקטים שלי</h1>
@@ -193,9 +210,11 @@ function ProjectsPage() {
             return (
               <li
                 key={p.id}
-                className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card p-4"
+                className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card"
                 style={i < 12 ? { animationDelay: `${i * 40}ms`, animationFillMode: "backwards" } : undefined}
               >
+                <SwipeableRow onDelete={() => setDeleteId(p.id)} className="rounded-xl">
+                  <div className="p-4">
                 <Link
                   to="/projects/$projectId"
                   params={{ projectId: p.id }}
@@ -259,7 +278,9 @@ function ProjectsPage() {
                   >
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                </div>
+                  </div>
+                  </div>
+                </SwipeableRow>
               </li>
             );
           };
