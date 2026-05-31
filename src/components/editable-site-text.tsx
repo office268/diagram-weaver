@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ElementType } from "react";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { cn } from "@/lib/utils";
 
