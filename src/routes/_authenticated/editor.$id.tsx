@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 import { getSpec, updateSpec } from "@/lib/spec.functions";
 import { ReviewPanel } from "@/components/review-panel";
+import { normalizeReviewNotes } from "@/lib/spec-output-schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
