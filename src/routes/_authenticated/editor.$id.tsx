@@ -283,7 +283,36 @@ function EditorPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [flushSave]);
 
+  // Focus mode: persist + 'f' shortcut + auto-close split when shrinking below lg
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("editor-focus-mode", focusMode ? "1" : "0");
+  }, [focusMode]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      if (e.key !== "f" && e.key !== "F") return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || t?.isContentEditable) return;
+      e.preventDefault();
+      setFocusMode((v) => !v);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const apply = () => {
+      if (!mql.matches) setSplitSecondaryKey(null);
+    };
+    apply();
+    mql.addEventListener("change", apply);
+    return () => mql.removeEventListener("change", apply);
+  }, []);
 
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
