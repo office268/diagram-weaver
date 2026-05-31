@@ -51,6 +51,7 @@ function EditorPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
   const [userNotes, setUserNotes] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const lastSentRef = useRef<string>("");
 
@@ -60,12 +61,13 @@ function EditorPage() {
       const normalized = normalizeSpec(data.spec.content);
       setContent(normalized);
       setUserNotes((data.spec as { user_notes?: string }).user_notes ?? "");
-      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "" });
+      setPrompt(data.spec.prompt ?? "");
+      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "", prompt: data.spec.prompt ?? "" });
     }
   }, [data?.spec]);
 
   const saveMut = useMutation({
-    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string }) =>
+    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string; prompt?: string }) =>
       updateFn({ data: { id, ...patch } }),
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
@@ -82,15 +84,15 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content, userNotes });
+    const snapshot = JSON.stringify({ title, content, userNotes, prompt });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content, userNotes });
+      saveMut.mutate({ title, content, userNotes, prompt });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content, userNotes]);
+  }, [title, content, userNotes, prompt]);
 
   const updateContent = useCallback((updater: (c: SpecContent) => SpecContent) => {
     setContent((prev) => (prev ? updater(prev) : prev));
