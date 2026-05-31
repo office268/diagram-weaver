@@ -749,41 +749,43 @@ function ProjectPage() {
                                     aria-hidden
                                     className="pointer-events-none absolute top-1/2 -right-3 h-0 w-3 border-t-2 border-dashed border-primary/40"
                                   />
-                                  <Link
-                                    to="/editor/$id"
-                                    params={{ id: d.id }}
-                                    className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 hover:translate-x-[-2px]"
-                                  >
-                                    <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
-                                      <TypeIcon className={`h-4 w-4 shrink-0 ${typeVisual.colorClass}`} />
-                                      <EditableDocTitle id={d.id} value={d.title} className="truncate text-sm text-foreground" />
-                                      {variantLabel && (
-                                        <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
-                                          {variantLabel}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex shrink-0 items-center gap-2">
-                                      {typeof d.review_score === "number" && (
-                                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
-                                          ציון {d.review_score}/10
-                                        </span>
-                                      )}
-                                      <Button
-                                        asChild={false}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/item:opacity-100"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setDeleteId(d.id);
-                                        }}
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                      </Button>
-                                    </div>
-                                  </Link>
+                                  <SwipeableRow onDelete={() => setDeleteId(d.id)} className="rounded-lg">
+                                    <Link
+                                      to="/editor/$id"
+                                      params={{ id: d.id }}
+                                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2 transition-all duration-200 hover:border-primary/40 hover:bg-accent/40 hover:translate-x-[-2px]"
+                                    >
+                                      <div className="flex min-w-0 items-center gap-2" onClick={(e) => e.preventDefault()}>
+                                        <TypeIcon className={`h-4 w-4 shrink-0 ${typeVisual.colorClass}`} />
+                                        <EditableDocTitle id={d.id} value={d.title} className="truncate text-sm text-foreground" />
+                                        {variantLabel && (
+                                          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
+                                            {variantLabel}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex shrink-0 items-center gap-2">
+                                        {typeof d.review_score === "number" && (
+                                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                                            ציון {d.review_score}/10
+                                          </span>
+                                        )}
+                                        <Button
+                                          asChild={false}
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 opacity-100 transition-opacity sm:opacity-0 sm:group-hover/item:opacity-100"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setDeleteId(d.id);
+                                          }}
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </Button>
+                                      </div>
+                                    </Link>
+                                  </SwipeableRow>
                                 </li>
                               );
                             })}
