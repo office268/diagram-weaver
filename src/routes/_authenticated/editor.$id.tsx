@@ -82,11 +82,23 @@ function EditorPage() {
   const getFn = useServerFn(getSpec);
   const updateFn = useServerFn(updateSpec);
   const createFn = useServerFn(createSpec);
+  const getProjectFn = useServerFn(getProject);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
     queryFn: () => getFn({ data: { id } }),
   });
+
+  const projectId = (data?.spec as { project_id?: string | null } | undefined)?.project_id ?? null;
+  const docType = (data?.spec as { doc_type?: string } | undefined)?.doc_type ?? null;
+  const { data: projectData } = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProjectFn({ data: { id: projectId as string } }),
+    enabled: !!projectId,
+  });
+  const projectName = projectData?.project?.name ?? null;
+  const docVisual = getDocTypeVisual(docType);
+  const DocIcon = docVisual.icon;
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<SpecContent | null>(null);
