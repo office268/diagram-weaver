@@ -501,6 +501,30 @@ function ProjectPage() {
     return byType;
   }, [data]);
 
+  const filteredGroupsByType = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return groupsByType;
+    const out: Record<string, Group[]> = {};
+    for (const [typeKey, groups] of Object.entries(groupsByType)) {
+      const typeLabel = DOC_TYPES[typeKey as DocTypeKey]?.label?.toLowerCase() ?? "";
+      const matchesType = typeLabel.includes(q);
+      const filtered = groups.filter((g) => {
+        if (matchesType) return true;
+        return g.items.some(
+          (it) =>
+            it.title.toLowerCase().includes(q) ||
+            (it.prompt ?? "").toLowerCase().includes(q),
+        );
+      });
+      if (filtered.length > 0) out[typeKey] = filtered;
+    }
+    return out;
+  }, [groupsByType, query]);
+
+  const hasFilterMatches = Object.keys(filteredGroupsByType).length > 0;
+
+
+
 
 
   return (
