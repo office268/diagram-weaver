@@ -1038,6 +1038,16 @@ function SectionShell({
   const [preview, setPreview] = useState<{ candidate: unknown; previous: unknown } | null>(null);
   const history = usePromptHistory(sectionKey ?? "default");
 
+  useEffect(() => {
+    if (!sectionKey) return;
+    const onOpen = (e: Event) => {
+      const ce = e as CustomEvent<string>;
+      if (ce.detail === sectionKey) setOpen(true);
+    };
+    window.addEventListener("spec-open-section", onOpen);
+    return () => window.removeEventListener("spec-open-section", onOpen);
+  }, [sectionKey]);
+
   const startEdit = () => {
     setDraft(title);
     setEditing(true);
