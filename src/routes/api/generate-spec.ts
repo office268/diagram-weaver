@@ -48,14 +48,8 @@ export const Route = createFileRoute("/api/generate-spec")({
           return new Response("LOVABLE_API_KEY missing", { status: 500 });
         }
 
-        const { data: row } = await supabaseAdmin
-          .from("ai_settings")
-          .select("system_instruction")
-          .eq("user_id", userId)
-          .maybeSingle();
-        const baseSystem = row?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION;
-        const docTypeInstruction = getDocTypeSystemInstruction(body.docType);
-        const system = `${baseSystem}\n\n${docTypeInstruction}`;
+        const { data: userId } = { data: userData.user.id };
+        const system = await resolveSystemInstruction(body.docType);
         const model = DEFAULT_MODEL;
 
         try {
