@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { COMPARISON_MODELS } from "@/lib/ai-spec-defaults";
+import { DEFAULT_MODEL } from "@/lib/ai-spec-defaults.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJson } from "@/lib/spec-output-schema";
 
@@ -76,7 +76,7 @@ export const Route = createFileRoute("/api/improve-section")({
             .join("\n");
 
           const { text } = await generateText({
-            model: gateway(COMPARISON_MODELS[0]),
+            model: gateway(DEFAULT_MODEL),
             system: SYSTEM,
             prompt: userPrompt,
             maxOutputTokens: 4000,

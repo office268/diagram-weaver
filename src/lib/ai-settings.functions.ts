@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { DEFAULT_SYSTEM_INSTRUCTION } from "./ai-spec-defaults";
 
 export const getAiSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -14,9 +13,8 @@ export const getAiSettings = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     return {
-      system_instruction: data?.system_instruction ?? DEFAULT_SYSTEM_INSTRUCTION,
+      system_instruction: data?.system_instruction ?? "",
       is_default: !data,
-      default_system_instruction: DEFAULT_SYSTEM_INSTRUCTION,
     };
   });
 
