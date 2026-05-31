@@ -1325,10 +1325,6 @@ function SectionShell({
                   <Pencil className="ml-2 h-4 w-4" />
                   עריכת שם
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={startEditContent}>
-                  <Pencil className="ml-2 h-4 w-4" />
-                  עריכת תוכן
-                </DropdownMenuItem>
                 {onAiImprove ? (
                   <DropdownMenuItem onSelect={() => setAiOpen(true)} className="text-primary">
                     <Sparkles className="ml-2 h-4 w-4" />
