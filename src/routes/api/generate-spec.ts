@@ -48,7 +48,22 @@ export const Route = createFileRoute("/api/generate-spec")({
           return new Response("LOVABLE_API_KEY missing", { status: 500 });
         }
 
-        void userId;
+        // Consume 1 credit atomically. Returns NULL if balance < 1.
+        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
+          "consume_credit",
+          { _user_id: userId, _doc_id: null },
+        );
+        if (creditErr) {
+          console.error("[generate-spec] consume_credit error:", creditErr);
+          return new Response("שגיאת קרדיטים", { status: 500 });
+        }
+        if (newBalance === null) {
+          return new Response(
+            "אזלו הקרדיטים שלך. בקר בדף המחירים כדי להוסיף קרדיטים או להתחיל מנוי.",
+            { status: 402 },
+          );
+        }
+
         const system = await resolveSystemInstruction(body.docType);
         const model = DEFAULT_MODEL;
 
