@@ -778,7 +778,7 @@ function EditorPage() {
   return (
     <div className="flex flex-col">
       {/* Toolbar */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-card px-3 py-2">
+      <div className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-border bg-card/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <Breadcrumb className="min-w-0 flex-1">
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
