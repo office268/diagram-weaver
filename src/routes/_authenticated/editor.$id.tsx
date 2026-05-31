@@ -856,10 +856,14 @@ function EditorPage() {
                       onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
                       onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
                       onDelete={() => deleteSection(key)}
+                      sectionKey={key}
                       onAiImprove={
                         key === "review"
                           ? undefined
                           : (instruction) => improveSection(key, titleValue, instruction)
+                      }
+                      onApplyImprove={(candidate, previous) =>
+                        applyImprovement(key, candidate, previous)
                       }
                     >
                       {renderBody(key)}
