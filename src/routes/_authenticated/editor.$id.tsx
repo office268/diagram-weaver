@@ -17,7 +17,7 @@ import {
   type SpecReview,
 } from "@/lib/spec-output-schema";
 import { supabase } from "@/integrations/supabase/client";
-import { COMPARISON_MODELS } from "@/lib/ai-spec-defaults";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -327,7 +327,7 @@ function EditorPage() {
         section_titles?: Record<string, string>;
         model?: string | null;
       };
-      const model = (spec.model as typeof COMPARISON_MODELS[number]) ?? COMPARISON_MODELS[0];
+      const model = spec.model ?? "";
       const promptText = spec.prompt ?? "";
       const docType = spec.doc_type ?? "spec_overview";
 
