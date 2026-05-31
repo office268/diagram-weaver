@@ -10,6 +10,7 @@ import {
   deleteSpec,
   deleteSpecGroup,
   updateSpec,
+  updateGroupPrompt,
 } from "@/lib/spec.functions";
 import {
   SpecOutputSchema,
