@@ -34,7 +34,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: "/projects", replace: true });
     }
   }, [user, loading, navigate]);
 
