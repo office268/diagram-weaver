@@ -55,10 +55,10 @@ export interface DocTypeDef {
   sectionOrder: string[];
   /** Custom display titles per section for this type. */
   sectionTitles: Record<string, string>;
-  /** Extra instructions appended to the AI system prompt for this type. */
-  systemInstruction: string;
 }
 
+// Public, client-safe metadata for each document type.
+// The AI system instructions per type live in `doc-types.server.ts`.
 export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
   business_requirements: {
     key: "business_requirements",
@@ -82,13 +82,6 @@ export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
       assumptions: "הנחות והגבלות",
       risks: "סיכונים עסקיים",
     },
-    systemInstruction: [
-      "סוג המסמך: מסמך דרישות עסקי (BRD).",
-      "התמקד בצד העסקי: רקע, צורך עסקי, מטרות מדידות (KPIs), בעלי עניין, תועלות צפויות.",
-      "אל תכלול ארכיטקטורה טכנית, מודל נתונים או תרשימי מערכת.",
-      "ה-personas מתארות בעלי עניין (Stakeholders).",
-      "ה-functional_requirements מתארות דרישות עסקיות גבוהות, לא דרישות מערכת.",
-    ].join("\n"),
   },
   technical_requirements: {
     key: "technical_requirements",
@@ -114,12 +107,6 @@ export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
       assumptions: "אילוצים והנחות טכניות",
       risks: "סיכונים טכניים",
     },
-    systemInstruction: [
-      "סוג המסמך: מסמך דרישות טכני (TRD).",
-      "התמקד בצד הטכני: דרישות מערכת מפורטות, אינטגרציות, חוזי APIs, מודל נתונים, ארכיטקטורה ואילוצי תשתית.",
-      "הקפד על NFRs: ביצועים, אבטחה, זמינות, סקלביליות, נגישות.",
-      "תרשים ארכיטקטורה ותרשים ER הם חובה.",
-    ].join("\n"),
   },
   initiation: {
     key: "initiation",
@@ -141,11 +128,6 @@ export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
       assumptions: "תקציב, לוחות זמנים והנחות",
       risks: "סיכוני פרויקט",
     },
-    systemInstruction: [
-      "סוג המסמך: מסמך ייזום פרויקט.",
-      "המסמך הוא ברמת ניהול פרויקט: מטרה, היקף (Scope/Out of Scope), אבני דרך, בעלי עניין, תקציב גס, לוחות זמנים וסיכונים.",
-      "אל תכנס לפירוט טכני, ארכיטקטורה או מודל נתונים.",
-    ].join("\n"),
   },
   spec_overview: {
     key: "spec_overview",
@@ -166,10 +148,6 @@ export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
       "user_notes",
     ],
     sectionTitles: {},
-    systemInstruction: [
-      "סוג המסמך: מסמך אפיון על (High Level Design).",
-      "כסה את כל הסעיפים ברמה גבוהה אך מקיפה: סקירה, מטרות, פרסונות, דרישות, תרחישים, ארכיטקטורה ומודל נתונים.",
-    ].join("\n"),
   },
   spec_detailed: {
     key: "spec_detailed",
@@ -196,11 +174,6 @@ export const DOC_TYPES: Record<DocTypeKey, DocTypeDef> = {
       architecture: "ארכיטקטורה מפורטת",
       data_model: "מודל נתונים מלא (ER + שדות)",
     },
-    systemInstruction: [
-      "סוג המסמך: מסמך אפיון מפורט (Low Level Design).",
-      "פרט לעומק כל סעיף: דרישות פונקציונליות מפורטות (לפחות 10), לפחות 4 תרחישי שימוש מלאים עם sequence diagrams, ארכיטקטורה מפורטת ומודל נתונים שכולל שדות עיקריים בכל ישות.",
-      "השתמש בתיאורים ארוכים וקונקרטיים — לא נקודות כלליות.",
-    ].join("\n"),
   },
 };
 
