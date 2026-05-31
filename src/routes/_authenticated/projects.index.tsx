@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+
 import {
   listProjects,
   createProject,
@@ -96,10 +98,11 @@ function ProjectsPage() {
             כל פרויקט מאגד את כל סוגי המסמכים והגרסאות שלו.
           </p>
         </div>
-        <Button onClick={() => setNewOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setNewOpen(true)} className="btn-gradient w-full border-0 sm:w-auto">
           <FolderPlus className="mr-2 h-4 w-4" />
           פרויקט חדש
         </Button>
+
       </div>
 
       <div className="mt-6">
@@ -136,13 +139,17 @@ function ProjectsPage() {
             {(error as Error).message}
           </div>
         ) : !data?.projects.length ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-            <Folder className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 font-medium text-foreground">עדיין אין פרויקטים</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              לחצו על "פרויקט חדש" כדי להתחיל.
-            </p>
-          </div>
+          <EmptyState
+            icon={Folder}
+            title="עדיין אין פרויקטים"
+            description='לחצו על "פרויקט חדש" כדי להתחיל לבנות את מסמכי האפיון הראשונים שלכם.'
+            action={
+              <Button onClick={() => setNewOpen(true)} className="btn-gradient border-0">
+                <FolderPlus className="mr-2 h-4 w-4" />
+                צרו פרויקט ראשון
+              </Button>
+            }
+          />
         ) : (() => {
           const q = query.trim().toLowerCase();
           const filtered = q
@@ -154,20 +161,23 @@ function ProjectsPage() {
             : data.projects;
           if (filtered.length === 0) {
             return (
-              <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
-                <Search className="mx-auto h-8 w-8 text-muted-foreground" />
-                <h3 className="mt-3 font-medium text-foreground">לא נמצאו פרויקטים</h3>
-                <p className="mt-1 text-sm text-muted-foreground">נסו מילת חיפוש אחרת.</p>
-              </div>
+              <EmptyState
+                icon={Search}
+                title="לא נמצאו פרויקטים"
+                description="נסו מילת חיפוש אחרת או נקו את שדה החיפוש."
+              />
             );
           }
+
           return (
             <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((p) => (
+              {filtered.map((p, i) => (
                 <li
                   key={p.id}
-                  className="group relative rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+                  className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card p-4"
+                  style={i < 12 ? { animationDelay: `${i * 40}ms`, animationFillMode: "backwards" } : undefined}
                 >
+
                   <Link
                     to="/projects/$projectId"
                     params={{ projectId: p.id }}
