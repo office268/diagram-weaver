@@ -1159,6 +1159,8 @@ function SectionShell({
   sectionKey,
   onAiImprove,
   onApplyImprove,
+  onSplit,
+  splitActive,
   dragHandle,
   children,
 }: {
@@ -1170,6 +1172,8 @@ function SectionShell({
   sectionKey?: string;
   onAiImprove?: (instruction: string) => Promise<{ candidate: unknown; previous: unknown } | null>;
   onApplyImprove?: (candidate: unknown, previous: unknown) => void;
+  onSplit?: () => void;
+  splitActive?: boolean;
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
