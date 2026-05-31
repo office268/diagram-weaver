@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/generate-spec")({
             : body.prompt;
 
           const result = streamText({
-            model: gateway(body.model),
+            model: gateway(model),
             prompt: userPrompt,
             system: system + "\n" + JSON_OUTPUT_INSTRUCTION,
             maxOutputTokens: 8000,
@@ -93,7 +93,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                   ? `${error.name}: ${error.message}${error.cause ? ` | cause: ${JSON.stringify(error.cause)}` : ""}`
                   : JSON.stringify(error);
               console.error(
-                `[generate-spec] streamText onError (${body.model}): ${detail}`,
+                `[generate-spec] streamText onError (${model}): ${detail}`,
               );
             },
           });
@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                   controller.enqueue(bytes);
                 } catch (e) {
                   console.error(
-                    `[generate-spec] enqueue failed (${body.model}):`,
+                    `[generate-spec] enqueue failed (${model}):`,
                     e,
                   );
                 }
@@ -133,7 +133,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                   const finishReason = await result.finishReason;
                   const usage = await result.usage;
                   console.log(
-                    `[generate-spec] done (${body.model}) finishReason=${finishReason} usage=${JSON.stringify(usage)}`,
+                    `[generate-spec] done (${model}) finishReason=${finishReason} usage=${JSON.stringify(usage)}`,
                   );
                   if (finishReason && finishReason !== "stop") {
                     const reasonMsg =
@@ -146,7 +146,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                   }
                 } catch (metaErr) {
                   console.error(
-                    `[generate-spec] meta read failed (${body.model}):`,
+                    `[generate-spec] meta read failed (${model}):`,
                     metaErr,
                   );
                 }
@@ -155,7 +155,7 @@ export const Route = createFileRoute("/api/generate-spec")({
               } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 console.error(
-                  `[generate-spec] stream iteration error (${body.model}): ${msg}`,
+                  `[generate-spec] stream iteration error (${model}): ${msg}`,
                 );
                 safeEnqueue(encoder.encode(`\n__STREAM_ERROR__:${msg}`));
                 safeClose();
@@ -169,7 +169,7 @@ export const Route = createFileRoute("/api/generate-spec")({
           });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
-          console.error(`[generate-spec] thrown (${body.model}):`, e);
+          console.error(`[generate-spec] thrown (${model}):`, e);
           let status = 500;
           let friendly = msg;
           if (msg.includes("429")) {
