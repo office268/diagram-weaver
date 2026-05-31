@@ -501,7 +501,7 @@ function EditorPage() {
         return null;
       }
     },
-    [getSectionValue, prompt, data?.spec],
+    [getSectionValue, prompt, data?.spec, projectId],
   );
 
   const applyImprovement = useCallback(
