@@ -78,7 +78,12 @@ export const Route = createFileRoute("/api/generate-spec")({
             Array.isArray(body.reviewerNotes) &&
             body.reviewerNotes.length > 0;
 
-          const userPrompt = isRevision
+          const knowledgeBlock = await loadKnowledgeContextBlock(
+            userId,
+            body.projectId,
+          );
+
+          const baseUserPrompt = isRevision
             ? [
                 "פרומפט מקורי של המשתמש:",
                 body.prompt,
@@ -92,6 +97,9 @@ export const Route = createFileRoute("/api/generate-spec")({
                 "צור גרסה משופרת של מסמך האפיון שמטפלת בכל ההערות, שומרת ומחזקת את החוזקות הקיימות, ומחזירה JSON תקני באותה סכמה בדיוק.",
               ].join("\n")
             : body.prompt;
+
+          const userPrompt = knowledgeBlock + baseUserPrompt;
+
 
           const result = streamText({
             model: gateway(model),
