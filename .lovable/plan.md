@@ -1,64 +1,80 @@
-# מימוש שיפורי "עורך" (9–12)
+# מימוש שיפורי מובייל (16–18)
 
-כל השינויים frontend בלבד, בקובץ `src/routes/_authenticated/editor.$id.tsx` (+ קומפוננטה חדשה אחת). אין שינויי DB/backend.
+כל השינויים frontend בלבד, ללא DB ו-ללא server functions חדשים. מותאם לעיצוב הקיים (semantic tokens מ-`src/styles.css`).
 
-## 9 — Word & Section Count (Status Bar)
+## 16 — Bottom Navigation במובייל
 
-הוספת bar תחתון דביק (`sticky bottom-0`) עם:
-- סך מילים במסמך (מצרף את כל הטקסטים מכל הסעיפים — `overview`, `goals`, `personas.description`, requirements `title+description`, `assumptions`, `use_cases`, `risks`, `user_notes`, `user_prompt`).
-- סעיפים שהושלמו vs ריקים (סעיף "מלא" = יש בו לפחות פריט אחד עם תוכן או טקסט חופשי לא־ריק).
-- helper `countWords(content)` ו-`sectionFillState(key, content)` ב-`useMemo`.
+יצירת `src/components/mobile-bottom-nav.tsx` עם bar קבוע בתחתית שמוצג רק במובייל (`md:hidden`).
 
-עיצוב: `border-t bg-card/80 backdrop-blur text-xs text-muted-foreground px-4 py-1.5 flex gap-4 justify-between`. אייקונים מ-lucide (`Type`, `ListChecks`).
+- מבנה: `fixed bottom-0 inset-x-0 z-40 border-t bg-card/95 backdrop-blur` עם `safe-area-inset-bottom` ו-`pb-[env(safe-area-inset-bottom)]`.
+- 4 כפתורים שווי-רוחב: **פרויקטים** (`Folder`), **חיפוש** (`Search` — פותח Cmd+K), **אחרונים** (`Clock` — פותח sheet), **הגדרות** (`Settings`).
+- מצב פעיל לפי `useRouterState({ select: s => s.location.pathname })` עם `text-primary` ו-bar עליון דק.
+- כל פריט: `flex flex-col items-center gap-0.5 py-2 text-[10px]` + אייקון 20px.
 
-## 10 — Progress Indicator
+ב-`src/routes/_authenticated.tsx`:
+- מוסיפים `<MobileBottomNav />` מתחת ל-`<Outlet />`.
+- ב-`<main>` מוסיפים `pb-16 md:pb-0` כדי שתוכן לא יוסתר.
+- ב-header: מסתירים `<CommandTriggerButton />` ו-`<RecentItemsMenu />` במובייל (`hidden md:inline-flex` סביב ה-wrapper שלהם) כי הם כבר ב-bottom nav.
+- ה-footer מוסתר במובייל (`hidden md:block`) — bottom nav תופס את התפקיד.
 
-בתוך אותו status bar, וגם דק מעל ה-toolbar:
-- `Progress` (shadcn) דק (`h-1`) שמראה אחוז סעיפים שמולאו = `filled / visibleSections.length`.
-- ב-status bar טקסט מספרי: "5 / 12 סעיפים".
-- מתעדכן אוטומטית עם `useMemo` תלוי ב-`content + visibleSections`.
+## 17 — Swipe Actions ברשימות
 
-## 11 — Focus Mode
+יצירת `src/components/swipeable-row.tsx` — wrapper גנרי עם touch handlers:
 
-state חדש `focusMode: boolean` שנשמר ב-localStorage (`editor-focus-mode`).
-- כפתור ב-toolbar (`Maximize2` / `Minimize2`) + קיצור `f` כשלא בתוך input/textarea.
-- כשפעיל:
-  - toolbar עם `bg-transparent border-transparent` (שקוף יותר), breadcrumbs מוסתרים.
-  - status bar מוסתר.
-  - רוחב מסמך גדל (`max-w-4xl` → `max-w-3xl` מרוכז יותר).
-  - בכל סעיף — סעיפים אחרים מקבלים `opacity-40` עד שמרחפים מעליהם (`group-hover:opacity-100 transition-opacity`).
-  - אירוע `spec-open-section` נשמר כדי שגלילה לסעיף תפתח אותו.
+- state פנימי `dragX`, מאזין ל-`onTouchStart/Move/End`.
+- swipe שמאלה (>72px) חושף כפתור destructive אדום ברוחב 80px בצד שמאל (RTL — `left-0`).
+- threshold מלא (>140px) → קורא ל-`onDelete()` של ה-prop ומתאפס.
+- אנימציה: `transform: translateX(...)` עם `transition-transform` כשמשחררים.
+- מציג כפתור רק במובייל (`md:hidden` על overlay layer); ב-desktop ה-wrapper פשוט מרנדר children.
+- `onDelete` אופציונלי; אם לא מועבר, אין swipe.
+- כפתור הפעולה: `Trash2` + label "מחק".
 
-## 12 — Split View (Desktop בלבד)
+שימושים:
+- `src/routes/_authenticated/projects.index.tsx` — עוטף כל card של פרויקט; `onDelete={() => setDeleteId(project.id)}` (פותח את ה-AlertDialog הקיים).
+- `src/routes/_authenticated/projects.$projectId.tsx` — עוטף כל שורת מסמך/קבוצה ברשימה; קורא ל-`setDeleteId` / `setDeleteGroupId` הקיימים.
 
-state `splitSecondaryKey: string | null` ב-`useState`. הפעלה דרך:
-- כפתור `Columns2` בכל `SectionShell` (ה-action bar שלצד "מחק/שפר"). לחיצה קובעת את הסעיף כ"משני".
-- כאשר `splitSecondaryKey` קיים ויש `lg` (≥1024px): ה-container הופך ל-grid `lg:grid-cols-2 gap-6`, וקומפוננטה חדשה `<SplitPanel sectionKey={splitSecondaryKey} ... />` נדבקת כעמודה ימנית (`lg:sticky lg:top-14 lg:max-h-[calc(100vh-4rem)] lg:overflow-y-auto`).
-- במובייל (<lg) הכפתור מוסתר; אם המסך מצטמצם, ה-split נסגר אוטומטית עם `useEffect` שמאזין ל-`window.matchMedia("(min-width: 1024px)")`.
-- כפתור `X` בראש העמודה המשנית כדי לסגור.
-- `SplitPanel` מקבל `renderBody(key)` ומציג כותרת + body, ללא drag handle ו-actions (read+edit אך לא מחיקה).
+## 18 — Pull-to-Refresh ברשימת פרויקטים
+
+יצירת hook `src/hooks/use-pull-to-refresh.ts`:
+
+- מחזיר `{ bind, pullDistance, refreshing }`.
+- `bind` = `onTouchStart/Move/End` שמוחל על container ראשי של דף הרשימה.
+- מופעל רק כש-`window.scrollY === 0` ו-`window.matchMedia("(max-width: 767px)").matches`.
+- threshold: 72px — כשמשחררים מעליו, קורא ל-`onRefresh()` async ומציג spinner עד ש-resolve.
+- אחרת מחזיר חלק עם transition.
+
+יצירת `src/components/pull-to-refresh-indicator.tsx` — אינדיקטור עליון:
+- `absolute top-0 inset-x-0 flex justify-center` עם `transform: translateY(${Math.min(pullDistance, 80)}px)`.
+- מציג `Loader2` (מסתובב כשרענון) או `ArrowDown` שמסתובב לפי `pullDistance/threshold`.
+
+שילוב ב-`src/routes/_authenticated/projects.index.tsx`:
+- `const { bind, pullDistance, refreshing } = usePullToRefresh({ onRefresh: () => queryClient.invalidateQueries({ queryKey: ["projects"] }) });`
+- עוטף את ה-root div של הדף ב-`{...bind}` ומציב את ה-indicator בתוכו.
 
 ## טכני / מבני
 
-- קומפוננטה חדשה: `src/components/editor-status-bar.tsx` — מקבל `wordCount`, `filledCount`, `totalCount`, `focusMode` (להסתרה).
-- helpers חדשים בקובץ העורך (לא קובץ נפרד כי תלויים ב-`SpecContent`):
-  ```ts
-  function getSectionText(key: string, content: SpecContent, userNotes: string, prompt: string): string
-  function countSectionWords(text: string): number
-  function isSectionFilled(key: string, content: SpecContent, ...): boolean
-  ```
-- אין שינוי ל-DB schema, לא ל-server functions, ולא ל-`spec-output-schema`.
-- `focusMode` ו-`splitSecondaryKey` נקיים מ-server state — frontend בלבד.
-- `Progress` הוא קומפוננטת shadcn קיימת ב-`@/components/ui/progress` (אם חסר — מוסיפים).
+- אין שינויי DB, אין server functions, אין תלויות חדשות.
+- `Cmd+K` open בכפתור החיפוש ב-bottom nav: `window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))` (כפי שמשמש כבר ב-`CommandTriggerButton`).
+- "אחרונים" ב-bottom nav: מאחר ש-`RecentItemsMenu` הוא dropdown מותנה ב-trigger, נשכפל את הלוגיקה לתוך `Sheet` (bottom sheet) שנפתח מהכפתור — או שנעטוף את `RecentItemsMenu` הקיים ונחשוף trigger חיצוני. **הבחירה**: נעדכן את `RecentItemsMenu` לקבל `trigger?: ReactNode` (אופציונלי) ולהסתיר את כפתור ברירת המחדל כשמועבר trigger מותאם. ב-bottom nav נעביר את הכפתור שלנו כ-trigger.
+- כל הטקסטים ב-RTL/עברית, semantic tokens בלבד (`text-foreground`, `text-muted-foreground`, `text-primary`, `bg-card`, `border-border`).
+- safe-area: ב-`src/styles.css` כבר אין הגדרה — נסתמך על CSS env() inline.
 
 ## קבצים
 
-- **נוצר**: `src/components/editor-status-bar.tsx`
-- **ערוך**: `src/routes/_authenticated/editor.$id.tsx`
-- **אולי נוצר** (אם חסר): `src/components/ui/progress.tsx` (shadcn standard)
+**נוצרים:**
+- `src/components/mobile-bottom-nav.tsx`
+- `src/components/swipeable-row.tsx`
+- `src/components/pull-to-refresh-indicator.tsx`
+- `src/hooks/use-pull-to-refresh.ts`
 
-## תאימות מובייל (384px)
+**עורכים:**
+- `src/routes/_authenticated.tsx` — הוספת bottom nav, הסתרת footer במובייל, padding ל-main.
+- `src/routes/_authenticated/projects.index.tsx` — עטיפת cards ב-SwipeableRow + pull-to-refresh על ה-container.
+- `src/routes/_authenticated/projects.$projectId.tsx` — עטיפת שורות מסמכים ב-SwipeableRow.
+- `src/components/recent-items-menu.tsx` — תמיכה ב-prop `trigger` חיצוני.
 
-- Status bar: מציג רק מספרים, מסתיר labels (`hidden sm:inline`).
-- Focus mode: הכפתור נשאר נגיש; ב-toolbar הצפוף נוסיף `aria-label`.
-- Split view: כפתור מוסתר במובייל (`hidden lg:inline-flex`); ב-resize ל-mobile מסגר אוטומטית.
+## תאימות
+
+- Desktop (≥768px): bottom nav, swipe overlay, pull-to-refresh — כולם מושבתים. UX זהה לקיים.
+- Mobile (<768px): bottom nav מופיע, swipe-to-delete פעיל, pull-to-refresh פעיל ברשימת פרויקטים.
+- iOS safe-area: bottom nav מתחשב ב-`env(safe-area-inset-bottom)`.
