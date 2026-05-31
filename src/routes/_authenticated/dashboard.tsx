@@ -448,9 +448,9 @@ function DashboardPage() {
             className="mt-1 text-sm text-muted-foreground block"
           />
         </div>
-        <Button onClick={() => setNewOpen(true)} className="w-full sm:w-auto">
+        <Button onClick={() => setTypePickerOpen(true)} className="w-full sm:w-auto">
           <Sparkles className="mr-2 h-4 w-4" />
-          <EditableSiteText textKey="dashboard.new_btn" defaultValue="מסמך אפיון חדש" />
+          <EditableSiteText textKey="dashboard.new_btn" defaultValue="מסמך חדש" />
         </Button>
       </div>
 
