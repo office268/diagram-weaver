@@ -558,9 +558,11 @@ function EditorPage() {
           prompt: promptText,
           model,
           docType,
+          projectId: spec.project_id ?? undefined,
           previousSpec: content,
           reviewerNotes: selectedTexts,
         }),
+
       });
       if (!genRes.ok || !genRes.body) {
         const t = (await genRes.text().catch(() => "")) || `שגיאה ${genRes.status}`;
