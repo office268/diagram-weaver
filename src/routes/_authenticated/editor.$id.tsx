@@ -299,6 +299,7 @@ function EditorPage() {
     [getSectionValue, applySectionValue, prompt, data?.spec],
   );
 
+  const improveDoc = useCallback(async () => {
     if (!data?.spec || !content) return;
     const reviewNotes = normalizeReviewNotes(
       (data.spec as { review_notes?: unknown }).review_notes,
