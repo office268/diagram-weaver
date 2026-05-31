@@ -10,8 +10,9 @@ export const listProjects = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: projects, error } = await supabase
       .from("projects")
-      .select("id, name, description, created_at, updated_at")
+      .select("id, name, description, created_at, updated_at, pinned_at")
       .eq("user_id", userId)
+      .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -38,12 +39,14 @@ export const listProjects = createServerFn({ method: "GET" })
         const c = counts.get(p.id);
         return {
           ...p,
+          pinned_at: (p as { pinned_at: string | null }).pinned_at ?? null,
           doc_count: c?.docs ?? 0,
           group_count: c?.groups.size ?? 0,
         };
       }),
     };
   });
+
 
 export const getProject = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
