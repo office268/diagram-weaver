@@ -1192,6 +1192,50 @@ function SectionShell({
         </div>
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>תצוגה מקדימה — שיפור AI</DialogTitle>
+            <DialogDescription>
+              השווה בין הגרסה הנוכחית להצעת ה-AI ל-"{title}". ניתן לבטל גם לאחר ההחלה.
+            </DialogDescription>
+          </DialogHeader>
+          {preview ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-muted-foreground">נוכחי</div>
+                <pre className="max-h-[50vh] overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap" dir="auto">
+                  {formatValue(preview.previous)}
+                </pre>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-primary">הצעת AI</div>
+                <pre className="max-h-[50vh] overflow-auto rounded-md border border-primary/40 bg-primary/5 p-3 text-xs whitespace-pre-wrap" dir="auto">
+                  {formatValue(preview.candidate)}
+                </pre>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setPreview(null)}>
+              ביטול
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (preview && onApplyImprove) {
+                  onApplyImprove(preview.candidate, preview.previous);
+                }
+                setPreview(null);
+                setOpen(true);
+              }}
+            >
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              החל שינוי
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Collapsible>
   );
 }
