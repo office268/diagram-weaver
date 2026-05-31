@@ -10,6 +10,8 @@ import {
   CommandTriggerButton,
 } from "@/components/global-command-palette";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
+import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
