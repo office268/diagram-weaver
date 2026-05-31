@@ -1,0 +1,1 @@
+ALTER TABLE public.spec_documents ADD COLUMN IF NOT EXISTS user_prompt text NOT NULL DEFAULT '';

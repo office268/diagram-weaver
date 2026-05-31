@@ -61,13 +61,13 @@ function EditorPage() {
       const normalized = normalizeSpec(data.spec.content);
       setContent(normalized);
       setUserNotes((data.spec as { user_notes?: string }).user_notes ?? "");
-      setPrompt(data.spec.prompt ?? "");
-      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "", prompt: data.spec.prompt ?? "" });
+      setPrompt((data.spec as { user_prompt?: string }).user_prompt ?? "");
+      lastSentRef.current = JSON.stringify({ title: data.spec.title, content: normalized, userNotes: (data.spec as { user_notes?: string }).user_notes ?? "", userPrompt: (data.spec as { user_prompt?: string }).user_prompt ?? "" });
     }
   }, [data?.spec]);
 
   const saveMut = useMutation({
-    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string; prompt?: string }) =>
+    mutationFn: (patch: { title?: string; content?: SpecContent; userNotes?: string; userPrompt?: string }) =>
       updateFn({ data: { id, ...patch } }),
     onMutate: () => setSaveState("saving"),
     onSuccess: () => {
@@ -84,11 +84,11 @@ function EditorPage() {
   // Debounced autosave
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content, userNotes, prompt });
+    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt });
     if (snapshot === lastSentRef.current) return;
     const t = setTimeout(() => {
       lastSentRef.current = snapshot;
-      saveMut.mutate({ title, content, userNotes, prompt });
+      saveMut.mutate({ title, content, userNotes, userPrompt: prompt });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
