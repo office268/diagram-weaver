@@ -177,7 +177,128 @@ function EditorPage() {
     });
   }, []);
 
-  const improveDoc = useCallback(async () => {
+  const deleteSection = useCallback((key: string) => {
+    setSectionOrder((prev) => prev.filter((k) => k !== key));
+  }, []);
+
+  const ensureIds = useCallback(<T extends { id?: string }>(items: unknown): T[] => {
+    if (!Array.isArray(items)) return [];
+    return items.map((it) => {
+      if (it && typeof it === "object") {
+        const obj = it as Record<string, unknown>;
+        if (typeof obj.id !== "string" || !obj.id) {
+          return { ...obj, id: newId() } as T;
+        }
+      }
+      return it as T;
+    });
+  }, []);
+
+  const getSectionValue = useCallback(
+    (key: string): { value: unknown; shape: "string" | "array" | "object" } | null => {
+      if (!content) return null;
+      switch (key) {
+        case "overview": return { value: content.overview, shape: "string" };
+        case "goals": return { value: content.goals, shape: "array" };
+        case "personas": return { value: content.personas, shape: "array" };
+        case "functional_requirements": return { value: content.functional_requirements, shape: "array" };
+        case "non_functional_requirements": return { value: content.non_functional_requirements, shape: "array" };
+        case "assumptions": return { value: content.assumptions, shape: "array" };
+        case "use_cases": return { value: content.use_cases, shape: "array" };
+        case "architecture": return { value: content.architecture, shape: "object" };
+        case "data_model": return { value: content.data_model, shape: "object" };
+        case "risks": return { value: content.risks, shape: "array" };
+        case "user_prompt": return { value: prompt, shape: "string" };
+        case "user_notes": return { value: userNotes, shape: "string" };
+        default: return null;
+      }
+    },
+    [content, prompt, userNotes],
+  );
+
+  const applySectionValue = useCallback(
+    (key: string, value: unknown) => {
+      const asString = () => (typeof value === "string" ? value : JSON.stringify(value));
+      const asObject = (fallback: { description: string; diagram: string }) => {
+        if (value && typeof value === "object") {
+          const obj = value as { description?: unknown; diagram?: unknown };
+          return {
+            description: typeof obj.description === "string" ? obj.description : fallback.description,
+            diagram: typeof obj.diagram === "string" ? obj.diagram : fallback.diagram,
+          };
+        }
+        return fallback;
+      };
+      switch (key) {
+        case "overview":
+          updateContent((c) => ({ ...c, overview: asString() })); break;
+        case "goals":
+          updateContent((c) => ({ ...c, goals: ensureIds<TextItem>(value) })); break;
+        case "personas":
+          updateContent((c) => ({ ...c, personas: ensureIds<Persona>(value) })); break;
+        case "functional_requirements":
+          updateContent((c) => ({ ...c, functional_requirements: ensureIds<Requirement>(value) })); break;
+        case "non_functional_requirements":
+          updateContent((c) => ({ ...c, non_functional_requirements: ensureIds<Requirement>(value) })); break;
+        case "assumptions":
+          updateContent((c) => ({ ...c, assumptions: ensureIds<TextItem>(value) })); break;
+        case "use_cases":
+          updateContent((c) => ({ ...c, use_cases: ensureIds<UseCase>(value) })); break;
+        case "architecture":
+          updateContent((c) => ({ ...c, architecture: asObject(c.architecture) })); break;
+        case "data_model":
+          updateContent((c) => ({ ...c, data_model: asObject(c.data_model) })); break;
+        case "risks":
+          updateContent((c) => ({ ...c, risks: ensureIds<TextItem>(value) })); break;
+        case "user_prompt":
+          setPrompt(asString()); break;
+        case "user_notes":
+          setUserNotes(asString()); break;
+      }
+    },
+    [updateContent, ensureIds],
+  );
+
+  const improveSection = useCallback(
+    async (key: string, label: string, instruction: string): Promise<boolean> => {
+      const cur = getSectionValue(key);
+      if (!cur) {
+        toast.error("לא ניתן לשפר סעיף זה");
+        return false;
+      }
+      try {
+        const { data: sess } = await supabase.auth.getSession();
+        const token = sess.session?.access_token;
+        if (!token) throw new Error("נדרשת התחברות מחדש");
+        const res = await fetch("/api/improve-section", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            sectionKey: key,
+            sectionLabel: label,
+            sectionValue: cur.value,
+            valueShape: cur.shape,
+            instruction,
+            contextPrompt: prompt,
+            docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
+          }),
+        });
+        if (!res.ok) {
+          const t = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
+          throw new Error(t);
+        }
+        const json = (await res.json()) as { value: unknown };
+        applySectionValue(key, json.value);
+        toast.success("הסעיף עודכן");
+        return true;
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "שיפור הסעיף נכשל");
+        return false;
+      }
+    },
+    [getSectionValue, applySectionValue, prompt, data?.spec],
+  );
+
     if (!data?.spec || !content) return;
     const reviewNotes = normalizeReviewNotes(
       (data.spec as { review_notes?: unknown }).review_notes,
