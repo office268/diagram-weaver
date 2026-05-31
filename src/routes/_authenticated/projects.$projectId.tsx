@@ -1336,3 +1336,57 @@ function EditableGroupPrompt({
   );
 }
 
+
+function ProjectKnowledgeSection({
+  value,
+  isLoading,
+  onSave,
+}: {
+  value: string;
+  isLoading: boolean;
+  onSave: (next: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const hasContent = (value ?? "").trim().length > 0;
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} asChild>
+      <section className="mt-6 rounded-lg border border-border bg-card">
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 px-4 py-3 text-right hover:bg-muted/40"
+          >
+            <ChevronRight
+              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+            />
+            <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-foreground">
+                ידע על הפרויקט
+                {hasContent ? (
+                  <span className="mr-2 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                    פעיל
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                ידע ספציפי לפרויקט זה שיישלח ל-AI עם כל יצירה/ביקורת/שיפור של מסמך בפרויקט.
+              </div>
+            </div>
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="border-t border-border p-4">
+            <BusinessKnowledgeCard
+              label="ידע על הפרויקט"
+              description="לדוגמה: יעדי הפרויקט, מערכות שאיתן הוא משתלב, אילוצי לקוח, מונחים פנימיים לפרויקט."
+              value={value}
+              isLoading={isLoading}
+              onSave={onSave}
+            />
+          </div>
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
+  );
+}
