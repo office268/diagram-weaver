@@ -486,7 +486,9 @@ function EditorPage() {
             instruction,
             contextPrompt: prompt,
             docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
+            projectId: projectId ?? undefined,
           }),
+
         });
         if (!res.ok) {
           const t = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
