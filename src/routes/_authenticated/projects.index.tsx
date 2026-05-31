@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search } from "lucide-react";
+import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 
@@ -11,7 +11,9 @@ import {
   listProjects,
   createProject,
   deleteProject,
+  toggleProjectPin,
 } from "@/lib/project.functions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +56,8 @@ function ProjectsPage() {
   const listFn = useServerFn(listProjects);
   const createFn = useServerFn(createProject);
   const deleteFn = useServerFn(deleteProject);
+  const pinFn = useServerFn(toggleProjectPin);
+
 
   const [newOpen, setNewOpen] = useState(false);
   const [name, setName] = useState("");
@@ -88,6 +92,17 @@ function ProjectsPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
+
+  const pinMut = useMutation({
+    mutationFn: (vars: { id: string; pinned: boolean }) =>
+      pinFn({ data: vars }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["recent-items"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "פעולה נכשלה"),
+  });
+
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
