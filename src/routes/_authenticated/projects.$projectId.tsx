@@ -64,43 +64,34 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId")({
 
 });
 
-type Stage =
-  | "loading"
-  | "reviewing"
-  | "revising"
-  | "reviewing-revised"
-  | "saving";
-
-type ModelOk = {
-  status: "success";
-  originalSpec: SpecOutput;
-  originalSpecId: string;
-  originalReview: SpecReview | null;
-  revisedSpec: SpecOutput | null;
-  revisedSpecId: string | null;
-  revisedReview: SpecReview | null;
+/**
+ * One generated version inside an iterative build session.
+ * Each iteration is saved to the DB and shows up in the project history.
+ */
+type Iteration = {
+  version: number;
+  specId: string;
+  spec: SpecOutput;
+  review: SpecReview | null;
+  /** Note ids the user picked to feed into the NEXT iteration. */
+  selectedNoteIds: Set<string>;
 };
 
-type ModelState =
-  | { status: Stage; partialSpec?: SpecOutput; partialReview?: SpecReview | null }
-  | ModelOk
-  | {
-      status: "error";
-      error: string;
-      originalSpec?: SpecOutput;
-      originalReview?: SpecReview | null;
-      revisedSpec?: SpecOutput;
-      revisedReview?: SpecReview | null;
-      canRetry?: boolean;
-    };
+type BuilderPhase =
+  | "generating"
+  | "reviewing"
+  | "ready"
+  | "error";
 
-type CompareState = Record<SpecModel, ModelState>;
-
-function initialCompareState(): CompareState {
-  return Object.fromEntries(
-    COMPARISON_MODELS.map((m) => [m, { status: "loading" } as ModelState]),
-  ) as CompareState;
-}
+type BuilderState = {
+  groupId: string;
+  prompt: string;
+  docType: DocTypeKey;
+  model: SpecModel;
+  iterations: Iteration[];
+  phase: BuilderPhase;
+  error?: string;
+};
 
 function ProjectPage() {
   const { projectId } = Route.useParams();
@@ -123,278 +114,336 @@ function ProjectPage() {
   const [typePickerOpen, setTypePickerOpen] = useState(false);
   const [docType, setDocType] = useState<DocTypeKey>("spec_overview");
   const [prompt, setPrompt] = useState("");
-  const [compareState, setCompareState] = useState<CompareState | null>(null);
-  const [compareGroupId, setCompareGroupId] = useState<string | null>(null);
+  const [builder, setBuilder] = useState<BuilderState | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProjectFn({ data: { id: projectId } }),
   });
 
+  /** Low-level: one streamed generation call. */
+  const generateOnce = useCallback(
+    async (
+      token: string,
+      params: {
+        promptText: string;
+        model: SpecModel;
+        docTypeKey: DocTypeKey;
+        previousSpec?: SpecOutput;
+        reviewerNotes?: string[];
+      },
+    ): Promise<SpecOutput> => {
+      const res = await fetch("/api/generate-spec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: params.promptText,
+          model: params.model,
+          docType: params.docTypeKey,
+          ...(params.previousSpec ? { previousSpec: params.previousSpec } : {}),
+          ...(params.reviewerNotes ? { reviewerNotes: params.reviewerNotes } : {}),
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
+        throw new Error(errText);
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+      }
+      fullText += decoder.decode();
 
-  const runModel = useCallback(
-    async (model: SpecModel, promptText: string, groupId: string, docTypeKey: DocTypeKey) => {
-      const setS = (next: ModelState) =>
-        setCompareState((prev) =>
-          prev ? { ...prev, [model]: next } : prev,
-        );
+      const errIdx = fullText.indexOf("__STREAM_ERROR__:");
+      if (errIdx >= 0) {
+        const errMsg = fullText
+          .slice(errIdx + "__STREAM_ERROR__:".length)
+          .trim();
+        throw new Error(errMsg || "שגיאת זרם מהמודל");
+      }
+      if (!fullText.trim()) throw new Error("המודל החזיר תשובה ריקה");
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(extractJson(fullText));
+      } catch {
+        throw new Error(`המודל לא החזיר JSON תקני (אורך ${fullText.length})`);
+      }
+      return SpecOutputSchema.parse(parsed);
+    },
+    [],
+  );
 
-      setS({ status: "loading" });
-
-      const getToken = async () => {
-        const { data: sess } = await supabase.auth.getSession();
-        const t = sess.session?.access_token;
-        if (!t) throw new Error("נדרשת התחברות מחדש");
-        return t;
-      };
-
-      const generateOnce = async (
-        token: string,
-        previousSpec?: SpecOutput,
-        reviewerNotes?: string[],
-      ): Promise<SpecOutput> => {
-        const res = await fetch("/api/generate-spec", {
+  /** Low-level: one review call. Returns null on failure (toast-warned). */
+  const reviewOnce = useCallback(
+    async (
+      token: string,
+      promptText: string,
+      spec: SpecOutput,
+    ): Promise<SpecReview | null> => {
+      try {
+        const revRes = await fetch("/api/review-spec", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            prompt: promptText,
-            model,
-            docType: docTypeKey,
-            ...(previousSpec ? { previousSpec } : {}),
-            ...(reviewerNotes ? { reviewerNotes } : {}),
-          }),
+          body: JSON.stringify({ prompt: promptText, spec }),
         });
-        if (!res.ok || !res.body) {
-          const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
-          throw new Error(errText);
+        if (!revRes.ok) {
+          const t = await revRes.text().catch(() => "");
+          throw new Error(t || `שגיאה ${revRes.status}`);
         }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let fullText = "";
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          fullText += decoder.decode(value, { stream: true });
-        }
-        fullText += decoder.decode();
-
-        const errIdx = fullText.indexOf("__STREAM_ERROR__:");
-        if (errIdx >= 0) {
-          const errMsg = fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim();
-          throw new Error(errMsg || "שגיאת זרם מהמודל");
-        }
-        if (!fullText.trim()) {
-          throw new Error("המודל החזיר תשובה ריקה");
-        }
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(extractJson(fullText));
-        } catch {
-          const head = fullText.slice(0, 200).replace(/\s+/g, " ");
-          const tail = fullText.slice(-200).replace(/\s+/g, " ");
-          throw new Error(
-            `המודל לא החזיר JSON תקני (אורך ${fullText.length}). התחלה: ${head} ... סוף: ${tail}`,
-          );
-        }
-        return SpecOutputSchema.parse(parsed);
-      };
-
-      const reviewOnce = async (
-        token: string,
-        spec: SpecOutput,
-      ): Promise<SpecReview | null> => {
-        try {
-          const revRes = await fetch("/api/review-spec", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ prompt: promptText, spec }),
-          });
-          if (!revRes.ok) {
-            const t = await revRes.text().catch(() => "");
-            throw new Error(t || `שגיאה ${revRes.status}`);
-          }
-          const json = await revRes.json();
-          if (json?.score == null) return null;
-          return {
-            score: Number(json.score),
-            notes: Array.isArray(json.notes) ? json.notes.map(String) : [],
-          };
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          toast.warning(`סוכן הביקורת נכשל (${model}): ${msg}`);
-          return null;
-        }
-      };
-
-      const saveOne = async (
-        spec: SpecOutput,
-        review: SpecReview | null,
-        suffix: string,
-        variant: "original" | "revised" | "single",
-      ): Promise<string> => {
-        const docTypeDef = getDocType(docTypeKey);
-        const effective = effectiveDocTypeConfig(
-          docTypeKey,
-          dtsData?.overrides[docTypeKey] ?? null,
-        );
-        const { spec: row } = await createFn({
-          data: {
-            title: `${spec.title} — ${docTypeDef.label} — ${model} — ${suffix}`,
-            prompt: promptText,
-            content: spec,
-            reviewScore: review?.score ?? null,
-            reviewNotes: review?.notes ?? [],
-            groupId,
-            model,
-            variant,
-            docType: docTypeKey,
-            sectionOrder: effective.sectionOrder,
-            sectionTitles: effective.sectionTitles,
-            projectId,
-          },
-        });
-
-        return row.id;
-      };
-
-      try {
-        const token = await getToken();
-
-        // Stage 1: original generation
-        const originalSpec = await generateOnce(token);
-
-        // Stage 2: first review
-        setS({ status: "reviewing", partialSpec: originalSpec });
-        const originalReview = await reviewOnce(token, originalSpec);
-
-        // Decide whether to revise
-        const shouldRevise =
-          originalReview != null &&
-          originalReview.notes.length > 0 &&
-          originalReview.score < 10;
-
-        let revisedSpec: SpecOutput | null = null;
-        let revisedReview: SpecReview | null = null;
-
-        if (shouldRevise) {
-          // Stage 3: revised generation
-          setS({
-            status: "revising",
-            partialSpec: originalSpec,
-            partialReview: originalReview,
-          });
-          try {
-            revisedSpec = await generateOnce(
-              token,
-              originalSpec,
-              originalReview!.notes,
-            );
-
-            // Stage 4: review the revised spec
-            setS({
-              status: "reviewing-revised",
-              partialSpec: revisedSpec,
-              partialReview: originalReview,
-            });
-            revisedReview = await reviewOnce(token, revisedSpec);
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            toast.warning(`יצירת הגרסה המתוקנת נכשלה (${model}): ${msg}`);
-            revisedSpec = null;
-            revisedReview = null;
-          }
-        }
-
-        // Stage 5: save
-        setS({
-          status: "saving",
-          partialSpec: revisedSpec ?? originalSpec,
-          partialReview: revisedReview ?? originalReview,
-        });
-        try {
-          const originalSpecId = await saveOne(
-            originalSpec,
-            originalReview,
-            revisedSpec ? "מקור" : "מסמך",
-            revisedSpec ? "original" : "single",
-          );
-          let revisedSpecId: string | null = null;
-          if (revisedSpec) {
-            revisedSpecId = await saveOne(revisedSpec, revisedReview, "מתוקן", "revised");
-          }
-          setS({
-            status: "success",
-            originalSpec,
-            originalSpecId,
-            originalReview,
-            revisedSpec,
-            revisedSpecId,
-            revisedReview,
-          });
-          qc.invalidateQueries({ queryKey: ["project", projectId] });
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : "שמירה נכשלה";
-          setS({
-            status: "error",
-            error: `המסמך נוצר אך השמירה נכשלה: ${msg}`,
-            originalSpec,
-            originalReview,
-            revisedSpec: revisedSpec ?? undefined,
-            revisedReview: revisedReview ?? undefined,
-            canRetry: true,
-          });
-        }
+        const json = await revRes.json();
+        if (json?.score == null) return null;
+        return {
+          score: Number(json.score),
+          notes: normalizeReviewNotes(json.notes),
+        };
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "יצירה נכשלה";
-        setS({ status: "error", error: msg, canRetry: true });
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.warning(`סוכן הביקורת נכשל: ${msg}`);
+        return null;
       }
     },
-    [createFn, qc, projectId],
+    [],
   );
 
-  const retryModel = useCallback(
-    (model: SpecModel) => {
-      if (!compareState || !compareGroupId) return;
-      void runModel(model, prompt, compareGroupId, docType);
+  const saveIteration = useCallback(
+    async (params: {
+      groupId: string;
+      promptText: string;
+      docTypeKey: DocTypeKey;
+      model: SpecModel;
+      version: number;
+      spec: SpecOutput;
+      review: SpecReview | null;
+    }): Promise<string> => {
+      const docTypeDef = getDocType(params.docTypeKey);
+      const effective = effectiveDocTypeConfig(
+        params.docTypeKey,
+        dtsData?.overrides[params.docTypeKey] ?? null,
+      );
+      const suffix = params.version === 1 ? "v1" : `v${params.version}`;
+      const variant: "original" | "revised" =
+        params.version === 1 ? "original" : "revised";
+      const { spec: row } = await createFn({
+        data: {
+          title: `${params.spec.title} — ${docTypeDef.label} — ${suffix}`,
+          prompt: params.promptText,
+          content: params.spec,
+          reviewScore: params.review?.score ?? null,
+          reviewNotes: params.review?.notes ?? [],
+          groupId: params.groupId,
+          model: params.model,
+          variant,
+          docType: params.docTypeKey,
+          sectionOrder: effective.sectionOrder,
+          sectionTitles: effective.sectionTitles,
+          projectId,
+        },
+      });
+      return row.id;
     },
-    [compareState, compareGroupId, prompt, runModel, docType],
+    [createFn, dtsData, projectId],
   );
 
-  const startCompare = useCallback(() => {
+  const getToken = useCallback(async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    const t = sess.session?.access_token;
+    if (!t) throw new Error("נדרשת התחברות מחדש");
+    return t;
+  }, []);
+
+  /** Start a new iterative build session (v1). */
+  const startBuilder = useCallback(async () => {
     const p = prompt.trim();
     if (p.length < 5) return;
     setNewOpen(false);
-    const gid = crypto.randomUUID();
-    setCompareGroupId(gid);
-    setCompareState(initialCompareState());
-    COMPARISON_MODELS.forEach((m) => {
-      void runModel(m, p, gid, docType);
-    });
-  }, [prompt, runModel, docType]);
+    const groupId = crypto.randomUUID();
+    const model = COMPARISON_MODELS[0];
+    const initialState: BuilderState = {
+      groupId,
+      prompt: p,
+      docType,
+      model,
+      iterations: [],
+      phase: "generating",
+    };
+    setBuilder(initialState);
 
-  const handlePick = useCallback(
-    (specId: string) => {
-      setCompareState(null);
-      setPrompt("");
-      navigate({ to: "/editor/$id", params: { id: specId } });
+    try {
+      const token = await getToken();
+      const spec = await generateOnce(token, {
+        promptText: p,
+        model,
+        docTypeKey: docType,
+      });
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "reviewing" } : prev,
+      );
+      const review = await reviewOnce(token, p, spec);
+      const specId = await saveIteration({
+        groupId,
+        promptText: p,
+        docTypeKey: docType,
+        model,
+        version: 1,
+        spec,
+        review,
+      });
+      const iteration: Iteration = {
+        version: 1,
+        specId,
+        spec,
+        review,
+        selectedNoteIds: new Set(),
+      };
+      setBuilder((prev) =>
+        prev ? { ...prev, iterations: [iteration], phase: "ready" } : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "error", error: msg } : prev,
+      );
+    }
+  }, [
+    prompt,
+    docType,
+    generateOnce,
+    reviewOnce,
+    saveIteration,
+    getToken,
+    qc,
+    projectId,
+  ]);
+
+  /** Generate the next iteration using user-selected suggestions. */
+  const improveBuilder = useCallback(async () => {
+    if (!builder || builder.phase !== "ready") return;
+    const last = builder.iterations[builder.iterations.length - 1];
+    if (!last || !last.review) return;
+    const selectedNotes: ReviewNote[] = last.review.notes.filter((n) =>
+      last.selectedNoteIds.has(n.id),
+    );
+    if (selectedNotes.length === 0) return;
+    const reviewerNotes = selectedNotes.map((n) => n.text);
+    const nextVersion = last.version + 1;
+
+    setBuilder((prev) => (prev ? { ...prev, phase: "generating" } : prev));
+    try {
+      const token = await getToken();
+      const spec = await generateOnce(token, {
+        promptText: builder.prompt,
+        model: builder.model,
+        docTypeKey: builder.docType,
+        previousSpec: last.spec,
+        reviewerNotes,
+      });
+      setBuilder((prev) => (prev ? { ...prev, phase: "reviewing" } : prev));
+      const review = await reviewOnce(token, builder.prompt, spec);
+      const specId = await saveIteration({
+        groupId: builder.groupId,
+        promptText: builder.prompt,
+        docTypeKey: builder.docType,
+        model: builder.model,
+        version: nextVersion,
+        spec,
+        review,
+      });
+      const nextIteration: Iteration = {
+        version: nextVersion,
+        specId,
+        spec,
+        review,
+        selectedNoteIds: new Set(),
+      };
+      setBuilder((prev) =>
+        prev
+          ? {
+              ...prev,
+              iterations: [...prev.iterations, nextIteration],
+              phase: "ready",
+            }
+          : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "יצירה נכשלה";
+      setBuilder((prev) =>
+        prev ? { ...prev, phase: "error", error: msg } : prev,
+      );
+    }
+  }, [
+    builder,
+    generateOnce,
+    reviewOnce,
+    saveIteration,
+    getToken,
+    qc,
+    projectId,
+  ]);
+
+  const toggleNote = useCallback((version: number, noteId: string) => {
+    setBuilder((prev) => {
+      if (!prev) return prev;
+      const iterations = prev.iterations.map((it) => {
+        if (it.version !== version) return it;
+        const next = new Set(it.selectedNoteIds);
+        if (next.has(noteId)) next.delete(noteId);
+        else next.add(noteId);
+        return { ...it, selectedNoteIds: next };
+      });
+      return { ...prev, iterations };
+    });
+  }, []);
+
+  const setNoteSelection = useCallback(
+    (version: number, ids: Set<string>) => {
+      setBuilder((prev) => {
+        if (!prev) return prev;
+        const iterations = prev.iterations.map((it) =>
+          it.version === version ? { ...it, selectedNoteIds: ids } : it,
+        );
+        return { ...prev, iterations };
+      });
     },
-    [navigate],
+    [],
   );
 
-  const anyBusy = compareState
-    ? Object.values(compareState).some((s) =>
-        ["loading", "reviewing", "revising", "reviewing-revised", "saving"].includes(
-          s.status,
-        ),
-      )
-    : false;
+  const finishBuilder = useCallback(
+    (specId?: string) => {
+      const target =
+        specId ??
+        builder?.iterations[builder.iterations.length - 1]?.specId ??
+        null;
+      setBuilder(null);
+      setPrompt("");
+      if (target) navigate({ to: "/editor/$id", params: { id: target } });
+    },
+    [builder, navigate],
+  );
+
+  const retryBuilder = useCallback(() => {
+    if (!builder) return;
+    // If the failure happened mid-improvement, just resume from selected notes.
+    if (builder.iterations.length > 0) {
+      void improveBuilder();
+    } else {
+      void startBuilder();
+    }
+  }, [builder, improveBuilder, startBuilder]);
+
+
 
 
 
