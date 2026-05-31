@@ -1541,20 +1541,23 @@ function ListBody<T extends { id: string }>({
             key={item.id}
             className="group relative rounded-lg border border-border bg-card p-4 focus-within:border-primary/40"
           >
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-2 flex items-center gap-2">
               <span className="text-xs text-muted-foreground">#{idx + 1}</span>
+            </div>
+            {renderItem(item, (next) =>
+              onChange(items.map((it) => (it.id === item.id ? next : it))),
+            )}
+            <div className="mt-2 hidden justify-start group-focus-within:flex">
               <Button
                 size="sm"
                 variant="ghost"
-                className="hidden h-7 text-destructive hover:bg-destructive/10 hover:text-destructive group-focus-within:inline-flex"
+                className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onChange(items.filter((it) => it.id !== item.id))}
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" /> מחק
               </Button>
             </div>
-            {renderItem(item, (next) =>
-              onChange(items.map((it) => (it.id === item.id ? next : it))),
-            )}
           </li>
         ))}
         {items.length === 0 && (
