@@ -238,6 +238,10 @@ function ProjectPage() {
         variant: "original" | "revised" | "single",
       ): Promise<string> => {
         const docTypeDef = getDocType(docTypeKey);
+        const effective = effectiveDocTypeConfig(
+          docTypeKey,
+          dtsData?.overrides[docTypeKey] ?? null,
+        );
         const { spec: row } = await createFn({
           data: {
             title: `${spec.title} — ${docTypeDef.label} — ${model} — ${suffix}`,
@@ -249,8 +253,8 @@ function ProjectPage() {
             model,
             variant,
             docType: docTypeKey,
-            sectionOrder: docTypeDef.sectionOrder,
-            sectionTitles: docTypeDef.sectionTitles,
+            sectionOrder: effective.sectionOrder,
+            sectionTitles: effective.sectionTitles,
             projectId,
           },
         });
