@@ -164,9 +164,11 @@ function ProjectPage() {
           prompt: params.promptText,
           model: params.model,
           docType: params.docTypeKey,
+          projectId,
           ...(params.previousSpec ? { previousSpec: params.previousSpec } : {}),
           ...(params.reviewerNotes ? { reviewerNotes: params.reviewerNotes } : {}),
         }),
+
       });
       if (!res.ok || !res.body) {
         const errText = (await res.text().catch(() => "")) || `שגיאה ${res.status}`;
