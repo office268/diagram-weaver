@@ -153,6 +153,7 @@ function DashboardPage() {
           body: JSON.stringify({
             prompt: promptText,
             model,
+            docType: docTypeKey,
             ...(previousSpec ? { previousSpec } : {}),
             ...(reviewerNotes ? { reviewerNotes } : {}),
           }),
