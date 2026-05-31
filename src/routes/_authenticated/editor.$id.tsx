@@ -368,16 +368,34 @@ function EditorPage() {
               addLabel="הוסף סיכון"
             />
           );
-        case "review":
+        case "review": {
           if (typeof data?.spec.review_score !== "number") return null;
+          const review: SpecReview = {
+            score: data.spec.review_score,
+            notes: normalizeReviewNotes(data.spec.review_notes),
+          };
           return (
-            <ReviewPanel
-              review={{
-                score: data.spec.review_score,
-                notes: normalizeReviewNotes(data.spec.review_notes),
-              }}
+            <ReviewSuggestionsPanel
+              review={review}
+              selected={selectedNoteIds}
+              onToggle={(noteId) =>
+                setSelectedNoteIds((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(noteId)) next.delete(noteId);
+                  else next.add(noteId);
+                  return next;
+                })
+              }
+              onSelectAll={() =>
+                setSelectedNoteIds(new Set(review.notes.map((n) => n.id)))
+              }
+              onClear={() => setSelectedNoteIds(new Set())}
+              onImprove={improveDoc}
+              onFinish={() => navigate({ to: "/projects" })}
+              improving={improving}
             />
           );
+        }
 
         case "user_notes":
           return (
