@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { GitBranch, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/use-auth";
@@ -108,7 +108,7 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2 text-sm font-medium text-foreground">
-          <GitBranch className="h-5 w-5 text-primary" />
+          <FileText className="h-5 w-5 text-primary" />
           סוכן ניתוח מערכות
         </Link>
 
