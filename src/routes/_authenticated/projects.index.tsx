@@ -184,49 +184,74 @@ function ProjectsPage() {
             );
           }
 
-          return (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((p, i) => (
-                <li
-                  key={p.id}
-                  className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card p-4"
-                  style={i < 12 ? { animationDelay: `${i * 40}ms`, animationFillMode: "backwards" } : undefined}
-                >
+          type ProjectItem = (typeof filtered)[number];
+          const pinned = filtered.filter((p) => p.pinned_at);
+          const others = filtered.filter((p) => !p.pinned_at);
 
-                  <Link
-                    to="/projects/$projectId"
-                    params={{ projectId: p.id }}
-                    className="block"
-                  >
-                    <div className="flex items-start gap-2">
-                      <Folder className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                      <div className="min-w-0">
+          const renderCard = (p: ProjectItem, i: number) => {
+            const isPinned = !!p.pinned_at;
+            return (
+              <li
+                key={p.id}
+                className="group hover-lift animate-fade-in relative rounded-xl border border-border bg-card p-4"
+                style={i < 12 ? { animationDelay: `${i * 40}ms`, animationFillMode: "backwards" } : undefined}
+              >
+                <Link
+                  to="/projects/$projectId"
+                  params={{ projectId: p.id }}
+                  className="block"
+                >
+                  <div className="flex items-start gap-2">
+                    <Folder className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
                         <div className="truncate font-medium text-foreground">{p.name}</div>
-                        {p.description && (
-                          <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                            {p.description}
-                          </div>
+                        {isPinned && (
+                          <Pin className="h-3 w-3 shrink-0 fill-primary text-primary" />
                         )}
                       </div>
+                      {p.description && (
+                        <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {p.description}
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Layers className="h-3.5 w-3.5" />
-                        {p.group_count} קבוצות
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3.5 w-3.5" />
-                        {p.doc_count} מסמכים
-                      </span>
-                      <span className="mr-auto">
-                        {new Date(p.updated_at).toLocaleDateString("he-IL")}
-                      </span>
-                    </div>
-                  </Link>
+                  </div>
+                  <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Layers className="h-3.5 w-3.5" />
+                      {p.group_count} קבוצות
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      {p.doc_count} מסמכים
+                    </span>
+                    <span className="mr-auto">
+                      {new Date(p.updated_at).toLocaleDateString("he-IL")}
+                    </span>
+                  </div>
+                </Link>
+                <div className="absolute left-2 top-2 flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute left-2 top-2 h-8 w-8 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+                    className="h-8 w-8"
+                    title={isPinned ? "בטל הצמדה" : "הצמד לראש"}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      pinMut.mutate({ id: p.id, pinned: !isPinned });
+                    }}
+                  >
+                    {isPinned ? (
+                      <PinOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Pin className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={(e) => {
                       e.preventDefault();
                       setDeleteId(p.id);
@@ -234,10 +259,39 @@ function ProjectsPage() {
                   >
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                </li>
-              ))}
-            </ul>
+                </div>
+              </li>
+            );
+          };
+
+          return (
+            <div className="space-y-8">
+              {pinned.length > 0 && (
+                <section>
+                  <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                    <Pin className="h-3.5 w-3.5 text-primary" />
+                    מוצמדים
+                  </h2>
+                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {pinned.map(renderCard)}
+                  </ul>
+                </section>
+              )}
+              {others.length > 0 && (
+                <section>
+                  {pinned.length > 0 && (
+                    <h2 className="mb-3 text-sm font-semibold text-muted-foreground">
+                      כל הפרויקטים
+                    </h2>
+                  )}
+                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {others.map(renderCard)}
+                  </ul>
+                </section>
+              )}
+            </div>
           );
+
         })()}
       </div>
 
