@@ -1,65 +1,73 @@
 
 ## מטרה
-אחרי שהמבקר נותן ציון והערות, להריץ שוב את סוכן ניתוח המערכות עם ההערות, ולהפיק מסמך מתוקן. גם המסמך המתוקן עובר ביקורת. שני המסמכים ושתי הביקורות נשמרים בנפרד.
+לאפשר למשתמש בעל תפקיד `admin` לערוך כל כותרת/הסבר באפליקציה ע"י דאבל-קליק. הטקסטים נשמרים בטבלה גלובלית `site_texts` (מפתח→ערך) ומוצגים לכל המשתמשים.
 
-## זרימה חדשה (פר מודל)
-1. יצירה ראשונית (קיים)
-2. ביקורת ראשונה (קיים)
-3. **חדש:** אם יש הערות מהמבקר → יצירה מתוקנת על בסיס הפרומפט המקורי + המסמך הקודם + הערות המבקר
-4. **חדש:** ביקורת על המסמך המתוקן
-5. שמירה: שני מסמכים נפרדים ב-`spec_documents`, כל אחד עם הציון וההערות שלו
+## מודל נתונים (migration)
 
-אם הביקורת הראשונה נכשלה או לא החזירה הערות (notes ריק וציון ≥9) — נדלג על שלב התיקון ונשמור רק את המסמך המקורי (כמו היום).
+1. `app_role` enum: `'admin' | 'user'`
+2. טבלה `user_roles(user_id, role)` + `GRANT` + RLS (קריאה: המשתמש שלו; כתיבה: רק `service_role`).
+3. פונקציה `has_role(_user_id uuid, _role app_role) returns boolean` עם `SECURITY DEFINER`.
+4. טבלה `site_texts`:
+   - `key text primary key`
+   - `value text not null`
+   - `updated_at timestamptz`, `updated_by uuid`
+5. RLS על `site_texts`:
+   - SELECT: ציבורי (`true`) — כולם רואים את הטקסטים.
+   - INSERT/UPDATE: רק `has_role(auth.uid(), 'admin')`.
+6. הענקת תפקיד admin למשתמש הראשי — לאחר אישור ה-migration אריץ INSERT ל-`user_roles` (אבקש מהמשתמש את האימייל שלו, או אקח את ה-user שכרגע מחובר).
 
-## שינויים טכניים
+## Server functions (`src/lib/site-texts.functions.ts`)
+- `getSiteTexts()` — קריאה ציבורית, מחזיר `Record<string,string>`. נקרא ב-loader של ה-root כדי להזרים את כל הטקסטים פעם אחת.
+- `updateSiteText({ key, value })` — מוגן ב-`requireSupabaseAuth`, בודק `has_role`, עושה `upsert`.
+- `getIsAdmin()` — מוגן, מחזיר boolean (לשליטה ב-UI).
 
-### 1. DB
-הוספת עמודות אופציונליות ל-`spec_documents` כדי לקשר בין הגרסאות:
-- `revision_of` UUID nullable — מצביע למסמך המקור (אם המסמך הזה הוא תיקון)
-- `revision_index` int default 0 — 0 למקור, 1 לתיקון הראשון
+## קליינט
 
-(לא חובה, אבל נחמד כדי להציג בדשבורד "מתוקן" ולקשר ביניהם. אם תעדיף לוותר ולהשאיר רק שני מסמכים נפרדים ללא קישור — נוותר על המיגרציה.)
+### Provider וקונטקסט
+- `src/lib/site-texts-context.tsx` — קונטקסט עם:
+  - `texts: Record<string,string>` (מהלואדר של ה-root)
+  - `isAdmin: boolean`
+  - `updateText(key, value)` — קורא ל-server fn + עדכון מקומי אופטימי.
+- ב-`__root.tsx` ה-loader יטען `getSiteTexts()` + (כשמחובר) `getIsAdmin()`, וה-Provider יעטוף את ה-Outlet.
 
-### 2. `src/routes/api/generate-spec.ts`
-תוספת לסכמת הבקשה:
-- `previousSpec?: object` — האפיון הקודם
-- `reviewerNotes?: string[]` — הערות לשיפור
+### קומפוננטה `<EditableSiteText>`
+- props: `textKey`, `defaultValue`, `as?` (h1/h2/p/span), `multiline?`, `className?`.
+- מציגה `texts[textKey] ?? defaultValue`.
+- אם `isAdmin`:
+  - `onDoubleClick` → הופך ל-`<input>`/`<textarea>` במקום (`contentEditable`-like או החלפה ל-Textarea/Input).
+  - שמירה אוטומטית ב-`onBlur` או `Enter` (Shift+Enter = שורה חדשה במולטילין). `Esc` = ביטול.
+  - אינדיקטור ויזואלי עדין (border-dashed בריחוף) + טוסט "נשמר".
+- אם לא admin: רק טקסט רגיל, ללא דאבל-קליק.
 
-כשהם מסופקים, נוסיף לפרומפט הוראת תיקון: "להלן מסמך אפיון קודם והערות מבקר איכות. צור גרסה משופרת שמטפלת בהערות, שומרת את החוזקות, ומחזירה JSON תקני באותה סכמה."
+### החלפת טקסטים קיימים
+החלפה של מחרוזות סטטיות ל-`<EditableSiteText textKey="..." defaultValue="...">` במקומות הבאים:
 
-### 3. `src/routes/_authenticated/dashboard.tsx`
-החלפת `runModel` בזרימה דו-שלבית:
-```text
-loading → reviewing → revising → reviewing-revised → saving (x2) → success
-```
+**Landing (`src/routes/index.tsx`)** — keys: `landing.header.brand`, `landing.hero.badge`, `landing.hero.title`, `landing.hero.subtitle`, `landing.hero.cta`, `landing.features.{1..3}.title/text`, `landing.footer`.
 
-`ModelState` יורחב לכלול:
-- `originalSpec`, `originalReview`
-- `revisedSpec?`, `revisedReview?`
-- `originalSpecId?`, `revisedSpecId?`
+**Dashboard (`src/routes/_authenticated/dashboard.tsx`)** — כותרת הדף, תיאור, טקסטים של empty state וכותרות כרטיסי מסמכים סטטיים (כל מחרוזת UI לא-דינמית).
 
-הלוגיקה:
-1. קריאה ל-`/api/generate-spec` (קיים)
-2. קריאה ל-`/api/review-spec` (קיים)
-3. אם `review.notes.length > 0` ו-`review.score < 10`:
-   a. קריאה שנייה ל-`/api/generate-spec` עם `previousSpec` ו-`reviewerNotes`
-   b. קריאה שנייה ל-`/api/review-spec` על הגרסה המתוקנת
-4. שמירה: `createSpec` למקור (title "… — מקור") ו-`createSpec` לתיקון (title "… — מתוקן"), כל אחד עם הציון/הערות שלו
+**Settings (`src/routes/_authenticated/settings.tsx`)** — כותרת `הגדרות AI`, תת-הסבר, כותרות/תיאורי הכרטיסים (`System Instruction`, `תבנית הפרומפט...`, וכו').
 
-### 4. דיאלוג ההשוואה (`ComparisonDialog` / `ResultPreview`)
-- מעל ה-Tabs של המודלים, נוסיף Tabs פנימיים: "מקור" / "מתוקן" כשקיים תיקון
-- כל טאב מציג את ה-`ReviewPanel` המתאים + תצוגת המסמך
-- בכפתורי הפעולה למטה: כפתור "פתח: מקור" וכפתור "פתח: מתוקן" לכל מודל שהצליח
+**Editor (`src/routes/_authenticated/editor.$id.tsx`)** — כותרות סטטיות וטקסטים מסבירים (לא תוכן המסמך עצמו, שנערך פר-מסמך).
 
-### 5. אין שינוי ב-`review-spec.ts`, `spec.functions.ts` (כבר מקבל ציון/הערות), `editor.$id.tsx`
-המסמך המתוקן הוא רשומה רגילה ב-spec_documents, כך שהעורך כבר יציג את הציון וההערות שלו ללא שינוי.
+(הערכים הדינמיים — title של מסמך, ביקורת סוכן, הערות משתמש — לא בהיקף.)
+
+## זרימת UX
+1. אדמין נכנס לדף → רואה את הטקסטים רגיל; בריחוף על טקסט ניתן לעריכה נדלק border מקווקו עדין + tooltip "דאבל-קליק לעריכה".
+2. דאבל-קליק → התא הופך לשדה עריכה במקום, פוקוס + סימון טקסט.
+3. Enter / blur → שמירה אוטומטית (`updateSiteText`), טוסט "נשמר", הטקסט מוחלף בכל המשתמשים בטעינה הבאה (אופטימית בקליינט הנוכחי, ולשאר ע"י invalidation של ה-query / רענון).
+4. Esc → ביטול.
 
 ## פרטים טכניים
-- הפרומפט לתיקון יישלח דרך אותו endpoint כדי לא לכפול קוד streaming.
-- אם יצירת הגרסה המתוקנת או הביקורת השנייה נכשלות — נציג טוסט אזהרה ונסתפק בשמירת המסמך המקורי + הביקורת שלו (לא נכשל את כל הזרימה).
-- ה-Quality threshold לדילוג על תיקון: notes ריק או score === 10.
+- ה-loader של ה-root יקרא `getSiteTexts()` (ציבורי, ללא auth) — בטוח ל-SSR.
+- `getIsAdmin()` נקרא רק מתוך `_authenticated` (יש session). מחוץ אליו `isAdmin=false`.
+- שמירה אופטימית: ה-Provider מעדכן `texts[key]` מיידית; אם השרת מחזיר שגיאה → revert + toast.error.
+- אין שינוי בתיאור/הגדרות אחרות; זו תוספת UI גרידא + טבלה גלובלית + תפקידים.
 
-## האם להוסיף את עמודות `revision_of` / `revision_index` ל-DB?
-זה ייתן לנו יכולת בעתיד להציג בדשבורד "מתוקן" וקישור הדדי. אם לא נוסיף, שני המסמכים פשוט יופיעו כעצמאיים עם שמות "— מקור" / "— מתוקן".
-
-המלצתי: כן להוסיף — זה זול וייתן UX טוב יותר בהמשך.
+## סיכום השינויים
+- migration: `app_role`, `user_roles`, `has_role`, `site_texts` + RLS + GRANTs.
+- server fns: `src/lib/site-texts.functions.ts`.
+- context: `src/lib/site-texts-context.tsx`.
+- קומפוננטה: `src/components/editable-site-text.tsx`.
+- עדכון: `src/routes/__root.tsx`, `src/routes/index.tsx`, `dashboard.tsx`, `settings.tsx`, `editor.$id.tsx`.
+- INSERT חד-פעמי ל-`user_roles` כדי לסמן את המשתמש כ-admin (אבקש אימייל לאחר אישור).
