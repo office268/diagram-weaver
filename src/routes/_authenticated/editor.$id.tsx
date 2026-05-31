@@ -338,11 +338,15 @@ function EditorPage() {
   );
 
   const improveSection = useCallback(
-    async (key: string, label: string, instruction: string): Promise<boolean> => {
+    async (
+      key: string,
+      label: string,
+      instruction: string,
+    ): Promise<{ candidate: unknown; previous: unknown } | null> => {
       const cur = getSectionValue(key);
       if (!cur) {
         toast.error("לא ניתן לשפר סעיף זה");
-        return false;
+        return null;
       }
       try {
         const { data: sess } = await supabase.auth.getSession();
@@ -366,15 +370,27 @@ function EditorPage() {
           throw new Error(t);
         }
         const json = (await res.json()) as { value: unknown };
-        applySectionValue(key, json.value);
-        toast.success("הסעיף עודכן");
-        return true;
+        return { candidate: json.value, previous: cur.value };
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "שיפור הסעיף נכשל");
-        return false;
+        return null;
       }
     },
-    [getSectionValue, applySectionValue, prompt, data?.spec],
+    [getSectionValue, prompt, data?.spec],
+  );
+
+  const applyImprovement = useCallback(
+    (key: string, candidate: unknown, previous: unknown) => {
+      applySectionValue(key, candidate);
+      toast.success("הסעיף עודכן", {
+        duration: 8000,
+        action: {
+          label: "בטל",
+          onClick: () => applySectionValue(key, previous),
+        },
+      });
+    },
+    [applySectionValue],
   );
 
   const improveDoc = useCallback(async () => {
