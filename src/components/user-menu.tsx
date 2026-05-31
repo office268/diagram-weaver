@@ -53,9 +53,23 @@ export function UserMenu({ user }: { user: User }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
+          <Link to="/billing">
+            <Zap className="ml-2 h-4 w-4 text-amber-500" />
+            <span className="flex-1">קרדיטים וחיוב</span>
+            <span className="text-xs font-semibold tabular-nums text-muted-foreground">{balance}</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
           <Link to="/settings">
             <Settings className="ml-2 h-4 w-4" />
             הגדרות
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/pricing">
+            <CreditCard className="ml-2 h-4 w-4" />
+            מחירים
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
