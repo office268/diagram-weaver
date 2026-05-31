@@ -13,7 +13,7 @@ import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card
 import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
-import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
+import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
 import {
   getAiSettings,
   updateBusinessKnowledge,
@@ -64,11 +64,16 @@ function SettingsPage() {
 
       <SettingsSection title="סיור מודרך" description="חזרה על המדריך לשימוש במערכת.">
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-            <div className="text-sm text-muted-foreground">
-              הפעלה מחדש של הסיור המקוצר על תכונות המערכת.
+          <CardContent className="space-y-4 pt-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
+                הפעלה מחדש של הסיור המקוצר על תכונות המערכת.
+              </div>
+              <RestartTourButton />
             </div>
-            <RestartTourButton />
+            <div className="border-t border-border pt-4">
+              <OnboardingEnabledToggle />
+            </div>
           </CardContent>
         </Card>
       </SettingsSection>

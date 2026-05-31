@@ -7,13 +7,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { TOUR_STEPS, ONBOARDING_STORAGE_KEY, type TourStep } from "./tour-steps";
+import {
+  TOUR_STEPS,
+  ONBOARDING_STORAGE_KEY,
+  ONBOARDING_DISABLED_KEY,
+  type TourStep,
+} from "./tour-steps";
 
 interface OnboardingContextValue {
   isActive: boolean;
   currentStepIndex: number;
   currentStep: TourStep | null;
   steps: TourStep[];
+  isEnabled: boolean;
+  setEnabled: (enabled: boolean) => void;
   start: () => void;
   next: () => void;
   prev: () => void;
@@ -38,6 +45,29 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [steps, setSteps] = useState<TourStep[]>(TOUR_STEPS);
+  const [isEnabled, setIsEnabledState] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setIsEnabledState(localStorage.getItem(ONBOARDING_DISABLED_KEY) !== "1");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setEnabled = useCallback((enabled: boolean) => {
+    setIsEnabledState(enabled);
+    try {
+      if (enabled) {
+        localStorage.removeItem(ONBOARDING_DISABLED_KEY);
+      } else {
+        localStorage.setItem(ONBOARDING_DISABLED_KEY, "1");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const start = useCallback(() => {
     setSteps(getVisibleSteps());
@@ -84,6 +114,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      const disabled = localStorage.getItem(ONBOARDING_DISABLED_KEY) === "1";
+      if (disabled) return;
       const done = localStorage.getItem(ONBOARDING_STORAGE_KEY);
       if (!done) {
         const t = setTimeout(() => start(), 600);
@@ -100,6 +132,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       currentStepIndex,
       currentStep: isActive ? steps[currentStepIndex] ?? null : null,
       steps,
+      isEnabled,
+      setEnabled,
       start,
       next,
       prev,
@@ -107,7 +141,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       complete,
       goTo,
     }),
-    [isActive, currentStepIndex, steps, start, next, prev, skip, complete, goTo],
+    [isActive, currentStepIndex, steps, isEnabled, setEnabled, start, next, prev, skip, complete, goTo],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

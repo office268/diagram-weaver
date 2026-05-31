@@ -69,3 +69,4 @@ export const TOUR_STEPS: TourStep[] = [
 ];
 
 export const ONBOARDING_STORAGE_KEY = "onboarding_completed_v1";
+export const ONBOARDING_DISABLED_KEY = "onboarding_disabled_v1";
