@@ -888,6 +888,43 @@ function EditorPage() {
     return DEFAULT_KEYS.includes(key);
   });
 
+  // Word & fill stats for status bar / progress
+  const { wordCount, filledCount } = useMemo(() => {
+    const countWords = (s: string) => {
+      const trimmed = (s ?? "").trim();
+      if (!trimmed) return 0;
+      return trimmed.split(/\s+/u).length;
+    };
+    const sectionText = (key: string): string => {
+      switch (key) {
+        case "user_prompt": return prompt;
+        case "user_notes": return userNotes;
+        case "overview": return content.overview;
+        case "goals": return content.goals.map((g) => g.text).join(" ");
+        case "assumptions": return content.assumptions.map((g) => g.text).join(" ");
+        case "risks": return content.risks.map((g) => g.text).join(" ");
+        case "personas": return content.personas.map((p) => `${p.name} ${p.description}`).join(" ");
+        case "functional_requirements": return content.functional_requirements.map((r) => `${r.title} ${r.description}`).join(" ");
+        case "non_functional_requirements": return content.non_functional_requirements.map((r) => `${r.title} ${r.description}`).join(" ");
+        case "use_cases": return content.use_cases.map((u) => `${u.title} ${u.description}`).join(" ");
+        case "architecture": return content.architecture.description;
+        case "data_model": return content.data_model.description;
+        default: return "";
+      }
+    };
+    let words = 0;
+    let filled = 0;
+    for (const key of visibleSections) {
+      const text = sectionText(key);
+      const w = countWords(text);
+      words += w;
+      if (w > 0) filled += 1;
+    }
+    return { wordCount: words, filledCount: filled };
+  }, [content, prompt, userNotes, visibleSections]);
+
+
+
   return (
     <div className="flex flex-col">
       {/* Toolbar */}
