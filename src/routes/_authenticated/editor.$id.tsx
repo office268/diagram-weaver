@@ -151,16 +151,22 @@ function EditorPage() {
 
       {/* Document */}
       <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-10">
-        {data.spec.prompt ? (
-          <section className="space-y-3">
-            <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
-              הפרומפט של המשתמש
-            </h2>
-            <div className="rounded-lg border border-border bg-muted/30 p-4 whitespace-pre-wrap text-sm text-foreground">
-              {data.spec.prompt}
-            </div>
-          </section>
-        ) : null}
+        <section className="space-y-3">
+          <h2 className="border-b border-border pb-2 text-xl font-semibold text-foreground">
+            הפרומפט של המשתמש
+          </h2>
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={Math.max(3, Math.min(15, prompt.split("\n").length + 1))}
+              placeholder="הפרומפט של המשתמש... (נשמר אוטומטית, משפיע רק על המסמך הזה)"
+              dir="auto"
+              className="resize-y text-sm"
+            />
+          </div>
+        </section>
+
 
 
         {/* Overview */}
