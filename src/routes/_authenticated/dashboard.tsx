@@ -995,5 +995,70 @@ function EditableDocTitle({
   );
 }
 
+function EditableGroupPrompt({
+  groupId,
+  value,
+  className,
+}: {
+  groupId: string;
+  value: string;
+  className?: string;
+}) {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateGroupPrompt);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
 
+  const commit = async () => {
+    setEditing(false);
+    const next = draft.trim();
+    if (!next || next === value) {
+      setDraft(value);
+      return;
+    }
+    try {
+      await updateFn({ data: { groupId, prompt: next } });
+      qc.invalidateQueries({ queryKey: ["specs"] });
+      toast.success("התיאור עודכן");
+    } catch (e) {
+      setDraft(value);
+      toast.error(e instanceof Error ? e.message : "עדכון נכשל");
+    }
+  };
+
+  if (editing) {
+    return (
+      <textarea
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void commit(); }
+          if (e.key === "Escape") { e.preventDefault(); setDraft(value); setEditing(false); }
+        }}
+        onClick={(e) => e.stopPropagation()}
+        dir="auto"
+        rows={Math.max(2, Math.min(8, draft.split("\n").length + 1))}
+        className={`w-full rounded border border-primary bg-background px-1.5 py-1 outline-none focus:ring-2 focus:ring-primary/40 ${className ?? ""}`}
+      />
+    );
+  }
+
+  return (
+    <h3
+      className={`${className ?? ""} cursor-text rounded outline-dashed outline-1 outline-transparent transition-colors hover:outline-primary/40`}
+      title="דאבל-קליק לעריכת התיאור (חל על כל הגרסאות בקבוצה)"
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDraft(value);
+        setEditing(true);
+      }}
+    >
+      {value}
+    </h3>
+  );
+}
 
