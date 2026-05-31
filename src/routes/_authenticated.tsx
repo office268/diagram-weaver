@@ -9,6 +9,7 @@ import {
   GlobalCommandPalette,
   CommandTriggerButton,
 } from "@/components/global-command-palette";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -40,17 +41,19 @@ function AuthenticatedLayout() {
           </Link>
 
           <div className="flex items-center gap-1.5">
-            <CommandTriggerButton />
-            <RecentItemsMenu />
+            <div className="hidden md:flex items-center gap-1.5">
+              <CommandTriggerButton />
+              <RecentItemsMenu />
+            </div>
             <ThemeToggle />
             <UserMenu user={user} />
           </div>
         </div>
       </header>
-      <main className="flex-1">
+      <main className="flex-1 pb-16 md:pb-0">
         <Outlet />
       </main>
-      <footer className="border-t border-border bg-card">
+      <footer className="hidden md:block border-t border-border bg-card">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
           <span>סוכן ניתוח מערכות · Lovable Cloud</span>
           <nav className="flex items-center gap-4">
@@ -60,6 +63,7 @@ function AuthenticatedLayout() {
           </nav>
         </div>
       </footer>
+      <MobileBottomNav />
       <GlobalCommandPalette />
     </div>
   );
