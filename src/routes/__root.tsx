@@ -162,10 +162,16 @@ function AuthBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const loaderData = Route.useLoaderData();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBridge />
-      <Outlet />
+      <SiteTextsProvider
+        initialTexts={loaderData?.siteTexts ?? {}}
+        isAdmin={loaderData?.isAdmin ?? false}
+      >
+        <Outlet />
+      </SiteTextsProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
