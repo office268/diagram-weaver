@@ -1052,52 +1052,103 @@ function EditorPage() {
       </CommandDialog>
 
       {/* Document */}
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-8">
-        <DndContext
-          sensors={dndSensors}
-          collisionDetection={closestCenter}
-          onDragEnd={(e: DragEndEvent) => {
-            const { active, over } = e;
-            if (!over || active.id === over.id) return;
-            reorderSections(String(active.id), String(over.id));
-          }}
-        >
-          <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
-            {visibleSections.map((key, index) => {
-              const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
-              const titleValue = sectionTitles[key] ?? def.defaultTitle;
-              return (
-                <SortableSection key={key} id={key}>
-                  {(dragHandle) => (
-                    <SectionShell
-                      title={titleValue}
-                      dragHandle={dragHandle}
-                      onTitleChange={(v) => setSectionTitle(key, v)}
-                      onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
-                      onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
-                      onDelete={() => deleteSection(key)}
-                      sectionKey={key}
-                      onAiImprove={
-                        key === "review"
-                          ? undefined
-                          : (instruction) => improveSection(key, titleValue, instruction)
-                      }
-                      onApplyImprove={(candidate, previous) =>
-                        applyImprovement(key, candidate, previous)
-                      }
-                    >
-                      {renderBody(key)}
-                    </SectionShell>
-                  )}
-                </SortableSection>
-              );
-            })}
-          </SortableContext>
-        </DndContext>
+      <div
+        className={cn(
+          "mx-auto w-full px-4 py-8",
+          splitSecondaryKey
+            ? "max-w-7xl grid gap-6 lg:grid-cols-2"
+            : focusMode
+              ? "max-w-3xl space-y-8"
+              : "max-w-4xl space-y-8",
+        )}
+      >
+        <div className={cn(splitSecondaryKey && "space-y-8 min-w-0")}>
+          <DndContext
+            sensors={dndSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={(e: DragEndEvent) => {
+              const { active, over } = e;
+              if (!over || active.id === over.id) return;
+              reorderSections(String(active.id), String(over.id));
+            }}
+          >
+            <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+              {visibleSections.map((key, index) => {
+                const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+                const titleValue = sectionTitles[key] ?? def.defaultTitle;
+                return (
+                  <SortableSection key={key} id={key}>
+                    {(dragHandle) => (
+                      <div
+                        className={cn(
+                          "group/section transition-opacity",
+                          focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
+                        )}
+                      >
+                        <SectionShell
+                          title={titleValue}
+                          dragHandle={dragHandle}
+                          onTitleChange={(v) => setSectionTitle(key, v)}
+                          onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                          onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                          onDelete={() => deleteSection(key)}
+                          sectionKey={key}
+                          onSplit={() => setSplitSecondaryKey(key)}
+                          splitActive={splitSecondaryKey === key}
+                          onAiImprove={
+                            key === "review"
+                              ? undefined
+                              : (instruction) => improveSection(key, titleValue, instruction)
+                          }
+                          onApplyImprove={(candidate, previous) =>
+                            applyImprovement(key, candidate, previous)
+                          }
+                        >
+                          {renderBody(key)}
+                        </SectionShell>
+                      </div>
+                    )}
+                  </SortableSection>
+                );
+              })}
+            </SortableContext>
+          </DndContext>
+        </div>
+        {splitSecondaryKey ? (
+          <aside className="hidden lg:block min-w-0">
+            <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto rounded-lg border border-primary/30 bg-card/40 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <Columns2 className="h-4 w-4 text-primary" />
+                  <span>תצוגת השוואה: {sectionTitles[splitSecondaryKey] ?? DEFAULT_SECTIONS.find((s) => s.key === splitSecondaryKey)?.defaultTitle ?? splitSecondaryKey}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setSplitSecondaryKey(null)}
+                  aria-label="סגור תצוגה משנית"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              {renderBody(splitSecondaryKey)}
+            </div>
+          </aside>
+        ) : null}
       </div>
+      {!focusMode ? (
+        <EditorStatusBar
+          wordCount={wordCount}
+          filledCount={filledCount}
+          totalCount={visibleSections.length}
+        />
+      ) : null}
     </div>
   );
 }
+
 
 function SectionShell({
   title,
