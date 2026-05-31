@@ -1350,7 +1350,7 @@ function SectionShell({
             </DropdownMenu>
           </div>
         </div>
-        <CollapsibleContent><div ref={contentRef}>{children}</div></CollapsibleContent>
+        <CollapsibleContent>{children}</CollapsibleContent>
       </section>
     </Collapsible>
     {onAiImprove ? (
