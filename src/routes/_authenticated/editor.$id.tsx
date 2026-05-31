@@ -218,7 +218,39 @@ function EditorPage() {
   }, []);
 
   const deleteSection = useCallback((key: string) => {
-    setSectionOrder((prev) => prev.filter((k) => k !== key));
+    let removedIndex = -1;
+    setSectionOrder((prev) => {
+      const idx = prev.indexOf(key);
+      if (idx < 0) return prev;
+      removedIndex = idx;
+      return prev.filter((k) => k !== key);
+    });
+    if (removedIndex < 0) return;
+    const restoreAt = removedIndex;
+    toast.success("הסעיף נמחק", {
+      duration: 8000,
+      action: {
+        label: "בטל",
+        onClick: () => {
+          setSectionOrder((cur) => {
+            if (cur.includes(key)) return cur;
+            const next = [...cur];
+            const at = Math.min(Math.max(restoreAt, 0), next.length);
+            next.splice(at, 0, key);
+            return next;
+          });
+        },
+      },
+    });
+  }, []);
+
+  const reorderSections = useCallback((from: string, to: string) => {
+    setSectionOrder((prev) => {
+      const oldIndex = prev.indexOf(from);
+      const newIndex = prev.indexOf(to);
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return prev;
+      return arrayMove(prev, oldIndex, newIndex);
+    });
   }, []);
 
   const ensureIds = useCallback(<T extends { id?: string }>(items: unknown): T[] => {
