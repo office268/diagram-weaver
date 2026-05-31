@@ -72,11 +72,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async () => {
-    try {
-      return { meta: await getAppMetadata() };
-    } catch {
-      return { meta: null };
-    }
+    const [metaR, textsR, adminR] = await Promise.allSettled([
+      getAppMetadata(),
+      getSiteTexts(),
+      getIsAdmin(),
+    ]);
+    return {
+      meta: metaR.status === "fulfilled" ? metaR.value : null,
+      siteTexts: textsR.status === "fulfilled" ? textsR.value : {},
+      isAdmin: adminR.status === "fulfilled" ? adminR.value.isAdmin : false,
+    };
   },
   head: ({ loaderData }) => {
     const m = loaderData?.meta;
