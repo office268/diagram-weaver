@@ -1,29 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Loader2, Save, RotateCcw, Sparkles, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-  getAiSettings,
-  updateAiSettings,
-  resetAiSettings,
-} from "@/lib/ai-settings.functions";
 
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
+import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton } from "@/components/onboarding/restart-tour-button";
@@ -33,18 +17,15 @@ export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
       { title: "הגדרות AI — סוכן ניתוח מערכות" },
-      { name: "description", content: "עריכת ה-system instruction ותצוגת הפרומפט שנשלח ל-LLM." },
+      { name: "description", content: "עריכת ה-system instruction לכל סוג מסמך." },
     ],
   }),
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const qc = useQueryClient();
-  const getFn = useServerFn(getAiSettings);
-  const updateFn = useServerFn(updateAiSettings);
-  const resetFn = useServerFn(resetAiSettings);
   const { isAdmin } = useSiteTexts();
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["ai-settings"],
