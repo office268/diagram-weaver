@@ -108,6 +108,12 @@ function ProjectPage() {
   const createFn = useServerFn(createSpec);
   const deleteFn = useServerFn(deleteSpec);
   const deleteGroupFn = useServerFn(deleteSpecGroup);
+  const listDtsFn = useServerFn(listDocTypeSettings);
+
+  const { data: dtsData } = useQuery({
+    queryKey: ["doc-type-settings"],
+    queryFn: () => listDtsFn(),
+  });
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
