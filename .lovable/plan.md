@@ -1,64 +1,57 @@
+# System Instruction לפי סוג מסמך
 
-# Onboarding Tour — סיור מודרך למשתמשים חדשים
+## מה משתנה
 
-סיור אינטראקטיבי בן 5-6 שלבים שמדריך משתמשים חדשים בפעם הראשונה שהם נכנסים למערכת. ללא תלויות חיצוניות — מימוש עצמאי עם spotlight + tooltip.
+היום יש System Instruction אחד גלובלי ב-`ai_settings` (פר-משתמש) + תוספת קשיחה לכל סוג מסמך בקוד (`doc-types.server.ts`) שלא ניתן לערוך.
 
-## חוויית המשתמש
+החדש: לכל סוג מסמך (BRD, TRD, ייזום, אפיון על, אפיון מפורט) יש **הוראה מלאה ונפרדת** הניתנת לעריכה דרך ה-UI ע"י אדמין בלבד, גלובלית לכל המשתמשים.
 
-- בכניסה ראשונה ל-`/projects` (אם אין `onboarding_completed` ב-localStorage), מופיע overlay כהה חצי-שקוף עם "חור" (spotlight) סביב האלמנט הנוכחי.
-- ליד האלמנט מופיע כרטיס tooltip עם: כותרת, תיאור קצר, מספר שלב (1/6), כפתורי "הבא"/"חזרה"/"דלג".
-- בסיום: toast "סיור הושלם 🎉" + שמירה ב-localStorage.
-- כפתור "סיור מודרך" קבוע ב-Settings וב-help menu — מאפשר להפעיל שוב בכל עת.
+## DB
 
-## שלבי הסיור
+טבלה חדשה `doc_type_instructions`:
+- `doc_type` text PK (אחד מ-`DOC_TYPE_KEYS`)
+- `system_instruction` text
+- `updated_at`, `updated_by`
 
-1. **ברוך הבא** — מודאל מרכזי (ללא spotlight) עם הסבר קצר על המערכת + CTA "בוא נתחיל".
-2. **כפתור פרויקט חדש** — spotlight על "פרויקט חדש" בעמוד `/projects`.
-3. **חיפוש גלובלי** — spotlight על `CommandTriggerButton` בכותרת (Cmd+K).
-4. **אחרונים** — spotlight על `RecentItemsMenu`.
-5. **תפריט משתמש / הגדרות** — spotlight על `UserMenu`.
-6. **סיום** — מודאל מרכזי "מוכן להתחיל!" עם קישור לפרויקט לדוגמה / יצירת פרויקט ראשון.
+RLS:
+- SELECT: `authenticated` (כל משתמש מחובר — נחוץ לקריאה ע"י השרת בשם המשתמש; הקריאה בפועל ב-API נעשית עם `supabaseAdmin`, אבל ה-grant נדרש אם נקרא בעתיד מהקליינט)
+- INSERT/UPDATE/DELETE: רק `has_role(auth.uid(), 'admin')`
+- GRANTs בהתאם
 
-במובייל (זיהוי לפי `matchMedia`): מדלגים על שלבי "חיפוש/אחרונים/משתמש" שמוסתרים, ומציגים שלב חלופי שמצביע על `MobileBottomNav`.
+Seed: insert ראשוני עם הטקסטים הקיימים מ-`doc-types.server.ts` + `DEFAULT_SYSTEM_INSTRUCTION` משולבים, כך שאין רגרסיה ביום הראשון.
 
-## ארכיטקטורה טכנית
+## Server
 
-**קבצים חדשים:**
+`src/lib/doc-type-instructions.functions.ts` חדש:
+- `listDocTypeInstructions()` — אדמין בלבד, מחזיר את כל הסוגים + defaults
+- `updateDocTypeInstruction({ doc_type, system_instruction })` — אדמין בלבד
+- `resetDocTypeInstruction({ doc_type })` — אדמין בלבד (מוחק מה-DB, יחזור ל-default מהקוד)
 
-- `src/components/onboarding/onboarding-provider.tsx` — Context שמנהל `currentStep`, `isActive`, `start()`, `next()`, `prev()`, `skip()`, `complete()`. מאוחסן ב-`localStorage` תחת `onboarding_completed_v1`.
-- `src/components/onboarding/onboarding-overlay.tsx` — ה-overlay עצמו:
-  - `position: fixed inset-0 z-[100]` עם `pointer-events-auto`.
-  - מחשב `getBoundingClientRect()` של היעד (לפי `data-tour` attribute), מצייר 4 div כהים סביבו ליצירת spotlight (ללא SVG clip-path כדי לתמוך בכל הדפדפנים).
-  - tooltip ממוקם דינמית (מעל/מתחת ליעד לפי מקום פנוי).
-  - מאזין ל-`resize` + `scroll` ומחשב מחדש.
-  - `Esc` = skip; חיצים = ניווט.
-- `src/components/onboarding/tour-steps.ts` — מערך השלבים: `{ id, target?: string, title, description, placement?: 'top'|'bottom'|'center' }`.
-- `src/components/onboarding/restart-tour-button.tsx` — כפתור קטן להפעלה מחדש (יוצב ב-Settings).
+`src/routes/api/generate-spec.ts`:
+- במקום `baseSystem` מ-`ai_settings` + `getDocTypeSystemInstruction`, נקרא קודם מ-`doc_type_instructions` לפי `body.docType`.
+- אם קיים שם — זו ההוראה היחידה שתישלח (מלאה ועצמאית).
+- אם לא — fallback ל-`DEFAULT_SYSTEM_INSTRUCTION + getDocTypeSystemInstruction(...)` כמו היום.
+- (גם `review-spec.ts` ו-`improve-section.ts` ייהנו מאותו fallback אם רלוונטי — נבדוק ונחיל באותה צורה.)
 
-**קבצים שמתעדכנים:**
+`ai_settings` של המשתמש נשאר קיים אבל לא בשימוש לזרימת היצירה החדשה. הסעיף ב-UI יוסר כדי לא לבלבל (ראה למטה).
 
-- `src/routes/_authenticated.tsx` — עוטף את ה-`<main>` ב-`<OnboardingProvider>` + מרנדר `<OnboardingOverlay />`. מוסיף `data-tour="header-search"` ל-`CommandTriggerButton wrapper`, `data-tour="header-recent"` ל-`RecentItemsMenu`, `data-tour="user-menu"` ל-`UserMenu`, `data-tour="mobile-nav"` ל-`MobileBottomNav`.
-- `src/routes/_authenticated/projects.index.tsx` — מוסיף `data-tour="new-project-btn"` לכפתור יצירת פרויקט; ב-`useEffect` קורא ל-`start()` אם זו כניסה ראשונה.
-- `src/routes/_authenticated/settings.tsx` — מוסיף section "סיור מודרך" עם `<RestartTourButton />`.
+## UI — `src/routes/_authenticated/settings.tsx`
 
-## פרטים טכניים
+סעיף חדש "הוראות מערכת לפי סוג מסמך" (אדמין בלבד, באותו `isAdmin` כמו שאר סעיפי האדמין):
+- Tabs/Accordion עם 5 סוגי המסמכים.
+- כל טאב: `Textarea` גדול + "שמור" + "שחזר לברירת מחדל".
+- תווית המציינת אם ההוראה כרגע = ברירת מחדל מהקוד או override מה-DB.
 
-- **אין שינויי DB ואין server functions** — הכל client-side ב-localStorage.
-- **Semantic tokens בלבד**: `bg-background/80 backdrop-blur-sm` ל-overlay, `bg-card border-border` ל-tooltip, `text-primary` להדגשות, `bg-primary text-primary-foreground` ל-CTA.
-- **A11y**: `role="dialog"` + `aria-labelledby` ל-tooltip, focus trap בסיסי, `Esc` סוגר.
-- **RTL**: כל הטקסטים בעברית, כפתורי next/prev מסודרים נכון (next משמאל ב-RTL).
-- **Spotlight ללא clip-path**: 4 overlays (top/bottom/left/right) שמכסים את כל המסך חוץ מהיעד — תאימות מלאה, פשוט יותר מ-SVG mask.
-- **תזמון**: ה-overlay מחכה 300ms לפני שלב ראשון כדי לוודא שה-DOM מוכן; בכל מעבר בודק שהיעד קיים, אחרת מדלג.
+הסעיף הקיים "הוראות מערכת ל-AI" (הגלובלי הפר-משתמש) — מוסר מה-UI, כי הוא כבר לא משפיע על הזרימה החדשה. הטבלה `ai_settings` נשארת ב-DB ללא שינוי (אפשר לנקות בעתיד).
 
-## קבצים — סיכום
+## קבצים
 
-**נוצרים (4):**
-- `src/components/onboarding/onboarding-provider.tsx`
-- `src/components/onboarding/onboarding-overlay.tsx`
-- `src/components/onboarding/tour-steps.ts`
-- `src/components/onboarding/restart-tour-button.tsx`
+חדש:
+- migration: `doc_type_instructions` + RLS + GRANTs + seed
+- `src/lib/doc-type-instructions.functions.ts`
+- `src/components/doc-type-instructions-card.tsx`
 
-**עורכים (3):**
-- `src/routes/_authenticated.tsx`
-- `src/routes/_authenticated/projects.index.tsx`
-- `src/routes/_authenticated/settings.tsx`
+עריכה:
+- `src/routes/api/generate-spec.ts` — קריאה מהטבלה החדשה
+- `src/lib/doc-types.server.ts` — נשאר כמקור defaults (מיוצא ל-helper שמשלב עם `DEFAULT_SYSTEM_INSTRUCTION`)
+- `src/routes/_authenticated/settings.tsx` — סעיף חדש, הסרת סעיף ai_settings הישן
