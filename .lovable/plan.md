@@ -1,21 +1,43 @@
-אעדכן את מנגנון הגרירה בעורך כך שיעבוד גם במסכי מגע, ואז אאמת אותו ישירות בתצוגה המקדימה.
+## מעבר ל-Google OAuth עם המיתוג שלך (BYOK)
 
-## מה אשנה
-1. אחזק את אזור הגרירה של סעיפי האפיון ב־`src/routes/_authenticated/editor.$id.tsx` כך ש־TouchSensor לא יבוטל מיד על ידי גלילת הדף.
-2. אוסיף ל־drag handle ולמיכל הרלוונטי הגדרות מגע מתאימות (`touch-action`/מניעת מחוות מתנגשות) בלי לפגוע בגלילה הרגילה של העורך.
-3. אעדכן את חוויית הגרירה במובייל כדי שהמשתמש יוכל ללחוץ לחיצה קצרה/ארוכה על הידית ואז להזיז סעיף בפועל.
-4. אבדוק בתצוגה המקדימה במסך צר שהסעיף באמת מחליף מיקום ולא רק נכנס למצב drag ואז מתבטל.
+### מה אעשה
 
-## למה זה כנראה קורה
-כרגע הגרירה כן מתחילה, אבל במובייל היא מתבטלת מיד. זה דפוס טיפוסי של `dnd-kit` כשאלמנט הגרירה לא מוגדר נכון למסכי מגע, ולכן הדפדפן נותן עדיפות לגלילה/gesture ומבטל את ה־drag.
+**1. שמירת הסודות בצורה מאובטחת**
+אבקש ממך להזין דרך טופס מאובטח את שני הערכים מ-Google Cloud Console:
+- `GOOGLE_OAUTH_CLIENT_ID`
+- `GOOGLE_OAUTH_CLIENT_SECRET`
 
-## פרטים טכניים
-- קובץ עיקרי: `src/routes/_authenticated/editor.$id.tsx`
-- אזורים רלוונטיים:
-  - `DndContext` + `useSensors`
-  - `SortableSection`
-  - `SectionShell`
-- תיקון צפוי:
-  - התאמת CSS/props לידית הגרירה עבור touch
-  - שמירה על `MouseSensor`/`TouchSensor`/`KeyboardSensor`
-  - אימות התנהגות במובייל אחרי השינוי
+(לא לשלוח אותם בצ'אט — הטופס מצפין ושומר אותם ב-Lovable Cloud)
+
+**2. הגדרת ספק Google ב-Backend**
+אגדיר את ספק Google ב-Auth של Lovable Cloud עם הסודות שלך, במקום ה-OAuth המנוהל של Lovable. מהרגע הזה — חלון ההסכמה של Google יציג את **השם והלוגו של Analyst Assist**, לא של Lovable.
+
+**3. עדכון קוד הכניסה**
+ב-`src/routes/login.tsx`:
+- החלפת `lovable.auth.signInWithOAuth("google", ...)` ב-`supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: ... } })`
+- הסרת ה-import של `lovable`
+
+**4. בדיקה**
+- כניסה עם Google → לוודא שמופיע "Analyst Assist" במסך ההסכמה
+- כניסה עם משתמש קיים (שנכנס דרך Lovable OAuth בעבר) — תמשיך לעבוד כי `sub` של Google זהה
+- כניסה עם משתמש חדש — לוודא שהפרופיל נוצר נכון (trigger `handle_new_user` כבר קיים)
+
+### נקודה חשובה — Verification
+
+כל עוד האפליקציה ב-Google היא במצב **Testing**, משתמשים שאינם ברשימת ה-Test Users יראו אזהרה "Google hasn't verified this app". כדי להעלים אותה צריך:
+- להגיש את האפליקציה ל-Verification (לוקח כמה ימים, דורש דומיין מאומת — `analyst-assist.com` מתאים)
+- זה תהליך נפרד של Google ולא דורש שינויי קוד
+
+### קבצים שישתנו
+
+- `src/routes/login.tsx` — החלפת קריאת ה-OAuth
+- הגדרות Auth ב-Backend (דרך הכלים)
+- סודות חדשים: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`
+
+### מה לא ישתנה
+
+- טבלאות, RLS, פרופילים, קרדיטים — הכל נשאר
+- משתמשים קיימים — ימשיכו להתחבר רגיל
+- כניסה עם אימייל/סיסמה — לא מושפעת
+
+מאשר להתחיל?
