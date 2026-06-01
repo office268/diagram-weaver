@@ -593,6 +593,12 @@ function ProjectPage() {
         }}
       />
 
+      <div className="mt-4">
+        <DocumentUploader projectId={projectId} />
+      </div>
+
+
+
 
 
       <div className="mt-8">
