@@ -310,49 +310,6 @@ function AssetField({
               הורד
             </Button>
           </div>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  יצירת {kind === "favicon" ? "פאביקון" : kind === "apple_touch_icon" ? "אייקון התקנה" : "תמונת שיתוף"} עם AI
-                </DialogTitle>
-                <DialogDescription>
-                  תאר במילים את התמונה הרצויה. היא תיווצר ותשובץ אוטומטית.
-                </DialogDescription>
-              </DialogHeader>
-              <Textarea
-                rows={4}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder={
-                  kind === "favicon"
-                    ? "לדוגמה: אייקון מינימליסטי של מסמך עם ניצוץ סגול"
-                    : kind === "apple_touch_icon"
-                      ? "לדוגמה: ריבוע סגול עם אות 'ס' לבנה במרכז"
-                      : "לדוגמה: רקע אבסטרקטי כחול-סגול עם הכיתוב 'סוכן ניתוח מערכות'"
-                }
-              />
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => setOpen(false)}
-                  disabled={genMut.isPending}
-                >
-                  ביטול
-                </Button>
-                <Button
-                  onClick={() => genMut.mutate()}
-                  disabled={prompt.trim().length < 3 || genMut.isPending}
-                >
-                  {genMut.isPending ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-1.5 h-4 w-4" />
-                  )}
-                  ייצר
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
     </div>
