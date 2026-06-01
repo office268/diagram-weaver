@@ -85,6 +85,7 @@ export function LoginLogCard() {
                   <th className="py-2 pl-3 font-medium">אימייל</th>
                   <th className="py-2 pl-3 font-medium">ספק</th>
                   <th className="py-2 pl-3 font-medium">סטטוס</th>
+                  <th className="py-2 pl-3 font-medium">מקור</th>
                   <th className="py-2 pl-3 font-medium">IP</th>
                   <th className="py-2 font-medium">דפדפן</th>
                 </tr>
@@ -98,6 +99,11 @@ export function LoginLogCard() {
                     <td className="py-2 pl-3 text-foreground">{r.email ?? "—"}</td>
                     <td className="py-2 pl-3 text-muted-foreground">{r.provider ?? "—"}</td>
                     <td className="py-2 pl-3">{statusBadge(r)}</td>
+                    <td className="py-2 pl-3">
+                      <Badge variant="outline" className="text-[10px]">
+                        {r.source === "app" ? "אפליקציה" : "Auth"}
+                      </Badge>
+                    </td>
                     <td className="py-2 pl-3 tabular-nums text-muted-foreground">
                       {r.ip ?? "—"}
                     </td>
