@@ -30,22 +30,26 @@ async function extractPdf(file: File): Promise<string> {
     .GlobalWorkerOptions.workerSrc = workerSrc;
 
   const buf = await file.arrayBuffer();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
-  const parts: string[] = [];
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((it: unknown) =>
-        it && typeof it === "object" && "str" in it
-          ? (it as { str: string }).str
-          : "",
-      )
-      .join(" ");
-    parts.push(pageText);
+  const loadingTask = pdfjs.getDocument({ data: buf });
+  const doc = await loadingTask.promise;
+  try {
+    const parts: string[] = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((it: unknown) =>
+          it && typeof it === "object" && "str" in it
+            ? (it as { str: string }).str
+            : "",
+        )
+        .join(" ");
+      parts.push(pageText);
+    }
+    return parts.join("\n\n");
+  } finally {
+    await loadingTask.destroy();
   }
-  await doc.destroy();
-  return parts.join("\n\n");
 }
 
 async function extractDocx(file: File): Promise<string> {
