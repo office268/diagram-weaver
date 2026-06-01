@@ -1,47 +1,65 @@
 ## מטרה
-להוסיף בדף ההגדרות (`/_authenticated/settings`) קולפס חדש "לוג התחברויות" — גלוי **אך ורק לאדמין** — שמציג את כל אירועי ההתחברות לאתר.
+להציג בלוג ההתחברויות גם את ההיסטוריה שלפני הוספת הפיצ'ר — דרך auth_logs של Lovable Cloud.
 
-## מקור הנתונים — שילוב של שניים
-1. **טבלה חדשה `login_events`** — תיעוד מדויק מצד האפליקציה (זמן, user_id, אימייל, provider, user agent, IP). תיכתב אוטומטית בכל `SIGNED_IN` דרך listener קיים ב-`__root.tsx`.
-2. **Auth Logs של Lovable Cloud** — שליפת ניסיונות התחברות (כולל כושלים) דרך `supabase--analytics_query` ב-server function אדמין.
-
-הקולפס יציג טבלה משולבת ממוינת לפי זמן יורד.
+## איך זה יעבוד
+auth_logs לא נגישים ל-runtime של ה-Worker דרך client רגיל. הגישה היחידה היא דרך **Supabase Management API** (`https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs.all`), שמקבל שאילתת SQL ומחזיר תוצאות. זה דורש Personal Access Token (PAT).
 
 ## שינויים
 
-### 1. מיגרציית DB
-טבלה `public.login_events`:
-- `id uuid PK`, `user_id uuid`, `email text`, `provider text` (google/email/...), `user_agent text`, `ip text` (nullable), `event text` (signed_in/signed_out), `created_at timestamptz default now()`
-- GRANTs: `authenticated` insert בלבד על עצמו; `service_role` הכל; אין anon
-- RLS:
-  - `INSERT`: `auth.uid() = user_id`
-  - `SELECT`: רק אדמין (`has_role(auth.uid(), 'admin')`)
-- אינדקס על `created_at desc` ועל `user_id`
+### 1. הוספת סוד `SUPABASE_ACCESS_TOKEN`
+דרך `add_secret`. המשתמש יצטרך:
+1. להיכנס ל-https://supabase.com/dashboard/account/tokens
+2. ליצור PAT חדש (שם חופשי, למשל "lovable-auth-logs")
+3. להדביק את הערך
 
-### 2. רישום אירוע התחברות
-ב-`src/routes/__root.tsx` בתוך ה-`AuthBridge`, כשמתקבל `SIGNED_IN`/`SIGNED_OUT` — לקרוא ל-server function חדשה `recordLoginEvent` שמכניסה שורה ל-`login_events` עם פרטי המשתמש וה-user agent. שקטה בשגיאות (לא חוסמת UX).
+### 2. עדכון `src/lib/login-log.functions.ts`
+ב-`getLoginLog`, להחליף את הבלוק שמדלג בשקט בקריאה אמיתית:
 
-### 3. Server functions חדשות (`src/lib/login-log.functions.ts`)
-- `recordLoginEvent` (`requireSupabaseAuth`) — INSERT ל-`login_events`.
-- `getLoginLog` (אדמין בלבד; בודק `has_role` דרך `supabaseAdmin` ומחזיר 403 אחרת) — מחזיר:
-  - 100 שורות אחרונות מ-`login_events`
-  - 100 רשומות auth_logs אחרונות מה-analytics (msg כמו "login", "logout", "token refreshed", שגיאות) דרך `supabaseAdmin` REST ל-analytics endpoint — או נשתמש בשאילתת SQL רגילה אם זמין; אם אין גישה, נדלג בשקט ונחזיר רק `login_events`.
-  - איחוד ומיון יורד לפי timestamp.
+```ts
+const pat = process.env.SUPABASE_ACCESS_TOKEN;
+const projectRef = process.env.SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1];
 
-### 4. רכיב UI חדש `src/components/login-log-card.tsx`
-- שימוש ב-`useQuery` שקורא ל-`getLoginLog`.
-- טבלה responsive: זמן (פורמט מקומי), אימייל, provider, סוג אירוע (badge: הצלחה/כישלון/יציאה), מקור (app/auth-log), IP/UA מקוצר.
-- כפתור רענון, מצבי loading/empty.
-
-### 5. שילוב בדף ההגדרות
-ב-`src/routes/_authenticated/settings.tsx`, בתוך הבלוק `{isAdmin ? (...)}`, להוסיף `SettingsSection` חדש:
-```tsx
-<SettingsSection title="לוג התחברויות" description="כל ניסיונות ההתחברות לאתר.">
-  <LoginLogCard />
-</SettingsSection>
+if (pat && projectRef) {
+  const sql = `
+    select id, timestamp, event_message,
+           metadata.msg as msg, metadata.status as status,
+           metadata.path as path, metadata.error as error,
+           metadata.remote_addr as ip
+    from auth_logs
+    cross join unnest(metadata) as metadata
+    where metadata.msg in ('Login', 'Logout', 'Signup', 'User Recovery Requested')
+       or metadata.status in ('400','401','403','422','500')
+    order by timestamp desc
+    limit 200
+  `;
+  const res = await fetch(
+    `https://api.supabase.com/v1/projects/${projectRef}/analytics/endpoints/logs.all`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${pat}` },
+      // sql מועבר כ-query param
+    }
+  );
+  // ... מיפוי ל-LoginLogRow עם source: "auth"
+}
 ```
 
+נמפה כל שורה ל-`LoginLogRow`:
+- `status: "error"` אם יש `metadata.error` או status ≥ 400
+- `event: "signed_in"` / `"signed_out"` לפי `msg`
+- `email` — לא תמיד זמין ב-auth_logs; נמלא ממה שיש (לרוב רק ב-user_id metadata)
+
+אם הקריאה נכשלת (401/403/network) — fallback שקט ל-`login_events` בלבד, בלי לזרוק שגיאה.
+
+### 3. UI — `src/components/login-log-card.tsx`
+- להוסיף עמודה "מקור" (אפליקציה / Auth) או badge קטן
+- אם `authLogsAvailable === false`, להציג הערה דיסקרטית: "היסטוריה מלאה דורשת חיבור ל-Lovable Cloud API"
+- דה-דופ בסיסי: אם יש רשומה מ-`login_events` ורשומה מ-auth_logs באותה דקה לאותו user_id — להעדיף את `login_events` (יש email מלא)
+
 ## הערות טכניות
-- ה-IP אינו זמין ב-`onAuthStateChange` של הדפדפן — נשאיר ריק ברישום מהקליינט; ה-IP יבוא מ-auth_logs.
-- אם שאילתת analytics נכשלת/אינה זמינה ב-runtime — fallback להצגת `login_events` בלבד עם הודעה דיסקרטית.
-- כל הקריאות עוברות דרך `createServerFn`, ללא חשיפת service role לקליינט.
+- ה-PAT שמור רק כסוד server-side, לא נחשף לקליינט.
+- Management API מוגבל ב-rate; שמרני — 200 שורות, רק כשפותחים את הקולפס (כבר עכשיו `useQuery` בלי refetch אוטומטי).
+- אם המשתמש לא יוסיף PAT — הכל ממשיך לעבוד עם `login_events` בלבד.
+
+## תוצאה
+לאחר אישור, אבקש את `SUPABASE_ACCESS_TOKEN` דרך `add_secret`, ואחרי שהוא נשמר אעדכן את הקוד.
