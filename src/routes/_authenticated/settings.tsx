@@ -11,6 +11,7 @@ import { EditableSiteText } from "@/components/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
 import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card";
 import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
+import { LoginLogCard } from "@/components/login-log-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
