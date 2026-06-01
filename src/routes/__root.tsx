@@ -148,12 +148,26 @@ function AuthBridge() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       // Only invalidate on real auth transitions — ignore TOKEN_REFRESHED
       // and INITIAL_SESSION which fire repeatedly and caused a redirect loop.
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         router.invalidate();
         queryClient.invalidateQueries();
+      }
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        import("@/lib/login-log.functions")
+          .then(({ recordLoginEvent }) =>
+            recordLoginEvent({
+              data: {
+                event: event === "SIGNED_IN" ? "signed_in" : "signed_out",
+                provider:
+                  (session?.user?.app_metadata?.provider as string | undefined) ?? null,
+                email: session?.user?.email ?? null,
+              },
+            }),
+          )
+          .catch(() => {});
       }
     });
     return () => subscription.unsubscribe();
