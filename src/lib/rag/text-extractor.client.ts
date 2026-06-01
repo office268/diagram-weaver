@@ -23,10 +23,11 @@ async function extractTxt(file: File): Promise<string> {
 
 async function extractPdf(file: File): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  const workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url"))
-    .default;
-  // @ts-expect-error -- pdfjs exposes GlobalWorkerOptions at runtime
-  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+  const workerSrc = (
+    await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
+  ).default;
+  (pdfjs as unknown as { GlobalWorkerOptions: { workerSrc: string } })
+    .GlobalWorkerOptions.workerSrc = workerSrc;
 
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
@@ -35,7 +36,11 @@ async function extractPdf(file: File): Promise<string> {
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
     const pageText = content.items
-      .map((it) => ("str" in it ? (it as { str: string }).str : ""))
+      .map((it: unknown) =>
+        it && typeof it === "object" && "str" in it
+          ? (it as { str: string }).str
+          : "",
+      )
       .join(" ");
     parts.push(pageText);
   }
@@ -44,7 +49,11 @@ async function extractPdf(file: File): Promise<string> {
 }
 
 async function extractDocx(file: File): Promise<string> {
-  const mammoth = await import("mammoth/mammoth.browser");
+  const mammoth = (await import("mammoth")) as unknown as {
+    extractRawText: (opts: {
+      arrayBuffer: ArrayBuffer;
+    }) => Promise<{ value: string }>;
+  };
   const arrayBuffer = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value;
