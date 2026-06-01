@@ -1,43 +1,33 @@
-## מעבר ל-Google OAuth עם המיתוג שלך (BYOK)
+## מטרה
+להחזיר את ההתחברות עם Google לעבודה בלי לשנות את הלוגיקה באפליקציה, כי הקוד כבר משתמש בזרימת Google של Lovable Cloud.
 
-### מה אעשה
+## מה אבדוק ואאמת
+1. **מקור הבעיה**
+   - לאמת אם ב-Cloud מוגדרים **credentials מותאמים אישית** ל-Google.
+   - אם כן, לוודא שה-Client ID וה-Client Secret תואמים בדיוק לאותו OAuth Client ב-Google Cloud.
 
-**1. שמירת הסודות בצורה מאובטחת**
-אבקש ממך להזין דרך טופס מאובטח את שני הערכים מ-Google Cloud Console:
-- `GOOGLE_OAUTH_CLIENT_ID`
-- `GOOGLE_OAUTH_CLIENT_SECRET`
+2. **כתובת callback הנכונה**
+   - לא להשתמש בכתובת ישנה/ידנית.
+   - לקחת את **Authorized redirect URL המדויק שמופיע בתוך Lovable Cloud** במסך:
+     `Users → Auth Settings → Sign In Methods → Google`
+   - לוודא שב-Google Cloud הכתובת הזו מופיעה בדיוק, בלי שינוי.
 
-(לא לשלוח אותם בצ'אט — הטופס מצפין ושומר אותם ב-Lovable Cloud)
+3. **בדיקת ה-OAuth Client ב-Google**
+   - לוודא שה-Client הוא מסוג **Web application**.
+   - לוודא שהוא לא נמחק / לא שייך לפרויקט Google אחר.
+   - לוודא שה-Consent Screen והדומיינים המורשים תואמים לסביבה הפעילה.
 
-**2. הגדרת ספק Google ב-Backend**
-אגדיר את ספק Google ב-Auth של Lovable Cloud עם הסודות שלך, במקום ה-OAuth המנוהל של Lovable. מהרגע הזה — חלון ההסכמה של Google יציג את **השם והלוגו של Analyst Assist**, לא של Lovable.
+4. **בידוד הבעיה**
+   - לבדוק קודם על ה-URL המפורסם של האפליקציה, לא על preview.
+   - אם המטרה אינה שימוש ב-credentials פרטיים, לעבור ל-**managed Google OAuth** של Lovable Cloud במקום credentials ידניים.
 
-**3. עדכון קוד הכניסה**
-ב-`src/routes/login.tsx`:
-- החלפת `lovable.auth.signInWithOAuth("google", ...)` ב-`supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: ... } })`
-- הסרת ה-import של `lovable`
+## תוצאה צפויה
+אחד משני המסלולים יפתור את הבעיה:
+- **מסלול מהיר:** לכבות credentials ידניים ולהשתמש ב-managed Google OAuth.
+- **מסלול מותאם אישית:** להשאיר credentials ידניים אבל לעדכן ב-Google Cloud את ה-client וה-callback המדויקים שמופיעים ב-Lovable Cloud.
 
-**4. בדיקה**
-- כניסה עם Google → לוודא שמופיע "Analyst Assist" במסך ההסכמה
-- כניסה עם משתמש קיים (שנכנס דרך Lovable OAuth בעבר) — תמשיך לעבוד כי `sub` של Google זהה
-- כניסה עם משתמש חדש — לוודא שהפרופיל נוצר נכון (trigger `handle_new_user` כבר קיים)
-
-### נקודה חשובה — Verification
-
-כל עוד האפליקציה ב-Google היא במצב **Testing**, משתמשים שאינם ברשימת ה-Test Users יראו אזהרה "Google hasn't verified this app". כדי להעלים אותה צריך:
-- להגיש את האפליקציה ל-Verification (לוקח כמה ימים, דורש דומיין מאומת — `analyst-assist.com` מתאים)
-- זה תהליך נפרד של Google ולא דורש שינויי קוד
-
-### קבצים שישתנו
-
-- `src/routes/login.tsx` — החלפת קריאת ה-OAuth
-- הגדרות Auth ב-Backend (דרך הכלים)
-- סודות חדשים: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`
-
-### מה לא ישתנה
-
-- טבלאות, RLS, פרופילים, קרדיטים — הכל נשאר
-- משתמשים קיימים — ימשיכו להתחבר רגיל
-- כניסה עם אימייל/סיסמה — לא מושפעת
-
-מאשר להתחיל?
+## פרטים טכניים
+- מצאתי שהקוד כבר קורא ל-`lovable.auth.signInWithOAuth("google")`, ולכן זו לא נראית כבעיית קוד.
+- שגיאת `401 invalid_client` מצביעה בדרך כלל על **Client ID / Client Secret שגויים**, client מפרויקט אחר, או OAuth Client שכבר לא תקף.
+- אם הייתה בעיית callback בלבד, בדרך כלל היינו מצפים יותר ל-`redirect_uri_mismatch` ולא ל-`invalid_client`.
+- לכן החשד הראשי הוא **custom Google credentials** ב-Cloud, לא מימוש ה-login בעמוד עצמו.
