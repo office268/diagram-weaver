@@ -1,33 +1,47 @@
 ## מטרה
-להחזיר את ההתחברות עם Google לעבודה בלי לשנות את הלוגיקה באפליקציה, כי הקוד כבר משתמש בזרימת Google של Lovable Cloud.
+להוסיף בדף ההגדרות (`/_authenticated/settings`) קולפס חדש "לוג התחברויות" — גלוי **אך ורק לאדמין** — שמציג את כל אירועי ההתחברות לאתר.
 
-## מה אבדוק ואאמת
-1. **מקור הבעיה**
-   - לאמת אם ב-Cloud מוגדרים **credentials מותאמים אישית** ל-Google.
-   - אם כן, לוודא שה-Client ID וה-Client Secret תואמים בדיוק לאותו OAuth Client ב-Google Cloud.
+## מקור הנתונים — שילוב של שניים
+1. **טבלה חדשה `login_events`** — תיעוד מדויק מצד האפליקציה (זמן, user_id, אימייל, provider, user agent, IP). תיכתב אוטומטית בכל `SIGNED_IN` דרך listener קיים ב-`__root.tsx`.
+2. **Auth Logs של Lovable Cloud** — שליפת ניסיונות התחברות (כולל כושלים) דרך `supabase--analytics_query` ב-server function אדמין.
 
-2. **כתובת callback הנכונה**
-   - לא להשתמש בכתובת ישנה/ידנית.
-   - לקחת את **Authorized redirect URL המדויק שמופיע בתוך Lovable Cloud** במסך:
-     `Users → Auth Settings → Sign In Methods → Google`
-   - לוודא שב-Google Cloud הכתובת הזו מופיעה בדיוק, בלי שינוי.
+הקולפס יציג טבלה משולבת ממוינת לפי זמן יורד.
 
-3. **בדיקת ה-OAuth Client ב-Google**
-   - לוודא שה-Client הוא מסוג **Web application**.
-   - לוודא שהוא לא נמחק / לא שייך לפרויקט Google אחר.
-   - לוודא שה-Consent Screen והדומיינים המורשים תואמים לסביבה הפעילה.
+## שינויים
 
-4. **בידוד הבעיה**
-   - לבדוק קודם על ה-URL המפורסם של האפליקציה, לא על preview.
-   - אם המטרה אינה שימוש ב-credentials פרטיים, לעבור ל-**managed Google OAuth** של Lovable Cloud במקום credentials ידניים.
+### 1. מיגרציית DB
+טבלה `public.login_events`:
+- `id uuid PK`, `user_id uuid`, `email text`, `provider text` (google/email/...), `user_agent text`, `ip text` (nullable), `event text` (signed_in/signed_out), `created_at timestamptz default now()`
+- GRANTs: `authenticated` insert בלבד על עצמו; `service_role` הכל; אין anon
+- RLS:
+  - `INSERT`: `auth.uid() = user_id`
+  - `SELECT`: רק אדמין (`has_role(auth.uid(), 'admin')`)
+- אינדקס על `created_at desc` ועל `user_id`
 
-## תוצאה צפויה
-אחד משני המסלולים יפתור את הבעיה:
-- **מסלול מהיר:** לכבות credentials ידניים ולהשתמש ב-managed Google OAuth.
-- **מסלול מותאם אישית:** להשאיר credentials ידניים אבל לעדכן ב-Google Cloud את ה-client וה-callback המדויקים שמופיעים ב-Lovable Cloud.
+### 2. רישום אירוע התחברות
+ב-`src/routes/__root.tsx` בתוך ה-`AuthBridge`, כשמתקבל `SIGNED_IN`/`SIGNED_OUT` — לקרוא ל-server function חדשה `recordLoginEvent` שמכניסה שורה ל-`login_events` עם פרטי המשתמש וה-user agent. שקטה בשגיאות (לא חוסמת UX).
 
-## פרטים טכניים
-- מצאתי שהקוד כבר קורא ל-`lovable.auth.signInWithOAuth("google")`, ולכן זו לא נראית כבעיית קוד.
-- שגיאת `401 invalid_client` מצביעה בדרך כלל על **Client ID / Client Secret שגויים**, client מפרויקט אחר, או OAuth Client שכבר לא תקף.
-- אם הייתה בעיית callback בלבד, בדרך כלל היינו מצפים יותר ל-`redirect_uri_mismatch` ולא ל-`invalid_client`.
-- לכן החשד הראשי הוא **custom Google credentials** ב-Cloud, לא מימוש ה-login בעמוד עצמו.
+### 3. Server functions חדשות (`src/lib/login-log.functions.ts`)
+- `recordLoginEvent` (`requireSupabaseAuth`) — INSERT ל-`login_events`.
+- `getLoginLog` (אדמין בלבד; בודק `has_role` דרך `supabaseAdmin` ומחזיר 403 אחרת) — מחזיר:
+  - 100 שורות אחרונות מ-`login_events`
+  - 100 רשומות auth_logs אחרונות מה-analytics (msg כמו "login", "logout", "token refreshed", שגיאות) דרך `supabaseAdmin` REST ל-analytics endpoint — או נשתמש בשאילתת SQL רגילה אם זמין; אם אין גישה, נדלג בשקט ונחזיר רק `login_events`.
+  - איחוד ומיון יורד לפי timestamp.
+
+### 4. רכיב UI חדש `src/components/login-log-card.tsx`
+- שימוש ב-`useQuery` שקורא ל-`getLoginLog`.
+- טבלה responsive: זמן (פורמט מקומי), אימייל, provider, סוג אירוע (badge: הצלחה/כישלון/יציאה), מקור (app/auth-log), IP/UA מקוצר.
+- כפתור רענון, מצבי loading/empty.
+
+### 5. שילוב בדף ההגדרות
+ב-`src/routes/_authenticated/settings.tsx`, בתוך הבלוק `{isAdmin ? (...)}`, להוסיף `SettingsSection` חדש:
+```tsx
+<SettingsSection title="לוג התחברויות" description="כל ניסיונות ההתחברות לאתר.">
+  <LoginLogCard />
+</SettingsSection>
+```
+
+## הערות טכניות
+- ה-IP אינו זמין ב-`onAuthStateChange` של הדפדפן — נשאיר ריק ברישום מהקליינט; ה-IP יבוא מ-auth_logs.
+- אם שאילתת analytics נכשלת/אינה זמינה ב-runtime — fallback להצגת `login_events` בלבד עם הודעה דיסקרטית.
+- כל הקריאות עוברות דרך `createServerFn`, ללא חשיפת service role לקליינט.
