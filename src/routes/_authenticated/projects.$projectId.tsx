@@ -23,6 +23,7 @@ import {
 } from "@/lib/spec.functions";
 import { getProject, updateProject } from "@/lib/project.functions";
 import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
+import { DocumentUploader } from "@/components/document-uploader";
 import {
   Collapsible,
   CollapsibleContent,
