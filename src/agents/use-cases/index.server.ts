@@ -1,0 +1,90 @@
+import { generateText } from "ai";
+import { z } from "zod";
+import type { AgentContext, UseCasesOutput, RequirementsOutput } from "@/agents/shared/types";
+import { AGENT_MODELS, AGENT_TEMPERATURES } from "@/agents/shared/constants";
+import { extractJson } from "@/lib/spec-output-schema";
+import {
+  buildRagBlock,
+  buildThinkingInstruction,
+  buildSelfCritiqueInstruction,
+  JSON_ONLY_INSTRUCTION,
+} from "@/agents/shared/prompt-helpers";
+import { USE_CASES_SYSTEM } from "./system";
+import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+
+const PersonaSchema = z.object({
+  id: z.string().default(""),
+  name: z.string().default(""),
+  description: z.string().default(""),
+});
+const UseCaseSchema = z.object({
+  id: z.string().default(""),
+  title: z.string().default(""),
+  description: z.string().default(""),
+  diagram: z.string().default(""),
+});
+const OutputSchema = z.object({
+  overview: z.string().default(""),
+  personas: z.array(PersonaSchema).default([]),
+  use_cases: z.array(UseCaseSchema).default([]),
+});
+
+const THINKING = buildThinkingInstruction([
+  "מי הם המשתמשים הראשיים של המערכת?",
+  "מה הפעולות הקריטיות שהם מבצעים?",
+  "אילו תרחישים מייצגים את השימוש הנפוץ ביותר?",
+]);
+
+const SELF_CRITIQUE = buildSelfCritiqueInstruction([
+  "יש לפחות 2 personas ו-2 use cases?",
+  "כל use case: ברור מי עושה מה ומה התוצאה?",
+  "שדה diagram ריק (יימולא מאוחר יותר)?",
+]);
+
+function buildPrompt(ctx: AgentContext, reqs: RequirementsOutput): string {
+  const parts: string[] = [];
+  if (ctx.knowledgeBlock) parts.push(ctx.knowledgeBlock);
+  if (ctx.ragContext) parts.push(buildRagBlock(ctx.ragContext));
+  parts.push(THINKING);
+  parts.push("## דרישות המערכת\n" + JSON.stringify(reqs.functional_requirements, null, 2));
+  parts.push("## בקשת המשתמש\n" + ctx.userPrompt);
+  parts.push(`
+סכמת JSON לפלט:
+{
+  "overview": string,
+  "personas": [{ "id": string, "name": string, "description": string }],
+  "use_cases": [{ "id": string, "title": string, "description": string, "diagram": "" }]
+}
+overview: סקירה כללית של המערכת בעברית (פסקה אחת).
+השאר את שדה diagram ריק ("") — יימולא בשלב הבא.
+מינימום: 2 personas, 2 use cases.
+${JSON_ONLY_INSTRUCTION}`);
+  parts.push(SELF_CRITIQUE);
+  return parts.join("\n\n");
+}
+
+export async function runUseCasesAgent(
+  ctx: AgentContext,
+  reqs: RequirementsOutput,
+  gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+): Promise<UseCasesOutput> {
+  const { text } = await generateText({
+    model: gateway(AGENT_MODELS.useCases),
+    system: USE_CASES_SYSTEM,
+    prompt: buildPrompt(ctx, reqs),
+    maxOutputTokens: 3000,
+    temperature: AGENT_TEMPERATURES.useCases,
+  });
+  try {
+    return OutputSchema.parse(JSON.parse(extractJson(text)));
+  } catch {
+    const { text: text2 } = await generateText({
+      model: gateway(AGENT_MODELS.useCases),
+      system: USE_CASES_SYSTEM,
+      prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד.",
+      maxOutputTokens: 3000,
+      temperature: 0,
+    });
+    return OutputSchema.parse(JSON.parse(extractJson(text2)));
+  }
+}

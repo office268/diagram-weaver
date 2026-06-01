@@ -459,41 +459,47 @@ export type Database = {
       }
       uploaded_documents: {
         Row: {
-          char_count: number
-          chunk_count: number
+          char_count: number | null
+          chunk_count: number | null
           created_at: string
+          error_message: string | null
           file_name: string
           file_size: number
           id: string
           mime_type: string
           project_id: string | null
           status: string
+          storage_path: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          char_count?: number
-          chunk_count?: number
+          char_count?: number | null
+          chunk_count?: number | null
           created_at?: string
+          error_message?: string | null
           file_name: string
           file_size?: number
           id?: string
           mime_type: string
           project_id?: string | null
           status?: string
+          storage_path?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          char_count?: number
-          chunk_count?: number
+          char_count?: number | null
+          chunk_count?: number | null
           created_at?: string
+          error_message?: string | null
           file_name?: string
           file_size?: number
           id?: string
           mime_type?: string
           project_id?: string | null
           status?: string
+          storage_path?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -506,6 +512,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_chunks: {
+        Row: {
+          id: string
+          document_id: string
+          user_id: string
+          project_id: string | null
+          chunk_index: number
+          content: string
+          embedding: string | null
+          token_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          user_id: string
+          project_id?: string | null
+          chunk_index?: number
+          content: string
+          embedding?: string | null
+          token_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          user_id?: string
+          project_id?: string | null
+          chunk_index?: number
+          content?: string
+          embedding?: string | null
+          token_count?: number
+          created_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -565,17 +607,19 @@ export type Database = {
       }
       match_document_chunks: {
         Args: {
-          _match_count?: number
-          _project_id: string
-          _query: string
-          _user_id: string
+          query_embedding: string
+          match_project_id: string
+          match_user_id: string
+          match_count?: number
+          min_similarity?: number
         }
-        Returns: {
-          content: string
-          document_id: string
+        Returns: Array<{
           id: string
+          content: string
           similarity: number
-        }[]
+          document_id: string
+          chunk_index: number
+        }>
       }
     }
     Enums: {
