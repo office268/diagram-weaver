@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Save, Wand2, Image as ImageIcon, Globe } from "lucide-react";
+import { Loader2, Save, Wand2, Image as ImageIcon, Globe, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -224,56 +224,92 @@ function AssetField({
             onChange={(e) => onChange(e.target.value)}
             dir="ltr"
           />
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" type="button">
-                <Wand2 className="mr-1.5 h-4 w-4" />
-                ייצר עם AI
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  יצירת {kind === "favicon" ? "פאביקון" : kind === "apple_touch_icon" ? "אייקון התקנה" : "תמונת שיתוף"} עם AI
-                </DialogTitle>
-                <DialogDescription>
-                  תאר במילים את התמונה הרצויה. היא תיווצר ותשובץ אוטומטית.
-                </DialogDescription>
-              </DialogHeader>
-              <Textarea
-                rows={4}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder={
-                  kind === "favicon"
-                    ? "לדוגמה: אייקון מינימליסטי של מסמך עם ניצוץ סגול"
-                    : kind === "apple_touch_icon"
-                      ? "לדוגמה: ריבוע סגול עם אות 'ס' לבנה במרכז"
-                      : "לדוגמה: רקע אבסטרקטי כחול-סגול עם הכיתוב 'סוכן ניתוח מערכות'"
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" type="button">
+                  <Wand2 className="mr-1.5 h-4 w-4" />
+                  ייצר עם AI
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    יצירת {kind === "favicon" ? "פאביקון" : kind === "apple_touch_icon" ? "אייקון התקנה" : "תמונת שיתוף"} עם AI
+                  </DialogTitle>
+                  <DialogDescription>
+                    תאר במילים את התמונה הרצויה. היא תיווצר ותשובץ אוטומטית.
+                  </DialogDescription>
+                </DialogHeader>
+                <Textarea
+                  rows={4}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={
+                    kind === "favicon"
+                      ? "לדוגמה: אייקון מינימליסטי של מסמך עם ניצוץ סגול"
+                      : kind === "apple_touch_icon"
+                        ? "לדוגמה: ריבוע סגול עם אות 'ס' לבנה במרכז"
+                        : "לדוגמה: רקע אבסטרקטי כחול-סגול עם הכיתוב 'סוכן ניתוח מערכות'"
+                  }
+                />
+                <DialogFooter>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setOpen(false)}
+                    disabled={genMut.isPending}
+                  >
+                    ביטול
+                  </Button>
+                  <Button
+                    onClick={() => genMut.mutate()}
+                    disabled={prompt.trim().length < 3 || genMut.isPending}
+                  >
+                    {genMut.isPending ? (
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="mr-1.5 h-4 w-4" />
+                    )}
+                    ייצר
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              disabled={!value}
+              onClick={async () => {
+                try {
+                  const res = await fetch(value);
+                  if (!res.ok) throw new Error("הורדה נכשלה");
+                  const blob = await res.blob();
+                  const ext =
+                    (blob.type.split("/")[1] || "png").split(";")[0] || "png";
+                  const baseName =
+                    kind === "favicon"
+                      ? "favicon"
+                      : kind === "apple_touch_icon"
+                        ? "apple-touch-icon"
+                        : "og-image";
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `${baseName}.${ext}`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "הורדה נכשלה");
                 }
-              />
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => setOpen(false)}
-                  disabled={genMut.isPending}
-                >
-                  ביטול
-                </Button>
-                <Button
-                  onClick={() => genMut.mutate()}
-                  disabled={prompt.trim().length < 3 || genMut.isPending}
-                >
-                  {genMut.isPending ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-1.5 h-4 w-4" />
-                  )}
-                  ייצר
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              }}
+            >
+              <Download className="mr-1.5 h-4 w-4" />
+              הורד
+            </Button>
+          </div>
         </div>
       </div>
     </div>
