@@ -46,6 +46,11 @@ export function LoginLogCard() {
         <div className="flex items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">
             {data ? `${data.rows.length} רשומות אחרונות` : ""}
+            {data && !data.authLogsAvailable ? (
+              <span className="block text-amber-600 dark:text-amber-500 mt-1">
+                היסטוריה מלאה לא זמינה כרגע — מוצגות רק רשומות מהאפליקציה.
+              </span>
+            ) : null}
           </div>
           <Button
             type="button"
