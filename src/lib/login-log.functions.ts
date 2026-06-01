@@ -93,17 +93,96 @@ export const getLoginLog = createServerFn({ method: "GET" })
       }
     }
 
-    // Auth analytics logs (best-effort)
+    // Auth analytics logs via Supabase Management API (best-effort)
     let authLogsAvailable = false;
     try {
-      const projectRef = process.env.SUPABASE_PROJECT_ID || process.env.SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1];
-      // analytics is only reachable via management API which we don't have; skip silently.
-      // (Auth logs require the management API; not available from worker runtime.)
-      void projectRef;
-    } catch {
+      const pat = process.env.CLOUD_MANAGEMENT_PAT;
+      const projectRef =
+        process.env.SUPABASE_PROJECT_ID ||
+        process.env.SUPABASE_URL?.match(/https:\/\/([^.]+)\./)?.[1];
+
+      if (pat && projectRef) {
+        const sql = `
+          select id, timestamp, event_message,
+                 metadata.msg as msg,
+                 metadata.status as status,
+                 metadata.path as path,
+                 metadata.error as error,
+                 metadata.remote_addr as remote_addr,
+                 metadata.user_id as auth_user_id,
+                 metadata.login_method as login_method,
+                 metadata.provider as provider
+          from auth_logs
+          cross join unnest(metadata) as metadata
+          order by timestamp desc
+          limit 200
+        `;
+        const url = `https://api.supabase.com/v1/projects/${projectRef}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`;
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${pat}` },
+        });
+
+        if (res.ok) {
+          authLogsAvailable = true;
+          const json = (await res.json()) as { result?: Array<Record<string, unknown>> };
+          const result = json.result ?? [];
+          for (const r of result) {
+            const msg = (r.msg as string | null) ?? null;
+            const statusStr = (r.status as string | number | null)?.toString() ?? null;
+            const statusNum = statusStr ? parseInt(statusStr, 10) : NaN;
+            const errorVal = (r.error as string | null) ?? null;
+            const path = (r.path as string | null) ?? null;
+
+            // Filter to only meaningful auth events
+            const isAuthEvent =
+              msg === "Login" ||
+              msg === "Logout" ||
+              msg === "Signup" ||
+              msg === "User Recovery Requested" ||
+              path === "/token" ||
+              path === "/signup" ||
+              path === "/recover" ||
+              path === "/logout" ||
+              (!isNaN(statusNum) && statusNum >= 400);
+            if (!isAuthEvent) continue;
+
+            const isError = !!errorVal || (!isNaN(statusNum) && statusNum >= 400);
+            const event =
+              msg === "Logout" || path === "/logout"
+                ? "signed_out"
+                : msg === "Signup" || path === "/signup"
+                  ? "signed_up"
+                  : "signed_in";
+
+            const ts = r.timestamp as number | string;
+            const created_at =
+              typeof ts === "number"
+                ? new Date(ts / 1000).toISOString() // microseconds → ms
+                : new Date(ts).toISOString();
+
+            rows.push({
+              id: `auth:${(r.id as string) ?? created_at}`,
+              source: "auth",
+              created_at,
+              email: null,
+              provider: (r.provider as string | null) ?? (r.login_method as string | null) ?? null,
+              event,
+              status: isError ? "error" : event === "signed_out" ? "info" : "success",
+              ip: (r.remote_addr as string | null) ?? null,
+              user_agent: null,
+              message: errorVal ?? msg ?? null,
+            });
+          }
+        } else {
+          console.error("auth logs fetch failed:", res.status, await res.text().catch(() => ""));
+        }
+      }
+    } catch (e) {
+      console.error("auth logs fetch error:", (e as Error).message);
       authLogsAvailable = false;
     }
 
     rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-    return { rows: rows.slice(0, 200), authLogsAvailable };
+    return { rows: rows.slice(0, 300), authLogsAvailable };
   });

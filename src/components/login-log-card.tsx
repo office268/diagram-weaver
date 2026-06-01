@@ -46,6 +46,11 @@ export function LoginLogCard() {
         <div className="flex items-center justify-between gap-2">
           <div className="text-xs text-muted-foreground">
             {data ? `${data.rows.length} רשומות אחרונות` : ""}
+            {data && !data.authLogsAvailable ? (
+              <span className="block text-amber-600 dark:text-amber-500 mt-1">
+                היסטוריה מלאה לא זמינה כרגע — מוצגות רק רשומות מהאפליקציה.
+              </span>
+            ) : null}
           </div>
           <Button
             type="button"
@@ -80,6 +85,7 @@ export function LoginLogCard() {
                   <th className="py-2 pl-3 font-medium">אימייל</th>
                   <th className="py-2 pl-3 font-medium">ספק</th>
                   <th className="py-2 pl-3 font-medium">סטטוס</th>
+                  <th className="py-2 pl-3 font-medium">מקור</th>
                   <th className="py-2 pl-3 font-medium">IP</th>
                   <th className="py-2 font-medium">דפדפן</th>
                 </tr>
@@ -93,6 +99,11 @@ export function LoginLogCard() {
                     <td className="py-2 pl-3 text-foreground">{r.email ?? "—"}</td>
                     <td className="py-2 pl-3 text-muted-foreground">{r.provider ?? "—"}</td>
                     <td className="py-2 pl-3">{statusBadge(r)}</td>
+                    <td className="py-2 pl-3">
+                      <Badge variant="outline" className="text-[10px]">
+                        {r.source === "app" ? "אפליקציה" : "Auth"}
+                      </Badge>
+                    </td>
                     <td className="py-2 pl-3 tabular-nums text-muted-foreground">
                       {r.ip ?? "—"}
                     </td>
