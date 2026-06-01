@@ -99,6 +99,10 @@ function SettingsPage() {
 
       {isAdmin ? (
         <>
+          <SettingsSection title="לוג התחברויות" description="כל ניסיונות ההתחברות לאתר.">
+            <LoginLogCard />
+          </SettingsSection>
+
           <SettingsSection title="מטא־דאטה של האפליקציה" description="כותרת, תיאור ותגי שיתוף.">
             <AppMetadataCard />
           </SettingsSection>
