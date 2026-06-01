@@ -6,21 +6,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "מסמכי אפיון שכותבים את עצמם — סוכן ניתוח מערכות" },
-      {
-        name: "description",
-        content:
-          "תארו את המערכת במילים שלכם — הסוכן יבנה דרישות פונקציונליות, הנחות יסוד, פרסונות, תרחישי שימוש, ארכיטקטורה ומודל נתונים. כל סעיף ניתן לעריכה.",
-      },
-      { property: "og:title", content: "מסמכי אפיון שכותבים את עצמם — סוכן ניתוח מערכות" },
-      {
-        property: "og:description",
-        content:
-          "תארו את המערכת במילים שלכם — הסוכן יבנה אפיון על מלא: דרישות, פרסונות, ארכיטקטורה ומודל נתונים.",
-      },
-      { property: "og:url", content: "/" },
-    ],
+    // כותרת/תיאור ו-OG נשלטים מ-Settings → "מטא-דאטא של האפליקציה"
+    // (מוגדרים בראוט השורש). כאן רק canonical ו-og:url ספציפיים לעמוד.
+    meta: [{ property: "og:url", content: "/" }],
     links: [{ rel: "canonical", href: "/" }],
   }),
   component: Landing,
