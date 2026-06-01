@@ -19,6 +19,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
+import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -76,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
   id: '/api/review-spec',
   path: '/api/review-spec',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIngestDocumentRoute = ApiIngestDocumentRouteImport.update({
+  id: '/api/ingest-document',
+  path: '/api/ingest-document',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImproveSectionRoute = ApiImproveSectionRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
+  '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
+  '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
+  '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/generate-spec'
     | '/api/improve-section'
+    | '/api/ingest-document'
     | '/api/review-spec'
     | '/editor/$id'
     | '/projects/$projectId'
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/generate-spec'
     | '/api/improve-section'
+    | '/api/ingest-document'
     | '/api/review-spec'
     | '/editor/$id'
     | '/projects/$projectId'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/api/generate-spec'
     | '/api/improve-section'
+    | '/api/ingest-document'
     | '/api/review-spec'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
+  ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       path: '/api/review-spec'
       fullPath: '/api/review-spec'
       preLoaderRoute: typeof ApiReviewSpecRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ingest-document': {
+      id: '/api/ingest-document'
+      path: '/api/ingest-document'
+      fullPath: '/api/ingest-document'
+      preLoaderRoute: typeof ApiIngestDocumentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/improve-section': {
@@ -441,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
   ApiImproveSectionRoute: ApiImproveSectionRoute,
+  ApiIngestDocumentRoute: ApiIngestDocumentRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
