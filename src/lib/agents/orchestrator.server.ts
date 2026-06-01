@@ -97,14 +97,14 @@ function buildAgentPrompt(
   return lines.join("\n");
 }
 
-async function runStructured<T>(
+async function runStructured<S extends z.ZodTypeAny>(
   apiKey: string,
   model: string,
   system: string,
   prompt: string,
-  schema: z.ZodType<T>,
+  schema: S,
   maxOutputTokens: number,
-): Promise<T> {
+): Promise<z.output<S>> {
   const gateway = createLovableAiGatewayProvider(apiKey);
   const { output } = await generateText({
     model: gateway(model),
@@ -113,7 +113,10 @@ async function runStructured<T>(
     maxOutputTokens,
     output: Output.object({ schema }),
   });
-  return output as T;
+  // The AI SDK's inferred type uses the schema's INPUT type (where .default
+  // makes fields optional); the runtime value is the OUTPUT type with all
+  // defaults applied. Re-parse to satisfy TypeScript and guarantee shape.
+  return schema.parse(output) as z.output<S>;
 }
 
 // ─── Agents ──────────────────────────────────────────────────────────────────

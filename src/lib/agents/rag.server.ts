@@ -60,7 +60,7 @@ export async function retrieveContext(params: {
 
   const { data, error } = await supabaseAdmin.rpc("match_document_chunks", {
     _user_id: userId,
-    _project_id: projectId,
+    _project_id: (projectId ?? null) as unknown as string,
     _query: queryEmbedding as unknown as string, // pgvector accepts array-like
     _match_count: matchCount,
   });
