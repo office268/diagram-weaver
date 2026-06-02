@@ -22,7 +22,7 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "סוכן ניתוח מערכות — כניסה" },
+      { title: "System Analyst Assist — כניסה" },
       { name: "description", content: "מסמכי אפיון שנכתבים בעצמם, בעזרת AI." },
       { property: "og:url", content: "/" },
     ],
@@ -126,17 +126,17 @@ function Landing() {
               className="relative flex h-16 w-16 rotate-45 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg"
               style={{ boxShadow: "var(--shadow-elegant, 0 10px 30px -10px hsl(var(--primary) / 0.5))" }}
             >
-              <Gem className="h-7 w-7 -rotate-45 text-primary-foreground" />
+              <Sparkles className="h-7 w-7 -rotate-45 text-primary-foreground" />
             </div>
           </div>
         </div>
 
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            סוכן ניתוח מערכות
+            System Analyst Assist
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            מסמכי אפיון שנכתבים בעצמם, בעזרת AI
+            ניתוח מערכות במהירות ה-AI ובאיכות של מומחים
           </p>
         </div>
 
