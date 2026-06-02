@@ -175,6 +175,16 @@ function AuthBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthBridge />
+      <RootProviders />
+      <Toaster richColors position="top-right" />
+    </QueryClientProvider>
+  );
+}
+
+function RootProviders() {
   const loaderData = Route.useLoaderData();
   const { user } = useAuth();
   const isAdminFn = useServerFn(getIsAdmin);
@@ -185,17 +195,13 @@ function RootComponent() {
     staleTime: 5 * 60 * 1000,
   });
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthBridge />
-      <SiteTextsProvider
-        initialTexts={loaderData?.siteTexts ?? {}}
-        isAdmin={adminData?.isAdmin ?? false}
-      >
-        <PaymentTestModeBanner />
-        <Outlet />
-      </SiteTextsProvider>
-      <Toaster richColors position="top-right" />
-    </QueryClientProvider>
+    <SiteTextsProvider
+      initialTexts={loaderData?.siteTexts ?? {}}
+      isAdmin={adminData?.isAdmin ?? false}
+    >
+      <PaymentTestModeBanner />
+      <Outlet />
+    </SiteTextsProvider>
   );
 }
 
