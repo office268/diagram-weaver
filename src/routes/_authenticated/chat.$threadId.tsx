@@ -572,12 +572,8 @@ function ChatPage() {
                       className="h-8 gap-1 rounded-full px-2 text-xs text-muted-foreground hover:text-foreground"
                       title={`מצב: ${MODE_META[mode].label}`}
                     >
-                      {(() => {
-                        const Icon = MODE_META[mode].icon;
-                        return <Icon className="h-3.5 w-3.5" />;
-                      })()}
                       <span className="hidden sm:inline">{MODE_META[mode].label}</span>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
