@@ -48,6 +48,8 @@ interface RunParams {
   previousSpec?: Record<string, unknown>;
   reviewerNotes?: string[];
   emit: ProgressEmitter;
+  /** Called as soon as the initial spec is assembled, before the review runs. */
+  onSpecReady?: (spec: SpecOutput) => void;
 }
 
 export interface OrchestratorResult {
