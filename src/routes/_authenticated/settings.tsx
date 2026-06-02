@@ -15,6 +15,7 @@ import { LoginLogCard } from "@/components/login-log-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
+import { AiUsageCard } from "@/components/ai-usage-card";
 import {
   getAiSettings,
   updateBusinessKnowledge,
