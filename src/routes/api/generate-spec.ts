@@ -97,6 +97,8 @@ export const Route = createFileRoute("/api/generate-spec")({
             // the client's first-`{`-to-last-`}` JSON extraction.
             const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
+            let specEmitted = false;
+
             try {
               const result = await runOrchestrator(
                 {
@@ -108,13 +110,20 @@ export const Route = createFileRoute("/api/generate-spec")({
                   previousSpec: body.previousSpec,
                   reviewerNotes: body.reviewerNotes,
                   emit: safeEnqueue,
+                  // Stream the spec to the client as soon as it's ready,
+                  // before the (slow) review agent runs.
+                  onSpecReady: (spec) => {
+                    if (specEmitted) return;
+                    specEmitted = true;
+                    safeEnqueue(JSON.stringify(spec));
+                    safeEnqueue("\n__REVIEW__\n");
+                  },
                 },
                 {
-                  // Skip review-driven iterations in the request path to
-                  // stay within the upstream timeout. The client already
-                  // runs a separate /api/review-spec call afterwards.
+                  // Cap iterations so the spec we streamed early matches the
+                  // final spec; the review runs once at the end.
                   maxIterations: 1,
-                  skipReview: true,
+                  skipReview: false,
                   canSpendIterationCredit: async () => false,
                 },
               );
@@ -123,7 +132,26 @@ export const Route = createFileRoute("/api/generate-spec")({
                 `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
               );
 
-              safeEnqueue(JSON.stringify(result.spec));
+              // Fallback: if onSpecReady never fired (shouldn't happen), emit now.
+              if (!specEmitted) {
+                safeEnqueue(JSON.stringify(result.spec));
+                safeEnqueue("\n__REVIEW__\n");
+              }
+
+              if (result.review) {
+                // Normalize to the same shape as /api/review-spec returns:
+                // { score, notes: [{ id, text, importance }] }
+                const notes = result.review.notes
+                  .map((n, i) => ({
+                    id: `n-${i + 1}`,
+                    text: (n.text ?? "").trim().slice(0, 500),
+                    importance: n.importance,
+                  }))
+                  .filter((n) => n.text.length > 0);
+                safeEnqueue(
+                  JSON.stringify({ score: result.review.score, notes }),
+                );
+              }
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               console.error("[generate-spec] error:", err);
