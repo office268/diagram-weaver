@@ -44,10 +44,10 @@ function AuthenticatedLayout() {
               <UserMenu user={user} />
             </div>
 
-            <nav className="flex items-center gap-1.5 sm:gap-2">
+            <nav className="flex items-start gap-3 sm:gap-4">
               <Link
                 to="/dashboard"
-                className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 sm:text-sm"
+                className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-primary transition-opacity hover:opacity-80 sm:text-xs"
               >
                 <Workflow className="h-4 w-4" />
                 <span>ניתוח מערכות</span>
@@ -55,20 +55,20 @@ function AuthenticatedLayout() {
               <button
                 type="button"
                 onClick={() => toast.info("ניהול פרויקט — בקרוב")}
-                className="relative flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent sm:text-sm"
+                className="relative flex flex-col items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-xs"
               >
                 <KanbanSquare className="h-4 w-4" />
                 <span>ניהול פרויקט</span>
-                <span className="absolute -top-1.5 -end-1.5 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
+                <span className="absolute -top-2 -end-3 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
               </button>
               <button
                 type="button"
                 onClick={() => toast.info("ניהול מוצר — בקרוב")}
-                className="relative flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent sm:text-sm"
+                className="relative flex flex-col items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-xs"
               >
                 <Rocket className="h-4 w-4" />
                 <span>ניהול מוצר</span>
-                <span className="absolute -top-1.5 -end-1.5 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
+                <span className="absolute -top-2 -end-3 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
               </button>
             </nav>
 
