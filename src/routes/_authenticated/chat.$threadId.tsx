@@ -541,7 +541,7 @@ function ChatPage() {
           </div>
 
           <p className="mx-auto mt-2 max-w-3xl text-[11px] text-muted-foreground">
-            Enter לשליחה · Shift+Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
+            Shift+Enter לשליחה · Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
           </p>
         </div>
       </div>
