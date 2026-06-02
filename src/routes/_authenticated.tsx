@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tansta
 import { useEffect } from "react";
 import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 
@@ -61,14 +61,17 @@ function AuthenticatedLayout() {
               )}
             </Link>
 
-            <button
-              type="button"
-              onClick={() => toast.info("ניהול פרויקט — בקרוב")}
+            <Link
+              to="/projects-management"
               className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
             >
               <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
               <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
-            </button>
+              {location.pathname.startsWith("/projects-management") && (
+                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
+              )}
+            </Link>
+
 
             <Link
               to="/product"

@@ -1,38 +1,35 @@
-
 ## מטרה
-החלפת ה-Toast "ניהול מוצר — בקרוב" בניווט אמיתי לעמוד `/product` שבו תוצג תפזורת מילים מעוצבת עד שיהיו הכלים בפועל.
+החלפת ה-Toast "ניהול פרויקט — בקרוב" בניווט אמיתי לעמוד `/projects-management` עם תפזורת מילים בסגנון של עמוד ניהול מוצר.
 
 ## שינויים
 
-### 1. עמוד חדש `src/routes/_authenticated/product.tsx`
-- `createFileRoute("/_authenticated/product")` עם `head()` (כותרת + תיאור).
-- מסך מלא (`min-h-[calc(100vh-...)]`) עם רקע עדין (gradient מ-`--background` ל-`--muted`).
-- כותרת קטנה למעלה: "ניהול מוצר — בקרוב כלים ייעודיים".
-- מתחתיה אזור מרכזי שמציג תפזורת של 6 מילים:
+### 1. עמוד חדש `src/routes/_authenticated/projects-management.tsx`
+- מבנה זהה ל-`product.tsx`: רקע radial-gradient, כותרת עליונה ("ניהול פרויקטים — בקרוב כלים ייעודיים"), ואזור תפזורת מרכזי.
+- מילים (חשיבות → גודל, זוויות מגוונות):
 
-| מילה | גודל יחסי (חשיבות) | זווית |
+| מילה | גודל | זווית/מיקום |
 |---|---|---|
-| User Journey | text-7xl/8xl | -12° |
-| KPIs | text-6xl | 90° (אנכי) |
-| Persona | text-7xl | 8° |
-| Backlog | text-5xl | -90° |
-| Roadmap | text-8xl | 0° (אופקי, מודגש) |
-| MVP | text-6xl | 25° |
+| Gantt | text-8xl/9xl (מרכז, מודגש) | -2° |
+| Timeline | text-7xl | -10°, שמאל-עליון |
+| Milestone | text-6xl | 8°, ימין-עליון |
+| Scope | text-5xl/6xl | -90° (אנכי, שמאל) |
+| Risk Management | text-5xl | 90° (אנכי, ימין) |
+| Resource Allocation | text-5xl/6xl | 12°, תחתון-שמאל |
+| Velocity | text-6xl italic | -8°, תחתון-מרכז |
+| Bottleneck | text-4xl/5xl | 18°, תחתון-ימין |
+| Dependency | text-3xl/4xl light/italic | -14°, מעל המרכז |
 
-- מיקום ע"י `absolute` בתוך container `relative` עם אחוזים (top/left), כך שזה רספונסיבי. בנייד נצמצם גדלים (`text-3xl`–`text-6xl`).
-- צבעים מה-design tokens בלבד (`text-primary`, `text-foreground`, `text-muted-foreground`, `text-accent-foreground`) ברמות `opacity` שונות כדי להוסיף עומק.
-- פונט: `font-serif`/`font-bold`/`tracking-tight` משולב — חלק `italic` להבדל ויזואלי.
-- אנימציית כניסה עדינה (`animate-in fade-in` + `slide-in` עם delays שונים) ללא תלות בספריות חדשות.
+- הופעת "Bottleneck" ו-"Dependency" כפולה ברשימת המשתמש — אציג כל אחת פעם אחת בלבד (אין ערך ויזואלי בכפילות + נמנע מ-DOM duplicates).
+- font-serif, opacity ו-italic מעורבים לעומק; אנימציית `animate-fade-in` עם delays.
+- responsive: גדלים קטנים יותר ב-sm/md viewport (384px).
 
 ### 2. עדכון `src/routes/_authenticated.tsx`
-- שורה 73-80: להחליף את ה-`<button onClick={toast.info(...)}>` ב-`<Link to="/product">` עם אותו עיצוב, ולהוסיף הדגשת active דומה לזו של "ניתוח מערכות" (`isProduct = location.pathname.startsWith("/product")`).
-- להסיר `Rocket` מהשורות אם לא נחוץ — להשאיר את האייקון.
+- שורות 73-80: החלפת ה-`<button onClick={toast.info(...)}>` של ניהול פרויקטים ב-`<Link to="/projects-management">` (אותו עיצוב), כולל הדגשת active (`location.pathname.startsWith("/projects-management")`).
+- ניקוי import של `toast` אם אינו בשימוש נוסף.
 
-### לא נוגעים
-- כפתור "ניהול פרויקט" נשאר עם ה-Toast (לא נתבקש).
-- אין שינוי backend / DB / auth.
+## לא נוגעים
+- backend / DB / auth — ללא שינוי.
+- כפתורים אחרים נשארים.
 
-## פרטים טכניים
-- אין תלות חדשה.
-- שימוש ב-Tailwind בלבד עבור rotation (`rotate-[-12deg]`, `[writing-mode:vertical-rl]` למילים אנכיות) — כל הזוויות דרך arbitrary values.
-- responsive: בreakpoint `sm`/`md` נחליף גדלים ומיקומים כדי שלא ייחתך בנייד (384px viewport נוכחי).
+## הערה
+שם הroute הוא `/projects-management` (ולא `/projects`) כדי לא להתנגש עם `/projects/$projectId` ו-`/projects` הקיימים תחת `_authenticated/projects.*`.
