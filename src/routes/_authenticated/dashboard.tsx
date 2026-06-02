@@ -1,10 +1,30 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -16,9 +36,45 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: HomePage,
 });
 
+const STORAGE_PREFIX = "dashboard-tile-order:";
+
+function loadOrder(userId: string | undefined): OutputKey[] {
+  const defaults = [...OUTPUT_TYPE_ORDER];
+  if (!userId || typeof window === "undefined") return defaults;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + userId);
+    if (!raw) return defaults;
+    const saved = JSON.parse(raw) as string[];
+    const valid = saved.filter((k): k is OutputKey =>
+      (OUTPUT_TYPE_ORDER as readonly string[]).includes(k),
+    );
+    // merge any new keys not present in saved order at the end
+    const missing = defaults.filter((k) => !valid.includes(k));
+    return [...valid, ...missing];
+  } catch {
+    return defaults;
+  }
+}
+
+function saveOrder(userId: string | undefined, order: OutputKey[]) {
+  if (!userId || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(order));
+  } catch {
+    // ignore
+  }
+}
+
 function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const createFn = useServerFn(createChatThread);
+
+  const [order, setOrder] = useState<OutputKey[]>(() => loadOrder(user?.id));
+
+  useEffect(() => {
+    setOrder(loadOrder(user?.id));
+  }, [user?.id]);
 
   const createMut = useMutation({
     mutationFn: (outputType: OutputKey) =>
@@ -29,48 +85,117 @@ function HomePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 220, tolerance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 220, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setOrder((prev) => {
+      const oldIndex = prev.indexOf(active.id as OutputKey);
+      const newIndex = prev.indexOf(over.id as OutputKey);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      saveOrder(user?.id, next);
+      return next;
+    });
+  };
+
+  const items = useMemo(() => order, [order]);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
-      <div className="grid flex-1 auto-rows-min content-evenly grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
-        {OUTPUT_TYPE_ORDER.map((key, i) => {
-          const t = OUTPUT_TYPES[key];
-          const Icon = t.icon;
-          const isPending = createMut.isPending && createMut.variables === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              disabled={createMut.isPending}
-              onClick={() => createMut.mutate(key)}
-              className="cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50"
-              style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
-            >
-              <span
-                className={`absolute top-2 end-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent ring-1 ring-border/60 ${t.colorClass}`}
-                aria-label="AI"
-                title="AI"
-              >
-                <Sparkles className="h-3 w-3" />
-              </span>
-              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent sm:h-14 sm:w-14 ${t.colorClass}`}>
-                {isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin sm:h-7 sm:w-7" />
-                ) : (
-                  <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
-                )}
-              </div>
-              <div className="min-w-0 px-1">
-                <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-foreground sm:text-sm">
-                  {t.label}
-                </div>
-                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
-                  {t.description}
-                </p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items} strategy={rectSortingStrategy}>
+          <div className="grid flex-1 auto-rows-min content-evenly grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+            {items.map((key, i) => (
+              <SortableTile
+                key={key}
+                outputKey={key}
+                index={i}
+                pending={createMut.isPending && createMut.variables === key}
+                disabled={createMut.isPending}
+                onActivate={() => createMut.mutate(key)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
+  );
+}
+
+function SortableTile({
+  outputKey,
+  index,
+  pending,
+  disabled,
+  onActivate,
+}: {
+  outputKey: OutputKey;
+  index: number;
+  pending: boolean;
+  disabled: boolean;
+  onActivate: () => void;
+}) {
+  const t = OUTPUT_TYPES[outputKey];
+  const Icon = t.icon;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: outputKey,
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    animationDelay: `${index * 30}ms`,
+    animationFillMode: "backwards",
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.85 : undefined,
+    touchAction: "manipulation",
+  };
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      disabled={disabled}
+      onClick={onActivate}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50 ${
+        isDragging ? "shadow-lg ring-2 ring-primary/40" : ""
+      }`}
+    >
+      <span
+        className={`absolute top-2 end-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent ring-1 ring-border/60 ${t.colorClass}`}
+        aria-label="AI"
+        title="AI"
+      >
+        <Sparkles className="h-3 w-3" />
+      </span>
+      <div
+        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent sm:h-14 sm:w-14 ${t.colorClass}`}
+      >
+        {pending ? (
+          <Loader2 className="h-5 w-5 animate-spin sm:h-7 sm:w-7" />
+        ) : (
+          <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
+        )}
+      </div>
+      <div className="min-w-0 px-1">
+        <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-foreground sm:text-sm">
+          {t.label}
+        </div>
+        <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{t.description}</p>
+      </div>
+    </button>
   );
 }
