@@ -22,6 +22,7 @@ import {
   ListChecks,
   Hammer,
   ChevronDown,
+  ChevronUp,
   Check,
 } from "lucide-react";
 import {
