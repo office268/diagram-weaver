@@ -42,6 +42,17 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   component: ChatPage,
 });
 
+interface Attachment {
+  id: string;
+  name: string;
+  size: number;
+  status: "uploading" | "ready";
+  text?: string;
+  truncated?: boolean;
+}
+
+
+
 function ChatPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
