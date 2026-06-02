@@ -44,7 +44,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getDocTypeVisual } from "@/lib/doc-types";
+import { getDocTypeVisual, getDocType } from "@/lib/doc-types";
+
+const DOC_TYPE_EN: Record<string, string> = {
+  business_requirements: "Business Requirements Document (BRD)",
+  technical_requirements: "Technical Requirements Document (TRD)",
+  initiation: "Project Initiation Document",
+  spec_overview: "High-Level Design (HLD)",
+  spec_detailed: "Low-Level Design (LLD)",
+};
 import { getProject } from "@/lib/project.functions";
 import {
   DndContext,
@@ -1199,15 +1207,67 @@ function EditorPage() {
                 "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
               )}
             >
-              <div className="flex-1 flex items-center justify-center text-center">
-                <h1 className="text-3xl sm:text-5xl font-bold leading-tight text-foreground">
-                  {title || "מסמך"}
-                </h1>
+              <div className="flex-1 flex flex-col">
+                <div className="text-center space-y-4 pt-8 sm:pt-16">
+                  <div className="text-sm sm:text-base text-muted-foreground font-medium">
+                    {projectName || "ללא פרויקט"}
+                  </div>
+                  <h1 className="text-3xl sm:text-5xl font-bold leading-tight text-foreground">
+                    {title || "מסמך"}
+                  </h1>
+                  <div className="space-y-1">
+                    <div className="text-base sm:text-lg text-foreground">
+                      {getDocType(docType).label}
+                    </div>
+                    <div className="text-sm sm:text-base text-muted-foreground" dir="ltr">
+                      {DOC_TYPE_EN[docType ?? "spec_overview"] ?? DOC_TYPE_EN.spec_overview}
+                    </div>
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground pt-2">
+                    {(() => {
+                      const d = (data?.spec as { updated_at?: string } | undefined)?.updated_at;
+                      const dateStr = d
+                        ? new Date(d).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric" })
+                        : new Date().toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "numeric" });
+                      const variant = (data?.spec as { variant?: string } | undefined)?.variant;
+                      const versionLabel = variant === "revised" ? "גרסה 2.0" : "גרסה 1.0";
+                      return `${dateStr} · ${versionLabel}`;
+                    })()}
+                  </div>
+                </div>
+                <div className="mt-12 sm:mt-16 border-t border-border pt-6 sm:pt-8">
+                  <h2 className="text-lg sm:text-xl font-semibold mb-4 text-foreground">תוכן עניינים</h2>
+                  <ol className="space-y-2">
+                    {visibleSections.map((key, i) => {
+                      const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+                      const titleValue = sectionTitles[key] ?? def.defaultTitle;
+                      const pageNum = i + 2;
+                      return (
+                        <li key={key}>
+                          <a
+                            href={`#section-${key}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="flex items-baseline gap-2 text-sm sm:text-base text-foreground hover:text-primary transition-colors group"
+                          >
+                            <span className="font-medium tabular-nums">{i + 1}.</span>
+                            <span className="group-hover:underline">{titleValue}</span>
+                            <span className="flex-1 border-b border-dotted border-muted-foreground/40 mx-2 translate-y-[-3px]" />
+                            <span className="text-xs text-muted-foreground tabular-nums">עמוד {pageNum}</span>
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
               </div>
               <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
                 עמוד 1 מתוך {visibleSections.length + 1}
               </footer>
             </article>
+
 
             <DndContext
               sensors={dndSensors}
@@ -1228,8 +1288,9 @@ function EditorPage() {
                     <SortableSection key={key} id={key}>
                       {(dragHandle) => (
                         <article
+                          id={`section-${key}`}
                           className={cn(
-                            "group/section rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+                            "group/section scroll-mt-20 rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
                             "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0 transition-opacity",
                             focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
                           )}
