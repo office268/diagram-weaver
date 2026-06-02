@@ -1114,6 +1114,35 @@ function EditorPage() {
         >
           <Italic className="h-4 w-4" />
         </Button>
+        <div className="mx-1 h-5 w-px bg-border" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="קפיצה לסעיף"
+              aria-label="קפיצה לסעיף"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent dir="rtl" align="center" className="max-h-80 overflow-y-auto">
+            {visibleSections.map((key, idx) => (
+              <DropdownMenuItem
+                key={key}
+                onSelect={() => {
+                  const el = document.getElementById(`section-${key}`);
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                <span className="tabular-nums text-muted-foreground ms-2">{idx + 1}.</span>
+                <span className="truncate">{sectionTitles[key] ?? key}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
 
