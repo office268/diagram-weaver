@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, FileText, Settings } from "lucide-react";
+import { Home, FileText } from "lucide-react";
 
 interface ItemProps {
   active: boolean;
