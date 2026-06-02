@@ -26,6 +26,7 @@ import { Route as ApiGenerateSpecV2RouteImport } from './routes/api/generate-spe
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
+import { Route as ApiChatAttachRouteImport } from './routes/api/chat-attach'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -120,6 +121,11 @@ const ApiChatMessageRoute = ApiChatMessageRouteImport.update({
   path: '/api/chat-message',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatAttachRoute = ApiChatAttachRouteImport.update({
+  id: '/api/chat-attach',
+  path: '/api/chat-attach',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/settings'
+    | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/settings'
+    | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/settings'
+    | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
@@ -348,6 +360,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiChatAttachRoute: typeof ApiChatAttachRoute
   ApiChatMessageRoute: typeof ApiChatMessageRoute
   ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat-attach': {
+      id: '/api/chat-attach'
+      path: '/api/chat-attach'
+      fullPath: '/api/chat-attach'
+      preLoaderRoute: typeof ApiChatAttachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -582,6 +602,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiChatAttachRoute: ApiChatAttachRoute,
   ApiChatMessageRoute: ApiChatMessageRoute,
   ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
