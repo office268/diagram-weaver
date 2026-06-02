@@ -13,6 +13,7 @@ import {
   Server,
   Database,
   BookOpen,
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,7 +23,8 @@ export type DocumentOutputKey =
   | "initiation"
   | "spec_overview"
   | "spec_detailed"
-  | "user_guide";
+  | "user_guide"
+  | "meeting_summary";
 
 
 export type DiagramOutputKey =
