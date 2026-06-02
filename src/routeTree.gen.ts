@@ -25,12 +25,15 @@ import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-sect
 import { Route as ApiGenerateSpecV2RouteImport } from './routes/api/generate-spec-v2'
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
+import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
+import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
@@ -112,9 +115,19 @@ const ApiDeleteDocumentRoute = ApiDeleteDocumentRouteImport.update({
   path: '/api/delete-document',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatMessageRoute = ApiChatMessageRouteImport.update({
+  id: '/api/chat-message',
+  path: '/api/chat-message',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -144,6 +157,12 @@ const AuthenticatedEditorIdRoute = AuthenticatedEditorIdRouteImport.update({
   path: '/editor/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedChatThreadIdRoute =
+  AuthenticatedChatThreadIdRouteImport.update({
+    id: '/chat/$threadId',
+    path: '/chat/$threadId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -162,7 +181,9 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
@@ -170,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -186,7 +208,9 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/documents': typeof AuthenticatedDocumentsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
@@ -194,6 +218,7 @@ export interface FileRoutesByTo {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -212,7 +237,9 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
@@ -220,6 +247,7 @@ export interface FileRoutesById {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -238,7 +266,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/billing'
     | '/dashboard'
+    | '/documents'
     | '/settings'
+    | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
@@ -246,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/projects/'
@@ -262,7 +293,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/billing'
     | '/dashboard'
+    | '/documents'
     | '/settings'
+    | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
@@ -270,6 +303,7 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/projects'
@@ -287,7 +321,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
+    | '/_authenticated/documents'
     | '/_authenticated/settings'
+    | '/api/chat-message'
     | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
@@ -295,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/_authenticated/chat/$threadId'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/'
@@ -311,6 +348,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiChatMessageRoute: typeof ApiChatMessageRoute
   ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
   ApiGenerateSpecV2Route: typeof ApiGenerateSpecV2Route
@@ -435,11 +473,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeleteDocumentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat-message': {
+      id: '/api/chat-message'
+      path: '/api/chat-message'
+      fullPath: '/api/chat-message'
+      preLoaderRoute: typeof ApiChatMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/documents': {
+      id: '/_authenticated/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
@@ -477,6 +529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditorIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/chat/$threadId': {
+      id: '/_authenticated/chat/$threadId'
+      path: '/chat/$threadId'
+      fullPath: '/chat/$threadId'
+      preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -490,7 +549,9 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
@@ -499,7 +560,9 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
@@ -519,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiChatMessageRoute: ApiChatMessageRoute,
   ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
   ApiGenerateSpecV2Route: ApiGenerateSpecV2Route,
