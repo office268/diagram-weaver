@@ -116,7 +116,6 @@ export const Route = createFileRoute("/_authenticated/editor/$id")({
 
 // Default ordered list of section keys + their default Hebrew titles.
 const DEFAULT_SECTIONS: { key: string; defaultTitle: string }[] = [
-  { key: "user_prompt", defaultTitle: "הפרומפט של המשתמש" },
   { key: "overview", defaultTitle: "סקירה כללית" },
   { key: "goals", defaultTitle: "מטרות" },
   { key: "personas", defaultTitle: "משתמשי קצה" },
@@ -127,7 +126,6 @@ const DEFAULT_SECTIONS: { key: string; defaultTitle: string }[] = [
   { key: "architecture", defaultTitle: "ארכיטקטורה" },
   { key: "data_model", defaultTitle: "מודל נתונים" },
   { key: "risks", defaultTitle: "סיכונים" },
-  { key: "review", defaultTitle: "ביקורת הסוכן המבקר" },
   { key: "user_notes", defaultTitle: "ההערות שלי" },
 ];
 const DEFAULT_KEYS = DEFAULT_SECTIONS.map((s) => s.key);
