@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff } from "lucide-react";
+import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { SwipeableRow } from "@/components/swipeable-row";
 import { PullToRefreshIndicator } from "@/components/pull-to-refresh-indicator";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { useSiteTexts } from "@/lib/site-texts-context";
 
 import {
   listProjects,
@@ -16,6 +17,7 @@ import {
   deleteProject,
   toggleProjectPin,
 } from "@/lib/project.functions";
+import { generateProjectIdea } from "@/lib/project-ideas.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
