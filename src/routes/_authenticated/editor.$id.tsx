@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare, Share2 } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare, Share2, History } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -168,6 +168,7 @@ function EditorPage() {
   const [, setTick] = useState(0);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("editor-focus-mode") === "1";
@@ -1139,7 +1140,19 @@ function EditorPage() {
         >
           <Redo2 className="h-4 w-4" />
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setHistoryOpen(true)}
+          title="היסטוריית גרסאות"
+          aria-label="היסטוריית גרסאות"
+        >
+          <History className="h-4 w-4" />
+        </Button>
         <div className="mx-1 h-5 w-px bg-border" />
+
         <Button
           type="button"
           variant="ghost"
@@ -1217,7 +1230,35 @@ function EditorPage() {
       </div>
 
 
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              היסטוריית גרסאות
+            </DialogTitle>
+            <DialogDescription>גרסאות קודמות של המסמך</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="rounded-md border border-border bg-card p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">גרסה נוכחית</span>
+                <span className="text-xs text-muted-foreground">
+                  {data?.spec.updated_at
+                    ? formatDistanceToNow(new Date(data.spec.updated_at), { addSuffix: true, locale: he })
+                    : "—"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                השמירה אוטומטית. שמירת היסטוריית גרסאות מלאה תהיה זמינה בקרוב.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Section quick-search (Cmd+K) */}
+
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
         <CommandInput placeholder="חפש סעיף... (Cmd/Ctrl+K)" />
         <CommandList>
