@@ -28,6 +28,7 @@ import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-docum
 import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
 import { Route as ApiChatAttachRouteImport } from './routes/api/chat-attach'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
 import { Route as AuthenticatedProductRouteImport } from './routes/_authenticated/product'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -132,6 +133,12 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProjectsManagementRoute =
+  AuthenticatedProjectsManagementRouteImport.update({
+    id: '/projects-management',
+    path: '/projects-management',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProductRoute = AuthenticatedProductRouteImport.update({
   id: '/product',
   path: '/product',
@@ -195,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/product': typeof AuthenticatedProductRoute
+  '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
@@ -224,6 +232,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/product': typeof AuthenticatedProductRoute
+  '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
@@ -255,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/product': typeof AuthenticatedProductRoute
+  '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/product'
+    | '/projects-management'
     | '/settings'
     | '/api/chat-attach'
     | '/api/chat-message'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/product'
+    | '/projects-management'
     | '/settings'
     | '/api/chat-attach'
     | '/api/chat-message'
@@ -345,6 +357,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/product'
+    | '/_authenticated/projects-management'
     | '/_authenticated/settings'
     | '/api/chat-attach'
     | '/api/chat-message'
@@ -519,6 +532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects-management': {
+      id: '/_authenticated/projects-management'
+      path: '/projects-management'
+      fullPath: '/projects-management'
+      preLoaderRoute: typeof AuthenticatedProjectsManagementRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/product': {
       id: '/_authenticated/product'
       path: '/product'
@@ -590,6 +610,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedProductRoute: typeof AuthenticatedProductRoute
+  AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
@@ -602,6 +623,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedProductRoute: AuthenticatedProductRoute,
+  AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
@@ -637,13 +659,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
