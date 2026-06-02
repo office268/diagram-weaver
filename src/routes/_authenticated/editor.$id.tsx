@@ -534,6 +534,7 @@ function EditorPage() {
   const applyImprovement = useCallback(
     (key: string, candidate: unknown, previous: unknown) => {
       applySectionValue(key, candidate);
+      qc.invalidateQueries({ queryKey: ["spec-usage", id] });
       toast.success("הסעיף עודכן", {
         duration: 8000,
         action: {
@@ -542,7 +543,7 @@ function EditorPage() {
         },
       });
     },
-    [applySectionValue],
+    [applySectionValue, qc, id],
   );
 
   const improveDoc = useCallback(async () => {
