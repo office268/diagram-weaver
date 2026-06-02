@@ -158,7 +158,7 @@ function SortableTile({
     animationFillMode: "backwards",
     zIndex: isDragging ? 50 : undefined,
     opacity: isDragging ? 0.85 : undefined,
-    touchAction: "manipulation",
+    touchAction: "none",
   };
 
   return (
