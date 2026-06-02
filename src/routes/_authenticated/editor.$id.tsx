@@ -1286,6 +1286,8 @@ function EditorPage() {
 
 function SectionShell({
   title,
+  displayTitle,
+  editableTitle,
   onTitleChange,
   onMoveUp,
   onMoveDown,
@@ -1299,6 +1301,8 @@ function SectionShell({
   children,
 }: {
   title: string;
+  displayTitle?: string;
+  editableTitle?: string;
   onTitleChange: (v: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -1311,6 +1315,9 @@ function SectionShell({
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const shownTitle = displayTitle ?? title;
+  const editTitle = editableTitle ?? title;
+
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
   const [open, setOpen] = useState(true);
