@@ -45,7 +45,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: "/projects", replace: true });
+      navigate({ to: "/dashboard", replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -57,7 +57,7 @@ function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/projects" },
+          options: { emailRedirectTo: window.location.origin + "/dashboard" },
         });
         if (error) throw error;
         toast.success("החשבון נוצר. ברוכים הבאים!");
@@ -76,7 +76,7 @@ function LoginPage() {
     setBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/projects",
+        redirect_uri: window.location.origin + "/dashboard",
       });
       if (result.error) throw result.error;
     } catch (err) {
