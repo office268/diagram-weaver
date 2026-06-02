@@ -381,46 +381,49 @@ function ChatPage() {
               ))}
             </div>
           )}
-          <div className="mx-auto flex max-w-3xl items-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              disabled={sending}
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="צרף קובץ"
-              title="צרף קובץ (PDF, DOCX, TXT)"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                messages.length === 0
-                  ? `תאר/י את ה${def?.label ?? "מסמך"}...`
-                  : "הוסף/י הבהרה או בקשת שינוי..."
-              }
-              rows={2}
-              disabled={sending}
-              className="min-h-[60px] resize-none"
-            />
-            <Button
-              onClick={() => void handleSend()}
-              disabled={
-                sending ||
-                (input.trim().length === 0 &&
-                  attachments.filter((a) => a.status === "ready").length === 0)
-              }
-              size="icon"
-              className="h-10 w-10 shrink-0"
-            >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+          <div className="mx-auto max-w-3xl">
+            <div className="relative flex items-end rounded-2xl border border-input bg-background shadow-sm focus-within:ring-2 focus-within:ring-ring">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                disabled={sending}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="צרף קובץ"
+                title="צרף קובץ (PDF, DOCX, TXT)"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  messages.length === 0
+                    ? `תאר/י את ה${def?.label ?? "מסמך"}...`
+                    : "הוסף/י הבהרה או בקשת שינוי..."
+                }
+                rows={2}
+                disabled={sending}
+                className="min-h-[60px] resize-none border-0 bg-transparent pe-12 ps-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <Button
+                onClick={() => void handleSend()}
+                disabled={
+                  sending ||
+                  (input.trim().length === 0 &&
+                    attachments.filter((a) => a.status === "ready").length === 0)
+                }
+                size="icon"
+                className="absolute bottom-1.5 right-1.5 h-8 w-8 shrink-0 rounded-full"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
+
           <p className="mx-auto mt-2 max-w-3xl text-[11px] text-muted-foreground">
             Enter לשליחה · Shift+Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
           </p>
