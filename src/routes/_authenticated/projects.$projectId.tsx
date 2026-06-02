@@ -154,7 +154,7 @@ function ProjectPage() {
         previousSpec?: SpecOutput;
         reviewerNotes?: string[];
       },
-    ): Promise<SpecOutput> => {
+    ): Promise<{ spec: SpecOutput; review: SpecReview | null }> => {
       const res = await fetch("/api/generate-spec", {
         method: "POST",
         headers: {
@@ -194,13 +194,37 @@ function ProjectPage() {
         throw new Error(errMsg || "שגיאת זרם מהמודל");
       }
       if (!fullText.trim()) throw new Error("המודל החזיר תשובה ריקה");
+
+      // Stream payload contract: <spec JSON>\n__REVIEW__\n<review JSON>
+      // The review half is optional (review may have failed silently).
+      const sepIdx = fullText.indexOf("__REVIEW__");
+      const specText = sepIdx >= 0 ? fullText.slice(0, sepIdx) : fullText;
+      const reviewText = sepIdx >= 0 ? fullText.slice(sepIdx + "__REVIEW__".length) : "";
+
       let parsed: unknown;
       try {
-        parsed = JSON.parse(extractJson(fullText));
+        parsed = JSON.parse(extractJson(specText));
       } catch {
         throw new Error(`המודל לא החזיר JSON תקני (אורך ${fullText.length})`);
       }
-      return SpecOutputSchema.parse(parsed);
+      const spec = SpecOutputSchema.parse(parsed);
+
+      let review: SpecReview | null = null;
+      if (reviewText.trim()) {
+        try {
+          const rawReview = JSON.parse(extractJson(reviewText));
+          if (rawReview && rawReview.score != null) {
+            review = {
+              score: Number(rawReview.score),
+              notes: normalizeReviewNotes(rawReview.notes),
+            };
+          }
+        } catch (e) {
+          console.warn("[generate-spec] inline review parse failed:", e);
+        }
+      }
+
+      return { spec, review };
     },
     [projectId],
 
@@ -307,7 +331,7 @@ function ProjectPage() {
 
     try {
       const token = await getToken();
-      const spec = await generateOnce(token, {
+      const { spec, review: inlineReview } = await generateOnce(token, {
         promptText: p,
         model,
         docTypeKey: docType,
@@ -315,7 +339,7 @@ function ProjectPage() {
       setBuilder((prev) =>
         prev ? { ...prev, phase: "reviewing" } : prev,
       );
-      const review = await reviewOnce(token, p, spec);
+      const review = inlineReview ?? (await reviewOnce(token, p, spec));
       const specId = await saveIteration({
         groupId,
         promptText: p,
@@ -368,7 +392,7 @@ function ProjectPage() {
     setBuilder((prev) => (prev ? { ...prev, phase: "generating" } : prev));
     try {
       const token = await getToken();
-      const spec = await generateOnce(token, {
+      const { spec, review: inlineReview } = await generateOnce(token, {
         promptText: builder.prompt,
         model: builder.model,
         docTypeKey: builder.docType,
@@ -376,7 +400,7 @@ function ProjectPage() {
         reviewerNotes,
       });
       setBuilder((prev) => (prev ? { ...prev, phase: "reviewing" } : prev));
-      const review = await reviewOnce(token, builder.prompt, spec);
+      const review = inlineReview ?? (await reviewOnce(token, builder.prompt, spec));
       const specId = await saveIteration({
         groupId: builder.groupId,
         promptText: builder.prompt,

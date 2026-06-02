@@ -48,6 +48,8 @@ interface RunParams {
   previousSpec?: Record<string, unknown>;
   reviewerNotes?: string[];
   emit: ProgressEmitter;
+  /** Called as soon as the initial spec is assembled, before the review runs. */
+  onSpecReady?: (spec: SpecOutput) => void;
 }
 
 export interface OrchestratorResult {
@@ -399,6 +401,14 @@ export async function runOrchestrator(
   let currentArch = architecture;
   let currentData = dataModel;
   let currentUC = useCases;
+
+  // Hand the freshly assembled spec to the caller right away so it can
+  // stream it to the client before the (slow) review starts.
+  try {
+    params.onSpecReady?.(currentSpec);
+  } catch (e) {
+    console.error("[orchestrator] onSpecReady threw (ignored):", e);
+  }
 
   let currentReview: ReviewAgentOutput | null = null;
   if (!skipReview) {
