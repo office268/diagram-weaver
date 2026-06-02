@@ -13,26 +13,52 @@ export const Route = createFileRoute("/_authenticated/product")({
 type Align = "start" | "center" | "end";
 type Word = {
   text: string;
-  size: string; // tailwind text-* + weight
-  color: string; // tailwind color class
-  rotate: number; // degrees
+  size: string;
+  weight: string;
+  font: string; // font family class
+  color: string;
+  rotate: number;
   align: Align;
   italic?: boolean;
+  tracking?: string;
+  uppercase?: boolean;
 };
 
-// Each word lives in its own row → guaranteed no overlap.
-// Variety comes from font size, weight, color, rotation, and horizontal alignment.
+// Importance tiers:
+// HERO: text-6xl/8xl/9xl — Roadmap, User Journey, MVP
+// MAJOR: text-4xl/6xl/7xl — Persona, Discovery, Market Fit
+// MID:   text-3xl/5xl/6xl — KPIs, Retention
+// MINOR: text-xl/3xl/4xl  — Backlog, Churn
 const words: Word[] = [
-  { text: "Roadmap", size: "text-4xl sm:text-7xl md:text-8xl font-black", color: "text-foreground", rotate: -2, align: "center" },
-  { text: "User Journey", size: "text-3xl sm:text-5xl md:text-6xl font-bold", color: "text-primary", rotate: -8, align: "start", italic: true },
-  { text: "Discovery", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-foreground/80", rotate: 6, align: "end", italic: true },
-  { text: "Persona", size: "text-3xl sm:text-5xl md:text-6xl font-semibold", color: "text-accent-foreground", rotate: 4, align: "start" },
-  { text: "MVP", size: "text-3xl sm:text-5xl md:text-6xl font-extrabold", color: "text-primary/90", rotate: 12, align: "end" },
-  { text: "Market Fit", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-foreground", rotate: -6, align: "center" },
-  { text: "KPIs", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-primary/80", rotate: -10, align: "start" },
-  { text: "Retention", size: "text-2xl sm:text-4xl md:text-5xl font-semibold", color: "text-accent-foreground", rotate: 8, align: "end" },
-  { text: "Backlog", size: "text-xl sm:text-3xl md:text-4xl font-semibold", color: "text-muted-foreground", rotate: -4, align: "start", italic: true },
-  { text: "Churn", size: "text-xl sm:text-3xl md:text-4xl font-light", color: "text-muted-foreground", rotate: 10, align: "center", italic: true },
+  // HERO — center, huge, black serif
+  { text: "Roadmap", size: "text-6xl sm:text-8xl md:text-9xl", weight: "font-black", font: "font-serif", color: "text-foreground", rotate: -3, align: "center", tracking: "tracking-tighter" },
+
+  // MAJOR — italic sans, strong color
+  { text: "User Journey", size: "text-4xl sm:text-6xl md:text-7xl", weight: "font-extrabold", font: "font-sans", color: "text-primary", rotate: -10, align: "start", italic: true, tracking: "tracking-tight" },
+
+  // MINOR — small, muted, uppercase mono for contrast
+  { text: "Backlog", size: "text-xl sm:text-2xl md:text-3xl", weight: "font-medium", font: "font-mono", color: "text-muted-foreground", rotate: 14, align: "end", uppercase: true, tracking: "tracking-[0.25em]" },
+
+  // MAJOR — serif italic
+  { text: "Discovery", size: "text-4xl sm:text-6xl md:text-7xl", weight: "font-bold", font: "font-serif", color: "text-foreground/85", rotate: 5, align: "end", italic: true },
+
+  // HERO — bold sans, accent
+  { text: "MVP", size: "text-7xl sm:text-9xl", weight: "font-black", font: "font-sans", color: "text-primary", rotate: 8, align: "start", tracking: "tracking-tighter" },
+
+  // MID — sans semibold
+  { text: "KPIs", size: "text-3xl sm:text-5xl md:text-6xl", weight: "font-bold", font: "font-sans", color: "text-primary/70", rotate: -12, align: "center", uppercase: true, tracking: "tracking-widest" },
+
+  // MAJOR — serif center, dramatic
+  { text: "Market Fit", size: "text-5xl sm:text-7xl md:text-8xl", weight: "font-extrabold", font: "font-serif", color: "text-foreground", rotate: -5, align: "center", italic: true },
+
+  // MAJOR — accent
+  { text: "Persona", size: "text-4xl sm:text-6xl md:text-7xl", weight: "font-bold", font: "font-serif", color: "text-accent-foreground", rotate: 7, align: "start" },
+
+  // MID — sans
+  { text: "Retention", size: "text-3xl sm:text-5xl md:text-6xl", weight: "font-semibold", font: "font-sans", color: "text-accent-foreground", rotate: 10, align: "end" },
+
+  // MINOR — light italic serif
+  { text: "Churn", size: "text-xl sm:text-3xl md:text-4xl", weight: "font-light", font: "font-serif", color: "text-muted-foreground/70", rotate: -16, align: "start", italic: true },
 ];
 
 const alignToFlex: Record<Align, string> = {
@@ -57,15 +83,14 @@ function ProductPage() {
         </p>
       </div>
 
-
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 sm:gap-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-10 sm:gap-10 sm:py-14">
         {words.map((w, i) => (
           <div key={i} className={`flex ${alignToFlex[w.align]}`}>
             <span
-              className={`inline-block whitespace-nowrap font-serif tracking-tight animate-fade-in ${w.size} ${w.color} ${w.italic ? "italic" : ""}`}
+              className={`inline-block whitespace-nowrap animate-fade-in leading-none ${w.size} ${w.weight} ${w.font} ${w.color} ${w.italic ? "italic" : ""} ${w.uppercase ? "uppercase" : ""} ${w.tracking ?? "tracking-tight"}`}
               style={{
                 transform: `rotate(${w.rotate}deg)`,
-                animationDelay: `${i * 80}ms`,
+                animationDelay: `${i * 90}ms`,
                 animationFillMode: "both",
               }}
             >
