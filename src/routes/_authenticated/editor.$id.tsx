@@ -1621,7 +1621,7 @@ function EditorPage() {
                               {renderBody(key)}
                             </SectionShell>
                           </div>
-                          <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+                          <footer className="pt-8 text-center text-xs text-muted-foreground">
                             עמוד {pageNumber} מתוך {totalPages}
                           </footer>
                         </article>
