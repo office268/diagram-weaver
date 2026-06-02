@@ -1051,7 +1051,11 @@ function EditorPage() {
           title="העלאה ל-SharePoint"
           aria-label="העלאה ל-SharePoint"
         >
-          <Upload className="h-4 w-4" />
+          <svg viewBox="0 0 32 32" className="h-4 w-4" aria-hidden>
+            <circle cx="12" cy="11" r="8" fill="#036c70"/>
+            <circle cx="21" cy="17" r="7" fill="#1a9ba1"/>
+            <circle cx="17" cy="25" r="5" fill="#37c6d0"/>
+          </svg>
         </Button>
         <div className="mx-1 h-5 w-px bg-border" />
         <Button
