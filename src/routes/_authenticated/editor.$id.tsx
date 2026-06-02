@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
