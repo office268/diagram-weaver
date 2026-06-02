@@ -116,7 +116,6 @@ export const Route = createFileRoute("/_authenticated/editor/$id")({
 
 // Default ordered list of section keys + their default Hebrew titles.
 const DEFAULT_SECTIONS: { key: string; defaultTitle: string }[] = [
-  { key: "user_prompt", defaultTitle: "הפרומפט של המשתמש" },
   { key: "overview", defaultTitle: "סקירה כללית" },
   { key: "goals", defaultTitle: "מטרות" },
   { key: "personas", defaultTitle: "משתמשי קצה" },
@@ -127,7 +126,6 @@ const DEFAULT_SECTIONS: { key: string; defaultTitle: string }[] = [
   { key: "architecture", defaultTitle: "ארכיטקטורה" },
   { key: "data_model", defaultTitle: "מודל נתונים" },
   { key: "risks", defaultTitle: "סיכונים" },
-  { key: "review", defaultTitle: "ביקורת הסוכן המבקר" },
   { key: "user_notes", defaultTitle: "ההערות שלי" },
 ];
 const DEFAULT_KEYS = DEFAULT_SECTIONS.map((s) => s.key);
@@ -169,6 +167,7 @@ function EditorPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("editor-focus-mode") === "1";
@@ -1115,6 +1114,18 @@ function EditorPage() {
           <Italic className="h-4 w-4" />
         </Button>
         <div className="mx-1 h-5 w-px bg-border" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setAiDialogOpen(true)}
+          title="עוזר AI — פרומפט והצעות לשיפור"
+          aria-label="עוזר AI"
+        >
+          <Sparkles className="h-4 w-4 text-primary" />
+        </Button>
+        <div className="mx-1 h-5 w-px bg-border" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -1180,6 +1191,74 @@ function EditorPage() {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      {/* AI assistant dialog — editable user prompt + reviewer suggestions */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-right">
+              <Sparkles className="h-4 w-4 text-primary" />
+              עוזר AI
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              הפרומפט שלך והצעות השיפור מהסוכן המבקר.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-foreground">הפרומפט שלך</div>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={Math.max(4, Math.min(15, prompt.split("\n").length + 1))}
+                placeholder="הפרומפט שלך... (נשמר אוטומטית)"
+                dir="auto"
+                className="resize-y text-sm"
+              />
+            </div>
+            {typeof data?.spec?.review_score === "number" ? (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-foreground">הצעות לשיפור</div>
+                <ReviewSuggestionsPanel
+                  review={{
+                    score: data.spec.review_score,
+                    notes: normalizeReviewNotes(data.spec.review_notes),
+                  }}
+                  selected={selectedNoteIds}
+                  onToggle={(noteId) =>
+                    setSelectedNoteIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(noteId)) next.delete(noteId);
+                      else next.add(noteId);
+                      return next;
+                    })
+                  }
+                  onSelectAll={() =>
+                    setSelectedNoteIds(
+                      new Set(
+                        normalizeReviewNotes(data.spec.review_notes).map((n) => n.id),
+                      ),
+                    )
+                  }
+                  onClear={() => setSelectedNoteIds(new Set())}
+                  onImprove={() => {
+                    setAiDialogOpen(false);
+                    improveDoc();
+                  }}
+                  onFinish={() => setAiDialogOpen(false)}
+                  improving={improving}
+                />
+              </div>
+            ) : (
+              <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                אין כרגע הצעות לשיפור מהסוכן המבקר.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Document — print-preview layout: separate A4 pages, page numbers, numbered sections */}
       <div className="bg-muted/40 py-6 sm:py-10">
