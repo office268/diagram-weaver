@@ -55,6 +55,36 @@
   }
 }
 
+@utility cube-3d {
+  transform: translateY(0);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+  box-shadow:
+    0 1px 0 var(--border),
+    0 4px 0 -1px color-mix(in oklab, var(--card) 92%, var(--foreground)),
+    0 5px 0 -1px var(--border),
+    0 8px 0 -2px color-mix(in oklab, var(--card) 86%, var(--foreground)),
+    0 9px 0 -2px var(--border),
+    0 22px 32px -12px color-mix(in oklab, var(--foreground) 28%, transparent);
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 1px 0 var(--border),
+      0 6px 0 -1px color-mix(in oklab, var(--card) 92%, var(--foreground)),
+      0 7px 0 -1px var(--border),
+      0 11px 0 -2px color-mix(in oklab, var(--card) 86%, var(--foreground)),
+      0 12px 0 -2px var(--border),
+      0 30px 40px -14px color-mix(in oklab, var(--foreground) 35%, transparent);
+  }
+  &:active {
+    transform: translateY(2px);
+    box-shadow:
+      0 1px 0 var(--border),
+      0 2px 0 -1px color-mix(in oklab, var(--card) 92%, var(--foreground)),
+      0 3px 0 -1px var(--border),
+      0 12px 18px -8px color-mix(in oklab, var(--foreground) 25%, transparent);
+  }
+}
+
 
 
 :root {

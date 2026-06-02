@@ -40,35 +40,40 @@ function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3">
         {OUTPUT_TYPE_ORDER.map((key, i) => {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
           const isPending = createMut.isPending && createMut.variables === key;
+          const isDiagram = t.category === "diagram";
           return (
             <button
               key={key}
               type="button"
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(key)}
-              className="hover-lift animate-fade-in group relative flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-5 text-right transition-all hover:border-primary/40 hover:shadow-lg disabled:opacity-50"
+              className="cube-3d animate-fade-in group relative flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-4 text-center disabled:opacity-50"
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
-              <div className={`flex h-11 w-11 items-center justify-center rounded-lg bg-accent ${t.colorClass}`}>
+              <span
+                className={`absolute top-2.5 ${isDiagram ? "left-2.5" : "right-2.5"} rounded-full bg-muted/80 px-2 py-0.5 text-[10px] text-muted-foreground`}
+              >
+                {isDiagram ? "תרשים" : "מסמך"}
+              </span>
+              <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-accent ${t.colorClass}`}>
                 {isPending ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-7 w-7 animate-spin" />
                 ) : (
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-7 w-7" />
                 )}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{t.label}</span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                    {t.category === "diagram" ? "תרשים" : "מסמך"}
-                  </span>
+                <div className="text-sm font-semibold leading-tight text-foreground sm:text-base">
+                  {t.label}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+                  {t.description}
+                </p>
               </div>
             </button>
           );
