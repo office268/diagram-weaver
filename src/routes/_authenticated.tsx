@@ -1,6 +1,6 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 
