@@ -152,9 +152,8 @@ export function LoginLogCard() {
                 {groups.map((g) => {
                   const isOpen = expanded === g.key;
                   return (
-                    <>
+                    <React.Fragment key={g.key}>
                       <tr
-                        key={g.key}
                         className="border-b border-border/50 cursor-pointer hover:bg-muted/40"
                         onClick={() => setExpanded(isOpen ? null : g.key)}
                       >
