@@ -40,7 +40,7 @@ function HomePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+      <div className="grid auto-rows-fr grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         {OUTPUT_TYPE_ORDER.map((key, i) => {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
