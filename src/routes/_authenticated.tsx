@@ -59,7 +59,6 @@ function AuthenticatedLayout() {
               >
                 <KanbanSquare className="h-4 w-4" />
                 <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
-                <span className="absolute -top-2 -end-3 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
               </button>
               <button
                 type="button"
