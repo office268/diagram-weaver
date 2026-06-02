@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, FileText } from "lucide-react";
+import { Home, FileText, FolderKanban } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 
@@ -34,6 +34,7 @@ export function MobileBottomNav() {
 
   const isHome = pathname.startsWith("/dashboard");
   const isDocuments = pathname.startsWith("/documents");
+  const isProjects = pathname.startsWith("/projects");
 
   return (
     <nav
@@ -43,6 +44,13 @@ export function MobileBottomNav() {
     >
       <Link to="/dashboard" className="flex-1">
         <ItemInner active={isHome} icon={<Home className="h-5 w-5" />} label="בית" />
+      </Link>
+      <Link to="/projects" className="flex-1">
+        <ItemInner
+          active={isProjects}
+          icon={<FolderKanban className="h-5 w-5" />}
+          label="פרויקטים"
+        />
       </Link>
       <Link to="/documents" className="flex-1">
         <ItemInner
