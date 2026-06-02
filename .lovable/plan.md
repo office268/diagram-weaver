@@ -1,61 +1,38 @@
-## מה נבנה
-הרחבה של סרגל הסטטוס בעורך כך שיציג:
-1. **מילים במסמך הנוכחי** (כבר קיים)
-2. **טוקנים מצטברים** של כל הקריאות ל-AI על המסמך הספציפי שפתוח (אותו `spec_documents.id`)
-3. **עלות מצטברת ב-$** של אותן קריאות
 
-מסמכים ישנים יציגו `—` בשני השדות החדשים.
+## מטרה
+החלפת ה-Toast "ניהול מוצר — בקרוב" בניווט אמיתי לעמוד `/product` שבו תוצג תפזורת מילים מעוצבת עד שיהיו הכלים בפועל.
 
----
+## שינויים
 
-## שינויי DB (migration)
+### 1. עמוד חדש `src/routes/_authenticated/product.tsx`
+- `createFileRoute("/_authenticated/product")` עם `head()` (כותרת + תיאור).
+- מסך מלא (`min-h-[calc(100vh-...)]`) עם רקע עדין (gradient מ-`--background` ל-`--muted`).
+- כותרת קטנה למעלה: "ניהול מוצר — בקרוב כלים ייעודיים".
+- מתחתיה אזור מרכזי שמציג תפזורת של 6 מילים:
 
-טבלה חדשה `ai_usage_events`:
-- `id uuid pk`
-- `user_id uuid` (RLS)
-- `spec_document_id uuid` — לאיזה מסמך הקריאה שייכת
-- `model text` — שם המודל שנקרא
-- `prompt_tokens int`, `completion_tokens int`, `total_tokens int`
-- `cost_usd numeric(12,6)` — מחושב בעת ההכנסה לפי טבלת תעריפים בקוד
-- `purpose text` — `generate` / `improve_section` / `review` / `agent:requirements` וכו'
-- `created_at timestamptz`
-- אינדקס על `(spec_document_id)`
-- RLS: בעלים בלבד יכול לקרוא; INSERT דרך service_role (מהשרת)
+| מילה | גודל יחסי (חשיבות) | זווית |
+|---|---|---|
+| User Journey | text-7xl/8xl | -12° |
+| KPIs | text-6xl | 90° (אנכי) |
+| Persona | text-7xl | 8° |
+| Backlog | text-5xl | -90° |
+| Roadmap | text-8xl | 0° (אופקי, מודגש) |
+| MVP | text-6xl | 25° |
 
-## תעריפים (קוד, לא DB)
-קובץ חדש `src/lib/ai-pricing.ts` עם מפה: `model → { inputPer1M, outputPer1M }` עבור המודלים שבשימוש (Gemini 2.5/3 flash/pro, GPT-5 וכו'). מחושב בעת לוג ה-usage. מודל לא מוכר → cost=0.
+- מיקום ע"י `absolute` בתוך container `relative` עם אחוזים (top/left), כך שזה רספונסיבי. בנייד נצמצם גדלים (`text-3xl`–`text-6xl`).
+- צבעים מה-design tokens בלבד (`text-primary`, `text-foreground`, `text-muted-foreground`, `text-accent-foreground`) ברמות `opacity` שונות כדי להוסיף עומק.
+- פונט: `font-serif`/`font-bold`/`tracking-tight` משולב — חלק `italic` להבדל ויזואלי.
+- אנימציית כניסה עדינה (`animate-in fade-in` + `slide-in` עם delays שונים) ללא תלות בספריות חדשות.
 
-## רישום ה-usage
-פונקציה משותפת `logAiUsage({ userId, docId, model, usage, purpose })` ב-`src/lib/ai-usage.server.ts` שמשתמשת ב-`supabaseAdmin`.
+### 2. עדכון `src/routes/_authenticated.tsx`
+- שורה 73-80: להחליף את ה-`<button onClick={toast.info(...)}>` ב-`<Link to="/product">` עם אותו עיצוב, ולהוסיף הדגשת active דומה לזו של "ניתוח מערכות" (`isProduct = location.pathname.startsWith("/product")`).
+- להסיר `Rocket` מהשורות אם לא נחוץ — להשאיר את האייקון.
 
-הוספת קריאה אליה אחרי כל `generateText` שמשויך למסמך, בקבצים:
-- `src/routes/api/generate-spec.ts` ו-`generate-spec-v2.ts`
-- `src/routes/api/improve-section.ts`
-- `src/routes/api/review-spec.ts`
-- כל agents תחת `src/agents/*/index.server.ts` (האורקסטרטור יעביר את `docId` למטה)
+### לא נוגעים
+- כפתור "ניהול פרויקט" נשאר עם ה-Toast (לא נתבקש).
+- אין שינוי backend / DB / auth.
 
-ה-AI SDK מחזיר `usage.promptTokens/completionTokens/totalTokens` — שימוש ישיר בערכים אלה.
-
-## Server function חדשה לקריאה
-`getDocUsageTotals(docId)` ב-`src/lib/spec.functions.ts` (עם `requireSupabaseAuth`):
-```sql
-select sum(total_tokens), sum(cost_usd) from ai_usage_events where spec_document_id = $1
-```
-מחזיר `{ totalTokens, totalCostUsd } | null` (null = אין נתונים → להציג `—`).
-
-## שינויים בקליינט
-1. `src/components/editor-status-bar.tsx` — מקבל שני props חדשים: `totalTokens: number | null`, `totalCostUsd: number | null`. מציג שני שדות נוספים עם אייקונים (`Coins` ו-`DollarSign` מ-lucide). `null → "—"`. עיצוב מינימלי בסגנון הקיים.
-2. `src/routes/_authenticated/editor.$id.tsx` — `useQuery` ל-`getDocUsageTotals` עם `staleTime` של 30 שניות; invalidation אחרי "צור מחדש" / "שפר סעיף". מעביר ל-`EditorStatusBar`.
-
----
-
-## ביצועים
-- **כתיבה**: insert אחד לכל קריאת AI (ממילא 2-30 שניות) — תוספת זניחה (~5ms).
-- **קריאה**: query אחד עם `SUM()` ואינדקס על `spec_document_id` → <10ms.
-- **תדירות**: רק בעת טעינת המסמך + אחרי פעולות AI. ללא polling.
-
-לא יורגש בביצועים.
-
-## מה לא משתנה
-- מבנה `spec_documents`, חישוב מילים, סעיפים, אחוזי התקדמות, קרדיטים.
-- מסמכים ישנים — פשוט יציגו `—`.
+## פרטים טכניים
+- אין תלות חדשה.
+- שימוש ב-Tailwind בלבד עבור rotation (`rotate-[-12deg]`, `[writing-mode:vertical-rl]` למילים אנכיות) — כל הזוויות דרך arbitrary values.
+- responsive: בreakpoint `sm`/`md` נחליף גדלים ומיקומים כדי שלא ייחתך בנייד (384px viewport נוכחי).
