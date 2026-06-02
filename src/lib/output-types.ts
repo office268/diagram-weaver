@@ -178,14 +178,14 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "diagram_sequence",
   "diagram_erd",
   "spec_detailed",
+  "user_guide",
+  "meeting_summary",
 ];
 
 // Less common types — shown inside the "More…" tile.
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
   "diagram_state",
   "diagram_deployment",
-  "user_guide",
-  "meeting_summary",
 ];
 
 
