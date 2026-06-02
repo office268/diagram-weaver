@@ -1,24 +1,36 @@
-## מה נוסיף
+## בעיה
 
-בדיאלוג "פרויקט חדש" (src/routes/_authenticated/projects.index.tsx), ליד שדה התיאור — כפתור קטן "✨ רעיון מה-AI" שמופיע **רק למנהל** (`isAdmin` מ-`useSiteTexts()`, אותו דפוס שמשתמשים בו כבר ב-settings.tsx).
+המשתמש מחובר כמנהל (אומת ב-DB: 1 משתמש עם `role='admin'`), אך הכפתור לא מופיע. הקוד שלי בודק `isAdmin` מ-`useSiteTexts()` שמגיע מ-`loaderData` של ה-root route. שני חשדים סבירים:
 
-לחיצה → קריאת serverFn → Lovable AI Gateway (`google/gemini-3-flash-preview`) → מקבל **שם פרויקט קצר + תיאור של בדיוק 3 משפטים** של מערכת מידע אקראית/מעניינת, וממלא את שדות `name` ו-`description` בטופס.
+1. **Stale loader data** — ה-`__root.tsx` loader רץ פעם אחת ב-SSR ללא bearer token (`getIsAdmin` נכשל → `isAdmin=false`), ועד שה-`onAuthStateChange` קורא ל-`router.invalidate()` ה-state עדיין הישן. בגלל `defaultPreloadStaleTime: 0` בדרך כלל זה נפתר, אבל ייתכן מירוץ.
+2. **Build/deploy לא טרי** — המשתמש פשוט רואה גרסה ישנה.
+
+## תיקון
+
+להוסיף ל-`projects.index.tsx` בדיקת admin עצמאית דרך `useQuery` שקורא ישירות ל-`getIsAdmin` (server fn קיימת), במקום להסתמך רק על context. ככה הכפתור יוצג ברגע שהשאילתה חוזרת `true`, ללא תלות ב-loader של ה-root.
+
+```ts
+const isAdminFn = useServerFn(getIsAdmin);
+const { data: adminData } = useQuery({
+  queryKey: ["isAdmin"],
+  queryFn: () => isAdminFn(),
+  staleTime: 60_000,
+});
+const isAdmin = adminData?.isAdmin ?? siteTextsIsAdmin;
+```
+
+(ה-fallback ל-`useSiteTexts().isAdmin` נשמר כדי לא להמתין לראשון.)
 
 ## שלבים
 
-1. **serverFn חדשה** — `src/lib/project-ideas.functions.ts`
-   - `generateProjectIdea` עם `createServerFn({ method: "POST" })` + `requireSupabaseAuth` middleware
-   - בתוך ההנדלר: לוודא ש-המשתמש הוא admin (שאילתת `user_roles` עם `supabaseAdmin`, כמו ב-`login-log.functions.ts`); אם לא — לזרוק 403
-   - להשתמש ב-`createLovableAiGatewayProvider` + `generateText` עם `Output.object` (Zod: `{ name: string, description: string }`)
-   - System prompt בעברית: "החזר רעיון למערכת מידע ארגונית. name: 3-6 מילים. description: בדיוק 3 משפטים, עברית, ממוקד בערך עסקי + משתמשים + פיצ'ר מרכזי."
+1. בקובץ `src/routes/_authenticated/projects.index.tsx`:
+   - להוסיף import של `getIsAdmin` מ-`@/lib/site-texts.functions`
+   - להוסיף `useQuery({ queryKey: ['isAdmin'], queryFn: ... })`
+   - לאחד עם `useSiteTexts().isAdmin` בתור fallback
+   - להחליף את התנאי `{isAdmin && ...}` עם הערך המאוחד
 
-2. **UI** — `src/routes/_authenticated/projects.index.tsx`
-   - להוסיף `const { isAdmin } = useSiteTexts()`
-   - מעל ה-Textarea של description, אם `isAdmin` → כפתור `<Button variant="outline" size="sm">` עם אייקון `Sparkles` (lucide-react כבר בשימוש)
-   - `useMutation` שקוראת ל-serverFn ומבצעת `setName(...)` ו-`setDescription(...)`; loading state עם spinner; toast לשגיאות
+2. אין שינויי DB, אין סכמות חדשות.
 
-## סיכון/הערות
+## הערה למשתמש
 
-- אין שינויי DB. אין מיגרציה.
-- הבדיקה היא כפולה: UI מסתיר את הכפתור, וה-serverFn גם בודקת admin (אבטחה אמיתית).
-- עלות: קריאה אחת ל-Lovable AI לכל לחיצה.
+אם גם אחרי התיקון הכפתור לא מופיע — נא לעשות **רענון קשה** (Ctrl+Shift+R / משיכה מלמעלה במובייל) ולפתוח שוב את דיאלוג "פרויקט חדש".

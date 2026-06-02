@@ -18,6 +18,7 @@ import {
   toggleProjectPin,
 } from "@/lib/project.functions";
 import { generateProjectIdea } from "@/lib/project-ideas.functions";
+import { getIsAdmin } from "@/lib/site-texts.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,14 @@ function ProjectsPage() {
   const deleteFn = useServerFn(deleteProject);
   const pinFn = useServerFn(toggleProjectPin);
   const ideaFn = useServerFn(generateProjectIdea);
-  const { isAdmin } = useSiteTexts();
+  const isAdminFn = useServerFn(getIsAdmin);
+  const { isAdmin: ctxIsAdmin } = useSiteTexts();
+  const { data: adminCheck } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => isAdminFn(),
+    staleTime: 60_000,
+  });
+  const isAdmin = adminCheck?.isAdmin ?? ctxIsAdmin;
 
 
 
