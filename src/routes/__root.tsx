@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -7,14 +7,16 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
-import { getSiteTexts } from "@/lib/site-texts.functions";
+import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
 import { SiteTextsProvider } from "@/lib/site-texts-context";
+import { useAuth } from "@/hooks/use-auth";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 function NotFoundComponent() {
@@ -173,19 +175,33 @@ function AuthBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const loaderData = Route.useLoaderData();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBridge />
-      <SiteTextsProvider
-        initialTexts={loaderData?.siteTexts ?? {}}
-        isAdmin={loaderData?.isAdmin ?? false}
-      >
-        <PaymentTestModeBanner />
-        <Outlet />
-      </SiteTextsProvider>
+      <RootProviders />
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
+  );
+}
+
+function RootProviders() {
+  const loaderData = Route.useLoaderData();
+  const { user } = useAuth();
+  const isAdminFn = useServerFn(getIsAdmin);
+  const { data: adminData } = useQuery({
+    queryKey: ["is-admin", user?.id ?? null],
+    queryFn: () => isAdminFn(),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+  return (
+    <SiteTextsProvider
+      initialTexts={loaderData?.siteTexts ?? {}}
+      isAdmin={adminData?.isAdmin ?? false}
+    >
+      <PaymentTestModeBanner />
+      <Outlet />
+    </SiteTextsProvider>
   );
 }
 
