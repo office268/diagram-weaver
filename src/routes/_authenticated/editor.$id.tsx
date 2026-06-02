@@ -1114,6 +1114,18 @@ function EditorPage() {
           <Italic className="h-4 w-4" />
         </Button>
         <div className="mx-1 h-5 w-px bg-border" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setAiDialogOpen(true)}
+          title="עוזר AI — פרומפט והצעות לשיפור"
+          aria-label="עוזר AI"
+        >
+          <Sparkles className="h-4 w-4 text-primary" />
+        </Button>
+        <div className="mx-1 h-5 w-px bg-border" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
