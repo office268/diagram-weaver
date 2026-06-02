@@ -978,97 +978,129 @@ function EditorPage() {
       {/* Toolbar */}
       <div
         className={cn(
-          "sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b px-3 py-2 backdrop-blur transition-colors",
+          "sticky top-0 z-30 flex items-center justify-center gap-1 border-b px-3 py-1.5 backdrop-blur transition-colors",
           focusMode
             ? "border-transparent bg-background/60 supports-[backdrop-filter]:bg-background/40"
             : "border-border bg-card/95 supports-[backdrop-filter]:bg-card/80",
         )}
       >
-        <Breadcrumb className={cn("min-w-0 flex-1", focusMode && "hidden")}>
-          <BreadcrumbList className="flex-nowrap">
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/projects">פרויקטים</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            {projectId ? (
-              <>
-                <BreadcrumbSeparator>
-                  <ChevronLeft />
-                </BreadcrumbSeparator>
-                <BreadcrumbItem className="hidden sm:inline-flex min-w-0">
-                  <BreadcrumbLink asChild>
-                    <Link
-                      to="/projects/$projectId"
-                      params={{ projectId }}
-                      className="truncate max-w-[14rem] inline-block align-bottom"
-                    >
-                      {projectName ?? "פרויקט"}
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              </>
-            ) : null}
-            <BreadcrumbSeparator>
-              <ChevronLeft />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem className="min-w-0">
-              <BreadcrumbPage className="flex min-w-0 items-center gap-1.5">
-                <DocIcon className={`h-3.5 w-3.5 shrink-0 ${docVisual.colorClass}`} />
-                <span className="truncate max-w-[10rem] sm:max-w-[20rem]">
-                  {title || "מסמך"}
-                </span>
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="order-3 h-8 w-full basis-full text-sm sm:order-none sm:flex-1 sm:basis-auto sm:max-w-md"
-          placeholder="כותרת המסמך"
-        />
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
-          {saveState === "saving" ? (
-            <>
-              <Loader2 className="h-3 w-3 animate-spin" /> <span className="hidden sm:inline">שומר…</span>
-            </>
-          ) : saveState === "saved" ? (
-            <>
-              <Check className="h-3 w-3 text-primary" /> <span className="hidden sm:inline">נשמר</span>
-            </>
-          ) : savedAgoLabel ? (
-            <>
-              <Check className="h-3 w-3 text-primary" />
-              <span className="hidden sm:inline" title={lastSavedAt?.toLocaleString("he-IL") ?? ""}>
-                נשמר {savedAgoLabel}
-              </span>
-            </>
-          ) : (
-            <>
-              <Save className="h-3 w-3" /> <span className="hidden sm:inline">שמירה אוטומטית</span>
-            </>
-          )}
-        </div>
-        <ExportMenu
-          title={title || "מסמך"}
-          content={content}
-          userPrompt={prompt}
-          userNotes={userNotes}
-          sectionOrder={visibleSections}
-          sectionTitles={sectionTitles}
-          reviewScore={data.spec.review_score ?? null}
-        />
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
-          onClick={() => setFocusMode((v) => !v)}
-          title={focusMode ? "יציאה ממצב מיקוד (F)" : "מצב מיקוד (F)"}
-          aria-label={focusMode ? "יציאה ממצב מיקוד" : "מצב מיקוד"}
+          onClick={() => flushSave()}
+          title="שמירה (Cmd/Ctrl+S)"
+          aria-label="שמירה"
         >
-          {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {saveState === "saving" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : saveState === "saved" ? (
+            <Check className="h-4 w-4 text-primary" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => {
+            const ok = printAsPdf({
+              title: title || "מסמך",
+              content,
+              userPrompt: prompt,
+              userNotes,
+              sectionOrder: visibleSections,
+              sectionTitles,
+              reviewScore: data.spec.review_score ?? null,
+            });
+            if (!ok) toast.error("חסום על ידי הדפדפן — אפשרו חלונות קופצים");
+          }}
+          title="הורדה / הדפסה"
+          aria-label="הורדה"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => toast.info("העלאה ל-Google Drive — בקרוב")}
+          title="העלאה ל-Google Drive"
+          aria-label="העלאה לדרייב"
+        >
+          <Cloud className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => toast.info("העלאה ל-SharePoint — בקרוב")}
+          title="העלאה ל-SharePoint"
+          aria-label="העלאה ל-SharePoint"
+        >
+          <Upload className="h-4 w-4" />
+        </Button>
+        <div className="mx-1 h-5 w-px bg-border" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand("undo"); }}
+          title="בטל (Cmd/Ctrl+Z)"
+          aria-label="בטל"
+        >
+          <Undo2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand("redo"); }}
+          title="בצע שוב (Cmd/Ctrl+Shift+Z)"
+          aria-label="בצע שוב"
+        >
+          <Redo2 className="h-4 w-4" />
+        </Button>
+        <div className="mx-1 h-5 w-px bg-border" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand("underline"); }}
+          title="קו תחתון"
+          aria-label="קו תחתון"
+        >
+          <Underline className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand("bold"); }}
+          title="מודגש"
+          aria-label="מודגש"
+        >
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand("italic"); }}
+          title="נטוי"
+          aria-label="נטוי"
+        >
+          <Italic className="h-4 w-4" />
         </Button>
       </div>
 
