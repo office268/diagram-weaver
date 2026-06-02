@@ -1403,7 +1403,7 @@ function SectionShell({
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
               title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
             >
-              <span>{title}</span>
+              <span>{shownTitle}</span>
             </button>
           )}
 
