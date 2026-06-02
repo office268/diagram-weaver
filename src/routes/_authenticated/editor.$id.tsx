@@ -1903,7 +1903,6 @@ function ListBody<T extends { id: string }>({
   onChange,
   newItem,
   renderItem,
-  addLabel,
 }: ListBodyProps<T>) {
   // Ensure exactly one trailing empty slot so users can keep typing (Word-like flow).
   const isEmptyItem = (it: T): boolean => {
