@@ -10,103 +10,36 @@ export const Route = createFileRoute("/_authenticated/product")({
   component: ProductPage,
 });
 
+type Align = "start" | "center" | "end";
 type Word = {
   text: string;
-  className: string;
-  style: React.CSSProperties;
-  delay: number;
+  size: string; // tailwind text-* + weight
+  color: string; // tailwind color class
+  rotate: number; // degrees
+  align: Align;
+  italic?: boolean;
 };
 
-// Importance drives font size; positions and rotations are scattered.
+// Each word lives in its own row → guaranteed no overlap.
+// Variety comes from font size, weight, color, rotation, and horizontal alignment.
 const words: Word[] = [
-  {
-    text: "Roadmap",
-    className:
-      "font-serif font-black tracking-tight text-foreground text-6xl sm:text-8xl md:text-9xl",
-    style: { top: "38%", left: "50%", transform: "translate(-50%, -50%) rotate(-2deg)" },
-    delay: 0,
-  },
-  {
-    text: "User Journey",
-    className:
-      "font-serif font-bold italic tracking-tight text-primary text-4xl sm:text-6xl md:text-7xl",
-    style: { top: "12%", left: "8%", transform: "rotate(-12deg)" },
-    delay: 80,
-  },
-  {
-    text: "Persona",
-    className:
-      "font-serif font-semibold tracking-tight text-foreground/80 text-4xl sm:text-5xl md:text-6xl",
-    style: { top: "20%", right: "6%", transform: "rotate(9deg)" },
-    delay: 160,
-  },
-  {
-    text: "KPIs",
-    className:
-      "font-serif font-bold tracking-tight text-primary/80 text-3xl sm:text-5xl md:text-6xl",
-    style: {
-      top: "50%",
-      left: "4%",
-      transform: "rotate(-90deg)",
-      transformOrigin: "left center",
-    },
-    delay: 240,
-  },
-  {
-    text: "Backlog",
-    className:
-      "font-serif font-semibold italic tracking-tight text-muted-foreground text-3xl sm:text-4xl md:text-5xl",
-    style: {
-      top: "50%",
-      right: "6%",
-      transform: "rotate(90deg)",
-      transformOrigin: "right center",
-    },
-    delay: 320,
-  },
-  {
-    text: "MVP",
-    className:
-      "font-serif font-extrabold tracking-tight text-accent-foreground text-4xl sm:text-6xl md:text-7xl",
-    style: { bottom: "14%", left: "18%", transform: "rotate(18deg)" },
-    delay: 400,
-  },
-  {
-    text: "Persona",
-    className:
-      "font-serif font-light italic tracking-tight text-foreground/30 text-2xl sm:text-3xl md:text-4xl",
-    style: { bottom: "20%", right: "20%", transform: "rotate(-8deg)" },
-    delay: 480,
-  },
-  {
-    text: "Market Fit",
-    className:
-      "font-serif font-extrabold tracking-tight text-primary text-3xl sm:text-5xl md:text-6xl",
-    style: { top: "62%", left: "12%", transform: "rotate(-6deg)" },
-    delay: 560,
-  },
-  {
-    text: "Discovery",
-    className:
-      "font-serif font-bold italic tracking-tight text-foreground/70 text-3xl sm:text-5xl md:text-6xl",
-    style: { top: "8%", left: "42%", transform: "rotate(4deg)" },
-    delay: 640,
-  },
-  {
-    text: "Retention",
-    className:
-      "font-serif font-semibold tracking-tight text-accent-foreground text-2xl sm:text-4xl md:text-5xl",
-    style: { bottom: "8%", right: "8%", transform: "rotate(14deg)" },
-    delay: 720,
-  },
-  {
-    text: "Churn",
-    className:
-      "font-serif font-light italic tracking-tight text-muted-foreground text-2xl sm:text-3xl md:text-4xl",
-    style: { top: "70%", right: "32%", transform: "rotate(-16deg)" },
-    delay: 800,
-  },
+  { text: "Roadmap", size: "text-4xl sm:text-7xl md:text-8xl font-black", color: "text-foreground", rotate: -2, align: "center" },
+  { text: "User Journey", size: "text-3xl sm:text-5xl md:text-6xl font-bold", color: "text-primary", rotate: -8, align: "start", italic: true },
+  { text: "Discovery", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-foreground/80", rotate: 6, align: "end", italic: true },
+  { text: "Persona", size: "text-3xl sm:text-5xl md:text-6xl font-semibold", color: "text-accent-foreground", rotate: 4, align: "start" },
+  { text: "MVP", size: "text-3xl sm:text-5xl md:text-6xl font-extrabold", color: "text-primary/90", rotate: 12, align: "end" },
+  { text: "Market Fit", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-foreground", rotate: -6, align: "center" },
+  { text: "KPIs", size: "text-2xl sm:text-4xl md:text-5xl font-bold", color: "text-primary/80", rotate: -10, align: "start" },
+  { text: "Retention", size: "text-2xl sm:text-4xl md:text-5xl font-semibold", color: "text-accent-foreground", rotate: 8, align: "end" },
+  { text: "Backlog", size: "text-xl sm:text-3xl md:text-4xl font-semibold", color: "text-muted-foreground", rotate: -4, align: "start", italic: true },
+  { text: "Churn", size: "text-xl sm:text-3xl md:text-4xl font-light", color: "text-muted-foreground", rotate: 10, align: "center", italic: true },
 ];
+
+const alignToFlex: Record<Align, string> = {
+  start: "justify-start",
+  center: "justify-center",
+  end: "justify-end",
+};
 
 function ProductPage() {
   return (
@@ -127,19 +60,20 @@ function ProductPage() {
         </h1>
       </div>
 
-      <div className="relative mx-auto h-[70vh] w-full max-w-6xl">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 sm:gap-6 sm:py-12">
         {words.map((w, i) => (
-          <span
-            key={i}
-            className={`absolute select-none whitespace-nowrap animate-fade-in ${w.className}`}
-            style={{
-              ...w.style,
-              animationDelay: `${w.delay}ms`,
-              animationFillMode: "both",
-            }}
-          >
-            {w.text}
-          </span>
+          <div key={i} className={`flex ${alignToFlex[w.align]}`}>
+            <span
+              className={`inline-block whitespace-nowrap font-serif tracking-tight animate-fade-in ${w.size} ${w.color} ${w.italic ? "italic" : ""}`}
+              style={{
+                transform: `rotate(${w.rotate}deg)`,
+                animationDelay: `${i * 80}ms`,
+                animationFillMode: "both",
+              }}
+            >
+              {w.text}
+            </span>
+          </div>
         ))}
       </div>
     </div>
