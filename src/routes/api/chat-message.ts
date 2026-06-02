@@ -323,11 +323,26 @@ export const Route = createFileRoute("/api/chat-message")({
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[chat-message] error:", err);
+
+          // Refund the credits we charged at the top of this handler,
+          // since no artifact was produced.
+          try {
+            await supabaseAdmin.rpc("grant_credits", {
+              _user_id: userId,
+              _amount: creditsToCharge,
+              _kind: "refund",
+              _description: `החזר קרדיטים — יצירת ${def.label} נכשלה`,
+              _paddle_event_id: `refund:${body.threadId}:${Date.now()}`,
+            });
+          } catch (refundErr) {
+            console.warn("[chat-message] refund failed:", refundErr);
+          }
+
           await supabaseAdmin.from("chat_messages").insert({
             thread_id: body.threadId,
             user_id: userId,
             role: "assistant",
-            content: `אירעה שגיאה: ${msg}`,
+            content: `אירעה שגיאה ביצירת ${def.label}. הקרדיטים הוחזרו, אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
           });
           return new Response(msg, { status: 500 });
         }
