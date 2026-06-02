@@ -43,6 +43,8 @@ export type Database = {
           completion_tokens: number
           cost_usd: number
           created_at: string
+          doc_title: string | null
+          doc_type: string | null
           id: string
           model: string
           prompt_tokens: number
@@ -50,11 +52,14 @@ export type Database = {
           spec_document_id: string
           total_tokens: number
           user_id: string
+          word_count: number
         }
         Insert: {
           completion_tokens?: number
           cost_usd?: number
           created_at?: string
+          doc_title?: string | null
+          doc_type?: string | null
           id?: string
           model: string
           prompt_tokens?: number
@@ -62,11 +67,14 @@ export type Database = {
           spec_document_id: string
           total_tokens?: number
           user_id: string
+          word_count?: number
         }
         Update: {
           completion_tokens?: number
           cost_usd?: number
           created_at?: string
+          doc_title?: string | null
+          doc_type?: string | null
           id?: string
           model?: string
           prompt_tokens?: number
@@ -74,6 +82,7 @@ export type Database = {
           spec_document_id?: string
           total_tokens?: number
           user_id?: string
+          word_count?: number
         }
         Relationships: []
       }

@@ -15,6 +15,7 @@ import { LoginLogCard } from "@/components/login-log-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
+import { AiUsageCard } from "@/components/ai-usage-card";
 import {
   getAiSettings,
   updateBusinessKnowledge,
@@ -93,6 +94,13 @@ function SettingsPage() {
             qc.invalidateQueries({ queryKey: ["ai-settings"] });
           }}
         />
+      </SettingsSection>
+
+      <SettingsSection
+        title="עלויות"
+        description="פירוט מצטבר של כל פעולות ה-AI שלך — מסמכים, מילים, טוקנים ועלות. נשמר גם עבור מסמכים שנמחקו."
+      >
+        <AiUsageCard />
       </SettingsSection>
 
 
