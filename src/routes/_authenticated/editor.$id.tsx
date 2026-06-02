@@ -1230,7 +1230,35 @@ function EditorPage() {
       </div>
 
 
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              היסטוריית גרסאות
+            </DialogTitle>
+            <DialogDescription>גרסאות קודמות של המסמך</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="rounded-md border border-border bg-card p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">גרסה נוכחית</span>
+                <span className="text-xs text-muted-foreground">
+                  {data?.spec.updated_at
+                    ? formatDistanceToNow(new Date(data.spec.updated_at), { addSuffix: true, locale: he })
+                    : "—"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                השמירה אוטומטית. שמירת היסטוריית גרסאות מלאה תהיה זמינה בקרוב.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Section quick-search (Cmd+K) */}
+
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
         <CommandInput placeholder="חפש סעיף... (Cmd/Ctrl+K)" />
         <CommandList>
