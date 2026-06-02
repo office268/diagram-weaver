@@ -559,7 +559,7 @@ function ChatPage() {
                 }
                 rows={4}
                 disabled={sending}
-                className="min-h-[104px] max-h-[176px] resize-none overflow-y-auto border-0 bg-transparent pe-24 ps-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[104px] max-h-[176px] resize-none overflow-y-auto border-0 bg-transparent ps-24 pe-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
                 <DropdownMenu>
