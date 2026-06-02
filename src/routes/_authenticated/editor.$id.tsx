@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -981,31 +981,79 @@ function EditorPage() {
             : "border-border bg-card/95 supports-[backdrop-filter]:bg-card/80",
         )}
       >
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            const rows = 3;
-            const cols = 3;
-            let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0" border="1">';
-            for (let r = 0; r < rows; r++) {
-              html += "<tr>";
-              for (let c = 0; c < cols; c++) {
-                html += '<td style="border:1px solid #ccc;padding:6px;min-width:60px">&nbsp;</td>';
-              }
-              html += "</tr>";
-            }
-            html += "</table><p>&nbsp;</p>";
-            document.execCommand("insertHTML", false, html);
-          }}
-          title="הוסף טבלה"
-          aria-label="הוסף טבלה"
-        >
-          <TableIcon className="h-4 w-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="הוספה"
+              aria-label="הוספה"
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 text-right" style={{ direction: "rtl" }}>
+            <DropdownMenuItem
+              onSelect={() => {
+                const url = window.prompt("כתובת התמונה (URL):");
+                if (!url) return;
+                const html = `<img src="${url.replace(/"/g, "&quot;")}" alt="" style="max-width:100%;height:auto" /><p>&nbsp;</p>`;
+                document.execCommand("insertHTML", false, html);
+              }}
+            >
+              <ImageIcon className="ml-2 h-4 w-4" />
+              תמונה
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                const url = window.prompt("כתובת הקישור (URL):");
+                if (!url) return;
+                const text = window.prompt("טקסט הקישור:", url) || url;
+                const safeUrl = url.replace(/"/g, "&quot;");
+                const html = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                document.execCommand("insertHTML", false, html);
+              }}
+            >
+              <LinkIcon className="ml-2 h-4 w-4" />
+              קישור
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                const rows = 3;
+                const cols = 3;
+                let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0" border="1">';
+                for (let r = 0; r < rows; r++) {
+                  html += "<tr>";
+                  for (let c = 0; c < cols; c++) {
+                    html += '<td style="border:1px solid #ccc;padding:6px;min-width:60px">&nbsp;</td>';
+                  }
+                  html += "</tr>";
+                }
+                html += "</table><p>&nbsp;</p>";
+                document.execCommand("insertHTML", false, html);
+              }}
+            >
+              <TableIcon className="ml-2 h-4 w-4" />
+              טבלה
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                const note = window.prompt("תוכן ההערה:");
+                if (!note) return;
+                const safe = note.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const html = `<aside style="border-right:3px solid #f59e0b;background:#fef3c7;color:#78350f;padding:8px 12px;margin:8px 0;border-radius:4px">${safe}</aside><p>&nbsp;</p>`;
+                document.execCommand("insertHTML", false, html);
+              }}
+            >
+              <MessageSquare className="ml-2 h-4 w-4" />
+              הערה
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button
           type="button"
           variant="ghost"
