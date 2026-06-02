@@ -1339,7 +1339,7 @@ function SectionShell({
   }, [sectionKey]);
 
   const startEdit = () => {
-    setDraft(title);
+    setDraft(editTitle);
     setEditing(true);
     setOpen(true);
   };
