@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, MoreHorizontal } from "lucide-react";
 import {
   DndContext,
   MouseSensor,
@@ -22,9 +22,22 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
+import {
+  OUTPUT_TYPES,
+  OUTPUT_TYPE_ORDER,
+  OUTPUT_TYPE_EXTRAS,
+  type OutputKey,
+} from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
