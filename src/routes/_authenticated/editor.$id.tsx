@@ -1065,7 +1065,7 @@ function EditorPage() {
               aria-label="שיתוף"
               onMouseDown={(e) => e.preventDefault()}
             >
-              <Upload className="h-4 w-4" />
+              <Share2 className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52 text-right" style={{ direction: "rtl" }}>
