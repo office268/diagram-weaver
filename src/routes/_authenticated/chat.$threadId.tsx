@@ -18,7 +18,18 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   File as FileIcon,
+  Sparkles,
+  ListChecks,
+  Hammer,
+  ChevronDown,
+  Check,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -89,6 +100,16 @@ function ChatPage() {
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [mode, setMode] = useState<"auto" | "plan" | "build">(() => {
+    if (typeof window === "undefined") return "auto";
+    const saved = window.localStorage.getItem("chat-mode");
+    return saved === "plan" || saved === "build" || saved === "auto" ? saved : "auto";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("chat-mode", mode);
+    }
+  }, [mode]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
