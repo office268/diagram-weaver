@@ -492,61 +492,7 @@ function ChatPage() {
             </div>
           )}
           <div className="mx-auto max-w-3xl">
-            <div className="relative flex items-end rounded-2xl border border-input bg-background shadow-sm focus-within:ring-2 focus-within:ring-ring">
-              <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                    disabled={sending}
-                    aria-label="הוסף"
-                    title="הוסף"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  side="top"
-                  align="start"
-                  className="w-48 p-1"
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                    onClick={() => {
-                      setAttachMenuOpen(false);
-                      fileInputRef.current?.click();
-                    }}
-                  >
-                    <FileIcon className="h-4 w-4 text-muted-foreground" />
-                    קובץ
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                    onClick={() => {
-                      setAttachMenuOpen(false);
-                      imageInputRef.current?.click();
-                    }}
-                  >
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    תמונה
-                  </button>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                    onClick={() => {
-                      setAttachMenuOpen(false);
-                      setLinkOpen(true);
-                    }}
-                  >
-                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                    קישור
-                  </button>
-                </PopoverContent>
-              </Popover>
+            <div className="flex flex-col rounded-2xl border border-input bg-background shadow-sm focus-within:ring-2 focus-within:ring-ring">
               <Textarea
                 ref={textareaRef}
                 value={input}
@@ -559,61 +505,118 @@ function ChatPage() {
                 }
                 rows={4}
                 disabled={sending}
-                className="min-h-[104px] max-h-[176px] resize-none overflow-y-auto border-0 bg-transparent ps-24 pe-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[88px] max-h-[176px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+              <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
+                <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                  <PopoverTrigger asChild>
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
                       disabled={sending}
-                      className="h-8 gap-1 rounded-full px-2 text-xs text-muted-foreground hover:text-foreground"
-                      title={`מצב: ${MODE_META[mode].label}`}
+                      aria-label="הוסף"
+                      title="הוסף"
                     >
-                      <span className="hidden sm:inline">{MODE_META[mode].label}</span>
-                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                      <Plus className="h-4 w-4" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    {(["auto", "plan", "build"] as const).map((m) => {
-                      const meta = MODE_META[m];
-                      const Icon = meta.icon;
-                      const active = mode === m;
-                      return (
-                        <DropdownMenuItem
-                          key={m}
-                          onClick={() => setMode(m)}
-                          className="flex items-start gap-2 py-2"
-                        >
-                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-medium">{meta.label}</span>
-                              {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="w-48 p-1">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setAttachMenuOpen(false);
+                        fileInputRef.current?.click();
+                      }}
+                    >
+                      <FileIcon className="h-4 w-4 text-muted-foreground" />
+                      קובץ
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setAttachMenuOpen(false);
+                        imageInputRef.current?.click();
+                      }}
+                    >
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      תמונה
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setAttachMenuOpen(false);
+                        setLinkOpen(true);
+                      }}
+                    >
+                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                      קישור
+                    </button>
+                  </PopoverContent>
+                </Popover>
+                <div className="flex items-center gap-1">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={sending}
+                        className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                        title={`מצב: ${MODE_META[mode].label}`}
+                        aria-label={`מצב: ${MODE_META[mode].label}`}
+                      >
+                        {(() => {
+                          const Icon = MODE_META[mode].icon;
+                          return <Icon className="h-4 w-4" />;
+                        })()}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      {(["auto", "plan", "build"] as const).map((m) => {
+                        const meta = MODE_META[m];
+                        const Icon = meta.icon;
+                        const active = mode === m;
+                        return (
+                          <DropdownMenuItem
+                            key={m}
+                            onClick={() => setMode(m)}
+                            className="flex items-start gap-2 py-2"
+                          >
+                            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-medium">{meta.label}</span>
+                                {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                              </div>
+                              <p className="text-[11px] leading-snug text-muted-foreground">
+                                {meta.description}
+                              </p>
                             </div>
-                            <p className="text-[11px] leading-snug text-muted-foreground">
-                              {meta.description}
-                            </p>
-                          </div>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  onClick={() => void handleSend()}
-                  disabled={
-                    sending ||
-                    (input.trim().length === 0 &&
-                      attachments.filter((a) => a.status === "ready").length === 0)
-                  }
-                  size="icon"
-                  className="h-8 w-8 shrink-0 rounded-full"
-                >
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    onClick={() => void handleSend()}
+                    disabled={
+                      sending ||
+                      (input.trim().length === 0 &&
+                        attachments.filter((a) => a.status === "ready").length === 0)
+                    }
+                    size="icon"
+                    aria-label="שלח"
+                    title="שלח"
+                    className="h-8 w-8 shrink-0 rounded-full"
+                  >
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
