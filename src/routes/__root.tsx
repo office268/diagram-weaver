@@ -199,7 +199,7 @@ function RootProviders() {
       initialTexts={loaderData?.siteTexts ?? {}}
       isAdmin={adminData?.isAdmin ?? false}
     >
-      <PaymentTestModeBanner />
+      
       <Outlet />
     </SiteTextsProvider>
   );
