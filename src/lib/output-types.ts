@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   Activity,
   Server,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,7 +27,9 @@ export type DiagramOutputKey =
   | "diagram_usecase"
   | "diagram_sequence"
   | "diagram_state"
-  | "diagram_deployment";
+  | "diagram_deployment"
+  | "diagram_erd";
+
 
 export type OutputKey = DocumentOutputKey | DiagramOutputKey;
 
