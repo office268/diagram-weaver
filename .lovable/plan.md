@@ -1,54 +1,48 @@
-## אבחון
 
-הוספתי בדיקת admin בצד הלקוח, וה-network מראה שהקריאה ל-`getIsAdmin` באמת חוזרת עם status 200 וטוקן Bearer תקין. ב-DB אישרתי ש-`office@make-i-tec.com` (`1c05c2d4-...248a4`) הוא `admin`. עם זאת — ב-session replay הדיאלוג נפתח לחמש שניות ולא נראה כפתור AI.
+# החזרת הסוכן המבקר ל-`/api/generate-spec`
 
-יש שתי השערות סבירות:
-1. **תזמון רינדור** — `useQuery` עדיין `pending` כשהדיאלוג נפתח לראשונה, ו-`ctxIsAdmin` הוא `false` (ה-root loader רץ ב-SSR ללא טוקן). הכפתור נסתר עד שהשאילתה חוזרת.
-2. **המיקום בתוך גוף הדיאלוג גורם שהמשתמש פשוט פספס אותו** (קטן, ליד תווית "תיאור").
+## המטרה
+להחזיר את שלב הביקורת לתוך אותה בקשת יצירה, בלי לחזור ל-timeout של ה-upstream proxy (60 שניות).
 
-## תיקון
+## הרעיון
+היום כל ה-pipeline רץ בתוך `runOrchestrator` כבלוק אחד, וה-heartbeat (רווחים) שומר על החיבור פתוח. הבעיה ב-timeout לא הייתה החיבור — אלא שהמודל `gemini-2.5-pro` של המבקר לבדו לקח יותר מדי זמן בתוך אותה קריאה, ולפעמים חצה את גבול ה-edge proxy לפני שה-JSON הסופי נשלח.
 
-### 1. לפתור את ה-SSR — `isAdmin` נכון כבר בטעינה הראשונה
-ב-`src/routes/__root.tsx`, ה-loader קורא ל-`getIsAdmin()` ישירות. הקריאה הזו רצה ב-SSR ללא Authorization header, נכשלת, ומחזירה `isAdmin: false` שנשמר ב-`useSiteTexts()` עד invalidation.
+הפתרון: לשנות את החוזה של ה-endpoint כך שישלח **שני מטענים מובחנים בתוך אותו stream**, עם מפרידים ברורים:
 
-תיקון: להעביר את `getIsAdmin` ל-`Route.useRouteContext()`/loader רק בצד הלקוח, או פשוט להסיר את `getIsAdmin` מה-loader ולהסתמך אך ורק על ה-`useQuery` הקיים ב-`projects.index.tsx`. כך אין ערך SSR שמרעיל את ה-state.
-
-### 2. להבטיח שהכפתור מתרנדר ברגע ש-query חוזר
-ל-`useQuery` הקיים נוסיף `placeholderData`/בדיקת loading, ונחליף את התנאי כך שיציג skeleton קטן בזמן `isLoading`:
-
-```tsx
-{(isAdminLoading || isAdmin) && (
-  <Button disabled={isAdminLoading || ideaMut.isPending} ...>
-    ...
-  </Button>
-)}
+```
+{ ...spec JSON... }
+__REVIEW__
+{ ...review JSON... }
 ```
 
-(אם בסוף `isAdmin=false`, הכפתור ייעלם אחרי הטעינה — לא נורא למשתמש לא-מנהל.)
+הספק (spec) נשלח **מיד כשהוא מוכן** (לפני הביקורת), אז אם הביקורת תיכשל או תיחתך — הלקוח כבר קיבל את המסמך השלם. הביקורת היא "תוספת" שמגיעה אחר כך באותו חיבור.
 
-### 3. להעביר את כפתור ה-AI ל-DialogHeader
-מיקום נוכחי: שורה קטנה ליד תווית "תיאור". המיקום החדש: שורת actions קטנה תחת `DialogTitle`/`DialogDescription`, כדי שהכפתור יהיה הדבר הראשון שרואים בדיאלוג.
+## שינויים נדרשים
 
-```tsx
-<DialogHeader>
-  <DialogTitle>פרויקט חדש</DialogTitle>
-  <DialogDescription>...</DialogDescription>
-  {isAdmin && (
-    <Button variant="outline" size="sm" className="mt-2 w-fit" onClick={() => ideaMut.mutate()}>
-      <Sparkles className="ml-1.5 h-4 w-4" /> רעיון מה-AI
-    </Button>
-  )}
-</DialogHeader>
-```
+### 1. `src/lib/agents/orchestrator.server.ts`
+- להוסיף callback חדש `onSpecReady?: (spec: SpecOutput) => void` ל-`RunParams`
+- בתוך `runOrchestrator`, מיד אחרי `assemble(...)` הראשון (לפני `runReviewAgent`), לקרוא ל-`onSpecReady(currentSpec)` אם הוגדר
+- להחזיר את `skipReview: false` כברירת מחדל (קוד הביקורת כבר קיים, רק ה-flag שמדלג עליו ב-API ייעלם)
 
-### 4. לוג דיבוג זמני
-להוסיף `useEffect(() => { console.log("[isAdmin]", { adminCheck, ctxIsAdmin, isAdmin, isAdminLoading }); }, [...])` כדי שאם הכפתור עדיין לא מופיע — נראה בקונסול בדיוק מה קורה.
+### 2. `src/routes/api/generate-spec.ts`
+- להסיר את `skipReview: true` ו-`maxIterations: 1`
+- להעביר `onSpecReady` שעושה:
+  ```
+  safeEnqueue(JSON.stringify(spec));
+  safeEnqueue("\n__REVIEW__\n");
+  ```
+- אחרי שה-orchestrator מסיים, לשלוח את `result.review` כ-JSON שני
+- ה-heartbeat נשאר כפי שהוא, ושומר על החיבור פתוח בזמן שהמבקר רץ
 
-## קבצים
+### 3. הלקוח שצורך את `/api/generate-spec` (לאתר ב-`src/lib/spec.functions.ts` או באזור ה-editor)
+- לפצל את התשובה לפי המפריד `__REVIEW__`
+- לפענח את החלק הראשון כ-spec (כמו היום) ולהציג אותו מיד
+- אם קיים חלק שני — לפענח אותו כ-review ולעדכן את ה-state של הביקורת
+- ה-endpoint הנפרד `/api/review-spec` נשאר זמין ל"הרץ ביקורת שוב"
 
-- `src/routes/__root.tsx` — להסיר את הקריאה ל-`getIsAdmin()` מה-loader, ולהעביר ל-`isAdmin: false` קבוע (יחושב בקליינט בלבד).
-- `src/routes/_authenticated/projects.index.tsx` — להעביר את הכפתור ל-`DialogHeader`, להוסיף state של `isLoading`, להוסיף לוג זמני.
+## למה זה פותר את ה-timeout
+ה-upstream proxy מתחיל לספור timeout מהבייט הראשון שלא הגיע. כל עוד ה-stream שולח **משהו** (heartbeat או נתונים אמיתיים) כל פחות מ-60 שניות — החיבור חי. עכשיו ה-spec יישלח מוקדם מאוד (תוך ~15-25 שניות), ואז יש לנו את כל החלון לביקורת בלי שהלקוח "מחכה לכלום".
 
-## הערה למשתמש
-
-לאחר הפריסה — **רענון קשה (Ctrl+Shift+R / משיכה מלמעלה במובייל)**, להיכנס שוב ל-/projects ולפתוח "פרויקט חדש". אם הכפתור עדיין לא מופיע — לפתוח את הקונסול בדפדפן ולהדביק לי את השורה `[isAdmin]`.
+## הערות
+- `maxIterations` חוזר ל-`MAX_ITERATIONS = 2` הדיפולטי (אפשר לשמר את הלולאה, או להגביל ל-1 אם רוצים — נחליט לפי הזמן בפועל)
+- אם נרצה זהירות מוגברת, אפשר להשאיר `maxIterations: 1` ולוודא שרק קריאת ביקורת אחת רצה — ככה בטוח לא נחרוג מהזמן
