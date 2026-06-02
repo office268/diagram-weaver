@@ -1389,7 +1389,7 @@ function SectionShell({
                   onTitleChange(draft);
                   setEditing(false);
                 } else if (e.key === "Escape") {
-                  setDraft(title);
+                  setDraft(editTitle);
                   setEditing(false);
                 }
               }}
