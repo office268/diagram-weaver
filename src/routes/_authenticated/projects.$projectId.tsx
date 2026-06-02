@@ -392,7 +392,7 @@ function ProjectPage() {
     setBuilder((prev) => (prev ? { ...prev, phase: "generating" } : prev));
     try {
       const token = await getToken();
-      const spec = await generateOnce(token, {
+      const { spec, review: inlineReview } = await generateOnce(token, {
         promptText: builder.prompt,
         model: builder.model,
         docTypeKey: builder.docType,
@@ -400,7 +400,7 @@ function ProjectPage() {
         reviewerNotes,
       });
       setBuilder((prev) => (prev ? { ...prev, phase: "reviewing" } : prev));
-      const review = await reviewOnce(token, builder.prompt, spec);
+      const review = inlineReview ?? (await reviewOnce(token, builder.prompt, spec));
       const specId = await saveIteration({
         groupId: builder.groupId,
         promptText: builder.prompt,
