@@ -1198,6 +1198,7 @@ function EditorPage() {
             </div>
           </aside>
         ) : null}
+        </div>
       </div>
       {!focusMode ? (
         <EditorStatusBar
