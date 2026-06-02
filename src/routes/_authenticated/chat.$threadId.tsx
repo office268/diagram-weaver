@@ -457,18 +457,60 @@ function ChatPage() {
           )}
           <div className="mx-auto max-w-3xl">
             <div className="relative flex items-end rounded-2xl border border-input bg-background shadow-sm focus-within:ring-2 focus-within:ring-ring">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                disabled={sending}
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="צרף קובץ"
-                title="צרף קובץ (PDF, DOCX, TXT)"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                    disabled={sending}
+                    aria-label="הוסף"
+                    title="הוסף"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="start"
+                  className="w-48 p-1"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <FileIcon className="h-4 w-4 text-muted-foreground" />
+                    קובץ
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      imageInputRef.current?.click();
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    תמונה
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      setLinkOpen(true);
+                    }}
+                  >
+                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                    קישור
+                  </button>
+                </PopoverContent>
+              </Popover>
               <Textarea
                 ref={textareaRef}
                 value={input}
