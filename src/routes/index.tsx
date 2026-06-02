@@ -188,7 +188,7 @@ function Landing() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="mx-auto block w-full max-w-[220px]" disabled={busy}>
+            <Button type="submit" className="w-full" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "signup" ? "יצירת חשבון" : "כניסה"}
             </Button>
@@ -200,7 +200,7 @@ function Landing() {
             <div className="h-px flex-1 bg-border" />
           </div>
 
-          <Button variant="outline" className="mx-auto block w-full max-w-[220px]" onClick={handleGoogle} disabled={busy}>
+          <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={busy}>
             <GoogleIcon className="mr-2 h-4 w-4" />
             המשך עם Google
           </Button>
