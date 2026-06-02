@@ -402,6 +402,14 @@ export async function runOrchestrator(
   let currentData = dataModel;
   let currentUC = useCases;
 
+  // Hand the freshly assembled spec to the caller right away so it can
+  // stream it to the client before the (slow) review starts.
+  try {
+    params.onSpecReady?.(currentSpec);
+  } catch (e) {
+    console.error("[orchestrator] onSpecReady threw (ignored):", e);
+  }
+
   let currentReview: ReviewAgentOutput | null = null;
   if (!skipReview) {
     emitStage(emit, "review", "start");
