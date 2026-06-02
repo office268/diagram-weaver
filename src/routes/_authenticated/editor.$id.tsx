@@ -1917,19 +1917,10 @@ function SortableSection({
     opacity: isDragging ? 0.6 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
-  const handle = (
-    <button
-      type="button"
-      ref={setActivatorNodeRef}
-      className="flex h-10 w-10 shrink-0 touch-none select-none items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      style={{ touchAction: "none" }}
-      aria-label="גרור לסידור מחדש"
-      {...attributes}
-      {...listeners}
-    >
-      <GripVertical className="h-4 w-4" />
-    </button>
-  );
+  void setActivatorNodeRef;
+  void attributes;
+  void listeners;
+  const handle: React.ReactNode = null;
   return (
     <div ref={setNodeRef} id={`section-${id}`} style={style} className="scroll-mt-20">
       {children(handle)}
