@@ -18,12 +18,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
 import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
-import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiGenerateSpecV2RouteImport } from './routes/api/generate-spec-v2'
-import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
+import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -77,6 +77,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUploadDocumentRoute = ApiUploadDocumentRouteImport.update({
+  id: '/api/upload-document',
+  path: '/api/upload-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
   id: '/api/review-spec',
   path: '/api/review-spec',
@@ -92,19 +97,14 @@ const ApiImproveSectionRoute = ApiImproveSectionRouteImport.update({
   path: '/api/improve-section',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGenerateSpecRoute = ApiGenerateSpecRouteImport.update({
-  id: '/api/generate-spec',
-  path: '/api/generate-spec',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiGenerateSpecV2Route = ApiGenerateSpecV2RouteImport.update({
   id: '/api/generate-spec-v2',
   path: '/api/generate-spec-v2',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiUploadDocumentRoute = ApiUploadDocumentRouteImport.update({
-  id: '/api/upload-document',
-  path: '/api/upload-document',
+const ApiGenerateSpecRoute = ApiGenerateSpecRouteImport.update({
+  id: '/api/generate-spec',
+  path: '/api/generate-spec',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDeleteDocumentRoute = ApiDeleteDocumentRouteImport.update({
@@ -163,13 +163,13 @@ export interface FileRoutesByFullPath {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
-  '/api/upload-document': typeof ApiUploadDocumentRoute
-  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/upload-document': typeof ApiUploadDocumentRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -187,13 +187,13 @@ export interface FileRoutesByTo {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
-  '/api/upload-document': typeof ApiUploadDocumentRoute
-  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/upload-document': typeof ApiUploadDocumentRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
@@ -213,13 +213,13 @@ export interface FileRoutesById {
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
-  '/api/upload-document': typeof ApiUploadDocumentRoute
-  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/upload-document': typeof ApiUploadDocumentRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
@@ -239,13 +239,13 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/settings'
+    | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
-    | '/api/upload-document'
-    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/upload-document'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/projects/'
@@ -263,13 +263,13 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/settings'
+    | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
-    | '/api/upload-document'
-    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/upload-document'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/projects'
@@ -288,13 +288,13 @@ export interface FileRouteTypes {
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
+    | '/api/delete-document'
     | '/api/generate-spec'
     | '/api/generate-spec-v2'
-    | '/api/upload-document'
-    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/upload-document'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/'
@@ -311,13 +311,13 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
   ApiGenerateSpecV2Route: typeof ApiGenerateSpecV2Route
-  ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
-  ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
+  ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -386,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/upload-document': {
+      id: '/api/upload-document'
+      path: '/api/upload-document'
+      fullPath: '/api/upload-document'
+      preLoaderRoute: typeof ApiUploadDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/review-spec': {
       id: '/api/review-spec'
       path: '/api/review-spec'
@@ -407,13 +414,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiImproveSectionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/generate-spec': {
-      id: '/api/generate-spec'
-      path: '/api/generate-spec'
-      fullPath: '/api/generate-spec'
-      preLoaderRoute: typeof ApiGenerateSpecRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/generate-spec-v2': {
       id: '/api/generate-spec-v2'
       path: '/api/generate-spec-v2'
@@ -421,11 +421,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateSpecV2RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/upload-document': {
-      id: '/api/upload-document'
-      path: '/api/upload-document'
-      fullPath: '/api/upload-document'
-      preLoaderRoute: typeof ApiUploadDocumentRouteImport
+    '/api/generate-spec': {
+      id: '/api/generate-spec'
+      path: '/api/generate-spec'
+      fullPath: '/api/generate-spec'
+      preLoaderRoute: typeof ApiGenerateSpecRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/delete-document': {
@@ -519,13 +519,13 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
   ApiGenerateSpecV2Route: ApiGenerateSpecV2Route,
-  ApiUploadDocumentRoute: ApiUploadDocumentRoute,
-  ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
   ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiIngestDocumentRoute: ApiIngestDocumentRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
+  ApiUploadDocumentRoute: ApiUploadDocumentRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
