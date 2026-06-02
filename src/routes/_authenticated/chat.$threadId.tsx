@@ -234,11 +234,8 @@ function ChatPage() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
-    }
+  function handleKeyDown(_e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter inserts a newline (default). Sending is via the send button only.
   }
 
   if (isLoading) {
@@ -540,9 +537,6 @@ function ChatPage() {
             </div>
           </div>
 
-          <p className="mx-auto mt-2 max-w-3xl text-[11px] text-muted-foreground">
-            Shift+Enter לשליחה · Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
-          </p>
         </div>
       </div>
 
