@@ -30,8 +30,8 @@ function HomePage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4">
-      <div className="grid auto-rows-fr grid-cols-3 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6 lg:gap-5">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
+      <div className="grid flex-1 auto-rows-min content-between grid-cols-3 gap-x-3 sm:gap-x-4 lg:gap-5">
         {OUTPUT_TYPE_ORDER.map((key, i) => {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
