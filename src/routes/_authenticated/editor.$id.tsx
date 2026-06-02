@@ -1816,19 +1816,19 @@ function ListBody<T extends { id: string }>({
 }: ListBodyProps<T>) {
   return (
     <div className="space-y-3">
-      <ul className="space-y-3">
+      <ul className="space-y-2">
         {items.map((item, idx) => (
           <li
             key={item.id}
-            className="group relative rounded-lg border border-border bg-card p-4 pt-3 focus-within:border-primary/40"
+            className="group relative"
           >
-            <span className="pointer-events-none absolute right-3 top-3 text-xs text-muted-foreground">
-              #{idx + 1}
+            <span className="pointer-events-none absolute right-0 top-1 text-xs text-muted-foreground tabular-nums">
+              {idx + 1}.
             </span>
             <EditableItemDeleteContext.Provider
               value={() => onChange(items.filter((it) => it.id !== item.id))}
             >
-              <div className="pr-8">
+              <div className="pr-6">
                 {renderItem(item, (next) =>
                   onChange(items.map((it) => (it.id === item.id ? next : it))),
                 )}
@@ -1837,11 +1837,12 @@ function ListBody<T extends { id: string }>({
           </li>
         ))}
         {items.length === 0 && (
-          <li className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+          <li className="text-sm text-muted-foreground">
             אין פריטים. לחץ "הוסף" כדי להתחיל.
           </li>
         )}
       </ul>
+
       <Button variant="outline" size="sm" onClick={() => onChange([...items, newItem()])}>
         <Plus className="mr-1.5 h-4 w-4" /> {addLabel}
       </Button>
