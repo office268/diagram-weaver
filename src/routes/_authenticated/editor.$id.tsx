@@ -1564,7 +1564,7 @@ function EditorPage() {
                   </ol>
                 </div>
               </div>
-              <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+              <footer className="pt-8 text-center text-xs text-muted-foreground">
                 עמוד 1 מתוך {visibleSections.length + 1}
               </footer>
             </article>
