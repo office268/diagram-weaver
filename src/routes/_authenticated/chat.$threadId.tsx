@@ -337,7 +337,52 @@ function ChatPage() {
 
         {/* Composer */}
         <div className="border-t border-border p-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="hidden"
+            onChange={onPickFiles}
+          />
+          {attachments.length > 0 && (
+            <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
+              {attachments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
+                >
+                  {a.status === "uploading" ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Paperclip className="h-3 w-3 text-primary" />
+                  )}
+                  <span className="max-w-[140px] truncate">{a.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.id)}
+                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label="הסר"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="mx-auto flex max-w-3xl items-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              disabled={sending}
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="צרף קובץ"
+              title="צרף קובץ (PDF, DOCX, TXT)"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
             <Textarea
               ref={textareaRef}
               value={input}
@@ -354,7 +399,11 @@ function ChatPage() {
             />
             <Button
               onClick={() => void handleSend()}
-              disabled={sending || input.trim().length === 0}
+              disabled={
+                sending ||
+                (input.trim().length === 0 &&
+                  attachments.filter((a) => a.status === "ready").length === 0)
+              }
               size="icon"
               className="h-10 w-10 shrink-0"
             >
@@ -362,7 +411,7 @@ function ChatPage() {
             </Button>
           </div>
           <p className="mx-auto mt-2 max-w-3xl text-[11px] text-muted-foreground">
-            Enter לשליחה · Shift+Enter לשורה חדשה
+            Enter לשליחה · Shift+Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
           </p>
         </div>
       </div>
