@@ -1596,7 +1596,7 @@ function EditorPage() {
                             focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
                           )}
                         >
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0">
                             <SectionShell
                               title={`${index + 1}. ${titleValue}`}
                               displayTitle={`${index + 1}. ${titleValue}`}
