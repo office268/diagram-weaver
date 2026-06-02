@@ -88,7 +88,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EditableText, EditableItemDeleteContext } from "@/components/editable-text";
+import { EditableText } from "@/components/editable-text";
 import { SpecDiagram } from "@/components/spec-diagram";
 import {
   normalizeSpec,
