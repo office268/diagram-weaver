@@ -238,7 +238,7 @@ function ChatPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ threadId, message: composed }),
+        body: JSON.stringify({ threadId, message: composed, mode }),
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
