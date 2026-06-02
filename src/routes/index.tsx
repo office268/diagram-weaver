@@ -188,7 +188,7 @@ function Landing() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button type="submit" className="mt-3 w-full" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {mode === "signup" ? "יצירת חשבון" : "כניסה"}
             </Button>
