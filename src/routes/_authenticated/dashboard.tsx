@@ -35,7 +35,7 @@ function HomePage() {
 
 
 
-      <div className="grid auto-rows-fr grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+      <div className="grid auto-rows-fr grid-cols-3 gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6 lg:gap-5">
         {OUTPUT_TYPE_ORDER.map((key, i) => {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
@@ -47,7 +47,7 @@ function HomePage() {
               type="button"
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(key)}
-              className="cube-3d animate-fade-in group relative flex h-32 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-40 sm:gap-3 sm:p-4 disabled:opacity-50"
+              className="cube-3d animate-fade-in group relative flex h-36 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-44 sm:gap-3 sm:p-4 disabled:opacity-50"
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
               <span
