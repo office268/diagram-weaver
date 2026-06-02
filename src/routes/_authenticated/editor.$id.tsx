@@ -1100,18 +1100,30 @@ function EditorPage() {
         </CommandList>
       </CommandDialog>
 
-      {/* Document */}
-      <div
-        className={cn(
-          "mx-auto w-full px-4 py-8",
-          splitSecondaryKey
-            ? "max-w-7xl grid gap-6 lg:grid-cols-2"
-            : focusMode
-              ? "max-w-3xl space-y-8"
-              : "max-w-4xl space-y-8",
-        )}
-      >
-        <div className={cn(splitSecondaryKey && "space-y-8 min-w-0")}>
+      {/* Document — page-style layout (like Word / Google Docs print preview) */}
+      <div className="bg-muted/40 py-6 sm:py-10">
+        <div
+          className={cn(
+            "mx-auto w-full px-3 sm:px-6",
+            splitSecondaryKey
+              ? "max-w-7xl grid gap-6 lg:grid-cols-2"
+              : focusMode
+                ? "max-w-[210mm]"
+                : "max-w-[210mm]",
+          )}
+        >
+          <div
+            className={cn(
+              "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+              "px-6 py-10 sm:px-16 sm:py-20 space-y-8 min-w-0",
+            )}
+          >
+            <header className="border-b border-border/60 pb-4">
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground">
+                {title || "מסמך"}
+              </h1>
+            </header>
+
           <DndContext
             sensors={dndSensors}
             collisionDetection={closestCenter}
