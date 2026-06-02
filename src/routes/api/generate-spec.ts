@@ -67,62 +67,85 @@ export const Route = createFileRoute("/api/generate-spec")({
           );
         }
 
-        // ── Run orchestrator (non-streaming: client only consumes final JSON)
-        try {
-          const result = await runOrchestrator(
-            {
-              userPrompt: body.prompt,
-              docType: (body.docType ?? "spec_overview") as DocTypeKey,
-              userId,
-              projectId: body.projectId ?? null,
-              apiKey: key,
-              previousSpec: body.previousSpec,
-              reviewerNotes: body.reviewerNotes,
-              emit: () => {
-                /* progress markers unused by client; swallowed to avoid stream timeouts */
-              },
-            },
-            {
-              canSpendIterationCredit: async () => {
-                const { data: nb, error: e } = await supabaseAdmin.rpc(
-                  "consume_credits",
-                  {
-                    _user_id: userId,
-                    _amount: 1,
-                    _description: "איטרציית שיפור multi-agent",
-                  },
-                );
-                if (e) {
-                  console.error("[generate-spec] iter credit:", e);
-                  return false;
-                }
-                return nb !== null;
-              },
-            },
-          );
+        // ── Stream response (keepalive heartbeat) so upstream proxy
+        // does not time out while the multi-agent run executes.
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            let closed = false;
+            const safeEnqueue = (s: string) => {
+              if (closed) return;
+              try {
+                controller.enqueue(encoder.encode(s));
+              } catch {
+                closed = true;
+              }
+            };
+            const safeClose = () => {
+              if (closed) return;
+              closed = true;
+              try {
+                controller.close();
+              } catch {
+                /* already closed */
+              }
+            };
 
-          console.log(
-            `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
-          );
+            // Heartbeat: emit a whitespace byte every 10s to keep the
+            // connection alive through edge proxies. Stage markers from
+            // the orchestrator are no-brace, so they don't interfere with
+            // the client's first-`{`-to-last-`}` JSON extraction.
+            const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
-          return new Response(JSON.stringify(result.spec), {
-            status: 200,
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-          });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.error("[generate-spec] error:", err);
-          let friendly = msg;
-          let status = 500;
-          if (msg.includes("429")) {
-            friendly = "הגעת למגבלת קצב.";
-            status = 429;
-          } else if (msg.includes("402")) {
-            friendly = "אזלו קרדיטי ה-AI.";
-            status = 402;
-          }
-          return new Response(friendly, { status });
-        }
+            try {
+              const result = await runOrchestrator(
+                {
+                  userPrompt: body.prompt,
+                  docType: (body.docType ?? "spec_overview") as DocTypeKey,
+                  userId,
+                  projectId: body.projectId ?? null,
+                  apiKey: key,
+                  previousSpec: body.previousSpec,
+                  reviewerNotes: body.reviewerNotes,
+                  emit: safeEnqueue,
+                },
+                {
+                  // Skip review-driven iterations in the request path to
+                  // stay within the upstream timeout. The user can request
+                  // an explicit improvement run afterwards.
+                  maxIterations: 1,
+                  canSpendIterationCredit: async () => false,
+                },
+              );
+
+              console.log(
+                `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
+              );
+
+              safeEnqueue(JSON.stringify(result.spec));
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.error("[generate-spec] error:", err);
+              let friendly = msg;
+              if (msg.includes("429")) friendly = "הגעת למגבלת קצב.";
+              else if (msg.includes("402")) friendly = "אזלו קרדיטי ה-AI.";
+              safeEnqueue(`\n__STREAM_ERROR__:${friendly}`);
+            } finally {
+              clearInterval(heartbeat);
+              safeClose();
+            }
+          },
+        });
+
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+          },
+        });
+
 
       },
     },
