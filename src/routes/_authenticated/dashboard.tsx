@@ -30,12 +30,8 @@ function HomePage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-3">
-      <div className="mb-4 text-center">
-        <h1 className="truncate text-base font-light tracking-tight text-muted-foreground sm:text-lg">
-          מה ניצור היום?
-        </h1>
-      </div>
+    <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-4">
+
 
 
 
