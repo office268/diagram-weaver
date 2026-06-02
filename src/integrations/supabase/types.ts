@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_events: {
+        Row: {
+          completion_tokens: number
+          cost_usd: number
+          created_at: string
+          id: string
+          model: string
+          prompt_tokens: number
+          purpose: string
+          spec_document_id: string
+          total_tokens: number
+          user_id: string
+        }
+        Insert: {
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          model: string
+          prompt_tokens?: number
+          purpose?: string
+          spec_document_id: string
+          total_tokens?: number
+          user_id: string
+        }
+        Update: {
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          id?: string
+          model?: string
+          prompt_tokens?: number
+          purpose?: string
+          spec_document_id?: string
+          total_tokens?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_metadata: {
         Row: {
           apple_touch_icon_url: string

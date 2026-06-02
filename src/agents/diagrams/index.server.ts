@@ -11,6 +11,7 @@ import {
 } from "@/agents/shared/prompt-helpers";
 import { DIAGRAMS_SYSTEM } from "./system";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 
 const OutputSchema = z.object({
   use_case_diagrams: z
@@ -68,24 +69,27 @@ export async function runDiagramsAgent(
   arch: ArchitectureOutput,
   dm: DataModelOutput,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  tracker?: UsageTracker,
 ): Promise<DiagramsOutput> {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: gateway(AGENT_MODELS.diagrams),
     system: DIAGRAMS_SYSTEM,
     prompt: buildPrompt(ctx, useCases, arch, dm),
     maxOutputTokens: 4000,
     temperature: AGENT_TEMPERATURES.diagrams,
   });
+  tracker?.track(AGENT_MODELS.diagrams, usage);
   try {
     return OutputSchema.parse(JSON.parse(extractJson(text)));
   } catch {
-    const { text: text2 } = await generateText({
+    const { text: text2, usage: usage2 } = await generateText({
       model: gateway(AGENT_MODELS.diagrams),
       system: DIAGRAMS_SYSTEM,
       prompt: buildPrompt(ctx, useCases, arch, dm) + "\n\nהחזר JSON תקני בלבד.",
       maxOutputTokens: 4000,
       temperature: 0,
     });
+    tracker?.track(AGENT_MODELS.diagrams, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }

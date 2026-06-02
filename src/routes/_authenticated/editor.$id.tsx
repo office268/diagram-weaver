@@ -74,7 +74,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
+import { getSpec, updateSpec, createSpec, getDocUsageTotals, logSpecUsage } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 import {
   normalizeReviewNotes,
@@ -138,10 +138,18 @@ function EditorPage() {
   const updateFn = useServerFn(updateSpec);
   const createFn = useServerFn(createSpec);
   const getProjectFn = useServerFn(getProject);
+  const getUsageFn = useServerFn(getDocUsageTotals);
+  const logUsageFn = useServerFn(logSpecUsage);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
     queryFn: () => getFn({ data: { id } }),
+  });
+
+  const { data: usageData } = useQuery({
+    queryKey: ["spec-usage", id],
+    queryFn: () => getUsageFn({ data: { id } }),
+    staleTime: 30_000,
   });
 
   const projectId = (data?.spec as { project_id?: string | null } | undefined)?.project_id ?? null;
@@ -505,6 +513,7 @@ function EditorPage() {
             contextPrompt: prompt,
             docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
             projectId: projectId ?? undefined,
+            docId: id,
           }),
 
         });
@@ -519,12 +528,13 @@ function EditorPage() {
         return null;
       }
     },
-    [getSectionValue, prompt, data?.spec, projectId],
+    [getSectionValue, prompt, data?.spec, projectId, id],
   );
 
   const applyImprovement = useCallback(
     (key: string, candidate: unknown, previous: unknown) => {
       applySectionValue(key, candidate);
+      qc.invalidateQueries({ queryKey: ["spec-usage", id] });
       toast.success("הסעיף עודכן", {
         duration: 8000,
         action: {
@@ -533,7 +543,7 @@ function EditorPage() {
         },
       });
     },
-    [applySectionValue],
+    [applySectionValue, qc, id],
   );
 
   const improveDoc = useCallback(async () => {
@@ -601,13 +611,42 @@ function EditorPage() {
         throw new Error(fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim() || "שגיאת זרם");
       }
 
-      // Stream payload contract: <spec JSON>\n__REVIEW__\n<review JSON>
+      // Stream payload contract: <spec JSON>\n__REVIEW__\n<review JSON>\n__USAGE__\n<usage JSON>
       const sepIdx = fullText.indexOf("__REVIEW__");
+      const usageIdx = fullText.indexOf("__USAGE__");
       const specText = sepIdx >= 0 ? fullText.slice(0, sepIdx) : fullText;
-      const reviewText = sepIdx >= 0 ? fullText.slice(sepIdx + "__REVIEW__".length) : "";
+      const reviewText =
+        sepIdx >= 0
+          ? fullText.slice(
+              sepIdx + "__REVIEW__".length,
+              usageIdx >= 0 ? usageIdx : undefined,
+            )
+          : "";
+      const usageText =
+        usageIdx >= 0 ? fullText.slice(usageIdx + "__USAGE__".length) : "";
 
       const parsed = JSON.parse(extractJson(specText));
       const newSpec: SpecOutput = SpecOutputSchema.parse(parsed);
+
+      let usagePayload: {
+        inputTokens: number;
+        outputTokens: number;
+        totalTokens: number;
+        costUsd: number;
+      } | null = null;
+      if (usageText.trim()) {
+        try {
+          const u = JSON.parse(extractJson(usageText));
+          usagePayload = {
+            inputTokens: Number(u.inputTokens ?? 0),
+            outputTokens: Number(u.outputTokens ?? 0),
+            totalTokens: Number(u.totalTokens ?? 0),
+            costUsd: Number(u.costUsd ?? 0),
+          };
+        } catch (e) {
+          console.warn("[generate-spec] usage parse failed:", e);
+        }
+      }
 
       // 2) Review — use inline review from stream if present, else call /api/review-spec.
       let newReview: SpecReview | null = null;
@@ -660,7 +699,27 @@ function EditorPage() {
         },
       });
 
+      // 4) Log AI usage against the newly-created doc
+      if (usagePayload) {
+        try {
+          await logUsageFn({
+            data: {
+              docId: row.id,
+              model: "multi-agent",
+              purpose: "regenerate",
+              inputTokens: usagePayload.inputTokens,
+              outputTokens: usagePayload.outputTokens,
+              totalTokens: usagePayload.totalTokens,
+              costUsd: usagePayload.costUsd,
+            },
+          });
+        } catch (e) {
+          console.warn("[generate-spec] logUsage failed:", e);
+        }
+      }
+
       qc.invalidateQueries({ queryKey: ["project"] });
+      qc.invalidateQueries({ queryKey: ["spec-usage", row.id] });
       toast.success("נוצרה גרסה משופרת");
       setSelectedNoteIds(new Set());
       navigate({ to: "/editor/$id", params: { id: row.id } });
@@ -669,7 +728,7 @@ function EditorPage() {
     } finally {
       setImproving(false);
     }
-  }, [data?.spec, content, selectedNoteIds, createFn, qc, navigate]);
+  }, [data?.spec, content, selectedNoteIds, createFn, qc, navigate, logUsageFn]);
 
   // Build a body renderer for each section key.
   const renderBody = useMemo(() => {
@@ -1639,6 +1698,8 @@ function EditorPage() {
           wordCount={wordCount}
           filledCount={filledCount}
           totalCount={visibleSections.length}
+          totalTokens={usageData?.totalTokens ?? null}
+          totalCostUsd={usageData?.totalCostUsd ?? null}
         />
       ) : null}
     </div>

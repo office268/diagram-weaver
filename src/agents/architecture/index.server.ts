@@ -11,6 +11,7 @@ import {
 } from "@/agents/shared/prompt-helpers";
 import { ARCHITECTURE_SYSTEM } from "./system";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 
 const OutputSchema = z.object({
   architecture: z.object({
@@ -52,24 +53,27 @@ export async function runArchitectureAgent(
   ctx: AgentContext,
   reqs: RequirementsOutput,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  tracker?: UsageTracker,
 ): Promise<ArchitectureOutput> {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: gateway(AGENT_MODELS.architecture),
     system: ARCHITECTURE_SYSTEM,
     prompt: buildPrompt(ctx, reqs),
     maxOutputTokens: 3000,
     temperature: AGENT_TEMPERATURES.architecture,
   });
+  tracker?.track(AGENT_MODELS.architecture, usage);
   try {
     return OutputSchema.parse(JSON.parse(extractJson(text)));
   } catch {
-    const { text: text2 } = await generateText({
+    const { text: text2, usage: usage2 } = await generateText({
       model: gateway(AGENT_MODELS.architecture),
       system: ARCHITECTURE_SYSTEM,
       prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד.",
       maxOutputTokens: 3000,
       temperature: 0,
     });
+    tracker?.track(AGENT_MODELS.architecture, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }

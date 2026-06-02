@@ -186,3 +186,53 @@ export const deleteSpec = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getDocUsageTotals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("ai_usage_events")
+      .select("total_tokens, cost_usd")
+      .eq("spec_document_id", data.id)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    if (!rows || rows.length === 0) {
+      return { totalTokens: null, totalCostUsd: null };
+    }
+    const totalTokens = rows.reduce((s, r) => s + (r.total_tokens ?? 0), 0);
+    const totalCostUsd = rows.reduce((s, r) => s + Number(r.cost_usd ?? 0), 0);
+    return { totalTokens, totalCostUsd };
+  });
+
+export const logSpecUsage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        docId: z.string().uuid(),
+        model: z.string().min(1).max(100),
+        purpose: z.string().min(1).max(50),
+        inputTokens: z.number().int().min(0),
+        outputTokens: z.number().int().min(0),
+        totalTokens: z.number().int().min(0),
+        costUsd: z.number().min(0).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { logAiUsage } = await import("@/lib/ai-usage.server");
+    await logAiUsage({
+      userId,
+      specDocumentId: data.docId,
+      model: data.model,
+      purpose: data.purpose,
+      inputTokens: data.inputTokens,
+      outputTokens: data.outputTokens,
+      totalTokens: data.totalTokens,
+      costUsd: data.costUsd,
+    });
+    return { ok: true };
+  });
