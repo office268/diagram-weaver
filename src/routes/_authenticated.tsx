@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 
@@ -39,11 +40,37 @@ function AuthenticatedLayout() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="relative border-b border-border bg-card">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-            <Link to="/dashboard" className="relative flex shrink-0 items-center gap-2 font-semibold text-foreground">
+            <div data-tour="user-menu">
+              <UserMenu user={user} />
+            </div>
 
-              <FileText className="h-5 w-5 text-primary" />
-              <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
-            </Link>
+            <nav className="flex items-center gap-1.5 sm:gap-2">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 sm:text-sm"
+              >
+                <Workflow className="h-4 w-4" />
+                <span>ניתוח מערכות</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => toast.info("ניהול פרויקט — בקרוב")}
+                className="relative flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent sm:text-sm"
+              >
+                <KanbanSquare className="h-4 w-4" />
+                <span>ניהול פרויקט</span>
+                <span className="absolute -top-1.5 -end-1.5 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.info("ניהול מוצר — בקרוב")}
+                className="relative flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent sm:text-sm"
+              >
+                <Rocket className="h-4 w-4" />
+                <span>ניהול מוצר</span>
+                <span className="absolute -top-1.5 -end-1.5 rounded-full bg-muted px-1 py-0.5 text-[8px] font-medium text-muted-foreground">בקרוב</span>
+              </button>
+            </nav>
 
             <div className="relative flex items-center gap-1.5">
               <div className="hidden md:flex items-center gap-1.5">
@@ -56,10 +83,6 @@ function AuthenticatedLayout() {
                 <div data-tour="header-search">
                   <CommandTriggerButton />
                 </div>
-              </div>
-              
-              <div data-tour="user-menu">
-                <UserMenu user={user} />
               </div>
             </div>
           </div>
