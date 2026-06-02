@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Sparkles, MoreHorizontal } from "lucide-react";
+import { Loader2, Sparkles, Shapes } from "lucide-react";
 import {
   DndContext,
   MouseSensor,
