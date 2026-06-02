@@ -1,12 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Folder, Search, Clock, Settings } from "lucide-react";
-import { RecentItemsMenu } from "@/components/recent-items-menu";
-
-function openCommandPalette() {
-  window.dispatchEvent(
-    new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }),
-  );
-}
+import { Home, FileText, Settings } from "lucide-react";
 
 interface ItemProps {
   active: boolean;
@@ -36,7 +29,8 @@ function ItemInner({ active, icon, label }: ItemProps) {
 export function MobileBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const isProjects = pathname.startsWith("/projects");
+  const isHome = pathname.startsWith("/dashboard");
+  const isDocuments = pathname.startsWith("/documents");
   const isSettings = pathname.startsWith("/settings");
 
   return (
@@ -45,33 +39,16 @@ export function MobileBottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="ניווט תחתון"
     >
-      <Link to="/projects" className="flex-1">
+      <Link to="/dashboard" className="flex-1">
+        <ItemInner active={isHome} icon={<Home className="h-5 w-5" />} label="בית" />
+      </Link>
+      <Link to="/documents" className="flex-1">
         <ItemInner
-          active={isProjects}
-          icon={<Folder className="h-5 w-5" />}
-          label="פרויקטים"
+          active={isDocuments}
+          icon={<FileText className="h-5 w-5" />}
+          label="המסמכים שלי"
         />
       </Link>
-      <button type="button" onClick={openCommandPalette} className="flex-1" aria-label="חיפוש">
-        <ItemInner
-          active={false}
-          icon={<Search className="h-5 w-5" />}
-          label="חיפוש"
-        />
-      </button>
-      <div className="flex flex-1 items-stretch">
-        <RecentItemsMenu
-          trigger={
-            <button type="button" className="flex w-full" aria-label="אחרונים">
-              <ItemInner
-                active={false}
-                icon={<Clock className="h-5 w-5" />}
-                label="אחרונים"
-              />
-            </button>
-          }
-        />
-      </div>
       <Link to="/settings" className="flex-1">
         <ItemInner
           active={isSettings}

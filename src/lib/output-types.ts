@@ -1,0 +1,162 @@
+// Unified catalog of all "output types" a user can create from the home tiles:
+// document types (BRD/TRD/initiation/spec) + diagram types (mermaid).
+import {
+  Briefcase,
+  Cpu,
+  Rocket,
+  LayoutTemplate,
+  FileCode2,
+  GitBranch,
+  Users,
+  ArrowRightLeft,
+  Activity,
+  Server,
+  type LucideIcon,
+} from "lucide-react";
+
+export type DocumentOutputKey =
+  | "business_requirements"
+  | "technical_requirements"
+  | "initiation"
+  | "spec_overview"
+  | "spec_detailed";
+
+export type DiagramOutputKey =
+  | "diagram_flow"
+  | "diagram_usecase"
+  | "diagram_sequence"
+  | "diagram_state"
+  | "diagram_deployment";
+
+export type OutputKey = DocumentOutputKey | DiagramOutputKey;
+
+export type OutputCategory = "document" | "diagram";
+
+export interface OutputTypeDef {
+  key: OutputKey;
+  category: OutputCategory;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  colorClass: string;
+  /** For diagram types only — Mermaid header (e.g. "flowchart TD") */
+  mermaidHint?: string;
+}
+
+// Order chosen to mirror a typical analysis workflow:
+// initiation → business → use-cases → technical → spec overview →
+// flow → sequence → spec detailed → state → deployment.
+export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
+  initiation: {
+    key: "initiation",
+    category: "document",
+    label: "מסמך ייזום",
+    description: "רקע, מטרות, היקף, אבני דרך וסיכוני פרויקט.",
+    icon: Rocket,
+    colorClass: "text-violet-500",
+  },
+  business_requirements: {
+    key: "business_requirements",
+    category: "document",
+    label: "מסמך דרישות עסקי",
+    description: "מטרות עסקיות, KPIs, בעלי עניין ודרישות עסקיות.",
+    icon: Briefcase,
+    colorClass: "text-amber-500",
+  },
+  diagram_usecase: {
+    key: "diagram_usecase",
+    category: "diagram",
+    label: "תרשים Use Case",
+    description: "מי המשתמשים, אילו פעולות הם מבצעים והאינטראקציות.",
+    icon: Users,
+    colorClass: "text-amber-500",
+    mermaidHint: "flowchart LR",
+  },
+  technical_requirements: {
+    key: "technical_requirements",
+    category: "document",
+    label: "מסמך דרישות טכני",
+    description: "דרישות מערכת, אינטגרציות, NFRs ואילוצים טכניים.",
+    icon: Cpu,
+    colorClass: "text-sky-500",
+  },
+  spec_overview: {
+    key: "spec_overview",
+    category: "document",
+    label: "מסמך אפיון על",
+    description: "אפיון מערכת ברמה גבוהה: דרישות, ארכיטקטורה ומודל נתונים.",
+    icon: LayoutTemplate,
+    colorClass: "text-primary",
+  },
+  diagram_flow: {
+    key: "diagram_flow",
+    category: "diagram",
+    label: "תרשים Flow Chart",
+    description: "זרימת תהליך עסקי או טכני עם החלטות וצעדים.",
+    icon: GitBranch,
+    colorClass: "text-primary",
+    mermaidHint: "flowchart TD",
+  },
+  diagram_sequence: {
+    key: "diagram_sequence",
+    category: "diagram",
+    label: "תרשים Sequence",
+    description: "סדר הקריאות בין רכיבים/שחקנים לאורך זמן.",
+    icon: ArrowRightLeft,
+    colorClass: "text-sky-500",
+    mermaidHint: "sequenceDiagram",
+  },
+  spec_detailed: {
+    key: "spec_detailed",
+    category: "document",
+    label: "מסמך אפיון מפורט",
+    description: "אפיון מעמיק: תרחישי שימוש, רכיבים, מודל נתונים מלא.",
+    icon: FileCode2,
+    colorClass: "text-emerald-500",
+  },
+  diagram_state: {
+    key: "diagram_state",
+    category: "diagram",
+    label: "תרשים State",
+    description: "מצבים והמעברים ביניהם של ישות במערכת.",
+    icon: Activity,
+    colorClass: "text-emerald-500",
+    mermaidHint: "stateDiagram-v2",
+  },
+  diagram_deployment: {
+    key: "diagram_deployment",
+    category: "diagram",
+    label: "תרשים Deployment",
+    description: "טופולוגיית פריסה: שרתים, רשתות ורכיבים.",
+    icon: Server,
+    colorClass: "text-violet-500",
+    mermaidHint: "flowchart TB",
+  },
+};
+
+// Display order on the home page tiles.
+export const OUTPUT_TYPE_ORDER: OutputKey[] = [
+  "initiation",
+  "business_requirements",
+  "diagram_usecase",
+  "technical_requirements",
+  "spec_overview",
+  "diagram_flow",
+  "diagram_sequence",
+  "spec_detailed",
+  "diagram_state",
+  "diagram_deployment",
+];
+
+export function getOutputType(key: string | null | undefined): OutputTypeDef | null {
+  if (!key) return null;
+  return (OUTPUT_TYPES as Record<string, OutputTypeDef>)[key] ?? null;
+}
+
+export function isDocumentType(key: OutputKey): key is DocumentOutputKey {
+  return OUTPUT_TYPES[key].category === "document";
+}
+
+export function isDiagramType(key: OutputKey): key is DiagramOutputKey {
+  return OUTPUT_TYPES[key].category === "diagram";
+}

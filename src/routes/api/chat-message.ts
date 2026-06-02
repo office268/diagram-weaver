@@ -1,0 +1,277 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { generateText } from "ai";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { runOrchestrator } from "@/agents/orchestrator/index.server";
+import {
+  OUTPUT_TYPES,
+  type DiagramOutputKey,
+  type DocumentOutputKey,
+  type OutputKey,
+} from "@/lib/output-types";
+import type { DocTypeKey } from "@/lib/doc-types";
+import type { SpecOutput } from "@/lib/spec-output-schema";
+
+const BodySchema = z.object({
+  threadId: z.string().uuid(),
+  message: z.string().min(1).max(5000),
+});
+
+const BASE_CREDITS = 3;
+
+function sanitize(s: string): string {
+  return s
+    .replace(/\bignore\b.{0,60}\b(instructions?|system|rules?)\b/gi, "")
+    .replace(/\bsystem\s*:/gi, "")
+    .slice(0, 5000)
+    .trim();
+}
+
+function extractMermaid(text: string): string {
+  const fence = text.match(/```(?:mermaid)?\s*\n([\s\S]*?)```/i);
+  if (fence) return fence[1].trim();
+  return text.trim();
+}
+
+export const Route = createFileRoute("/api/chat-message")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const auth = request.headers.get("authorization") ?? "";
+        const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+        if (!token) return new Response("Unauthorized", { status: 401 });
+
+        const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
+        if (userErr || !userData?.user) return new Response("Unauthorized", { status: 401 });
+        const userId = userData.user.id;
+
+        let body: z.infer<typeof BodySchema>;
+        try {
+          body = BodySchema.parse(await request.json());
+        } catch {
+          return new Response("Bad request", { status: 400 });
+        }
+
+        const apiKey = process.env.LOVABLE_API_KEY;
+        if (!apiKey) return new Response("LOVABLE_API_KEY missing", { status: 500 });
+
+        // Load thread & verify ownership
+        const { data: thread, error: threadErr } = await supabaseAdmin
+          .from("chat_threads")
+          .select("*")
+          .eq("id", body.threadId)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (threadErr) return new Response(threadErr.message, { status: 500 });
+        if (!thread) return new Response("Thread not found", { status: 404 });
+
+        const outputType = thread.output_type as OutputKey;
+        const def = OUTPUT_TYPES[outputType];
+        if (!def) return new Response("Invalid output type", { status: 400 });
+
+        // Load prior messages for context
+        const { data: priorMsgs } = await supabaseAdmin
+          .from("chat_messages")
+          .select("*")
+          .eq("thread_id", body.threadId)
+          .order("created_at", { ascending: true });
+        const prior = priorMsgs ?? [];
+
+        const cleanUserMsg = sanitize(body.message);
+
+        // Insert user message
+        const { error: insertUserErr } = await supabaseAdmin.from("chat_messages").insert({
+          thread_id: body.threadId,
+          user_id: userId,
+          role: "user",
+          content: cleanUserMsg,
+        });
+        if (insertUserErr) return new Response(insertUserErr.message, { status: 500 });
+
+        // Consume credits
+        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
+          "consume_credits",
+          {
+            _user_id: userId,
+            _amount: BASE_CREDITS,
+            _description: `יצירה: ${def.label}`,
+          },
+        );
+        if (creditErr) return new Response("שגיאת קרדיטים", { status: 500 });
+        if (newBalance === null) {
+          return new Response(
+            `אזלו הקרדיטים (דרושים ${BASE_CREDITS}). הוסף בדף המחירים.`,
+            { status: 402 },
+          );
+        }
+
+        try {
+          if (def.category === "document") {
+            // Build refinement context from prior assistant artifact (latest)
+            const lastAssistantArtifact = [...prior]
+              .reverse()
+              .find((m) => m.role === "assistant" && m.artifact_kind === "spec_document");
+
+            let previousSpec: SpecOutput | undefined;
+            if (lastAssistantArtifact?.artifact_id) {
+              const { data: prevSpec } = await supabaseAdmin
+                .from("spec_documents")
+                .select("content")
+                .eq("id", lastAssistantArtifact.artifact_id)
+                .maybeSingle();
+              if (prevSpec?.content) previousSpec = prevSpec.content as SpecOutput;
+            }
+
+            // Combine all prior user messages + new one as the prompt
+            const combinedPrompt = [
+              ...prior.filter((m) => m.role === "user").map((m) => m.content),
+              cleanUserMsg,
+            ].join("\n\n---\n\n");
+
+            const result = await runOrchestrator({
+              userPrompt: combinedPrompt,
+              docType: (outputType as DocumentOutputKey) as DocTypeKey,
+              userId,
+              projectId: null,
+              lovableApiKey: apiKey,
+              previousSpec,
+              reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
+            });
+
+            const title = result.spec.title || def.label;
+            const { data: specRow, error: specErr } = await supabaseAdmin
+              .from("spec_documents")
+              .insert({
+                user_id: userId,
+                title: `${title} — ${def.label}`,
+                prompt: combinedPrompt,
+                content: result.spec,
+                doc_type: outputType,
+                review_score: result.review.score,
+                review_notes: result.review.notes,
+                variant: previousSpec ? "revised" : "original",
+              })
+              .select()
+              .single();
+            if (specErr) throw new Error(specErr.message);
+
+            const assistantContent =
+              `נוצר ${def.label} — **${title}**.\n\n` +
+              `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
+
+            await supabaseAdmin.from("chat_messages").insert({
+              thread_id: body.threadId,
+              user_id: userId,
+              role: "assistant",
+              content: assistantContent,
+              artifact_kind: "spec_document",
+              artifact_id: specRow.id,
+            });
+
+            // Update thread title if first
+            if (prior.length === 0) {
+              await supabaseAdmin
+                .from("chat_threads")
+                .update({ title: title.slice(0, 100) })
+                .eq("id", body.threadId);
+            } else {
+              await supabaseAdmin
+                .from("chat_threads")
+                .update({ updated_at: new Date().toISOString() })
+                .eq("id", body.threadId);
+            }
+
+            return Response.json({
+              ok: true,
+              artifact: { kind: "spec_document", id: specRow.id, title },
+            });
+          }
+
+          // Diagram path
+          const diagDef = def as typeof def & { mermaidHint: string };
+          const provider = createLovableAiGatewayProvider(apiKey);
+          const model = provider("google/gemini-2.5-flash");
+
+          const system =
+            `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
+            `סוג התרשים המבוקש: ${def.label}. ` +
+            `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
+            `התחל בכותרת המתאימה (${def.mermaidHint ?? ""}). ` +
+            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
+
+          const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+            (m) => ({
+              role: m.role === "assistant" ? "assistant" : "user",
+              content: m.content,
+            }),
+          );
+          history.push({ role: "user", content: cleanUserMsg });
+
+          const { text } = await generateText({
+            model,
+            system,
+            messages: history,
+            temperature: 0.3,
+          });
+
+          const mermaid = extractMermaid(text);
+          const title = cleanUserMsg.slice(0, 80) || def.label;
+
+          const { data: diagRow, error: diagErr } = await supabaseAdmin
+            .from("diagrams")
+            .insert({
+              user_id: userId,
+              thread_id: body.threadId,
+              kind: outputType,
+              title,
+              prompt: cleanUserMsg,
+              mermaid_code: mermaid,
+            })
+            .select()
+            .single();
+          if (diagErr) throw new Error(diagErr.message);
+
+          const assistantContent =
+            `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+
+          await supabaseAdmin.from("chat_messages").insert({
+            thread_id: body.threadId,
+            user_id: userId,
+            role: "assistant",
+            content: assistantContent,
+            artifact_kind: "diagram",
+            artifact_id: diagRow.id,
+          });
+
+          if (prior.length === 0) {
+            await supabaseAdmin
+              .from("chat_threads")
+              .update({ title: title.slice(0, 100) })
+              .eq("id", body.threadId);
+          } else {
+            await supabaseAdmin
+              .from("chat_threads")
+              .update({ updated_at: new Date().toISOString() })
+              .eq("id", body.threadId);
+          }
+
+          return Response.json({
+            ok: true,
+            artifact: { kind: "diagram", id: diagRow.id, mermaid, title },
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[chat-message] error:", err);
+          await supabaseAdmin.from("chat_messages").insert({
+            thread_id: body.threadId,
+            user_id: userId,
+            role: "assistant",
+            content: `אירעה שגיאה: ${msg}`,
+          });
+          return new Response(msg, { status: 500 });
+        }
+      },
+    },
+  },
+});
