@@ -74,7 +74,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { getSpec, updateSpec, createSpec } from "@/lib/spec.functions";
+import { getSpec, updateSpec, createSpec, getDocUsageTotals, logSpecUsage } from "@/lib/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 import {
   normalizeReviewNotes,
@@ -138,10 +138,18 @@ function EditorPage() {
   const updateFn = useServerFn(updateSpec);
   const createFn = useServerFn(createSpec);
   const getProjectFn = useServerFn(getProject);
+  const getUsageFn = useServerFn(getDocUsageTotals);
+  const logUsageFn = useServerFn(logSpecUsage);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["spec", id],
     queryFn: () => getFn({ data: { id } }),
+  });
+
+  const { data: usageData } = useQuery({
+    queryKey: ["spec-usage", id],
+    queryFn: () => getUsageFn({ data: { id } }),
+    staleTime: 30_000,
   });
 
   const projectId = (data?.spec as { project_id?: string | null } | undefined)?.project_id ?? null;
@@ -1639,6 +1647,8 @@ function EditorPage() {
           wordCount={wordCount}
           filledCount={filledCount}
           totalCount={visibleSections.length}
+          totalTokens={usageData?.totalTokens ?? null}
+          totalCostUsd={usageData?.totalCostUsd ?? null}
         />
       ) : null}
     </div>
