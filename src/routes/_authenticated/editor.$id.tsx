@@ -1241,7 +1241,7 @@ function SectionShell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(title);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
