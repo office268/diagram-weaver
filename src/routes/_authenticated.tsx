@@ -50,7 +50,7 @@ function AuthenticatedLayout() {
                 className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-primary transition-opacity hover:opacity-80 sm:text-xs"
               >
                 <Workflow className="h-4 w-4" />
-                <span>ניתוח מערכות</span>
+                <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
               </Link>
               <button
                 type="button"
