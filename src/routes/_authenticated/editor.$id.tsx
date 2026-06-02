@@ -1491,7 +1491,7 @@ function EditorPage() {
             <article
               className={cn(
                 "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
-                "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
+                "flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
               )}
             >
               <div className="flex-1 flex flex-col">
