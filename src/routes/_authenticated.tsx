@@ -44,7 +44,7 @@ function AuthenticatedLayout() {
               <UserMenu user={user} />
             </div>
 
-            <nav className="flex items-start gap-3 sm:gap-4">
+            <nav className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-start gap-8 sm:gap-12">
               <Link
                 to="/dashboard"
                 className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-primary transition-opacity hover:opacity-80 sm:text-xs"
