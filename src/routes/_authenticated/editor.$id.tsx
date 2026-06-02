@@ -1192,6 +1192,74 @@ function EditorPage() {
         </CommandList>
       </CommandDialog>
 
+      {/* AI assistant dialog — editable user prompt + reviewer suggestions */}
+      <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-right">
+              <Sparkles className="h-4 w-4 text-primary" />
+              עוזר AI
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              הפרומפט שלך והצעות השיפור מהסוכן המבקר.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-foreground">הפרומפט שלך</div>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={Math.max(4, Math.min(15, prompt.split("\n").length + 1))}
+                placeholder="הפרומפט שלך... (נשמר אוטומטית)"
+                dir="auto"
+                className="resize-y text-sm"
+              />
+            </div>
+            {typeof data?.spec?.review_score === "number" ? (
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-foreground">הצעות לשיפור</div>
+                <ReviewSuggestionsPanel
+                  review={{
+                    score: data.spec.review_score,
+                    notes: normalizeReviewNotes(data.spec.review_notes),
+                  }}
+                  selected={selectedNoteIds}
+                  onToggle={(noteId) =>
+                    setSelectedNoteIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(noteId)) next.delete(noteId);
+                      else next.add(noteId);
+                      return next;
+                    })
+                  }
+                  onSelectAll={() =>
+                    setSelectedNoteIds(
+                      new Set(
+                        normalizeReviewNotes(data.spec.review_notes).map((n) => n.id),
+                      ),
+                    )
+                  }
+                  onClear={() => setSelectedNoteIds(new Set())}
+                  onImprove={() => {
+                    setAiDialogOpen(false);
+                    improveDoc();
+                  }}
+                  onFinish={() => setAiDialogOpen(false)}
+                  improving={improving}
+                />
+              </div>
+            ) : (
+              <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+                אין כרגע הצעות לשיפור מהסוכן המבקר.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
       {/* Document — print-preview layout: separate A4 pages, page numbers, numbered sections */}
       <div className="bg-muted/40 py-6 sm:py-10">
         {splitSecondaryKey ? (
