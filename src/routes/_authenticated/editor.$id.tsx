@@ -591,25 +591,46 @@ function EditorPage() {
       if (errIdx >= 0) {
         throw new Error(fullText.slice(errIdx + "__STREAM_ERROR__:".length).trim() || "שגיאת זרם");
       }
-      const parsed = JSON.parse(extractJson(fullText));
+
+      // Stream payload contract: <spec JSON>\n__REVIEW__\n<review JSON>
+      const sepIdx = fullText.indexOf("__REVIEW__");
+      const specText = sepIdx >= 0 ? fullText.slice(0, sepIdx) : fullText;
+      const reviewText = sepIdx >= 0 ? fullText.slice(sepIdx + "__REVIEW__".length) : "";
+
+      const parsed = JSON.parse(extractJson(specText));
       const newSpec: SpecOutput = SpecOutputSchema.parse(parsed);
 
-      // 2) Review
+      // 2) Review — use inline review from stream if present, else call /api/review-spec.
       let newReview: SpecReview | null = null;
-      try {
-        const revRes = await fetch("/api/review-spec", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ prompt: promptText, spec: newSpec, projectId: spec.project_id ?? undefined }),
-        });
-        if (revRes.ok) {
-          const j = await revRes.json();
-          if (j?.score != null) {
-            newReview = { score: Number(j.score), notes: normalizeReviewNotes(j.notes) };
+      if (reviewText.trim()) {
+        try {
+          const rawReview = JSON.parse(extractJson(reviewText));
+          if (rawReview?.score != null) {
+            newReview = {
+              score: Number(rawReview.score),
+              notes: normalizeReviewNotes(rawReview.notes),
+            };
           }
+        } catch (e) {
+          console.warn("[generate-spec] inline review parse failed:", e);
         }
-      } catch {
-        // non-fatal
+      }
+      if (!newReview) {
+        try {
+          const revRes = await fetch("/api/review-spec", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ prompt: promptText, spec: newSpec, projectId: spec.project_id ?? undefined }),
+          });
+          if (revRes.ok) {
+            const j = await revRes.json();
+            if (j?.score != null) {
+              newReview = { score: Number(j.score), notes: normalizeReviewNotes(j.notes) };
+            }
+          }
+        } catch {
+          // non-fatal
+        }
       }
 
       // 3) Save as new revised version under same group
