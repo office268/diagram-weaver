@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff } from "lucide-react";
+import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { SwipeableRow } from "@/components/swipeable-row";
 import { PullToRefreshIndicator } from "@/components/pull-to-refresh-indicator";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
+import { useSiteTexts } from "@/lib/site-texts-context";
 
 import {
   listProjects,
@@ -16,6 +17,7 @@ import {
   deleteProject,
   toggleProjectPin,
 } from "@/lib/project.functions";
+import { generateProjectIdea } from "@/lib/project-ideas.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +62,9 @@ function ProjectsPage() {
   const createFn = useServerFn(createProject);
   const deleteFn = useServerFn(deleteProject);
   const pinFn = useServerFn(toggleProjectPin);
+  const ideaFn = useServerFn(generateProjectIdea);
+  const { isAdmin } = useSiteTexts();
+
 
 
   const [newOpen, setNewOpen] = useState(false);
@@ -88,6 +93,16 @@ function ProjectsPage() {
       navigate({ to: "/projects/$projectId", params: { projectId: res.project.id } });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
+  });
+
+  const ideaMut = useMutation({
+    mutationFn: () => ideaFn(),
+    onSuccess: (res) => {
+      if (res.name) setName(res.name);
+      if (res.description) setDescription(res.description);
+      toast.success("רעיון נוצר");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירת רעיון נכשלה"),
   });
 
   const deleteMut = useMutation({
@@ -342,7 +357,26 @@ function ProjectsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="proj-desc">תיאור (אופציונלי)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label htmlFor="proj-desc">תיאור (אופציונלי)</Label>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => ideaMut.mutate()}
+                    disabled={ideaMut.isPending}
+                    className="h-7 gap-1.5 text-xs"
+                  >
+                    {ideaMut.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    רעיון מה-AI
+                  </Button>
+                )}
+              </div>
               <Textarea
                 id="proj-desc"
                 value={description}
