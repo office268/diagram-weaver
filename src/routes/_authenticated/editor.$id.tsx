@@ -44,7 +44,15 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getDocTypeVisual } from "@/lib/doc-types";
+import { getDocTypeVisual, getDocType } from "@/lib/doc-types";
+
+const DOC_TYPE_EN: Record<string, string> = {
+  business_requirements: "Business Requirements Document (BRD)",
+  technical_requirements: "Technical Requirements Document (TRD)",
+  initiation: "Project Initiation Document",
+  spec_overview: "High-Level Design (HLD)",
+  spec_detailed: "Low-Level Design (LLD)",
+};
 import { getProject } from "@/lib/project.functions";
 import {
   DndContext,
