@@ -1491,10 +1491,10 @@ function EditorPage() {
             <article
               className={cn(
                 "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
-                "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
+                "flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
               )}
             >
-              <div className="flex-1 flex flex-col">
+              <div className="flex flex-col">
                 <div className="text-center space-y-4 pt-8 sm:pt-16">
                   <div className="text-sm sm:text-base text-muted-foreground font-medium">
                     {projectName || "ללא פרויקט"}
@@ -1564,7 +1564,7 @@ function EditorPage() {
                   </ol>
                 </div>
               </div>
-              <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+              <footer className="pt-8 text-center text-xs text-muted-foreground">
                 עמוד 1 מתוך {visibleSections.length + 1}
               </footer>
             </article>
@@ -1592,11 +1592,11 @@ function EditorPage() {
                           id={`section-${key}`}
                           className={cn(
                             "group/section scroll-mt-20 rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
-                            "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0 transition-opacity",
+                            "flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0 transition-opacity",
                             focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
                           )}
                         >
-                          <div className="flex-1 min-w-0">
+                          <div className="min-w-0">
                             <SectionShell
                               title={`${index + 1}. ${titleValue}`}
                               displayTitle={`${index + 1}. ${titleValue}`}
@@ -1621,7 +1621,7 @@ function EditorPage() {
                               {renderBody(key)}
                             </SectionShell>
                           </div>
-                          <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+                          <footer className="pt-8 text-center text-xs text-muted-foreground">
                             עמוד {pageNumber} מתוך {totalPages}
                           </footer>
                         </article>
