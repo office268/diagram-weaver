@@ -18,6 +18,7 @@ import {
   toggleProjectPin,
 } from "@/lib/project.functions";
 import { generateProjectIdea } from "@/lib/project-ideas.functions";
+import { getIsAdmin } from "@/lib/site-texts.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
