@@ -1684,7 +1684,6 @@ function SectionShell({
 
   return (
     <>
-    <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
           {dragHandle}
@@ -1712,10 +1711,9 @@ function SectionShell({
           ) : (
             <button
               type="button"
-              onClick={() => setOpen((o) => !o)}
-              onDoubleClick={startEdit}
+              onClick={startEdit}
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-              title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
+              title="לחץ לעריכת שם הסעיף"
             >
               <span>{shownTitle}</span>
             </button>
@@ -1724,9 +1722,9 @@ function SectionShell({
           <div className="ml-auto flex shrink-0 items-center gap-1" />
 
         </div>
-        <CollapsibleContent>{children}</CollapsibleContent>
+        <div>{children}</div>
       </section>
-    </Collapsible>
+
     {onAiImprove ? (
       <Dialog open={aiOpen} onOpenChange={(o) => { if (aiBusy) return; setAiOpen(o); }}>
         <DialogContent className="max-w-lg space-y-2">
