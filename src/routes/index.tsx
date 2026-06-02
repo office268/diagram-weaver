@@ -236,6 +236,8 @@ function Landing() {
           <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
           <span aria-hidden>·</span>
           <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
+          <span aria-hidden>·</span>
+          <Link to="/about" className="hover:text-foreground">אודות</Link>
         </nav>
       </div>
 
