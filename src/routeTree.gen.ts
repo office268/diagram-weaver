@@ -22,6 +22,9 @@ import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
 import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
 import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
+import { Route as ApiGenerateSpecV2RouteImport } from './routes/api/generate-spec-v2'
+import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
+import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -94,6 +97,21 @@ const ApiGenerateSpecRoute = ApiGenerateSpecRouteImport.update({
   path: '/api/generate-spec',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateSpecV2Route = ApiGenerateSpecV2RouteImport.update({
+  id: '/api/generate-spec-v2',
+  path: '/api/generate-spec-v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiUploadDocumentRoute = ApiUploadDocumentRouteImport.update({
+  id: '/api/upload-document',
+  path: '/api/upload-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDeleteDocumentRoute = ApiDeleteDocumentRouteImport.update({
+  id: '/api/delete-document',
+  path: '/api/delete-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -146,6 +164,9 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
+  '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
@@ -167,6 +188,9 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
+  '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
@@ -190,6 +214,9 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/api/generate-spec': typeof ApiGenerateSpecRoute
+  '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
+  '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/api/delete-document': typeof ApiDeleteDocumentRoute
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
@@ -213,6 +240,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/generate-spec-v2'
+    | '/api/upload-document'
+    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
@@ -234,6 +264,9 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/settings'
     | '/api/generate-spec'
+    | '/api/generate-spec-v2'
+    | '/api/upload-document'
+    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
@@ -256,6 +289,9 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
     | '/api/generate-spec'
+    | '/api/generate-spec-v2'
+    | '/api/upload-document'
+    | '/api/delete-document'
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
@@ -276,6 +312,9 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   ApiGenerateSpecRoute: typeof ApiGenerateSpecRoute
+  ApiGenerateSpecV2Route: typeof ApiGenerateSpecV2Route
+  ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
+  ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
@@ -375,6 +414,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateSpecRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate-spec-v2': {
+      id: '/api/generate-spec-v2'
+      path: '/api/generate-spec-v2'
+      fullPath: '/api/generate-spec-v2'
+      preLoaderRoute: typeof ApiGenerateSpecV2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/upload-document': {
+      id: '/api/upload-document'
+      path: '/api/upload-document'
+      fullPath: '/api/upload-document'
+      preLoaderRoute: typeof ApiUploadDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/delete-document': {
+      id: '/api/delete-document'
+      path: '/api/delete-document'
+      fullPath: '/api/delete-document'
+      preLoaderRoute: typeof ApiDeleteDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -460,6 +520,9 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   ApiGenerateSpecRoute: ApiGenerateSpecRoute,
+  ApiGenerateSpecV2Route: ApiGenerateSpecV2Route,
+  ApiUploadDocumentRoute: ApiUploadDocumentRoute,
+  ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
   ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiIngestDocumentRoute: ApiIngestDocumentRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
