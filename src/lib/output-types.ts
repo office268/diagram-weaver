@@ -13,6 +13,7 @@ import {
   Server,
   Database,
   BookOpen,
+  Mic,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,7 +23,8 @@ export type DocumentOutputKey =
   | "initiation"
   | "spec_overview"
   | "spec_detailed"
-  | "user_guide";
+  | "user_guide"
+  | "meeting_summary";
 
 
 export type DiagramOutputKey =
@@ -155,6 +157,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: BookOpen,
     colorClass: "text-teal-500",
   },
+  meeting_summary: {
+    key: "meeting_summary",
+    category: "document",
+    label: "תמלול וסיכום ישיבה",
+    description: "תמלול של ישיבה וסיכום החלטות, משימות ונקודות מפתח.",
+    icon: Mic,
+    colorClass: "text-rose-500",
+  },
 };
 
 // Display order on the home page tiles.
@@ -171,6 +181,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "diagram_state",
   "diagram_deployment",
   "user_guide",
+  "meeting_summary",
 ];
 
 
