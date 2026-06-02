@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tansta
 import { useEffect } from "react";
 import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
 
