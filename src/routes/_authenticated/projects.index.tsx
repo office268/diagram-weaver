@@ -95,6 +95,16 @@ function ProjectsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
+  const ideaMut = useMutation({
+    mutationFn: () => ideaFn(),
+    onSuccess: (res) => {
+      if (res.name) setName(res.name);
+      if (res.description) setDescription(res.description);
+      toast.success("רעיון נוצר");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירת רעיון נכשלה"),
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
     onSuccess: () => {
