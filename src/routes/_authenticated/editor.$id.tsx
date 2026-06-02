@@ -1471,7 +1471,7 @@ function SectionShell({
         <DialogContent className="max-w-lg space-y-2">
           <DialogHeader>
             <DialogTitle>שיפור עם AI</DialogTitle>
-            <DialogDescription>תאר/י כיצד לשפר את הסעיף "{title}".</DialogDescription>
+            <DialogDescription>תאר/י כיצד לשפר את הסעיף "{editTitle}".</DialogDescription>
           </DialogHeader>
           <Textarea
             value={aiPrompt}
