@@ -122,6 +122,7 @@ function HomePage() {
   };
 
   const items = useMemo(() => order, [order]);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
@@ -138,10 +139,92 @@ function HomePage() {
                 onActivate={() => createMut.mutate(key)}
               />
             ))}
+            <MoreTile
+              index={items.length}
+              disabled={createMut.isPending}
+              onActivate={() => setMoreOpen(true)}
+            />
           </div>
         </SortableContext>
       </DndContext>
+
+      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+        <DrawerContent>
+          <DrawerHeader className="text-right">
+            <DrawerTitle>סוגי מסמכים נוספים</DrawerTitle>
+            <DrawerDescription>בחר/י סוג מסמך או תרשים פחות נפוץ ליצירה.</DrawerDescription>
+          </DrawerHeader>
+          <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 px-4 pb-6 sm:grid-cols-3">
+            {OUTPUT_TYPE_EXTRAS.map((key) => {
+              const t = OUTPUT_TYPES[key];
+              const Icon = t.icon;
+              const isPending = createMut.isPending && createMut.variables === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={createMut.isPending}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    createMut.mutate(key);
+                  }}
+                  className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center transition-colors hover:bg-accent/40 disabled:opacity-50"
+                >
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent ${t.colorClass}`}
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Icon className="h-6 w-6" />
+                    )}
+                  </div>
+                  <div className="text-xs font-semibold leading-tight text-foreground">
+                    {t.label}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
+  );
+}
+
+function MoreTile({
+  index,
+  disabled,
+  onActivate,
+}: {
+  index: number;
+  disabled: boolean;
+  onActivate: () => void;
+}) {
+  const style: React.CSSProperties = {
+    animationDelay: `${index * 30}ms`,
+    animationFillMode: "backwards",
+  };
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onActivate}
+      style={style}
+      className="cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-dashed border-border/70 bg-gradient-to-br from-card to-accent/20 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50"
+    >
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-muted-foreground sm:h-14 sm:w-14">
+        <MoreHorizontal className="h-5 w-5 sm:h-7 sm:w-7" />
+      </div>
+      <div className="min-w-0 px-1">
+        <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-foreground sm:text-sm">
+          עוד…
+        </div>
+        <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
+          סוגי מסמכים ותרשימים נוספים
+        </p>
+      </div>
+    </button>
   );
 }
 
