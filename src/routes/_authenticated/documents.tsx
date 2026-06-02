@@ -3,10 +3,39 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Search, Trash2, FileText, GitBranch, ExternalLink, Loader2 } from "lucide-react";
+import {
+  Search,
+  Trash2,
+  FileText,
+  GitBranch,
+  ExternalLink,
+  Loader2,
+  SlidersHorizontal,
+  ArrowUpDown,
+  FileUp,
+  X,
+  Check,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,37 +48,69 @@ import {
 } from "@/components/ui/alert-dialog";
 import { listSpecs, deleteSpec } from "@/lib/spec.functions";
 import { listDiagrams, deleteDiagram } from "@/lib/diagrams.functions";
+import { listDocuments, deleteDocument } from "@/lib/documents.functions";
 import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({
     meta: [
       { title: "המסמכים שלי — סוכן ניתוח מערכות" },
-      { name: "description", content: "כל המסמכים והתרשימים שיצרת." },
+      { name: "description", content: "כל המסמכים, התרשימים והקבצים שלך." },
     ],
   }),
   component: DocumentsPage,
 });
 
+type ItemCategory = "document" | "diagram" | "upload";
 type Item = {
   id: string;
   title: string;
-  type: OutputKey;
-  category: "document" | "diagram";
+  type: OutputKey | "upload";
+  category: ItemCategory;
   createdAt: string;
   prompt: string;
+  meta?: string; // for uploads: size/mime
 };
+
+type SortKey = "date_desc" | "date_asc" | "name" | "type";
+type GroupFilter = "all" | "document" | "diagram" | "upload";
+
+const SORT_LABEL: Record<SortKey, string> = {
+  date_desc: "חדש → ישן",
+  date_asc: "ישן → חדש",
+  name: "לפי שם (א׳-ת׳)",
+  type: "לפי סוג",
+};
+
+const GROUP_LABEL: Record<GroupFilter, string> = {
+  all: "הכל",
+  document: "מסמכים שיצרתי",
+  diagram: "תרשימים",
+  upload: "קבצים שהעליתי",
+};
+
+function formatSize(bytes?: number | null) {
+  if (!bytes || bytes <= 0) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 function DocumentsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const listSpecsFn = useServerFn(listSpecs);
   const listDiagramsFn = useServerFn(listDiagrams);
+  const listDocumentsFn = useServerFn(listDocuments);
   const deleteSpecFn = useServerFn(deleteSpec);
   const deleteDiagramFn = useServerFn(deleteDiagram);
+  const deleteDocumentFn = useServerFn(deleteDocument);
 
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<OutputKey | "all">("all");
+  const [group, setGroup] = useState<GroupFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<OutputKey | "all">("all");
+  const [sortBy, setSortBy] = useState<SortKey>("date_desc");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
 
   const { data: specsData, isLoading: specsLoading } = useQuery({
@@ -59,6 +120,10 @@ function DocumentsPage() {
   const { data: diagramsData, isLoading: diagramsLoading } = useQuery({
     queryKey: ["diagrams-all"],
     queryFn: () => listDiagramsFn(),
+  });
+  const { data: uploadsData, isLoading: uploadsLoading } = useQuery({
+    queryKey: ["uploaded-documents", "all"],
+    queryFn: () => listDocumentsFn({ data: {} }),
   });
 
   const items: Item[] = useMemo(() => {
@@ -80,97 +145,274 @@ function DocumentsPage() {
         createdAt: d.created_at,
         prompt: d.prompt ?? "",
       })) ?? [];
-    return [...specs, ...diagrams].sort((a, b) =>
-      a.createdAt < b.createdAt ? 1 : -1,
-    );
-  }, [specsData, diagramsData]);
+    const uploads: Item[] =
+      (uploadsData?.documents ?? []).map((u) => ({
+        id: u.id,
+        title: u.file_name,
+        type: "upload",
+        category: "upload",
+        createdAt: u.created_at,
+        prompt: "",
+        meta: formatSize(u.file_size),
+      })) ?? [];
+    return [...specs, ...diagrams, ...uploads];
+  }, [specsData, diagramsData, uploadsData]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return items.filter((it) => {
-      if (filter !== "all" && it.type !== filter) return false;
+    const out = items.filter((it) => {
+      if (group !== "all" && it.category !== group) return false;
+      if (typeFilter !== "all" && it.type !== typeFilter) return false;
       if (!q) return true;
       return (
-        it.title.toLowerCase().includes(q) || it.prompt.toLowerCase().includes(q)
+        it.title.toLowerCase().includes(q) ||
+        it.prompt.toLowerCase().includes(q)
       );
     });
-  }, [items, query, filter]);
+    out.sort((a, b) => {
+      switch (sortBy) {
+        case "date_asc":
+          return a.createdAt < b.createdAt ? -1 : 1;
+        case "name":
+          return a.title.localeCompare(b.title, "he");
+        case "type":
+          return a.category.localeCompare(b.category) ||
+            String(a.type).localeCompare(String(b.type));
+        case "date_desc":
+        default:
+          return a.createdAt < b.createdAt ? 1 : -1;
+      }
+    });
+    return out;
+  }, [items, query, group, typeFilter, sortBy]);
 
   const deleteMut = useMutation({
     mutationFn: async (item: Item) => {
       if (item.category === "document") {
         await deleteSpecFn({ data: { id: item.id } });
-      } else {
+      } else if (item.category === "diagram") {
         await deleteDiagramFn({ data: { id: item.id } });
+      } else {
+        await deleteDocumentFn({ data: { id: item.id } });
       }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["specs-all"] });
       qc.invalidateQueries({ queryKey: ["diagrams-all"] });
+      qc.invalidateQueries({ queryKey: ["uploaded-documents", "all"] });
       setDeleteTarget(null);
       toast.success("נמחק");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
 
-  const isLoading = specsLoading || diagramsLoading;
+  const isLoading = specsLoading || diagramsLoading || uploadsLoading;
+  const activeFilterCount =
+    (group !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0);
+
+  // Sub-types available in the currently selected group
+  const subTypeKeys = useMemo<OutputKey[]>(() => {
+    if (group === "upload") return [];
+    return OUTPUT_TYPE_ORDER.filter((k) => {
+      const cat = OUTPUT_TYPES[k].category;
+      if (group === "all") return true;
+      return cat === group;
+    });
+  }, [group]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            המסמכים שלי
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            כל המסמכים והתרשימים שיצרת.
-          </p>
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          המסמכים שלי
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          כל המסמכים, התרשימים והקבצים שיצרת והעלית.
+        </p>
+      </div>
+
+      {/* Toolbar: search + sort + filter */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="חפש לפי שם או פרומפט..."
+            className="h-10 pr-9"
+          />
         </div>
-        <Button onClick={() => navigate({ to: "/" })} className="btn-gradient border-0">
-          יצירת מסמך חדש
-        </Button>
-      </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => setFilter("all")}
-          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-            filter === "all"
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-card hover:bg-accent"
-          }`}
-        >
-          הכל
-        </button>
-        {OUTPUT_TYPE_ORDER.map((key) => {
-          const t = OUTPUT_TYPES[key];
-          const active = filter === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card hover:bg-accent"
-              }`}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              aria-label="מיון"
+              title={`מיון: ${SORT_LABEL[sortBy]}`}
             >
-              <t.icon className={`h-3 w-3 ${active ? "" : t.colorClass}`} />
-              {t.label}
-            </button>
-          );
-        })}
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>מיון</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+              <DropdownMenuItem
+                key={k}
+                onClick={() => setSortBy(k)}
+                className="flex items-center justify-between gap-3"
+              >
+                <span>{SORT_LABEL[k]}</span>
+                {sortBy === k && <Check className="h-3.5 w-3.5" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative h-10 w-10 shrink-0"
+              aria-label="סינון"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFilterCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="text-right">סינון</SheetTitle>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-5">
+              <div>
+                <div className="mb-2 text-xs font-medium text-muted-foreground">
+                  קטגוריה
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(GROUP_LABEL) as GroupFilter[]).map((g) => {
+                    const active = group === g;
+                    return (
+                      <button
+                        key={g}
+                        onClick={() => {
+                          setGroup(g);
+                          setTypeFilter("all");
+                        }}
+                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                          active
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card hover:bg-accent"
+                        }`}
+                      >
+                        {GROUP_LABEL[g]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {subTypeKeys.length > 0 && (
+                <div>
+                  <div className="mb-2 text-xs font-medium text-muted-foreground">
+                    סוג
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setTypeFilter("all")}
+                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                        typeFilter === "all"
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card hover:bg-accent"
+                      }`}
+                    >
+                      כל הסוגים
+                    </button>
+                    {subTypeKeys.map((key) => {
+                      const t = OUTPUT_TYPES[key];
+                      const active = typeFilter === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setTypeFilter(key)}
+                          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-card hover:bg-accent"
+                          }`}
+                        >
+                          <t.icon
+                            className={`h-3 w-3 ${active ? "" : t.colorClass}`}
+                          />
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <SheetFooter className="mt-6 flex-row justify-between gap-2 sm:justify-between">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setGroup("all");
+                  setTypeFilter("all");
+                }}
+                disabled={activeFilterCount === 0}
+              >
+                <X className="ml-1 h-4 w-4" />
+                נקה הכל
+              </Button>
+              <Button onClick={() => setFilterOpen(false)} className="btn-gradient border-0">
+                הצג תוצאות
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </div>
 
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="חפש לפי שם או פרומפט..."
-          className="pr-9"
-        />
-      </div>
+      {/* Active filter chips summary */}
+      {activeFilterCount > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+          {group !== "all" && (
+            <Badge variant="secondary" className="gap-1 pr-2">
+              {GROUP_LABEL[group]}
+              <button
+                onClick={() => {
+                  setGroup("all");
+                  setTypeFilter("all");
+                }}
+                aria-label="הסר"
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+          {typeFilter !== "all" && (
+            <Badge variant="secondary" className="gap-1 pr-2">
+              {OUTPUT_TYPES[typeFilter]?.label}
+              <button
+                onClick={() => setTypeFilter("all")}
+                aria-label="הסר"
+                className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex h-32 items-center justify-center">
@@ -183,7 +425,7 @@ function DocumentsPage() {
           description={
             items.length === 0
               ? "התחל/י ליצור מסמך או תרשים חדש מדף הבית."
-              : "נסה/י מילת חיפוש או פילטר אחר."
+              : "נסה/י מילת חיפוש או סינון אחר."
           }
           action={
             items.length === 0 ? (
@@ -196,40 +438,57 @@ function DocumentsPage() {
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((it) => {
-            const def = OUTPUT_TYPES[it.type];
-            const Icon = def?.icon ?? (it.category === "diagram" ? GitBranch : FileText);
-            const href = it.category === "document"
-              ? `/editor/${it.id}`
-              : `/chat`; // diagrams open inside chat thread; quick view fallback
+            const def = it.category !== "upload" ? OUTPUT_TYPES[it.type as OutputKey] : null;
+            const Icon =
+              it.category === "upload"
+                ? FileUp
+                : def?.icon ?? (it.category === "diagram" ? GitBranch : FileText);
+            const colorClass =
+              it.category === "upload" ? "text-teal-500" : def?.colorClass ?? "";
+            const typeLabel =
+              it.category === "upload" ? "קובץ שהועלה" : def?.label ?? "";
+
+            const CardInner = (
+              <div className="flex items-start gap-2">
+                <div
+                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent ${colorClass}`}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-foreground">
+                    {it.title}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">
+                    {typeLabel} ·{" "}
+                    {new Date(it.createdAt).toLocaleDateString("he-IL")}
+                    {it.meta ? ` · ${it.meta}` : ""}
+                  </div>
+                  {it.prompt && (
+                    <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                      {it.prompt}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+
             return (
               <li
                 key={`${it.category}-${it.id}`}
                 className="group hover-lift relative rounded-xl border border-border bg-card p-4"
               >
-                <Link
-                  to={it.category === "document" ? "/editor/$id" : "/documents"}
-                  params={it.category === "document" ? { id: it.id } : undefined}
-                  className="block"
-                >
-                  <div className="flex items-start gap-2">
-                    <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent ${def?.colorClass}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-foreground">
-                        {it.title}
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {def?.label} · {new Date(it.createdAt).toLocaleDateString("he-IL")}
-                      </div>
-                      {it.prompt && (
-                        <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                          {it.prompt}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                {it.category === "document" ? (
+                  <Link
+                    to="/editor/$id"
+                    params={{ id: it.id }}
+                    className="block"
+                  >
+                    {CardInner}
+                  </Link>
+                ) : (
+                  <div className="block">{CardInner}</div>
+                )}
                 <div className="absolute left-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {it.category === "document" && (
                     <Link
@@ -250,8 +509,6 @@ function DocumentsPage() {
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                {/* unused href var silenced */}
-                <span className="hidden">{href}</span>
               </li>
             );
           })}
