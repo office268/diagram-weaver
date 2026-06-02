@@ -377,6 +377,59 @@ function ChatPage() {
             className="hidden"
             onChange={onPickFiles}
           />
+          <input
+            ref={imageInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={onPickFiles}
+          />
+          <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>הוספת קישור</DialogTitle>
+                <DialogDescription>
+                  הדבק/י כתובת URL לצירוף להודעה.
+                </DialogDescription>
+              </DialogHeader>
+              <Input
+                dir="ltr"
+                placeholder="https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const url = linkUrl.trim();
+                    if (!url) return;
+                    setInput((prev) => (prev ? `${prev}\n${url}` : url));
+                    setLinkUrl("");
+                    setLinkOpen(false);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }
+                }}
+              />
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => { setLinkUrl(""); setLinkOpen(false); }}>
+                  ביטול
+                </Button>
+                <Button
+                  onClick={() => {
+                    const url = linkUrl.trim();
+                    if (!url) return;
+                    setInput((prev) => (prev ? `${prev}\n${url}` : url));
+                    setLinkUrl("");
+                    setLinkOpen(false);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }}
+                  disabled={!linkUrl.trim()}
+                >
+                  הוסף
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {attachments.length > 0 && (
             <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
               {attachments.map((a) => (
