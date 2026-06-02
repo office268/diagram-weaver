@@ -44,30 +44,29 @@ function AuthenticatedLayout() {
               <UserMenu user={user} />
             </div>
 
-            <nav className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-start gap-8 sm:gap-12">
+            <nav className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-start gap-14 sm:gap-20">
               <Link
                 to="/dashboard"
-                className="flex flex-col items-center gap-0.5 text-[10px] font-semibold text-primary transition-opacity hover:opacity-80 sm:text-xs"
+                className="flex flex-col items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-80 sm:text-sm"
               >
-                <Workflow className="h-4 w-4" />
+                <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
               </Link>
               <button
                 type="button"
                 onClick={() => toast.info("ניהול פרויקט — בקרוב")}
-                className="relative flex flex-col items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-xs"
+                className="relative flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
               >
-                <KanbanSquare className="h-4 w-4" />
+                <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
               </button>
               <button
                 type="button"
                 onClick={() => toast.info("ניהול מוצר — בקרוב")}
-                className="relative flex flex-col items-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-xs"
+                className="relative flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
               >
-                <Rocket className="h-4 w-4" />
+                <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
                 <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
-                
               </button>
             </nav>
 
