@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare, Share2, History } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon, Image as ImageIcon, Link as LinkIcon, MessageSquare, Share2, History, Type } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1186,6 +1186,40 @@ function EditorPage() {
         >
           <Italic className="h-4 w-4" />
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="גודל פונט"
+              aria-label="גודל פונט"
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <Type className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="text-right" style={{ direction: "rtl" }}>
+            {[
+              { size: "1", label: "קטן מאוד" },
+              { size: "2", label: "קטן" },
+              { size: "3", label: "רגיל" },
+              { size: "4", label: "בינוני" },
+              { size: "5", label: "גדול" },
+              { size: "6", label: "גדול מאוד" },
+              { size: "7", label: "ענק" },
+            ].map((opt) => (
+              <DropdownMenuItem
+                key={opt.size}
+                onMouseDown={(e) => e.preventDefault()}
+                onSelect={() => document.execCommand("fontSize", false, opt.size)}
+              >
+                {opt.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="mx-1 h-5 w-px bg-border" />
         <Button
           type="button"
