@@ -234,11 +234,8 @@ function ChatPage() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
-    }
+  function handleKeyDown(_e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter inserts a newline (default). Sending is via the send button only.
   }
 
   if (isLoading) {
