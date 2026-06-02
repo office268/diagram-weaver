@@ -22,6 +22,7 @@ import {
   ListChecks,
   Hammer,
   ChevronDown,
+  ChevronUp,
   Check,
 } from "lucide-react";
 import {
@@ -570,10 +571,7 @@ function ChatPage() {
                         title={`מצב: ${MODE_META[mode].label}`}
                         aria-label={`מצב: ${MODE_META[mode].label}`}
                       >
-                        {(() => {
-                          const Icon = MODE_META[mode].icon;
-                          return <Icon className="h-4 w-4" />;
-                        })()}
+                        <ChevronUp className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
