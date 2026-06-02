@@ -31,14 +31,12 @@ function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+      <div className="mb-6 text-center">
+        <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
           מה ניצור היום?
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-          בחר/י סוג מסמך או תרשים והתחל/י לתאר במילים שלך.
-        </p>
       </div>
+
 
       <div className="grid auto-rows-fr grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         {OUTPUT_TYPE_ORDER.map((key, i) => {
