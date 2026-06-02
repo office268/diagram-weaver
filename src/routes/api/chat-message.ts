@@ -16,9 +16,11 @@ import type { SpecOutput } from "@/lib/spec-output-schema";
 const BodySchema = z.object({
   threadId: z.string().uuid(),
   message: z.string().min(1).max(5000),
+  mode: z.enum(["auto", "plan", "build"]).optional().default("auto"),
 });
 
 const BASE_CREDITS = 3;
+const PLAN_CREDITS = 1;
 
 function sanitize(s: string): string {
   return s
