@@ -1,5 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, FileText } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { UserMenu } from "@/components/user-menu";
 
 interface ItemProps {
   active: boolean;
@@ -28,13 +30,14 @@ function ItemInner({ active, icon, label }: ItemProps) {
 
 export function MobileBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { user } = useAuth();
 
   const isHome = pathname.startsWith("/dashboard");
   const isDocuments = pathname.startsWith("/documents");
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-card/95 backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-border bg-card/95 backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       aria-label="ניווט תחתון"
     >
@@ -48,6 +51,11 @@ export function MobileBottomNav() {
           label="המסמכים שלי"
         />
       </Link>
+      {user && (
+        <div className="flex flex-1 items-center justify-center py-1.5">
+          <UserMenu user={user} />
+        </div>
+      )}
     </nav>
   );
 }
