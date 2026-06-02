@@ -1140,7 +1140,19 @@ function EditorPage() {
         >
           <Redo2 className="h-4 w-4" />
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setHistoryOpen(true)}
+          title="היסטוריית גרסאות"
+          aria-label="היסטוריית גרסאות"
+        >
+          <History className="h-4 w-4" />
+        </Button>
         <div className="mx-1 h-5 w-px bg-border" />
+
         <Button
           type="button"
           variant="ghost"
