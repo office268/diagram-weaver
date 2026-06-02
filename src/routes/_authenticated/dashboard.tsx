@@ -213,8 +213,8 @@ function MoreTile({
       style={style}
       className="cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-dashed border-border/70 bg-gradient-to-br from-card to-accent/20 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent text-muted-foreground sm:h-14 sm:w-14">
-        <MoreHorizontal className="h-5 w-5 sm:h-7 sm:w-7" />
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-accent text-primary sm:h-14 sm:w-14">
+        <Shapes className="h-5 w-5 sm:h-7 sm:w-7" />
       </div>
       <div className="min-w-0 px-1">
         <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-foreground sm:text-sm">
