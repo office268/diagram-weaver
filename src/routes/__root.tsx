@@ -13,7 +13,7 @@ import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
-import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
+import { getSiteTexts } from "@/lib/site-texts.functions";
 import { SiteTextsProvider } from "@/lib/site-texts-context";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
@@ -73,15 +73,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async () => {
-    const [metaR, textsR, adminR] = await Promise.allSettled([
-      getAppMetadata(),
-      getSiteTexts(),
-      getIsAdmin(),
-    ]);
+    const [metaR, textsR] = await Promise.allSettled([getAppMetadata(), getSiteTexts()]);
     return {
       meta: metaR.status === "fulfilled" ? metaR.value : null,
       siteTexts: textsR.status === "fulfilled" ? textsR.value : {},
-      isAdmin: adminR.status === "fulfilled" ? adminR.value.isAdmin : false,
+      isAdmin: false,
     };
   },
   head: ({ loaderData }) => {
