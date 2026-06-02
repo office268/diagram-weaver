@@ -1499,9 +1499,23 @@ function EditorPage() {
                   <div className="text-sm sm:text-base text-muted-foreground font-medium">
                     {projectName || "ללא פרויקט"}
                   </div>
-                  <h1 className="text-3xl sm:text-5xl font-bold leading-tight text-foreground">
+                  <h1
+                    className="text-3xl sm:text-5xl font-bold leading-tight text-foreground outline-none focus:ring-2 focus:ring-primary/40 rounded px-2 -mx-2"
+                    contentEditable
+                    suppressContentEditableWarning
+                    spellCheck={false}
+                    onBlur={(e) => {
+                      const v = e.currentTarget.textContent?.trim() ?? "";
+                      if (v && v !== title) setTitle(v);
+                      else if (!v) e.currentTarget.textContent = title || "מסמך";
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLElement).blur(); }
+                    }}
+                  >
                     {title || "מסמך"}
                   </h1>
+
                   <div className="space-y-1">
                     <div className="text-base sm:text-lg text-foreground">
                       {getDocType(docType).label}
