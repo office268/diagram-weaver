@@ -1954,7 +1954,8 @@ function ListBody<T extends { id: string }>({
 }: ListBodyProps<T>) {
   // Ensure exactly one trailing empty slot so users can keep typing (Word-like flow).
   const isEmptyItem = (it: T): boolean => {
-    for (const v of Object.values(it as Record<string, unknown>)) {
+    for (const [key, v] of Object.entries(it as Record<string, unknown>)) {
+      if (key === "id") continue;
       if (typeof v === "string" && v.trim() !== "") return false;
     }
     return true;
