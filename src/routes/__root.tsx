@@ -176,12 +176,20 @@ function AuthBridge() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const loaderData = Route.useLoaderData();
+  const { user } = useAuth();
+  const isAdminFn = useServerFn(getIsAdmin);
+  const { data: adminData } = useQuery({
+    queryKey: ["is-admin", user?.id ?? null],
+    queryFn: () => isAdminFn(),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBridge />
       <SiteTextsProvider
         initialTexts={loaderData?.siteTexts ?? {}}
-        isAdmin={loaderData?.isAdmin ?? false}
+        isAdmin={adminData?.isAdmin ?? false}
       >
         <PaymentTestModeBanner />
         <Outlet />
