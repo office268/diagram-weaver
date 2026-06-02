@@ -1128,7 +1128,7 @@ function EditorPage() {
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent dir="rtl" align="center" className="max-h-80 overflow-y-auto">
+          <DropdownMenuContent align="center" className="max-h-80 overflow-y-auto [&]:[direction:rtl] text-right">
             {visibleSections.map((key, idx) => (
               <DropdownMenuItem
                 key={key}
