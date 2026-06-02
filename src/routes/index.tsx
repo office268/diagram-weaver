@@ -114,20 +114,59 @@ function Landing() {
       />
 
       <div className="w-full max-w-sm">
-        {/* AI Diamond */}
-        <div className="mb-6 flex justify-center">
-          <div className="relative">
+        {/* AI Sparkle Orb */}
+        <div className="mb-8 flex justify-center">
+          <div className="relative h-24 w-24">
+            {/* Outer aurora glow */}
             <div
               aria-hidden
-              className="absolute inset-0 animate-pulse rounded-2xl blur-xl"
-              style={{ background: "var(--gradient-primary, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary))))", opacity: 0.5 }}
+              className="absolute inset-0 animate-pulse rounded-full blur-2xl"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, hsl(var(--primary)), #8b5cf6, #06b6d4, hsl(var(--primary)))",
+                opacity: 0.55,
+              }}
             />
+            {/* Rotating ring */}
             <div
-              className="relative flex h-16 w-16 rotate-45 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg"
-              style={{ boxShadow: "var(--shadow-elegant, 0 10px 30px -10px hsl(var(--primary) / 0.5))" }}
+              aria-hidden
+              className="absolute inset-0 rounded-full opacity-70"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, transparent 0deg, hsl(var(--primary)) 90deg, #a78bfa 180deg, #22d3ee 270deg, transparent 360deg)",
+                animation: "spin 6s linear infinite",
+                WebkitMask:
+                  "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+                mask: "radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px))",
+              }}
+            />
+            {/* Inner glossy orb */}
+            <div
+              className="absolute inset-2 flex items-center justify-center rounded-full shadow-2xl"
+              style={{
+                background:
+                  "radial-gradient(circle at 30% 25%, #ffffff55, transparent 40%), linear-gradient(135deg, hsl(var(--primary)) 0%, #8b5cf6 60%, #6366f1 100%)",
+                boxShadow:
+                  "0 10px 40px -10px hsl(var(--primary) / 0.7), inset 0 -8px 20px rgba(0,0,0,0.25), inset 0 2px 6px rgba(255,255,255,0.4)",
+              }}
             >
-              <Sparkles className="h-7 w-7 -rotate-45 text-primary-foreground" />
+              <Sparkles
+                className="h-8 w-8 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+                strokeWidth={1.75}
+              />
             </div>
+            {/* Tiny orbiting sparkles */}
+            <Sparkles
+              aria-hidden
+              className="absolute -top-1 -right-1 h-3.5 w-3.5 animate-pulse text-cyan-300 drop-shadow"
+              strokeWidth={2}
+            />
+            <Sparkles
+              aria-hidden
+              className="absolute -bottom-1 -left-1 h-3 w-3 animate-pulse text-violet-300 drop-shadow"
+              strokeWidth={2}
+              style={{ animationDelay: "0.6s" }}
+            />
           </div>
         </div>
 
