@@ -52,7 +52,7 @@ function HomePage() {
               type="button"
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(key)}
-              className="cube-3d animate-fade-in group relative flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-4 text-center disabled:opacity-50"
+              className="cube-3d animate-fade-in group relative flex h-32 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-40 sm:gap-3 sm:p-4 disabled:opacity-50"
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
               <span
