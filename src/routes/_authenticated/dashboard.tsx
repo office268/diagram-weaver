@@ -52,7 +52,7 @@ function HomePage() {
               type="button"
               disabled={createMut.isPending}
               onClick={() => createMut.mutate(key)}
-              className="cube-3d animate-fade-in group relative flex aspect-square flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-4 text-center disabled:opacity-50"
+              className="cube-3d animate-fade-in group relative flex h-32 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-40 sm:gap-3 sm:p-4 disabled:opacity-50"
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
               <span
@@ -60,15 +60,15 @@ function HomePage() {
               >
                 {isDiagram ? "תרשים" : "מסמך"}
               </span>
-              <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-accent ${t.colorClass}`}>
+              <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent sm:h-14 sm:w-14 ${t.colorClass}`}>
                 {isPending ? (
-                  <Loader2 className="h-7 w-7 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin sm:h-7 sm:w-7" />
                 ) : (
-                  <Icon className="h-7 w-7" />
+                  <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
                 )}
               </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold leading-tight text-foreground sm:text-base">
+              <div className="min-w-0 px-1">
+                <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-foreground sm:text-sm">
                   {t.label}
                 </div>
                 <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
