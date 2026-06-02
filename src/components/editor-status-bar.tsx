@@ -1,16 +1,32 @@
-import { Type, ListChecks } from "lucide-react";
+import { Type, ListChecks, Coins, DollarSign } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface EditorStatusBarProps {
   wordCount: number;
   filledCount: number;
   totalCount: number;
+  totalTokens: number | null;
+  totalCostUsd: number | null;
+}
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString("he-IL");
+}
+
+function formatCost(usd: number): string {
+  if (usd >= 1) return `$${usd.toFixed(2)}`;
+  if (usd >= 0.01) return `$${usd.toFixed(3)}`;
+  return `$${usd.toFixed(4)}`;
 }
 
 export function EditorStatusBar({
   wordCount,
   filledCount,
   totalCount,
+  totalTokens,
+  totalCostUsd,
 }: EditorStatusBarProps) {
   const pct = totalCount > 0 ? Math.round((filledCount / totalCount) * 100) : 0;
   return (
@@ -27,6 +43,19 @@ export function EditorStatusBar({
             {filledCount} / {totalCount}
           </span>
           <span className="hidden sm:inline">סעיפים</span>
+        </div>
+        <div className="flex items-center gap-1.5" title="טוקנים מצטברים בכל קריאות ה-AI על המסמך">
+          <Coins className="h-3.5 w-3.5" />
+          <span className="tabular-nums">
+            {totalTokens === null ? "—" : formatTokens(totalTokens)}
+          </span>
+          <span className="hidden sm:inline">טוקנים</span>
+        </div>
+        <div className="flex items-center gap-1.5" title="עלות מצטברת ב-USD">
+          <DollarSign className="h-3.5 w-3.5" />
+          <span className="tabular-nums">
+            {totalCostUsd === null ? "—" : formatCost(totalCostUsd)}
+          </span>
         </div>
         <div className="ml-auto flex min-w-[8rem] items-center gap-2">
           <Progress value={pct} className="h-1 flex-1" />
