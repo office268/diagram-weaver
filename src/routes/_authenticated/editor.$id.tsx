@@ -167,6 +167,7 @@ function EditorPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem("editor-focus-mode") === "1";
