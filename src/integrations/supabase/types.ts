@@ -185,9 +185,10 @@ export type Database = {
           content: string
           created_at: string
           document_id: string
-          embedding: string
+          embedding: string | null
           id: string
           project_id: string | null
+          token_count: number
           user_id: string
         }
         Insert: {
@@ -195,9 +196,10 @@ export type Database = {
           content: string
           created_at?: string
           document_id: string
-          embedding: string
+          embedding?: string | null
           id?: string
           project_id?: string | null
+          token_count?: number
           user_id: string
         }
         Update: {
@@ -205,9 +207,10 @@ export type Database = {
           content?: string
           created_at?: string
           document_id?: string
-          embedding?: string
+          embedding?: string | null
           id?: string
           project_id?: string | null
+          token_count?: number
           user_id?: string
         }
         Relationships: [
@@ -462,12 +465,14 @@ export type Database = {
           char_count: number
           chunk_count: number
           created_at: string
+          error_message: string | null
           file_name: string
           file_size: number
           id: string
           mime_type: string
           project_id: string | null
           status: string
+          storage_path: string | null
           updated_at: string
           user_id: string
         }
@@ -475,12 +480,14 @@ export type Database = {
           char_count?: number
           chunk_count?: number
           created_at?: string
+          error_message?: string | null
           file_name: string
           file_size?: number
           id?: string
           mime_type: string
           project_id?: string | null
           status?: string
+          storage_path?: string | null
           updated_at?: string
           user_id: string
         }
@@ -488,12 +495,14 @@ export type Database = {
           char_count?: number
           chunk_count?: number
           created_at?: string
+          error_message?: string | null
           file_name?: string
           file_size?: number
           id?: string
           mime_type?: string
           project_id?: string | null
           status?: string
+          storage_path?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -565,12 +574,14 @@ export type Database = {
       }
       match_document_chunks: {
         Args: {
-          _match_count?: number
-          _project_id: string
-          _query: string
-          _user_id: string
+          match_count?: number
+          match_project_id: string
+          match_user_id: string
+          min_similarity?: number
+          query_embedding: string
         }
         Returns: {
+          chunk_index: number
           content: string
           document_id: string
           id: string
