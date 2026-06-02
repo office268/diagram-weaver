@@ -16,9 +16,11 @@ import type { SpecOutput } from "@/lib/spec-output-schema";
 const BodySchema = z.object({
   threadId: z.string().uuid(),
   message: z.string().min(1).max(5000),
+  mode: z.enum(["auto", "plan", "build"]).optional().default("auto"),
 });
 
 const BASE_CREDITS = 3;
+const PLAN_CREDITS = 1;
 
 function sanitize(s: string): string {
   return s
@@ -89,22 +91,80 @@ export const Route = createFileRoute("/api/chat-message")({
         });
         if (insertUserErr) return new Response(insertUserErr.message, { status: 500 });
 
-        // Consume credits
+        // Consume credits (plan mode costs less since no artifact is generated)
+        const creditsToCharge = body.mode === "plan" ? PLAN_CREDITS : BASE_CREDITS;
         const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
           "consume_credits",
           {
             _user_id: userId,
-            _amount: BASE_CREDITS,
-            _description: `יצירה: ${def.label}`,
+            _amount: creditsToCharge,
+            _description:
+              body.mode === "plan"
+                ? `תכנון: ${def.label}`
+                : `יצירה: ${def.label}`,
           },
         );
         if (creditErr) return new Response("שגיאת קרדיטים", { status: 500 });
         if (newBalance === null) {
           return new Response(
-            `אזלו הקרדיטים (דרושים ${BASE_CREDITS}). הוסף בדף המחירים.`,
+            `אזלו הקרדיטים (דרושים ${creditsToCharge}). הוסף בדף המחירים.`,
             { status: 402 },
           );
         }
+
+        // Plan mode: respond with clarifying questions / outline only, no artifact
+        if (body.mode === "plan") {
+          try {
+            const provider = createLovableAiGatewayProvider(apiKey);
+            const model = provider("google/gemini-2.5-flash");
+            const planSystem =
+              `אתה אנליסט מערכות מנוסה שעוזר ללקוח לחדד את הבקשה לפני יצירת ${def.label}. ` +
+              `אל תייצר את המסמך/תרשים עצמו. במקום זה: ` +
+              `1) זהה מידע חסר וקריטי, ושאל עד 5 שאלות הבהרה ממוקדות. ` +
+              `2) הצע מבנה/תוכן עניינים ראשוני ל-${def.label} בנקודות קצרות. ` +
+              `3) ציין הנחות שאתה לוקח. ` +
+              `כתוב בעברית, תמציתי עם כותרות בולד ו-bullet points. בסוף ההודעה הזמן את המשתמש לעבור למצב Build כשמוכן.`;
+            const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+              (m) => ({
+                role: m.role === "assistant" ? "assistant" : "user",
+                content: m.content,
+              }),
+            );
+            history.push({ role: "user", content: cleanUserMsg });
+
+            const { text } = await generateText({
+              model,
+              system: planSystem,
+              messages: history,
+              temperature: 0.5,
+            });
+
+            await supabaseAdmin.from("chat_messages").insert({
+              thread_id: body.threadId,
+              user_id: userId,
+              role: "assistant",
+              content: text.trim() || "לא הופקה תשובה.",
+            });
+
+            await supabaseAdmin
+              .from("chat_threads")
+              .update({ updated_at: new Date().toISOString() })
+              .eq("id", body.threadId);
+
+            return Response.json({ ok: true, mode: "plan" });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error("[chat-message] plan error:", err);
+            await supabaseAdmin.from("chat_messages").insert({
+              thread_id: body.threadId,
+              user_id: userId,
+              role: "assistant",
+              content: `אירעה שגיאה: ${msg}`,
+            });
+            return new Response(msg, { status: 500 });
+          }
+        }
+
 
         try {
           if (def.category === "document") {

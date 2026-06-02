@@ -18,7 +18,18 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   File as FileIcon,
+  Sparkles,
+  ListChecks,
+  Hammer,
+  ChevronDown,
+  Check,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -70,6 +81,24 @@ interface Attachment {
 
 
 
+const MODE_META = {
+  auto: {
+    label: "Auto",
+    icon: Sparkles,
+    description: "ה-AI מחליט אם לשאול הבהרות או לייצר ישר.",
+  },
+  plan: {
+    label: "Plan",
+    icon: ListChecks,
+    description: "שאלות הבהרה והצעת מבנה בלבד, ללא יצירת מסמך/תרשים.",
+  },
+  build: {
+    label: "Build",
+    icon: Hammer,
+    description: "מייצר את המסמך/תרשים ישר לפי הבקשה.",
+  },
+} as const;
+
 function ChatPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
@@ -89,6 +118,16 @@ function ChatPage() {
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
+  const [mode, setMode] = useState<"auto" | "plan" | "build">(() => {
+    if (typeof window === "undefined") return "auto";
+    const saved = window.localStorage.getItem("chat-mode");
+    return saved === "plan" || saved === "build" || saved === "auto" ? saved : "auto";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("chat-mode", mode);
+    }
+  }, [mode]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
@@ -217,7 +256,7 @@ function ChatPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ threadId, message: composed }),
+        body: JSON.stringify({ threadId, message: composed, mode }),
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -520,20 +559,66 @@ function ChatPage() {
                 }
                 rows={2}
                 disabled={sending}
-                className="min-h-[60px] resize-none border-0 bg-transparent pe-12 ps-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[60px] resize-none border-0 bg-transparent pe-24 ps-12 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-              <Button
-                onClick={() => void handleSend()}
-                disabled={
-                  sending ||
-                  (input.trim().length === 0 &&
-                    attachments.filter((a) => a.status === "ready").length === 0)
-                }
-                size="icon"
-                className="absolute bottom-1.5 right-1.5 h-8 w-8 shrink-0 rounded-full"
-              >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
+              <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      className="h-8 gap-1 rounded-full px-2 text-xs text-muted-foreground hover:text-foreground"
+                      title={`מצב: ${MODE_META[mode].label}`}
+                    >
+                      {(() => {
+                        const Icon = MODE_META[mode].icon;
+                        return <Icon className="h-3.5 w-3.5" />;
+                      })()}
+                      <span className="hidden sm:inline">{MODE_META[mode].label}</span>
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {(["auto", "plan", "build"] as const).map((m) => {
+                      const meta = MODE_META[m];
+                      const Icon = meta.icon;
+                      const active = mode === m;
+                      return (
+                        <DropdownMenuItem
+                          key={m}
+                          onClick={() => setMode(m)}
+                          className="flex items-start gap-2 py-2"
+                        >
+                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium">{meta.label}</span>
+                              {active && <Check className="h-3.5 w-3.5 text-primary" />}
+                            </div>
+                            <p className="text-[11px] leading-snug text-muted-foreground">
+                              {meta.description}
+                            </p>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  onClick={() => void handleSend()}
+                  disabled={
+                    sending ||
+                    (input.trim().length === 0 &&
+                      attachments.filter((a) => a.status === "ready").length === 0)
+                  }
+                  size="icon"
+                  className="h-8 w-8 shrink-0 rounded-full"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
 
