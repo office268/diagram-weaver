@@ -38,53 +38,52 @@ function AuthenticatedLayout() {
   return (
     <OnboardingProvider>
       <div className="flex min-h-screen flex-col bg-background">
-        <header className="relative border-b border-border bg-card">
-          <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-            <div data-tour="user-menu">
+        <header className="border-b border-border bg-card">
+          <div className="flex w-full items-center justify-between gap-2 px-4 py-5 sm:py-6">
+            <div data-tour="user-menu" className="flex flex-1 justify-center">
               <UserMenu user={user} />
             </div>
 
-            <nav className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-start gap-14 sm:gap-20">
-              <Link
-                to="/dashboard"
-                className="flex flex-col items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-80 sm:text-sm"
-              >
-                <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => toast.info("ניהול פרויקט — בקרוב")}
-                className="relative flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
-              >
-                <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info("ניהול מוצר — בקרוב")}
-                className="relative flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
-              >
-                <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
-                <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
-              </button>
-            </nav>
+            <Link
+              to="/dashboard"
+              className="flex flex-1 flex-col items-center gap-1 text-xs font-semibold text-primary transition-opacity hover:opacity-80 sm:text-sm"
+            >
+              <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
+            </Link>
 
-            <div className="relative flex items-center gap-1.5">
-              <div className="hidden md:flex items-center gap-1.5">
-                <Link
-                  to="/documents"
-                  className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  המסמכים שלי
-                </Link>
-                <div data-tour="header-search">
-                  <CommandTriggerButton />
-                </div>
+            <button
+              type="button"
+              onClick={() => toast.info("ניהול פרויקט — בקרוב")}
+              className="flex flex-1 flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
+            >
+              <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => toast.info("ניהול מוצר — בקרוב")}
+              className="flex flex-1 flex-col items-center gap-1 text-xs font-semibold text-muted-foreground transition-opacity hover:opacity-80 sm:text-sm"
+            >
+              <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
+            </button>
+
+            <div className="hidden md:flex flex-1 items-center justify-center gap-1.5">
+              <Link
+                to="/documents"
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                המסמכים שלי
+              </Link>
+              <div data-tour="header-search">
+                <CommandTriggerButton />
               </div>
             </div>
           </div>
         </header>
+
         <main className="flex-1 pb-16 md:pb-0">
           <Outlet />
         </main>
