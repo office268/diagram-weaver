@@ -96,6 +96,13 @@ function SettingsPage() {
         />
       </SettingsSection>
 
+      <SettingsSection
+        title="עלויות"
+        description="פירוט מצטבר של כל פעולות ה-AI שלך — מסמכים, מילים, טוקנים ועלות. נשמר גם עבור מסמכים שנמחקו."
+      >
+        <AiUsageCard />
+      </SettingsSection>
+
 
 
       {isAdmin ? (
