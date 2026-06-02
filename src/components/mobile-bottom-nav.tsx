@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, FileText, Settings } from "lucide-react";
+import { Home, FileText } from "lucide-react";
 
 interface ItemProps {
   active: boolean;
@@ -31,7 +31,6 @@ export function MobileBottomNav() {
 
   const isHome = pathname.startsWith("/dashboard");
   const isDocuments = pathname.startsWith("/documents");
-  const isSettings = pathname.startsWith("/settings");
 
   return (
     <nav
@@ -47,13 +46,6 @@ export function MobileBottomNav() {
           active={isDocuments}
           icon={<FileText className="h-5 w-5" />}
           label="המסמכים שלי"
-        />
-      </Link>
-      <Link to="/settings" className="flex-1">
-        <ItemInner
-          active={isSettings}
-          icon={<Settings className="h-5 w-5" />}
-          label="הגדרות"
         />
       </Link>
     </nav>
