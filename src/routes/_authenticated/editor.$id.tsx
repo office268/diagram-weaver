@@ -995,7 +995,7 @@ function EditorPage() {
               <Plus className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" dir="rtl" className="w-44 text-right" style={{ direction: "rtl" }}>
+          <DropdownMenuContent align="end" className="w-44 text-right" style={{ direction: "rtl" }}>
             <DropdownMenuItem
               onSelect={() => {
                 const url = window.prompt("כתובת התמונה (URL):");
