@@ -114,9 +114,8 @@ function Landing() {
       />
 
       <div className="w-full max-w-sm">
-        {/* AI Sparkle Orb */}
         <div className="mb-8 flex justify-center">
-          <div className="relative h-24 w-24">
+          <div className="relative h-32 w-32">
             {/* Outer aurora glow */}
             <div
               aria-hidden
@@ -151,22 +150,10 @@ function Landing() {
               }}
             >
               <Sparkles
-                className="h-8 w-8 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
+                className="h-11 w-11 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]"
                 strokeWidth={1.75}
               />
             </div>
-            {/* Tiny orbiting sparkles */}
-            <Sparkles
-              aria-hidden
-              className="absolute -top-1 -right-1 h-3.5 w-3.5 animate-pulse text-cyan-300 drop-shadow"
-              strokeWidth={2}
-            />
-            <Sparkles
-              aria-hidden
-              className="absolute -bottom-1 -left-1 h-3 w-3 animate-pulse text-violet-300 drop-shadow"
-              strokeWidth={2}
-              style={{ animationDelay: "0.6s" }}
-            />
           </div>
         </div>
 
