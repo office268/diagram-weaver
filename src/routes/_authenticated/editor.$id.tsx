@@ -513,6 +513,7 @@ function EditorPage() {
             contextPrompt: prompt,
             docType: (data?.spec as { doc_type?: string } | undefined)?.doc_type,
             projectId: projectId ?? undefined,
+            docId: id,
           }),
 
         });
