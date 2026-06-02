@@ -88,7 +88,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EditableText, EditableItemDeleteContext } from "@/components/editable-text";
+import { EditableText } from "@/components/editable-text";
 import { SpecDiagram } from "@/components/spec-diagram";
 import {
   normalizeSpec,
@@ -1684,7 +1684,6 @@ function SectionShell({
 
   return (
     <>
-    <Collapsible open={open} onOpenChange={setOpen} asChild>
       <section className="space-y-3">
         <div className="flex items-center gap-2 border-b border-border pb-2">
           {dragHandle}
@@ -1712,10 +1711,9 @@ function SectionShell({
           ) : (
             <button
               type="button"
-              onClick={() => setOpen((o) => !o)}
-              onDoubleClick={startEdit}
+              onClick={startEdit}
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
-              title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
+              title="לחץ לעריכת שם הסעיף"
             >
               <span>{shownTitle}</span>
             </button>
@@ -1724,9 +1722,9 @@ function SectionShell({
           <div className="ml-auto flex shrink-0 items-center gap-1" />
 
         </div>
-        <CollapsibleContent>{children}</CollapsibleContent>
+        <div>{children}</div>
       </section>
-    </Collapsible>
+
     {onAiImprove ? (
       <Dialog open={aiOpen} onOpenChange={(o) => { if (aiBusy) return; setAiOpen(o); }}>
         <DialogContent className="max-w-lg space-y-2">
@@ -1905,43 +1903,48 @@ function ListBody<T extends { id: string }>({
   onChange,
   newItem,
   renderItem,
-  addLabel,
 }: ListBodyProps<T>) {
+  // Ensure exactly one trailing empty slot so users can keep typing (Word-like flow).
+  const isEmptyItem = (it: T): boolean => {
+    for (const v of Object.values(it as Record<string, unknown>)) {
+      if (typeof v === "string" && v.trim() !== "") return false;
+    }
+    return true;
+  };
+
+  useEffect(() => {
+    const last = items[items.length - 1];
+    if (!last || !isEmptyItem(last)) {
+      onChange([...items, newItem()]);
+      return;
+    }
+    // Trim extra trailing empty items (keep just one)
+    let cut = items.length;
+    while (cut > 1 && isEmptyItem(items[cut - 1]) && isEmptyItem(items[cut - 2])) cut--;
+    if (cut !== items.length) onChange(items.slice(0, cut));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
   return (
     <div className="space-y-3">
       <ul className="space-y-2">
         {items.map((item, idx) => (
-          <li
-            key={item.id}
-            className="group relative"
-          >
+          <li key={item.id} className="relative">
             <span className="pointer-events-none absolute right-0 top-1 text-xs text-muted-foreground tabular-nums">
               {idx + 1}.
             </span>
-            <EditableItemDeleteContext.Provider
-              value={() => onChange(items.filter((it) => it.id !== item.id))}
-            >
-              <div className="pr-6">
-                {renderItem(item, (next) =>
-                  onChange(items.map((it) => (it.id === item.id ? next : it))),
-                )}
-              </div>
-            </EditableItemDeleteContext.Provider>
+            <div className="pr-6">
+              {renderItem(item, (next) =>
+                onChange(items.map((it) => (it.id === item.id ? next : it))),
+              )}
+            </div>
           </li>
         ))}
-        {items.length === 0 && (
-          <li className="text-sm text-muted-foreground">
-            אין פריטים. לחץ "הוסף" כדי להתחיל.
-          </li>
-        )}
       </ul>
-
-      <Button variant="outline" size="sm" onClick={() => onChange([...items, newItem()])}>
-        <Plus className="mr-1.5 h-4 w-4" /> {addLabel}
-      </Button>
     </div>
   );
 }
+
 
 function SortableSection({
   id,
