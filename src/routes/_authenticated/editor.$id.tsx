@@ -805,7 +805,7 @@ function EditorPage() {
           );
         case "architecture":
           return (
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="space-y-4">
               <EditableText
                 value={content.architecture.description}
                 onChange={(v) =>
@@ -814,19 +814,17 @@ function EditorPage() {
                 multiline
                 placeholder="תיאור הארכיטקטורה..."
               />
-              <div className="mt-4">
-                <SpecDiagram
-                  code={content.architecture.diagram ?? ""}
-                  onChange={(code) =>
-                    updateContent((c) => ({ ...c, architecture: { ...c.architecture, diagram: code } }))
-                  }
-                />
-              </div>
+              <SpecDiagram
+                code={content.architecture.diagram ?? ""}
+                onChange={(code) =>
+                  updateContent((c) => ({ ...c, architecture: { ...c.architecture, diagram: code } }))
+                }
+              />
             </div>
           );
         case "data_model":
           return (
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="space-y-4">
               <EditableText
                 value={content.data_model.description}
                 onChange={(v) =>
@@ -835,16 +833,15 @@ function EditorPage() {
                 multiline
                 placeholder="תיאור מודל הנתונים..."
               />
-              <div className="mt-4">
-                <SpecDiagram
-                  code={content.data_model.diagram ?? ""}
-                  onChange={(code) =>
-                    updateContent((c) => ({ ...c, data_model: { ...c.data_model, diagram: code } }))
-                  }
-                />
-              </div>
+              <SpecDiagram
+                code={content.data_model.diagram ?? ""}
+                onChange={(code) =>
+                  updateContent((c) => ({ ...c, data_model: { ...c.data_model, diagram: code } }))
+                }
+              />
             </div>
           );
+
         case "risks":
           return (
             <ListBody<TextItem>
