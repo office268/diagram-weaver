@@ -90,22 +90,102 @@ function ChatPage() {
     textareaRef.current?.focus();
   }, [threadId, sending]);
 
+  async function uploadFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) {
+      toast.error("נדרשת התחברות מחדש");
+      return;
+    }
+    for (const file of list) {
+      const id = crypto.randomUUID();
+      setAttachments((prev) => [
+        ...prev,
+        { id, name: file.name, size: file.size, status: "uploading" },
+      ]);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/chat-attach", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || `שגיאה ${res.status}`);
+        }
+        const json = (await res.json()) as {
+          fileName: string;
+          size: number;
+          text: string;
+          truncated: boolean;
+        };
+        setAttachments((prev) =>
+          prev.map((a) =>
+            a.id === id
+              ? { ...a, status: "ready", text: json.text, truncated: json.truncated }
+              : a,
+          ),
+        );
+      } catch (e) {
+        toast.error(
+          `${file.name}: ${e instanceof Error ? e.message : "העלאה נכשלה"}`,
+        );
+        setAttachments((prev) => prev.filter((a) => a.id !== id));
+      }
+    }
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      void uploadFiles(e.target.files);
+    }
+    e.target.value = "";
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  }
+
   async function handleSend() {
     const msg = input.trim();
-    if (!msg || sending) return;
+    const readyAtts = attachments.filter((a) => a.status === "ready");
+    const hasUploading = attachments.some((a) => a.status === "uploading");
+    if (hasUploading) {
+      toast.info("ממתין לסיום העלאת קבצים...");
+      return;
+    }
+    if ((!msg && readyAtts.length === 0) || sending) return;
     setSending(true);
     setInput("");
+    const sentAtts = readyAtts;
+    setAttachments([]);
     try {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       if (!token) throw new Error("נדרשת התחברות מחדש");
+
+      let composed = msg;
+      if (sentAtts.length > 0) {
+        const filesBlock = sentAtts
+          .map(
+            (a) =>
+              `--- קובץ: ${a.name}${a.truncated ? " (קוצץ)" : ""} ---\n${a.text ?? ""}`,
+          )
+          .join("\n\n");
+        composed =
+          `[קבצים מצורפים]\n${filesBlock}\n\n[הודעת המשתמש]\n${msg || "(ראה קבצים מצורפים)"}`;
+      }
+
       const res = await fetch("/api/chat-message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ threadId, message: msg }),
+        body: JSON.stringify({ threadId, message: composed }),
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -116,6 +196,7 @@ function ChatPage() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
       setInput(msg);
+      setAttachments(sentAtts);
     } finally {
       setSending(false);
     }
