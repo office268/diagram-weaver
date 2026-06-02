@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload } from "lucide-react";
+import { Loader2, Save, Check, Plus, Trash2, ChevronUp, ChevronDown, Pencil, ChevronRight, ChevronLeft, Sparkles, X, GripVertical, Search, Maximize2, Minimize2, Columns2, MoreVertical, Download, Undo2, Redo2, Bold, Italic, Underline, Cloud, Upload, Table as TableIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -989,17 +989,25 @@ function EditorPage() {
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
-          onClick={() => flushSave()}
-          title="שמירה (Cmd/Ctrl+S)"
-          aria-label="שמירה"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            const rows = 3;
+            const cols = 3;
+            let html = '<table style="border-collapse:collapse;width:100%;margin:8px 0" border="1">';
+            for (let r = 0; r < rows; r++) {
+              html += "<tr>";
+              for (let c = 0; c < cols; c++) {
+                html += '<td style="border:1px solid #ccc;padding:6px;min-width:60px">&nbsp;</td>';
+              }
+              html += "</tr>";
+            }
+            html += "</table><p>&nbsp;</p>";
+            document.execCommand("insertHTML", false, html);
+          }}
+          title="הוסף טבלה"
+          aria-label="הוסף טבלה"
         >
-          {saveState === "saving" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : saveState === "saved" ? (
-            <Check className="h-4 w-4 text-primary" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
+          <TableIcon className="h-4 w-4" />
         </Button>
         <Button
           type="button"
