@@ -1,26 +1,30 @@
-## הבעיה
 
-ב-`src/routes/__root.tsx` (שורה 80) ה-loader מחזיר `isAdmin: false` קבוע, ולא קורא לפונקציה `getIsAdmin` שכבר קיימת ב-`src/lib/site-texts.functions.ts`. התוצאה: ה-`SiteTextsProvider` תמיד מקבל `isAdmin=false`, ולכן ב-`src/routes/_authenticated/settings.tsx` 4 הסקציות שמוגנות ב-`{isAdmin ? ... : null}` נעלמות לכל המשתמשים — כולל אדמינים אמיתיים:
+## איחוד דף בית + התחברות לדף אחד
 
-- לוג התחברויות
-- מטא-דאטה של האפליקציה
-- סוגי מסמכים וסעיפי ברירת מחדל
-- הוראות מערכת לפי סוג מסמך (הפרומפטים)
+### מטרה
+דף יחיד, נקי ומינימליסטי, שמשלב מיתוג קצר + טופס התחברות/הרשמה, עם אלמנט יהלום זוהר שמייצג AI.
 
-## הפתרון
+### מבנה הדף החדש (`/`)
+מסך אחד ממורכז, ללא גלילה במובייל:
 
-לזהות אדמין בצד הלקוח אחרי שה-session נטען, ולהזרים את הערך ל-`SiteTextsProvider`. לא דרך ה-root loader, כי ה-loader רץ ב-SSR בלי bearer token ו-`requireSupabaseAuth` היה נכשל.
+1. **יהלום AI מנצנץ** בראש המסך — אייקון `Sparkles`/יהלום עם הילה רכה (gradient + glow) ואנימציית pulse עדינה. מעביר את מסר ה-AI ויזואלית בלי טקסט.
+2. **כותרת קצרה** — "סוכן ניתוח מערכות"
+3. **שורת תיאור אחת בלבד** — לדוגמה: "מסמכי אפיון שנכתבים בעצמם, בעזרת AI."
+4. **כרטיס התחברות קומפקטי** — טאבים כניסה/הרשמה, שדות אימייל+סיסמה, כפתור ראשי, "שכחתי סיסמה", מפריד "או", וכפתור Google.
+5. **פוטר זעיר** — קישורים למדיניות פרטיות/תנאים (טקסט קטן).
 
-### שינויים
+### שינויים בקבצים
+- **`src/routes/index.tsx`** — להחליף לחלוטין: להסיר את ה-header, hero הגדול, שלושת כרטיסי ה-Feature והפוטר הנוכחי. במקום זאת לרנדר את היהלום + כותרת + תיאור + טופס auth (אותה לוגיקה שב-`login.tsx` כיום: email/password, Google דרך `lovable.auth.signInWithOAuth`, דיאלוג שכחתי סיסמה). אם המשתמש כבר מחובר — redirect ל-`/dashboard`.
+- **`src/routes/login.tsx`** — להפוך לפשוט: redirect ל-`/` (לתאימות לאחור עם קישורים קיימים), כך שלא נשבור ניווט קיים מ-`reset-password` או מה-header של דפים אחרים.
+- **`src/routes/_authenticated.tsx`** — לעדכן את ה-`redirect` ב-`beforeLoad` כך שיפנה ל-`/` במקום ל-`/login` (אם כרגע מפנה ללוגין).
 
-1. **`src/routes/__root.tsx`**
-   - להסיר את `isAdmin: false` מה-loader (לא קריטי, אבל מסדר את המודל).
-   - ב-`RootComponent`: להוסיף `useQuery` שקורא ל-`getIsAdmin` רק כשיש משתמש מחובר (תלוי ב-`useAuth().user?.id` בתור queryKey, ו-`enabled: !!user`).
-   - להעביר את התוצאה (`data?.isAdmin ?? false`) ל-`<SiteTextsProvider isAdmin={...}>`.
-   - ה-`AuthBridge` הקיים כבר עושה `queryClient.invalidateQueries()` ב-SIGNED_IN/OUT, אז הסטטוס יתעדכן אוטומטית בלוגין/לוגאוט.
+### פרטים ויזואליים
+- היהלום: SVG/Lucide `Gem` או `Sparkles` בתוך עיגול עם `bg-gradient-to-br from-primary to-primary-glow`, shadow זוהר (`--shadow-elegant`), אנימציית `animate-pulse` עדינה.
+- ריווח: `min-h-screen flex items-center justify-center`, רוחב מקסימלי `max-w-md`.
+- שמירה על RTL ועל טוקני העיצוב הקיימים מ-`src/styles.css`.
+- ThemeToggle קטן בפינה.
 
-2. **בלי שינויי DB / RLS** — המדיניות `Users view own roles` על `user_roles` כבר מאפשרת לפונקציה לקרוא את התפקיד של המשתמש עצמו.
-
-### אימות
-
-אחרי השינוי, להתחבר כ-`office@make-i-tec.com`, לפתוח את `/settings`, ולפתוח את 4 הסקציות (הן עדיין יהיו מקופלות כברירת מחדל לפי הבחירה הקודמת — אם תרצה גם להחזיר אותן פתוחות כברירת מחדל, תגיד ואוסיף לזה).
+### מה לא משנים
+- לוגיקת auth (Supabase + Lovable OAuth) נשארת זהה.
+- מסלולי `/dashboard`, `/about`, `/pricing` וכו' לא מושפעים.
+- אין שינויי backend או DB.
