@@ -11,6 +11,7 @@ const BodySchema = z.object({
   prompt: z.string().min(1).max(5000),
   spec: z.record(z.string(), z.any()),
   projectId: z.string().uuid().optional(),
+  docId: z.string().uuid().optional(),
 });
 
 
@@ -85,12 +86,29 @@ export const Route = createFileRoute("/api/review-spec")({
             ].join("\n");
 
 
-          const { text } = await generateText({
+          const { text, usage } = await generateText({
             model: gateway(DEFAULT_MODEL),
             system: REVIEWER_SYSTEM,
             prompt: userPrompt,
             maxOutputTokens: 2000,
           });
+
+          if (body.docId) {
+            try {
+              const { logAiUsage } = await import("@/lib/ai-usage.server");
+              await logAiUsage({
+                userId: userData.user.id,
+                specDocumentId: body.docId,
+                model: DEFAULT_MODEL,
+                purpose: "review",
+                inputTokens: usage?.inputTokens ?? 0,
+                outputTokens: usage?.outputTokens ?? 0,
+                totalTokens: usage?.totalTokens ?? 0,
+              });
+            } catch (e) {
+              console.error("[review-spec] logAiUsage failed:", e);
+            }
+          }
 
           try {
             const raw = JSON.parse(extractJson(text));
