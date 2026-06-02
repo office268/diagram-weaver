@@ -67,85 +67,63 @@ export const Route = createFileRoute("/api/generate-spec")({
           );
         }
 
-        // ── Stream
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream<Uint8Array>({
-          async start(controller) {
-            let closed = false;
-            const enqueue = (s: string) => {
-              if (closed) return;
-              try {
-                controller.enqueue(encoder.encode(s));
-              } catch (e) {
-                console.error("[generate-spec] enqueue failed:", e);
-              }
-            };
-            const close = () => {
-              if (closed) return;
-              closed = true;
-              try {
-                controller.close();
-              } catch {
-                /* already closed */
-              }
-            };
-
-            try {
-              const result = await runOrchestrator(
-                {
-                  userPrompt: body.prompt,
-                  docType: (body.docType ?? "spec_overview") as DocTypeKey,
-                  userId,
-                  projectId: body.projectId ?? null,
-                  apiKey: key,
-                  previousSpec: body.previousSpec,
-                  reviewerNotes: body.reviewerNotes,
-                  emit: enqueue,
-                },
-                {
-                  canSpendIterationCredit: async () => {
-                    const { data: nb, error: e } = await supabaseAdmin.rpc(
-                      "consume_credits",
-                      {
-                        _user_id: userId,
-                        _amount: 1,
-                        _description: "איטרציית שיפור multi-agent",
-                      },
-                    );
-                    if (e) {
-                      console.error("[generate-spec] iter credit:", e);
-                      return false;
-                    }
-                    return nb !== null;
+        // ── Run orchestrator (non-streaming: client only consumes final JSON)
+        try {
+          const result = await runOrchestrator(
+            {
+              userPrompt: body.prompt,
+              docType: (body.docType ?? "spec_overview") as DocTypeKey,
+              userId,
+              projectId: body.projectId ?? null,
+              apiKey: key,
+              previousSpec: body.previousSpec,
+              reviewerNotes: body.reviewerNotes,
+              emit: () => {
+                /* progress markers unused by client; swallowed to avoid stream timeouts */
+              },
+            },
+            {
+              canSpendIterationCredit: async () => {
+                const { data: nb, error: e } = await supabaseAdmin.rpc(
+                  "consume_credits",
+                  {
+                    _user_id: userId,
+                    _amount: 1,
+                    _description: "איטרציית שיפור multi-agent",
                   },
-                },
-              );
+                );
+                if (e) {
+                  console.error("[generate-spec] iter credit:", e);
+                  return false;
+                }
+                return nb !== null;
+              },
+            },
+          );
 
-              console.log(
-                `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
-              );
+          console.log(
+            `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
+          );
 
-              // Final JSON: the spec only. extractJson on the client takes
-              // first `{` to last `}` — stage markers above contain no braces,
-              // so this remains parseable.
-              enqueue(JSON.stringify(result.spec));
-              close();
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              console.error("[generate-spec] error:", err);
-              let friendly = msg;
-              if (msg.includes("429")) friendly = "הגעת למגבלת קצב.";
-              else if (msg.includes("402")) friendly = "אזלו קרדיטי ה-AI.";
-              enqueue(`\n__STREAM_ERROR__:${friendly}`);
-              close();
-            }
-          },
-        });
+          return new Response(JSON.stringify(result.spec), {
+            status: 200,
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error("[generate-spec] error:", err);
+          let friendly = msg;
+          let status = 500;
+          if (msg.includes("429")) {
+            friendly = "הגעת למגבלת קצב.";
+            status = 429;
+          } else if (msg.includes("402")) {
+            friendly = "אזלו קרדיטי ה-AI.";
+            status = 402;
+          }
+          return new Response(friendly, { status });
+        }
 
-        return new Response(stream, {
-          status: 200,
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
-        });
       },
     },
   },
