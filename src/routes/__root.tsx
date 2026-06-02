@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -7,14 +7,16 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getAppMetadata } from "@/lib/app-metadata.functions";
-import { getSiteTexts } from "@/lib/site-texts.functions";
+import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
 import { SiteTextsProvider } from "@/lib/site-texts-context";
+import { useAuth } from "@/hooks/use-auth";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 function NotFoundComponent() {
