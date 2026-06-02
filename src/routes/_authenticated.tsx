@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { UserMenu } from "@/components/user-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
+
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
   GlobalCommandPalette,
@@ -64,7 +64,7 @@ function AuthenticatedLayout() {
                   <CommandTriggerButton />
                 </div>
               </div>
-              <ThemeToggle />
+              
               <div data-tour="user-menu">
                 <UserMenu user={user} />
               </div>

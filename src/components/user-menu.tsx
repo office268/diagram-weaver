@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCredits } from "@/hooks/use-credits";
+import { useTheme } from "@/hooks/use-theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,8 @@ function initialsFromEmail(email: string | null | undefined): string {
 export function UserMenu({ user }: { user: User }) {
   const navigate = useNavigate();
   const { balance } = useCredits();
+  const { theme, toggle } = useTheme();
+  const isDark = theme === "dark";
   const email = user.email ?? "";
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ||
@@ -71,6 +74,10 @@ export function UserMenu({ user }: { user: User }) {
             <CreditCard className="ml-2 h-4 w-4" />
             מחירים
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); toggle(); }}>
+          {isDark ? <Sun className="ml-2 h-4 w-4" /> : <Moon className="ml-2 h-4 w-4" />}
+          {isDark ? "מצב בהיר" : "מצב כהה"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
