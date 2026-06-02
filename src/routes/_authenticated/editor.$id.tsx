@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { EditorStatusBar } from "@/components/editor-status-bar";
 import { ExportMenu } from "@/components/export-menu";
+import { printAsPdf } from "@/lib/spec-export";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
