@@ -236,7 +236,7 @@ export function LoginLogCard() {
                           </td>
                         </tr>
                       ) : null}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </tbody>
