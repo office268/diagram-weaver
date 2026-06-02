@@ -81,6 +81,24 @@ interface Attachment {
 
 
 
+const MODE_META = {
+  auto: {
+    label: "Auto",
+    icon: Sparkles,
+    description: "ה-AI מחליט אם לשאול הבהרות או לייצר ישר.",
+  },
+  plan: {
+    label: "Plan",
+    icon: ListChecks,
+    description: "שאלות הבהרה והצעת מבנה בלבד, ללא יצירת מסמך/תרשים.",
+  },
+  build: {
+    label: "Build",
+    icon: Hammer,
+    description: "מייצר את המסמך/תרשים ישר לפי הבקשה.",
+  },
+} as const;
+
 function ChatPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
