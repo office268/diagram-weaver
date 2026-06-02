@@ -1288,8 +1288,9 @@ function EditorPage() {
                     <SortableSection key={key} id={key}>
                       {(dragHandle) => (
                         <article
+                          id={`section-${key}`}
                           className={cn(
-                            "group/section rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+                            "group/section scroll-mt-20 rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
                             "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0 transition-opacity",
                             focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
                           )}
