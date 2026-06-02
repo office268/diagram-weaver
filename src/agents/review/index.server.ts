@@ -4,6 +4,7 @@ import { ReviewSchema, extractJson } from "@/lib/spec-output-schema";
 import { AGENT_MODELS, AGENT_TEMPERATURES } from "@/agents/shared/constants";
 import { buildSelfCritiqueInstruction } from "@/agents/shared/prompt-helpers";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 
 const REVIEW_SYSTEM = [
   "אתה מבקר איכות בכיר של מסמכי אפיון מערכת.",
@@ -37,6 +38,7 @@ export async function runReviewAgent(
   spec: SpecOutput,
   userPrompt: string,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  tracker?: UsageTracker,
 ): Promise<SpecReview> {
   const prompt = [
     "## פרומפט מקורי\n" + userPrompt,
@@ -53,6 +55,7 @@ export async function runReviewAgent(
       temperature: AGENT_TEMPERATURES.review,
     });
     text = res.text;
+    tracker?.track(AGENT_MODELS.review, res.usage);
   } catch (err) {
     console.warn("[review-agent] generateText failed, using default review:", err);
     return { score: 8, notes: [] };

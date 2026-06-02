@@ -6,6 +6,7 @@ import { extractJson } from "@/lib/spec-output-schema";
 import { REQUIREMENTS_SYSTEM } from "./system";
 import { buildRequirementsPrompt } from "./prompt";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 
 const ItemSchema = z.object({ id: z.string().default(""), text: z.string().default("") });
 const ReqSchema = z.object({
@@ -25,14 +26,16 @@ const OutputSchema = z.object({
 export async function runRequirementsAgent(
   ctx: AgentContext,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  tracker?: UsageTracker,
 ): Promise<RequirementsOutput> {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: gateway(AGENT_MODELS.requirements),
     system: REQUIREMENTS_SYSTEM,
     prompt: buildRequirementsPrompt(ctx),
     maxOutputTokens: 4000,
     temperature: AGENT_TEMPERATURES.requirements,
   });
+  tracker?.track(AGENT_MODELS.requirements, usage);
 
   try {
     const parsed = OutputSchema.parse(JSON.parse(extractJson(text)));
@@ -40,13 +43,14 @@ export async function runRequirementsAgent(
   } catch (err) {
     console.error("[requirements-agent] parse failed, retrying:", err);
     // Retry once with explicit correction instruction
-    const { text: text2 } = await generateText({
+    const { text: text2, usage: usage2 } = await generateText({
       model: gateway(AGENT_MODELS.requirements),
       system: REQUIREMENTS_SYSTEM,
       prompt: buildRequirementsPrompt(ctx) + "\n\nחשוב: החזר JSON תקני בלבד, ללא טקסט נוסף.",
       maxOutputTokens: 4000,
       temperature: 0,
     });
+    tracker?.track(AGENT_MODELS.requirements, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }

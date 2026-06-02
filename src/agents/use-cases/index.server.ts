@@ -11,6 +11,7 @@ import {
 } from "@/agents/shared/prompt-helpers";
 import { USE_CASES_SYSTEM } from "./system";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 
 const PersonaSchema = z.object({
   id: z.string().default(""),
@@ -67,24 +68,27 @@ export async function runUseCasesAgent(
   ctx: AgentContext,
   reqs: RequirementsOutput,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
+  tracker?: UsageTracker,
 ): Promise<UseCasesOutput> {
-  const { text } = await generateText({
+  const { text, usage } = await generateText({
     model: gateway(AGENT_MODELS.useCases),
     system: USE_CASES_SYSTEM,
     prompt: buildPrompt(ctx, reqs),
     maxOutputTokens: 3000,
     temperature: AGENT_TEMPERATURES.useCases,
   });
+  tracker?.track(AGENT_MODELS.useCases, usage);
   try {
     return OutputSchema.parse(JSON.parse(extractJson(text)));
   } catch {
-    const { text: text2 } = await generateText({
+    const { text: text2, usage: usage2 } = await generateText({
       model: gateway(AGENT_MODELS.useCases),
       system: USE_CASES_SYSTEM,
       prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד.",
       maxOutputTokens: 3000,
       temperature: 0,
     });
+    tracker?.track(AGENT_MODELS.useCases, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }
