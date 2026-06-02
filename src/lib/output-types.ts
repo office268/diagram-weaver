@@ -12,6 +12,7 @@ import {
   Activity,
   Server,
   Database,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +21,9 @@ export type DocumentOutputKey =
   | "technical_requirements"
   | "initiation"
   | "spec_overview"
-  | "spec_detailed";
+  | "spec_detailed"
+  | "user_guide";
+
 
 export type DiagramOutputKey =
   | "diagram_flow"
