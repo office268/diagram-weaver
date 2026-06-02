@@ -20,6 +20,9 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === "/dashboard";
+
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login", replace: true });
