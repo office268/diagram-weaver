@@ -17,7 +17,7 @@ import { getAppMetadata } from "@/lib/app-metadata.functions";
 import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
 import { SiteTextsProvider } from "@/lib/site-texts-context";
 import { useAuth } from "@/hooks/use-auth";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+
 
 function NotFoundComponent() {
   return (
@@ -199,7 +199,7 @@ function RootProviders() {
       initialTexts={loaderData?.siteTexts ?? {}}
       isAdmin={adminData?.isAdmin ?? false}
     >
-      <PaymentTestModeBanner />
+      
       <Outlet />
     </SiteTextsProvider>
   );
