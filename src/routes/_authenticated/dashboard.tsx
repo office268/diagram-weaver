@@ -40,7 +40,6 @@ function HomePage() {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
           const isPending = createMut.isPending && createMut.variables === key;
-          const isDiagram = t.category === "diagram";
           return (
             <button
               key={key}
