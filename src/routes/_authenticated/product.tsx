@@ -78,6 +78,34 @@ const words: Word[] = [
     style: { bottom: "20%", right: "20%", transform: "rotate(-8deg)" },
     delay: 480,
   },
+  {
+    text: "Market Fit",
+    className:
+      "font-serif font-extrabold tracking-tight text-primary text-3xl sm:text-5xl md:text-6xl",
+    style: { top: "62%", left: "12%", transform: "rotate(-6deg)" },
+    delay: 560,
+  },
+  {
+    text: "Discovery",
+    className:
+      "font-serif font-bold italic tracking-tight text-foreground/70 text-3xl sm:text-5xl md:text-6xl",
+    style: { top: "8%", left: "42%", transform: "rotate(4deg)" },
+    delay: 640,
+  },
+  {
+    text: "Retention",
+    className:
+      "font-serif font-semibold tracking-tight text-accent-foreground text-2xl sm:text-4xl md:text-5xl",
+    style: { bottom: "8%", right: "8%", transform: "rotate(14deg)" },
+    delay: 720,
+  },
+  {
+    text: "Churn",
+    className:
+      "font-serif font-light italic tracking-tight text-muted-foreground text-2xl sm:text-3xl md:text-4xl",
+    style: { top: "70%", right: "32%", transform: "rotate(-16deg)" },
+    delay: 800,
+  },
 ];
 
 function ProductPage() {
