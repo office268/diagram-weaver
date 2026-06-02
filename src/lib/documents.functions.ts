@@ -14,7 +14,7 @@ export const listDocuments = createServerFn({ method: "GET" })
     let q = supabase
       .from("uploaded_documents")
       .select(
-        "id, file_name, file_size, mime_type, char_count, chunk_count, status, created_at, project_id",
+        "id, file_name, file_size, mime_type, char_count, chunk_count, status, error_message, created_at, project_id",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });

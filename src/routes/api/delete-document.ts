@@ -37,10 +37,12 @@ export const Route = createFileRoute("/api/delete-document")({
 
         if (!doc) return new Response("Not found", { status: 404 });
 
-        // Delete from storage (chunks cascade via FK on DB delete)
-        await supabaseAdmin.storage
-          .from("project-documents")
-          .remove([doc.storage_path]);
+        // Delete from storage if a path exists (chunks cascade via FK on DB delete)
+        if (doc.storage_path) {
+          await supabaseAdmin.storage
+            .from("project-documents")
+            .remove([doc.storage_path]);
+        }
 
         await supabaseAdmin
           .from("uploaded_documents")

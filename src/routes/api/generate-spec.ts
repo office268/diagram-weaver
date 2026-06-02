@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { runOrchestrator } from "@/lib/agents/orchestrator.server";
+import { runOrchestrator } from "@/agents/orchestrator/index.server";
 
 const BodySchema = z.object({
   prompt: z.string().min(5).max(5000),
@@ -10,17 +10,24 @@ const BodySchema = z.object({
   reviewerNotes: z.array(z.string()).max(50).optional(),
   docType: z.enum(DOC_TYPE_KEYS).optional(),
   projectId: z.string().uuid().optional(),
-  // Accepted for client-compatibility; orchestrator picks its own per-agent models.
   model: z.string().max(100).optional(),
 });
 
-const BASE_CREDITS = 3; // 5 agent calls + review (worker prices)
+const BASE_CREDITS = 3;
+
+function sanitizePrompt(raw: string): string {
+  return raw
+    .replace(/\bignore\b.{0,60}\b(instructions?|system|rules?)\b/gi, "")
+    .replace(/\bsystem\s*:/gi, "")
+    .replace(/<\/?s(?:ystem|cript)[^>]*>/gi, "")
+    .slice(0, 5000)
+    .trim();
+}
 
 export const Route = createFileRoute("/api/generate-spec")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // ── Auth
         const auth = request.headers.get("authorization") ?? "";
         const token = auth.toLowerCase().startsWith("bearer ")
           ? auth.slice(7).trim()
@@ -29,12 +36,10 @@ export const Route = createFileRoute("/api/generate-spec")({
 
         const { data: userData, error: userErr } =
           await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user) {
+        if (userErr || !userData?.user)
           return new Response("Unauthorized", { status: 401 });
-        }
         const userId = userData.user.id;
 
-        // ── Body
         let body: z.infer<typeof BodySchema>;
         try {
           body = BodySchema.parse(await request.json());
@@ -43,11 +48,8 @@ export const Route = createFileRoute("/api/generate-spec")({
         }
 
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) {
-          return new Response("LOVABLE_API_KEY missing", { status: 500 });
-        }
+        if (!key) return new Response("LOVABLE_API_KEY missing", { status: 500 });
 
-        // ── Credits (base charge)
         const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
           "consume_credits",
           {
@@ -67,8 +69,6 @@ export const Route = createFileRoute("/api/generate-spec")({
           );
         }
 
-        // ── Stream response (keepalive heartbeat) so upstream proxy
-        // does not time out while the multi-agent run executes.
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
@@ -84,74 +84,39 @@ export const Route = createFileRoute("/api/generate-spec")({
             const safeClose = () => {
               if (closed) return;
               closed = true;
-              try {
-                controller.close();
-              } catch {
-                /* already closed */
-              }
+              try { controller.close(); } catch { /* already closed */ }
             };
 
-            // Heartbeat: emit a whitespace byte every 10s to keep the
-            // connection alive through edge proxies. Stage markers from
-            // the orchestrator are no-brace, so they don't interfere with
-            // the client's first-`{`-to-last-`}` JSON extraction.
+            // Heartbeat every 10s to keep edge proxies from timing out.
             const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
-            let specEmitted = false;
-
             try {
-              const result = await runOrchestrator(
-                {
-                  userPrompt: body.prompt,
-                  docType: (body.docType ?? "spec_overview") as DocTypeKey,
-                  userId,
-                  projectId: body.projectId ?? null,
-                  apiKey: key,
-                  previousSpec: body.previousSpec,
-                  reviewerNotes: body.reviewerNotes,
-                  emit: safeEnqueue,
-                  // Stream the spec to the client as soon as it's ready,
-                  // before the (slow) review agent runs.
-                  onSpecReady: (spec) => {
-                    if (specEmitted) return;
-                    specEmitted = true;
-                    safeEnqueue(JSON.stringify(spec));
-                    safeEnqueue("\n__REVIEW__\n");
-                  },
-                },
-                {
-                  // Cap iterations so the spec we streamed early matches the
-                  // final spec; the review runs once at the end.
-                  maxIterations: 1,
-                  skipReview: false,
-                  canSpendIterationCredit: async () => false,
-                },
-              );
+              const result = await runOrchestrator({
+                userPrompt: sanitizePrompt(body.prompt),
+                docType: (body.docType ?? "spec_overview") as DocTypeKey,
+                userId,
+                projectId: body.projectId ?? null,
+                lovableApiKey: key,
+                previousSpec: body.previousSpec,
+                reviewerNotes: body.reviewerNotes,
+              });
 
               console.log(
-                `[generate-spec] done iterations=${result.iterations} skipped=${result.iterationsSkippedNoCredits} rag=${result.ragChunkCount} score=${result.review?.score ?? "n/a"}`,
+                `[generate-spec] done score=${result.finalScore} iterations=${result.iterations}`,
               );
 
-              // Fallback: if onSpecReady never fired (shouldn't happen), emit now.
-              if (!specEmitted) {
-                safeEnqueue(JSON.stringify(result.spec));
-                safeEnqueue("\n__REVIEW__\n");
-              }
+              // Stream contract: <spec JSON>\n__REVIEW__\n<review JSON>
+              safeEnqueue(JSON.stringify(result.spec));
+              safeEnqueue("\n__REVIEW__\n");
 
-              if (result.review) {
-                // Normalize to the same shape as /api/review-spec returns:
-                // { score, notes: [{ id, text, importance }] }
-                const notes = result.review.notes
-                  .map((n, i) => ({
-                    id: `n-${i + 1}`,
-                    text: (n.text ?? "").trim().slice(0, 500),
-                    importance: n.importance,
-                  }))
-                  .filter((n) => n.text.length > 0);
-                safeEnqueue(
-                  JSON.stringify({ score: result.review.score, notes }),
-                );
-              }
+              const notes = result.review.notes
+                .map((n) => ({
+                  id: n.id,
+                  text: n.text.trim().slice(0, 500),
+                  importance: n.importance,
+                }))
+                .filter((n) => n.text.length > 0);
+              safeEnqueue(JSON.stringify({ score: result.review.score, notes }));
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               console.error("[generate-spec] error:", err);
@@ -174,8 +139,6 @@ export const Route = createFileRoute("/api/generate-spec")({
             "X-Accel-Buffering": "no",
           },
         });
-
-
       },
     },
   },

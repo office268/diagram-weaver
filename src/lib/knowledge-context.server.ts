@@ -1,14 +1,16 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-/**
- * Loads the user's business_knowledge and the (optional) project's
- * business_knowledge, then renders a Hebrew context block to prepend to
- * the user prompt sent to the model. Returns "" if nothing is set.
- */
+// In-memory cache with 60s TTL — avoids redundant DB queries per generation call
+const _cache = new Map<string, { value: string; expires: number }>();
+
 export async function loadKnowledgeContextBlock(
   userId: string,
   projectId?: string | null,
 ): Promise<string> {
+  const key = `${userId}:${projectId ?? ""}`;
+  const cached = _cache.get(key);
+  if (cached && Date.now() < cached.expires) return cached.value;
+
   const [userRes, projectRes] = await Promise.all([
     supabaseAdmin
       .from("ai_settings")
@@ -40,7 +42,12 @@ export async function loadKnowledgeContextBlock(
     if (parts.length) parts.push("");
     parts.push("## ידע על הפרויקט", projectKnowledge);
   }
-  if (!parts.length) return "";
+  if (!parts.length) {
+    _cache.set(key, { value: "", expires: Date.now() + 60_000 });
+    return "";
+  }
   parts.push("", "---", "");
-  return parts.join("\n");
+  const value = parts.join("\n");
+  _cache.set(key, { value, expires: Date.now() + 60_000 });
+  return value;
 }

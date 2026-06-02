@@ -185,19 +185,21 @@ export type Database = {
           content: string
           created_at: string
           document_id: string
-          embedding: string
+          embedding: string | null
           id: string
           project_id: string | null
+          token_count: number | null
           user_id: string
         }
         Insert: {
-          chunk_index: number
+          chunk_index?: number
           content: string
           created_at?: string
           document_id: string
-          embedding: string
+          embedding?: string | null
           id?: string
           project_id?: string | null
+          token_count?: number | null
           user_id: string
         }
         Update: {
@@ -205,9 +207,10 @@ export type Database = {
           content?: string
           created_at?: string
           document_id?: string
-          embedding?: string
+          embedding?: string | null
           id?: string
           project_id?: string | null
+          token_count?: number | null
           user_id?: string
         }
         Relationships: [
@@ -512,42 +515,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      document_chunks: {
-        Row: {
-          id: string
-          document_id: string
-          user_id: string
-          project_id: string | null
-          chunk_index: number
-          content: string
-          embedding: string | null
-          token_count: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          document_id: string
-          user_id: string
-          project_id?: string | null
-          chunk_index?: number
-          content: string
-          embedding?: string | null
-          token_count?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          document_id?: string
-          user_id?: string
-          project_id?: string | null
-          chunk_index?: number
-          content?: string
-          embedding?: string | null
-          token_count?: number
-          created_at?: string
-        }
-        Relationships: []
       }
       user_roles: {
         Row: {

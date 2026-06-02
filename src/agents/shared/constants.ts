@@ -10,7 +10,7 @@ export const AGENT_MODELS = {
   dataModel:     DEFAULT_AGENT_MODEL,
   useCases:      DEFAULT_AGENT_MODEL,
   diagrams:      DEFAULT_AGENT_MODEL,
-  review:        DEFAULT_AGENT_MODEL,
+  review:        "google/gemini-2.5-pro" as const,
 } as const;
 
 export const AGENT_TEMPERATURES = {
