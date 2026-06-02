@@ -228,25 +228,25 @@ function EditorPage() {
     },
   });
 
-  // Debounced autosave
+  // Debounced autosave — defer JSON.stringify into the timer so typing stays cheap
+  const [dirty, setDirty] = useState(false);
   useEffect(() => {
     if (!content) return;
-    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
-    if (snapshot === lastSentRef.current) return;
+    setDirty(true);
     const t = setTimeout(() => {
+      const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
+      if (snapshot === lastSentRef.current) {
+        setDirty(false);
+        return;
+      }
       lastSentRef.current = snapshot;
       saveMut.mutate({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
-    }, 800);
+      setDirty(false);
+    }, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
 
-  // Dirty = pending unsaved changes (debounce hasn't flushed yet)
-  const dirty = useMemo(() => {
-    if (!content) return false;
-    const snapshot = JSON.stringify({ title, content, userNotes, userPrompt: prompt, sectionOrder, sectionTitles });
-    return snapshot !== lastSentRef.current;
-  }, [title, content, userNotes, prompt, sectionOrder, sectionTitles]);
 
   // Warn before unload if there are pending changes
   useEffect(() => {
