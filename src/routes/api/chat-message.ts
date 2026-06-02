@@ -216,6 +216,23 @@ export const Route = createFileRoute("/api/chat-message")({
               .single();
             if (specErr) throw new Error(specErr.message);
 
+            // Log AI usage for this spec document
+            try {
+              const { logAiUsage } = await import("@/lib/ai-usage.server");
+              await logAiUsage({
+                userId,
+                specDocumentId: specRow.id,
+                model: "multi-agent",
+                purpose: previousSpec ? "regenerate" : "generate",
+                inputTokens: result.usage.inputTokens,
+                outputTokens: result.usage.outputTokens,
+                totalTokens: result.usage.totalTokens,
+                costUsd: result.usage.costUsd,
+              });
+            } catch (e) {
+              console.error("[chat-message] logAiUsage failed:", e);
+            }
+
             const assistantContent =
               `נוצר ${def.label} — **${title}**.\n\n` +
               `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;

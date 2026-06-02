@@ -16,6 +16,7 @@ const BodySchema = z.object({
   docType: z.string().max(100).optional(),
   valueShape: z.enum(["string", "array", "object"]),
   projectId: z.string().uuid().optional(),
+  docId: z.string().uuid().optional(),
 });
 
 
@@ -85,12 +86,29 @@ export const Route = createFileRoute("/api/improve-section")({
               .join("\n");
 
 
-          const { text } = await generateText({
+          const { text, usage } = await generateText({
             model: gateway(DEFAULT_MODEL),
             system: SYSTEM,
             prompt: userPrompt,
             maxOutputTokens: 4000,
           });
+
+          if (body.docId) {
+            try {
+              const { logAiUsage } = await import("@/lib/ai-usage.server");
+              await logAiUsage({
+                userId: userData.user.id,
+                specDocumentId: body.docId,
+                model: DEFAULT_MODEL,
+                purpose: "improve_section",
+                inputTokens: usage?.inputTokens ?? 0,
+                outputTokens: usage?.outputTokens ?? 0,
+                totalTokens: usage?.totalTokens ?? 0,
+              });
+            } catch (e) {
+              console.error("[improve-section] logAiUsage failed:", e);
+            }
+          }
 
           let parsed: unknown;
           try {

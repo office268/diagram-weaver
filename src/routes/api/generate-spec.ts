@@ -105,7 +105,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                 `[generate-spec] done score=${result.finalScore} iterations=${result.iterations}`,
               );
 
-              // Stream contract: <spec JSON>\n__REVIEW__\n<review JSON>
+              // Stream contract: <spec JSON>\n__REVIEW__\n<review JSON>\n__USAGE__\n<usage JSON>
               safeEnqueue(JSON.stringify(result.spec));
               safeEnqueue("\n__REVIEW__\n");
 
@@ -117,6 +117,8 @@ export const Route = createFileRoute("/api/generate-spec")({
                 }))
                 .filter((n) => n.text.length > 0);
               safeEnqueue(JSON.stringify({ score: result.review.score, notes }));
+              safeEnqueue("\n__USAGE__\n");
+              safeEnqueue(JSON.stringify(result.usage));
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
               console.error("[generate-spec] error:", err);
