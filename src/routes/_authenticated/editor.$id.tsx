@@ -1494,7 +1494,7 @@ function EditorPage() {
                 "flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
               )}
             >
-              <div className="flex-1 flex flex-col">
+              <div className="flex flex-col">
                 <div className="text-center space-y-4 pt-8 sm:pt-16">
                   <div className="text-sm sm:text-base text-muted-foreground font-medium">
                     {projectName || "ללא פרויקט"}
