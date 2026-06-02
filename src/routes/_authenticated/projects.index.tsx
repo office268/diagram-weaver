@@ -62,6 +62,9 @@ function ProjectsPage() {
   const createFn = useServerFn(createProject);
   const deleteFn = useServerFn(deleteProject);
   const pinFn = useServerFn(toggleProjectPin);
+  const ideaFn = useServerFn(generateProjectIdea);
+  const { isAdmin } = useSiteTexts();
+
 
 
   const [newOpen, setNewOpen] = useState(false);
