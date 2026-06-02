@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   KeyboardSensor,
   useSensor,
@@ -86,11 +86,11 @@ function HomePage() {
   });
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { delay: 220, tolerance: 8 },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 220, tolerance: 8 },
+      activationConstraint: { delay: 250, tolerance: 12 },
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
