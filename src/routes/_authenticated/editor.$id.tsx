@@ -1319,7 +1319,7 @@ function SectionShell({
   const editTitle = editableTitle ?? title;
 
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(title);
+  const [draft, setDraft] = useState(editTitle);
   const [open, setOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
