@@ -111,9 +111,10 @@ export const Route = createFileRoute("/api/generate-spec")({
                 },
                 {
                   // Skip review-driven iterations in the request path to
-                  // stay within the upstream timeout. The user can request
-                  // an explicit improvement run afterwards.
+                  // stay within the upstream timeout. The client already
+                  // runs a separate /api/review-spec call afterwards.
                   maxIterations: 1,
+                  skipReview: true,
                   canSpendIterationCredit: async () => false,
                 },
               );

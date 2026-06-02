@@ -331,6 +331,7 @@ export async function runOrchestrator(
   options: {
     scoreThreshold?: number;
     maxIterations?: number;
+    skipReview?: boolean;
     canSpendIterationCredit: () => Promise<boolean>;
   },
 ): Promise<OrchestratorResult> {
@@ -346,6 +347,7 @@ export async function runOrchestrator(
   } = params;
   const scoreThreshold = options.scoreThreshold ?? SCORE_THRESHOLD;
   const maxIterations = options.maxIterations ?? MAX_ITERATIONS;
+  const skipReview = options.skipReview ?? false;
 
   emitStage(emit, "context", "start");
   const [knowledgeBlock, docInstruction, ragResult] = await Promise.all([
@@ -398,14 +400,16 @@ export async function runOrchestrator(
   let currentData = dataModel;
   let currentUC = useCases;
 
-  emitStage(emit, "review", "start");
   let currentReview: ReviewAgentOutput | null = null;
-  try {
-    currentReview = await runReviewAgent(currentSpec, userPrompt, apiKey);
-  } catch (e) {
-    console.error("[orchestrator] review failed (non-fatal):", e);
+  if (!skipReview) {
+    emitStage(emit, "review", "start");
+    try {
+      currentReview = await runReviewAgent(currentSpec, userPrompt, apiKey);
+    } catch (e) {
+      console.error("[orchestrator] review failed (non-fatal):", e);
+    }
+    emitStage(emit, "review", "done");
   }
-  emitStage(emit, "review", "done");
 
   let iterations = 1;
   let iterationsRequested = 0;
