@@ -1054,61 +1054,68 @@ function EditorPage() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => {
-            const ok = printAsPdf({
-              title: title || "מסמך",
-              content,
-              userPrompt: prompt,
-              userNotes,
-              sectionOrder: visibleSections,
-              sectionTitles,
-              reviewScore: data.spec.review_score ?? null,
-            });
-            if (!ok) toast.error("חסום על ידי הדפדפן — אפשרו חלונות קופצים");
-          }}
-          title="הורדה / הדפסה"
-          aria-label="הורדה"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => toast.info("העלאה ל-Google Drive — בקרוב")}
-          title="העלאה ל-Google Drive"
-          aria-label="העלאה לדרייב"
-        >
-          <svg viewBox="0 0 87.3 78" className="h-4 w-4" aria-hidden>
-            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
-            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
-            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
-            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
-            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
-            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
-          </svg>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => toast.info("העלאה ל-SharePoint — בקרוב")}
-          title="העלאה ל-SharePoint"
-          aria-label="העלאה ל-SharePoint"
-        >
-          <svg viewBox="0 0 32 32" className="h-4 w-4" aria-hidden>
-            <circle cx="12" cy="11" r="8" fill="#036c70"/>
-            <circle cx="21" cy="17" r="7" fill="#1a9ba1"/>
-            <circle cx="17" cy="25" r="5" fill="#37c6d0"/>
-          </svg>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              title="שיתוף"
+              aria-label="שיתוף"
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 text-right" style={{ direction: "rtl" }}>
+            <DropdownMenuItem onSelect={() => toast.info("העלאה ל-SharePoint — בקרוב")}>
+              <svg viewBox="0 0 32 32" className="ml-2 h-4 w-4" aria-hidden>
+                <circle cx="12" cy="11" r="8" fill="#036c70"/>
+                <circle cx="21" cy="17" r="7" fill="#1a9ba1"/>
+                <circle cx="17" cy="25" r="5" fill="#37c6d0"/>
+              </svg>
+              SharePoint
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => toast.info("העלאה ל-Google Workspace — בקרוב")}>
+              <svg viewBox="0 0 87.3 78" className="ml-2 h-4 w-4" aria-hidden>
+                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+              </svg>
+              Google Workspace
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => toast.info("העלאה ל-OneDrive — בקרוב")}>
+              <svg viewBox="0 0 32 20" className="ml-2 h-4 w-4" aria-hidden>
+                <path d="M19.4 8.2a6.5 6.5 0 0 0-12.4-1.4 5.5 5.5 0 0 0-.7 10.9h17.5a4.7 4.7 0 0 0 .9-9.3 5.3 5.3 0 0 0-5.3-.2z" fill="#0364b8"/>
+                <path d="M7 6.8a6.5 6.5 0 0 1 12.4 1.4 5.3 5.3 0 0 1 5.3.2 4.7 4.7 0 0 1 2.1 2.1L19.5 17H6.3a5.5 5.5 0 0 1 .7-10.2z" fill="#0078d4"/>
+              </svg>
+              OneDrive
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                const ok = printAsPdf({
+                  title: title || "מסמך",
+                  content,
+                  userPrompt: prompt,
+                  userNotes,
+                  sectionOrder: visibleSections,
+                  sectionTitles,
+                  reviewScore: data.spec.review_score ?? null,
+                });
+                if (!ok) toast.error("חסום על ידי הדפדפן — אפשרו חלונות קופצים");
+              }}
+            >
+              <Download className="ml-2 h-4 w-4" />
+              הורדה
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="mx-1 h-5 w-px bg-border" />
         <Button
           type="button"
