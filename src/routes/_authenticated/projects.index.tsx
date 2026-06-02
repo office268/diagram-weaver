@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,6 @@ import { EmptyState } from "@/components/empty-state";
 import { SwipeableRow } from "@/components/swipeable-row";
 import { PullToRefreshIndicator } from "@/components/pull-to-refresh-indicator";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
-import { useSiteTexts } from "@/lib/site-texts-context";
 
 import {
   listProjects,
@@ -18,7 +17,6 @@ import {
   toggleProjectPin,
 } from "@/lib/project.functions";
 import { generateProjectIdea } from "@/lib/project-ideas.functions";
-import { getIsAdmin } from "@/lib/site-texts.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,18 +62,6 @@ function ProjectsPage() {
   const deleteFn = useServerFn(deleteProject);
   const pinFn = useServerFn(toggleProjectPin);
   const ideaFn = useServerFn(generateProjectIdea);
-  const isAdminFn = useServerFn(getIsAdmin);
-  const { isAdmin: ctxIsAdmin } = useSiteTexts();
-  const { data: adminCheck, isLoading: isAdminLoading } = useQuery({
-    queryKey: ["is-admin"],
-    queryFn: () => isAdminFn(),
-    staleTime: 60_000,
-  });
-  const isAdmin = adminCheck?.isAdmin ?? ctxIsAdmin;
-
-  useEffect(() => {
-    console.log("[isAdmin]", { adminCheck, ctxIsAdmin, isAdmin, isAdminLoading });
-  }, [adminCheck, ctxIsAdmin, isAdmin, isAdminLoading]);
 
 
 
@@ -355,25 +341,23 @@ function ProjectsPage() {
             <DialogDescription>
               תנו לפרויקט שם — תוכלו ליצור תחתיו מסמכים מסוגים שונים.
             </DialogDescription>
-            {(isAdminLoading || isAdmin) && (
-              <div className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => ideaMut.mutate()}
-                  disabled={isAdminLoading || ideaMut.isPending}
-                  className="w-fit gap-1.5"
-                >
-                  {isAdminLoading || ideaMut.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  רעיון מה-AI
-                </Button>
-              </div>
-            )}
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => ideaMut.mutate()}
+                disabled={ideaMut.isPending}
+                className="w-fit gap-1.5"
+              >
+                {ideaMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                רעיון מה-AI
+              </Button>
+            </div>
           </DialogHeader>
           <div className="space-y-3">
             <div>
