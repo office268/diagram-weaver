@@ -357,7 +357,26 @@ function ProjectsPage() {
               />
             </div>
             <div>
-              <Label htmlFor="proj-desc">תיאור (אופציונלי)</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label htmlFor="proj-desc">תיאור (אופציונלי)</Label>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => ideaMut.mutate()}
+                    disabled={ideaMut.isPending}
+                    className="h-7 gap-1.5 text-xs"
+                  >
+                    {ideaMut.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    רעיון מה-AI
+                  </Button>
+                )}
+              </div>
               <Textarea
                 id="proj-desc"
                 value={description}
