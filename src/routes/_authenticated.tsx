@@ -52,7 +52,7 @@ function AuthenticatedLayout() {
               <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
             </Link>
 
-            <div className="flex items-center gap-1.5">
+            <div className="relative flex items-center gap-1.5">
               <div className="hidden md:flex items-center gap-1.5">
                 <Link
                   to="/documents"
