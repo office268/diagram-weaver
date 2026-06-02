@@ -55,10 +55,8 @@ function ProductPage() {
         <p className="text-xs sm:text-sm uppercase tracking-[0.3em] text-muted-foreground">
           ניהול מוצר
         </p>
-        <h1 className="mt-2 text-lg sm:text-2xl font-semibold text-foreground">
-          כלים ייעודיים למנהלי מוצר — בקרוב
-        </h1>
       </div>
+
 
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 sm:gap-6 sm:py-12">
         {words.map((w, i) => (
