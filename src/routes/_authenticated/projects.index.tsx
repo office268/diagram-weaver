@@ -64,7 +64,14 @@ function ProjectsPage() {
   const deleteFn = useServerFn(deleteProject);
   const pinFn = useServerFn(toggleProjectPin);
   const ideaFn = useServerFn(generateProjectIdea);
-  const { isAdmin } = useSiteTexts();
+  const isAdminFn = useServerFn(getIsAdmin);
+  const { isAdmin: ctxIsAdmin } = useSiteTexts();
+  const { data: adminCheck } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: () => isAdminFn(),
+    staleTime: 60_000,
+  });
+  const isAdmin = adminCheck?.isAdmin ?? ctxIsAdmin;
 
 
 
