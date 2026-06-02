@@ -12,6 +12,7 @@ import {
   Activity,
   Server,
   Database,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +21,9 @@ export type DocumentOutputKey =
   | "technical_requirements"
   | "initiation"
   | "spec_overview"
-  | "spec_detailed";
+  | "spec_detailed"
+  | "user_guide";
+
 
 export type DiagramOutputKey =
   | "diagram_flow"
@@ -144,6 +147,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     colorClass: "text-rose-500",
     mermaidHint: "erDiagram",
   },
+  user_guide: {
+    key: "user_guide",
+    category: "document",
+    label: "מדריך למשתמש",
+    description: "הסבר צעד-אחר-צעד לשימוש במערכת עבור משתמשי הקצה.",
+    icon: BookOpen,
+    colorClass: "text-teal-500",
+  },
 };
 
 // Display order on the home page tiles.
@@ -159,7 +170,9 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "spec_detailed",
   "diagram_state",
   "diagram_deployment",
+  "user_guide",
 ];
+
 
 
 export function getOutputType(key: string | null | undefined): OutputTypeDef | null {
