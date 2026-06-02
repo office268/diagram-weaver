@@ -39,9 +39,15 @@ function AuthenticatedLayout() {
   return (
     <OnboardingProvider>
       <div className="flex min-h-screen flex-col bg-background">
-        <header className="border-b border-border bg-card">
+        <header className="relative border-b border-border bg-card">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-            <Link to="/dashboard" className="flex shrink-0 items-center gap-2 font-semibold text-foreground">
+            {isDashboard && (
+              <h1 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 truncate text-sm font-light tracking-tight text-muted-foreground sm:text-base">
+                מה ניצור היום?
+              </h1>
+            )}
+            <Link to="/dashboard" className="relative flex shrink-0 items-center gap-2 font-semibold text-foreground">
+
               <FileText className="h-5 w-5 text-primary" />
               <span className="hidden sm:inline">סוכן ניתוח מערכות</span>
             </Link>
