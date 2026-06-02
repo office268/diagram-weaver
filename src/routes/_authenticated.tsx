@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,8 +20,6 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isDashboard = location.pathname === "/dashboard";
 
 
   useEffect(() => {
@@ -41,11 +39,6 @@ function AuthenticatedLayout() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="relative border-b border-border bg-card">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
-            {isDashboard && (
-              <h1 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 truncate text-sm font-light tracking-tight text-muted-foreground sm:text-base">
-                מה ניצור היום?
-              </h1>
-            )}
             <Link to="/dashboard" className="relative flex shrink-0 items-center gap-2 font-semibold text-foreground">
 
               <FileText className="h-5 w-5 text-primary" />
