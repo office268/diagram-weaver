@@ -1100,105 +1100,177 @@ function EditorPage() {
         </CommandList>
       </CommandDialog>
 
-      {/* Document — page-style layout (like Word / Google Docs print preview) */}
+      {/* Document — print-preview layout: separate A4 pages, page numbers, numbered sections */}
       <div className="bg-muted/40 py-6 sm:py-10">
-        <div
-          className={cn(
-            "mx-auto w-full px-3 sm:px-6",
-            splitSecondaryKey
-              ? "max-w-7xl grid gap-6 lg:grid-cols-2"
-              : focusMode
-                ? "max-w-[210mm]"
-                : "max-w-[210mm]",
-          )}
-        >
-          <div
-            className={cn(
-              "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
-              "px-6 py-10 sm:px-16 sm:py-20 space-y-8 min-w-0",
-            )}
-          >
-            <header className="border-b border-border/60 pb-4">
-              <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground">
-                {title || "מסמך"}
-              </h1>
-            </header>
-
-          <DndContext
-            sensors={dndSensors}
-            collisionDetection={closestCenter}
-            onDragEnd={(e: DragEndEvent) => {
-              const { active, over } = e;
-              if (!over || active.id === over.id) return;
-              reorderSections(String(active.id), String(over.id));
-            }}
-          >
-            <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
-              {visibleSections.map((key, index) => {
-                const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
-                const titleValue = sectionTitles[key] ?? def.defaultTitle;
-                return (
-                  <SortableSection key={key} id={key}>
-                    {(dragHandle) => (
-                      <div
-                        className={cn(
-                          "group/section transition-opacity",
-                          focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
-                        )}
-                      >
-                        <SectionShell
-                          title={titleValue}
-                          dragHandle={dragHandle}
-                          onTitleChange={(v) => setSectionTitle(key, v)}
-                          onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
-                          onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
-                          onDelete={() => deleteSection(key)}
-                          sectionKey={key}
-                          onSplit={() => setSplitSecondaryKey(key)}
-                          splitActive={splitSecondaryKey === key}
-                          onAiImprove={
-                            key === "review"
-                              ? undefined
-                              : (instruction) => improveSection(key, titleValue, instruction)
-                          }
-                          onApplyImprove={(candidate, previous) =>
-                            applyImprovement(key, candidate, previous)
-                          }
-                        >
-                          {renderBody(key)}
-                        </SectionShell>
-                      </div>
-                    )}
-                  </SortableSection>
-                );
-              })}
-            </SortableContext>
-          </DndContext>
-        </div>
         {splitSecondaryKey ? (
-          <aside className="hidden lg:block min-w-0">
-            <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto rounded-lg border border-primary/30 bg-card/40 p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
-                <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  <Columns2 className="h-4 w-4 text-primary" />
-                  <span>תצוגת השוואה: {sectionTitles[splitSecondaryKey] ?? DEFAULT_SECTIONS.find((s) => s.key === splitSecondaryKey)?.defaultTitle ?? splitSecondaryKey}</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0"
-                  onClick={() => setSplitSecondaryKey(null)}
-                  aria-label="סגור תצוגה משנית"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              {renderBody(splitSecondaryKey)}
+          <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 grid gap-6 lg:grid-cols-2">
+            <div
+              className={cn(
+                "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+                "px-6 py-10 sm:px-16 sm:py-20 space-y-8 min-w-0",
+              )}
+            >
+              <header className="border-b border-border/60 pb-4">
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-foreground">
+                  {title || "מסמך"}
+                </h1>
+              </header>
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e: DragEndEvent) => {
+                  const { active, over } = e;
+                  if (!over || active.id === over.id) return;
+                  reorderSections(String(active.id), String(over.id));
+                }}
+              >
+                <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+                  {visibleSections.map((key, index) => {
+                    const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+                    const titleValue = sectionTitles[key] ?? def.defaultTitle;
+                    return (
+                      <SortableSection key={key} id={key}>
+                        {(dragHandle) => (
+                          <div
+                            className={cn(
+                              "group/section transition-opacity",
+                              focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
+                            )}
+                          >
+                            <SectionShell
+                              title={`${index + 1}. ${titleValue}`}
+                              displayTitle={`${index + 1}. ${titleValue}`}
+                              editableTitle={titleValue}
+                              dragHandle={dragHandle}
+                              onTitleChange={(v) => setSectionTitle(key, v)}
+                              onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                              onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                              onDelete={() => deleteSection(key)}
+                              sectionKey={key}
+                              onSplit={() => setSplitSecondaryKey(key)}
+                              splitActive={splitSecondaryKey === key}
+                              onAiImprove={
+                                key === "review"
+                                  ? undefined
+                                  : (instruction) => improveSection(key, titleValue, instruction)
+                              }
+                              onApplyImprove={(candidate, previous) =>
+                                applyImprovement(key, candidate, previous)
+                              }
+                            >
+                              {renderBody(key)}
+                            </SectionShell>
+                          </div>
+                        )}
+                      </SortableSection>
+                    );
+                  })}
+                </SortableContext>
+              </DndContext>
             </div>
-          </aside>
-        ) : null}
-        </div>
+            <aside className="hidden lg:block min-w-0">
+              <div className="lg:sticky lg:top-16 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto rounded-lg border border-primary/30 bg-card/40 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <Columns2 className="h-4 w-4 text-primary" />
+                    <span>תצוגת השוואה: {sectionTitles[splitSecondaryKey] ?? DEFAULT_SECTIONS.find((s) => s.key === splitSecondaryKey)?.defaultTitle ?? splitSecondaryKey}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => setSplitSecondaryKey(null)}
+                    aria-label="סגור תצוגה משנית"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                {renderBody(splitSecondaryKey)}
+              </div>
+            </aside>
+          </div>
+        ) : (
+          <div className="mx-auto w-full max-w-[210mm] px-3 sm:px-6 space-y-6 sm:space-y-10">
+            {/* Cover page */}
+            <article
+              className={cn(
+                "rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+                "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0",
+              )}
+            >
+              <div className="flex-1 flex items-center justify-center text-center">
+                <h1 className="text-3xl sm:text-5xl font-bold leading-tight text-foreground">
+                  {title || "מסמך"}
+                </h1>
+              </div>
+              <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+                עמוד 1 מתוך {visibleSections.length + 1}
+              </footer>
+            </article>
+
+            <DndContext
+              sensors={dndSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e: DragEndEvent) => {
+                const { active, over } = e;
+                if (!over || active.id === over.id) return;
+                reorderSections(String(active.id), String(over.id));
+              }}
+            >
+              <SortableContext items={visibleSections} strategy={verticalListSortingStrategy}>
+                {visibleSections.map((key, index) => {
+                  const def = DEFAULT_SECTIONS.find((s) => s.key === key)!;
+                  const titleValue = sectionTitles[key] ?? def.defaultTitle;
+                  const pageNumber = index + 2;
+                  const totalPages = visibleSections.length + 1;
+                  return (
+                    <SortableSection key={key} id={key}>
+                      {(dragHandle) => (
+                        <article
+                          className={cn(
+                            "group/section rounded-sm border border-border bg-card text-foreground shadow-[0_4px_18px_-6px_rgba(0,0,0,0.18)]",
+                            "min-h-[297mm] flex flex-col px-6 py-10 sm:px-16 sm:py-20 min-w-0 transition-opacity",
+                            focusMode && "opacity-40 hover:opacity-100 focus-within:opacity-100",
+                          )}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <SectionShell
+                              title={`${index + 1}. ${titleValue}`}
+                              displayTitle={`${index + 1}. ${titleValue}`}
+                              editableTitle={titleValue}
+                              dragHandle={dragHandle}
+                              onTitleChange={(v) => setSectionTitle(key, v)}
+                              onMoveUp={index > 0 ? () => moveSection(key, -1) : undefined}
+                              onMoveDown={index < visibleSections.length - 1 ? () => moveSection(key, 1) : undefined}
+                              onDelete={() => deleteSection(key)}
+                              sectionKey={key}
+                              onSplit={() => setSplitSecondaryKey(key)}
+                              splitActive={splitSecondaryKey === key}
+                              onAiImprove={
+                                key === "review"
+                                  ? undefined
+                                  : (instruction) => improveSection(key, titleValue, instruction)
+                              }
+                              onApplyImprove={(candidate, previous) =>
+                                applyImprovement(key, candidate, previous)
+                              }
+                            >
+                              {renderBody(key)}
+                            </SectionShell>
+                          </div>
+                          <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+                            עמוד {pageNumber} מתוך {totalPages}
+                          </footer>
+                        </article>
+                      )}
+                    </SortableSection>
+                  );
+                })}
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
       </div>
       {!focusMode ? (
         <EditorStatusBar
@@ -1214,6 +1286,8 @@ function EditorPage() {
 
 function SectionShell({
   title,
+  displayTitle,
+  editableTitle,
   onTitleChange,
   onMoveUp,
   onMoveDown,
@@ -1227,6 +1301,8 @@ function SectionShell({
   children,
 }: {
   title: string;
+  displayTitle?: string;
+  editableTitle?: string;
   onTitleChange: (v: string) => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -1239,8 +1315,11 @@ function SectionShell({
   dragHandle?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const shownTitle = displayTitle ?? title;
+  const editTitle = editableTitle ?? title;
+
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(title);
+  const [draft, setDraft] = useState(editTitle);
   const [open, setOpen] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
@@ -1260,7 +1339,7 @@ function SectionShell({
   }, [sectionKey]);
 
   const startEdit = () => {
-    setDraft(title);
+    setDraft(editTitle);
     setEditing(true);
     setOpen(true);
   };
@@ -1310,7 +1389,7 @@ function SectionShell({
                   onTitleChange(draft);
                   setEditing(false);
                 } else if (e.key === "Escape") {
-                  setDraft(title);
+                  setDraft(editTitle);
                   setEditing(false);
                 }
               }}
@@ -1324,7 +1403,7 @@ function SectionShell({
               className="group flex flex-1 items-center gap-2 text-right text-xl font-semibold text-foreground hover:text-primary"
               title="לחץ לפתיחה/סגירה. דאבל-קליק או כפתור עריכה לעריכת שם הסעיף"
             >
-              <span>{title}</span>
+              <span>{shownTitle}</span>
             </button>
           )}
 
@@ -1392,7 +1471,7 @@ function SectionShell({
         <DialogContent className="max-w-lg space-y-2">
           <DialogHeader>
             <DialogTitle>שיפור עם AI</DialogTitle>
-            <DialogDescription>תאר/י כיצד לשפר את הסעיף "{title}".</DialogDescription>
+            <DialogDescription>תאר/י כיצד לשפר את הסעיף "{editTitle}".</DialogDescription>
           </DialogHeader>
           <Textarea
             value={aiPrompt}
