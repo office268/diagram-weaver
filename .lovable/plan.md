@@ -1,41 +1,35 @@
-## שינוי עיצוב האריחים בדף הבית
+## הצעה: הוספת אריח "תרשים ERD"
 
-**קובץ יחיד**: `src/routes/_authenticated/dashboard.tsx`
+כרגע יש 10 אריחים בלוח (5 מסמכים + 5 תרשימים) בגריד של 3 עמודות — מה שמשאיר שורה אחרונה עם אריח בודד ופוגע בסימטריה הוויזואלית. הוספת אריח נוסף תיצור 11 אריחים (3+3+3+2), סידור הרבה יותר מאוזן מבחינה ויזואלית מ-3+3+3+1.
 
-### שינויים
+### הקובייה המוצעת: תרשים ERD (Entity-Relationship Diagram)
 
-1. **רשת 2 בשורה במובייל**
-   - להחליף `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` ב-`grid-cols-2 lg:grid-cols-3`
-   - הגדלת מרווח: `gap-4 sm:gap-5`
+זה באמת חסר בקטלוג — יש לנו `diagram_state`, `diagram_flow`, `diagram_sequence`, `diagram_usecase`, `diagram_deployment`, אבל אין תרשים יחסי-ישויות, שהוא אחד התרשימים הכי בסיסיים בניתוח מערכות (מודל נתונים ויזואלי, טבלאות וקשרים).
 
-2. **פורמט קוביה (aspect ratio ריבועי)**
-   - להוסיף `aspect-square` לכל אריח
-   - תוכן מרוכז אנכית: אייקון גדול למעלה במרכז, שם מתחת, תיאור קטן מתחת (או להסתיר תיאור במובייל כדי לשמור על מראה קוביה נקי)
-   - הסרת תג "מסמך/תרשים" מהמרכז — להעביר כפס צבעוני קטן בפינה העליונה
-   - אייקון מוגדל ל-`h-7 w-7` בתוך ריבוע `h-14 w-14`
+- **label:** "תרשים ERD"
+- **description:** "ישויות, שדות והקשרים ביניהן במודל הנתונים."
+- **icon:** `Database` מ-lucide-react (מתאים סמנטית, שונה ויזואלית מהאייקונים הקיימים)
+- **colorClass:** `text-rose-500` (צבע שעוד לא בשימוש בלוח, מוסיף גיוון)
+- **mermaidHint:** `erDiagram`
+- **category:** `diagram`
 
-3. **אפקט תלת-מימד צף (2-3 שכבות)**
-   - להוסיף ב-`src/styles.css` שתי utilities חדשות:
-     - `.cube-3d` — צללים מרובדים שיוצרים תחושה של 2-3 שכבות מתחת לקוביה:
-       ```
-       box-shadow:
-         0 1px 0 hsl(var(--border)),
-         0 4px 0 -1px color-mix(in oklab, var(--card) 95%, var(--foreground)),
-         0 5px 0 -1px hsl(var(--border)),
-         0 8px 0 -2px color-mix(in oklab, var(--card) 90%, var(--foreground)),
-         0 9px 0 -2px hsl(var(--border)),
-         0 20px 30px -10px color-mix(in oklab, var(--foreground) 25%, transparent);
-       transform: translateY(0);
-       transition: transform 200ms ease, box-shadow 200ms ease;
-       ```
-     - `.cube-3d:hover` — `translateY(-4px)` עם צללים עמוקים יותר ליצירת תחושת "ריחוף" נוסף
-     - `.cube-3d:active` — `translateY(2px)` עם פחות שכבות (לחיצה = הקוביה נדחפת פנימה)
-   - להחליף את `hover-lift` הקיים ב-`cube-3d` באריחים
+### שינויים בקוד
 
-4. **גרדיאנט עדין על הקוביה**
-   - רקע: `bg-gradient-to-br from-card to-accent/30` להוספת עומק אופטי
-   - border עדין יותר: `border-border/60`
+קובץ יחיד: `src/lib/output-types.ts`
 
-### לא משתנה
-- הלוגיקה (mutation, ניווט, סוגים) נשארת זהה
-- שאר הדפים לא נוגעים בהם
+1. הוספת `"diagram_erd"` לטיפוס `DiagramOutputKey`.
+2. הוספת `import { Database }` מ-`lucide-react`.
+3. הוספת ערך חדש ל-`OUTPUT_TYPES` עם השדות שלמעלה.
+4. שיבוץ ב-`OUTPUT_TYPE_ORDER` מיד אחרי `diagram_sequence` ולפני `spec_detailed` — כך ה-ERD יושב לוגית ליד שאר תרשימי הנתונים/הזרימה, ולפני המסמכים המפורטים שמשתמשים במודל הנתונים.
+
+הסדר החדש יהיה:
+```
+initiation, business_requirements, diagram_usecase,
+technical_requirements, spec_overview, diagram_flow,
+diagram_sequence, diagram_erd, spec_detailed,
+diagram_state, diagram_deployment
+```
+
+לא נדרש שינוי ב-`dashboard.tsx` — הוא ממפה אוטומטית את `OUTPUT_TYPE_ORDER`. גם תשתית היצירה (`createChatThread`, ה-agents) כבר תומכת בכל מפתח שמוגדר כאן, כך שאין צורך בשינויים נוספים בצד השרת.
+
+אישור ואני מיישם.

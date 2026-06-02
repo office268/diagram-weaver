@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   Activity,
   Server,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,7 +27,9 @@ export type DiagramOutputKey =
   | "diagram_usecase"
   | "diagram_sequence"
   | "diagram_state"
-  | "diagram_deployment";
+  | "diagram_deployment"
+  | "diagram_erd";
+
 
 export type OutputKey = DocumentOutputKey | DiagramOutputKey;
 
@@ -132,6 +135,15 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     colorClass: "text-violet-500",
     mermaidHint: "flowchart TB",
   },
+  diagram_erd: {
+    key: "diagram_erd",
+    category: "diagram",
+    label: "תרשים ERD",
+    description: "ישויות, שדות והקשרים ביניהן במודל הנתונים.",
+    icon: Database,
+    colorClass: "text-rose-500",
+    mermaidHint: "erDiagram",
+  },
 };
 
 // Display order on the home page tiles.
@@ -143,10 +155,12 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "spec_overview",
   "diagram_flow",
   "diagram_sequence",
+  "diagram_erd",
   "spec_detailed",
   "diagram_state",
   "diagram_deployment",
 ];
+
 
 export function getOutputType(key: string | null | undefined): OutputTypeDef | null {
   if (!key) return null;
