@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
 
@@ -51,9 +51,11 @@ function HomePage() {
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
               <span
-                className={`absolute top-2.5 ${isDiagram ? "left-2.5" : "right-2.5"} rounded-full bg-muted/80 px-2 py-0.5 text-[10px] text-muted-foreground`}
+                className={`absolute top-2 ${isDiagram ? "left-2" : "right-2"} flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/20`}
+                aria-label="AI"
+                title="AI"
               >
-                {isDiagram ? "תרשים" : "מסמך"}
+                <Sparkles className="h-3 w-3" />
               </span>
               <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent sm:h-14 sm:w-14 ${t.colorClass}`}>
                 {isPending ? (
