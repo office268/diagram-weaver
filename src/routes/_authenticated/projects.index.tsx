@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { FolderPlus, Folder, Trash2, Loader2, FileText, Layers, Search, Pin, PinOff, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,12 +66,16 @@ function ProjectsPage() {
   const ideaFn = useServerFn(generateProjectIdea);
   const isAdminFn = useServerFn(getIsAdmin);
   const { isAdmin: ctxIsAdmin } = useSiteTexts();
-  const { data: adminCheck } = useQuery({
+  const { data: adminCheck, isLoading: isAdminLoading } = useQuery({
     queryKey: ["is-admin"],
     queryFn: () => isAdminFn(),
     staleTime: 60_000,
   });
   const isAdmin = adminCheck?.isAdmin ?? ctxIsAdmin;
+
+  useEffect(() => {
+    console.log("[isAdmin]", { adminCheck, ctxIsAdmin, isAdmin, isAdminLoading });
+  }, [adminCheck, ctxIsAdmin, isAdmin, isAdminLoading]);
 
 
 
@@ -351,6 +355,25 @@ function ProjectsPage() {
             <DialogDescription>
               תנו לפרויקט שם — תוכלו ליצור תחתיו מסמכים מסוגים שונים.
             </DialogDescription>
+            {(isAdminLoading || isAdmin) && (
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => ideaMut.mutate()}
+                  disabled={isAdminLoading || ideaMut.isPending}
+                  className="w-fit gap-1.5"
+                >
+                  {isAdminLoading || ideaMut.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  רעיון מה-AI
+                </Button>
+              </div>
+            )}
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -365,25 +388,8 @@ function ProjectsPage() {
               />
             </div>
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="mb-1 flex items-center justify-between">
                 <Label htmlFor="proj-desc">תיאור (אופציונלי)</Label>
-                {isAdmin && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => ideaMut.mutate()}
-                    disabled={ideaMut.isPending}
-                    className="h-7 gap-1.5 text-xs"
-                  >
-                    {ideaMut.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    רעיון מה-AI
-                  </Button>
-                )}
               </div>
               <Textarea
                 id="proj-desc"
