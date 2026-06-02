@@ -1628,61 +1628,8 @@ function SectionShell({
             </button>
           )}
 
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  title="פעולות"
-                  aria-label="פעולות"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onSelect={startEdit}>
-                  <Pencil className="ml-2 h-4 w-4" />
-                  עריכת שם
-                </DropdownMenuItem>
-                {onAiImprove ? (
-                  <DropdownMenuItem onSelect={() => setAiOpen(true)} className="text-primary">
-                    <Sparkles className="ml-2 h-4 w-4" />
-                    שיפור עם AI
-                  </DropdownMenuItem>
-                ) : null}
-                {onSplit ? (
-                  <DropdownMenuItem onSelect={onSplit}>
-                    <Columns2 className="ml-2 h-4 w-4" />
-                    {splitActive ? "סגור תצוגת השוואה" : "תצוגת השוואה"}
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled={!onMoveUp} onSelect={() => onMoveUp?.()}>
-                  <ChevronUp className="ml-2 h-4 w-4" />
-                  הזז למעלה
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled={!onMoveDown} onSelect={() => onMoveDown?.()}>
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                  הזז למטה
-                </DropdownMenuItem>
-                {onDelete ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={() => setConfirmDelete(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="ml-2 h-4 w-4" />
-                      מחיקה
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-1" />
+
         </div>
         <CollapsibleContent>{children}</CollapsibleContent>
       </section>
