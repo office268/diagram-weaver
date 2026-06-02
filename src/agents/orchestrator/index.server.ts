@@ -11,6 +11,7 @@ import { runDataModelAgent } from "@/agents/data-model/index.server";
 import { runUseCasesAgent } from "@/agents/use-cases/index.server";
 import { runDiagramsAgent } from "@/agents/diagrams/index.server";
 import { runReviewAgent, filterNotesByKeywords } from "@/agents/review/index.server";
+import { createUsageTracker, type UsageTotals } from "@/lib/ai-usage.server";
 
 export async function runOrchestrator(params: {
   userPrompt: string;
@@ -22,7 +23,7 @@ export async function runOrchestrator(params: {
   reviewerNotes?: string[];
   scoreThreshold?: number;
   maxIterations?: number;
-}): Promise<OrchestratorOutput> {
+}): Promise<OrchestratorOutput & { usage: UsageTotals }> {
   const {
     userPrompt,
     docType,
@@ -37,6 +38,7 @@ export async function runOrchestrator(params: {
 
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
   const isRevision = !!previousSpec && Array.isArray(reviewerNotes) && reviewerNotes.length > 0;
+  const tracker = createUsageTracker();
 
   // Step 1: Load knowledge context + RAG context in parallel
   const [knowledgeBlock, ragResult] = await Promise.all([
@@ -54,25 +56,25 @@ export async function runOrchestrator(params: {
   };
 
   // Step 2: Requirements agent
-  const requirements = await runRequirementsAgent(ctx, gateway);
+  const requirements = await runRequirementsAgent(ctx, gateway, tracker);
 
   // Step 3: Architecture + Data Model in parallel
   const [architecture, dataModel] = await Promise.all([
-    runArchitectureAgent(ctx, requirements, gateway),
-    runDataModelAgent(ctx, requirements, gateway),
+    runArchitectureAgent(ctx, requirements, gateway, tracker),
+    runDataModelAgent(ctx, requirements, gateway, tracker),
   ]);
 
   // Step 4: Use Cases agent
-  const useCases = await runUseCasesAgent(ctx, requirements, gateway);
+  const useCases = await runUseCasesAgent(ctx, requirements, gateway, tracker);
 
   // Step 5: Diagrams agent
-  const diagrams = await runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway);
+  const diagrams = await runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway, tracker);
 
   // Step 6: Assemble full spec
   let currentSpec = assembleSpec(requirements, architecture, dataModel, useCases, diagrams);
 
   // Step 7: Review
-  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway);
+  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
   let iterations = 1;
 
   // Step 8: Improvement loop
@@ -91,29 +93,29 @@ export async function runOrchestrator(params: {
 
     // Run only relevant agents
     if (reqNotes.length > 0) {
-      const improved = await runRequirementsAgent(improveCtx, gateway);
+      const improved = await runRequirementsAgent(improveCtx, gateway, tracker);
       currentSpec = mergeRequirements(currentSpec, improved);
     }
 
     if (archNotes.length > 0) {
       const [improvedArch, improvedDiagrams] = await Promise.all([
-        runArchitectureAgent(improveCtx, requirements, gateway),
-        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway),
+        runArchitectureAgent(improveCtx, requirements, gateway, tracker),
+        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
       ]);
       currentSpec = mergeArchitecture(currentSpec, improvedArch, improvedDiagrams);
     }
 
     if (ucNotes.length > 0) {
       const [improvedUC, improvedDiagrams] = await Promise.all([
-        runUseCasesAgent(improveCtx, requirements, gateway),
-        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway),
+        runUseCasesAgent(improveCtx, requirements, gateway, tracker),
+        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
       ]);
       currentSpec = mergeUseCases(currentSpec, improvedUC, improvedDiagrams);
     }
 
-    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway);
+    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
     iterations++;
   }
 
-  return { spec: currentSpec, finalScore: currentReview.score, iterations, review: currentReview };
+  return { spec: currentSpec, finalScore: currentReview.score, iterations, review: currentReview, usage: tracker.totals() };
 }
