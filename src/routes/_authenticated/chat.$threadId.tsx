@@ -15,7 +15,24 @@ import {
   Plus,
   Paperclip,
   X,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  File as FileIcon,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -68,6 +85,10 @@ function ChatPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
@@ -356,6 +377,59 @@ function ChatPage() {
             className="hidden"
             onChange={onPickFiles}
           />
+          <input
+            ref={imageInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={onPickFiles}
+          />
+          <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>הוספת קישור</DialogTitle>
+                <DialogDescription>
+                  הדבק/י כתובת URL לצירוף להודעה.
+                </DialogDescription>
+              </DialogHeader>
+              <Input
+                dir="ltr"
+                placeholder="https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    const url = linkUrl.trim();
+                    if (!url) return;
+                    setInput((prev) => (prev ? `${prev}\n${url}` : url));
+                    setLinkUrl("");
+                    setLinkOpen(false);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }
+                }}
+              />
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => { setLinkUrl(""); setLinkOpen(false); }}>
+                  ביטול
+                </Button>
+                <Button
+                  onClick={() => {
+                    const url = linkUrl.trim();
+                    if (!url) return;
+                    setInput((prev) => (prev ? `${prev}\n${url}` : url));
+                    setLinkUrl("");
+                    setLinkOpen(false);
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                  }}
+                  disabled={!linkUrl.trim()}
+                >
+                  הוסף
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           {attachments.length > 0 && (
             <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
               {attachments.map((a) => (
@@ -383,18 +457,60 @@ function ChatPage() {
           )}
           <div className="mx-auto max-w-3xl">
             <div className="relative flex items-end rounded-2xl border border-input bg-background shadow-sm focus-within:ring-2 focus-within:ring-ring">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                disabled={sending}
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="צרף קובץ"
-                title="צרף קובץ (PDF, DOCX, TXT)"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute bottom-1.5 left-1.5 h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                    disabled={sending}
+                    aria-label="הוסף"
+                    title="הוסף"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="start"
+                  className="w-48 p-1"
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <FileIcon className="h-4 w-4 text-muted-foreground" />
+                    קובץ
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      imageInputRef.current?.click();
+                    }}
+                  >
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    תמונה
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                    onClick={() => {
+                      setAttachMenuOpen(false);
+                      setLinkOpen(true);
+                    }}
+                  >
+                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                    קישור
+                  </button>
+                </PopoverContent>
+              </Popover>
               <Textarea
                 ref={textareaRef}
                 value={input}
