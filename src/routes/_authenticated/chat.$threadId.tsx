@@ -13,6 +13,8 @@ import {
   Trash2,
   ArrowRight,
   Plus,
+  Paperclip,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +42,17 @@ export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   component: ChatPage,
 });
 
+interface Attachment {
+  id: string;
+  name: string;
+  size: number;
+  status: "uploading" | "ready";
+  text?: string;
+  truncated?: boolean;
+}
+
+
+
 function ChatPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
@@ -51,8 +64,10 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
@@ -86,22 +101,102 @@ function ChatPage() {
     textareaRef.current?.focus();
   }, [threadId, sending]);
 
+  async function uploadFiles(files: FileList | File[]) {
+    const list = Array.from(files);
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) {
+      toast.error("נדרשת התחברות מחדש");
+      return;
+    }
+    for (const file of list) {
+      const id = crypto.randomUUID();
+      setAttachments((prev) => [
+        ...prev,
+        { id, name: file.name, size: file.size, status: "uploading" },
+      ]);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/chat-attach", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || `שגיאה ${res.status}`);
+        }
+        const json = (await res.json()) as {
+          fileName: string;
+          size: number;
+          text: string;
+          truncated: boolean;
+        };
+        setAttachments((prev) =>
+          prev.map((a) =>
+            a.id === id
+              ? { ...a, status: "ready", text: json.text, truncated: json.truncated }
+              : a,
+          ),
+        );
+      } catch (e) {
+        toast.error(
+          `${file.name}: ${e instanceof Error ? e.message : "העלאה נכשלה"}`,
+        );
+        setAttachments((prev) => prev.filter((a) => a.id !== id));
+      }
+    }
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      void uploadFiles(e.target.files);
+    }
+    e.target.value = "";
+  }
+
+  function removeAttachment(id: string) {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  }
+
   async function handleSend() {
     const msg = input.trim();
-    if (!msg || sending) return;
+    const readyAtts = attachments.filter((a) => a.status === "ready");
+    const hasUploading = attachments.some((a) => a.status === "uploading");
+    if (hasUploading) {
+      toast.info("ממתין לסיום העלאת קבצים...");
+      return;
+    }
+    if ((!msg && readyAtts.length === 0) || sending) return;
     setSending(true);
     setInput("");
+    const sentAtts = readyAtts;
+    setAttachments([]);
     try {
       const { data: sess } = await supabase.auth.getSession();
       const token = sess.session?.access_token;
       if (!token) throw new Error("נדרשת התחברות מחדש");
+
+      let composed = msg;
+      if (sentAtts.length > 0) {
+        const filesBlock = sentAtts
+          .map(
+            (a) =>
+              `--- קובץ: ${a.name}${a.truncated ? " (קוצץ)" : ""} ---\n${a.text ?? ""}`,
+          )
+          .join("\n\n");
+        composed =
+          `[קבצים מצורפים]\n${filesBlock}\n\n[הודעת המשתמש]\n${msg || "(ראה קבצים מצורפים)"}`;
+      }
+
       const res = await fetch("/api/chat-message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ threadId, message: msg }),
+        body: JSON.stringify({ threadId, message: composed }),
       });
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -112,6 +207,7 @@ function ChatPage() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
       setInput(msg);
+      setAttachments(sentAtts);
     } finally {
       setSending(false);
     }
@@ -252,7 +348,52 @@ function ChatPage() {
 
         {/* Composer */}
         <div className="border-t border-border p-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            className="hidden"
+            onChange={onPickFiles}
+          />
+          {attachments.length > 0 && (
+            <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
+              {attachments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
+                >
+                  {a.status === "uploading" ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Paperclip className="h-3 w-3 text-primary" />
+                  )}
+                  <span className="max-w-[140px] truncate">{a.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(a.id)}
+                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label="הסר"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="mx-auto flex max-w-3xl items-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              disabled={sending}
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="צרף קובץ"
+              title="צרף קובץ (PDF, DOCX, TXT)"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
             <Textarea
               ref={textareaRef}
               value={input}
@@ -269,7 +410,11 @@ function ChatPage() {
             />
             <Button
               onClick={() => void handleSend()}
-              disabled={sending || input.trim().length === 0}
+              disabled={
+                sending ||
+                (input.trim().length === 0 &&
+                  attachments.filter((a) => a.status === "ready").length === 0)
+              }
               size="icon"
               className="h-10 w-10 shrink-0"
             >
@@ -277,7 +422,7 @@ function ChatPage() {
             </Button>
           </div>
           <p className="mx-auto mt-2 max-w-3xl text-[11px] text-muted-foreground">
-            Enter לשליחה · Shift+Enter לשורה חדשה
+            Enter לשליחה · Shift+Enter לשורה חדשה · ניתן לצרף PDF, DOCX, TXT (עד 10MB)
           </p>
         </div>
       </div>
