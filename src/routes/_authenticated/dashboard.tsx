@@ -40,7 +40,6 @@ function HomePage() {
           const t = OUTPUT_TYPES[key];
           const Icon = t.icon;
           const isPending = createMut.isPending && createMut.variables === key;
-          const isDiagram = t.category === "diagram";
           return (
             <button
               key={key}
@@ -51,7 +50,7 @@ function HomePage() {
               style={{ animationDelay: `${i * 30}ms`, animationFillMode: "backwards" }}
             >
               <span
-                className={`absolute top-2 ${isDiagram ? "left-2" : "right-2"} flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/20`}
+                className={`absolute top-2 end-2 flex h-5 w-5 items-center justify-center rounded-full bg-accent ring-1 ring-border/60 ${t.colorClass}`}
                 aria-label="AI"
                 title="AI"
               >
