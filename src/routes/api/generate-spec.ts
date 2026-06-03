@@ -50,24 +50,9 @@ export const Route = createFileRoute("/api/generate-spec")({
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("LOVABLE_API_KEY missing", { status: 500 });
 
-        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
-          "consume_credits",
-          {
-            _user_id: userId,
-            _amount: BASE_CREDITS,
-            _description: "יצירת מסמך אפיון (multi-agent)",
-          },
-        );
-        if (creditErr) {
-          console.error("[generate-spec] consume_credits error:", creditErr);
-          return new Response("שגיאת קרדיטים", { status: 500 });
-        }
-        if (newBalance === null) {
-          return new Response(
-            `אזלו הקרדיטים שלך (דרושים ${BASE_CREDITS}). הוסף קרדיטים בדף המחירים.`,
-            { status: 402 },
-          );
-        }
+        // Credit check temporarily disabled — allow generation regardless of balance.
+        void BASE_CREDITS;
+
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
