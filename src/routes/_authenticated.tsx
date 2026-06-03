@@ -4,6 +4,7 @@ import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { UserMenu } from "@/components/user-menu";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
@@ -42,8 +43,9 @@ function AuthenticatedLayout() {
     <OnboardingProvider>
       <div className="flex min-h-screen flex-col bg-background">
         <header className="border-b border-border bg-card">
-          <div className="flex w-full items-center justify-start px-4 pt-3 [direction:rtl]" data-tour="user-menu">
+          <div className="flex w-full items-center justify-start gap-2 px-4 pt-3 [direction:rtl]" data-tour="user-menu">
             <UserMenu user={user} />
+            <OrgNameLabel />
           </div>
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
 
