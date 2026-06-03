@@ -423,6 +423,62 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -725,11 +781,23 @@ export type Database = {
         }
         Returns: number
       }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["org_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       match_document_chunks: {
@@ -751,6 +819,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      org_role: "owner" | "admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -879,6 +948,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      org_role: ["owner", "admin", "member"],
     },
   },
 } as const
