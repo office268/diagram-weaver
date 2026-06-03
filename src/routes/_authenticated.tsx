@@ -168,7 +168,7 @@ function AuthenticatedLayout() {
         </header>
 
         <main className="flex-1 bg-background">
-          <div className="flex w-full items-center justify-center py-2 [direction:rtl]">
+          <div className="flex w-full items-center justify-center py-0.5 [direction:rtl]">
             <Button
               variant="ghost"
               size="icon"
