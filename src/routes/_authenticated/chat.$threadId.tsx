@@ -381,7 +381,7 @@ function ChatPage() {
         </div>
 
         {/* Composer */}
-        <div className="p-3">
+        <div className="px-3 pt-3 pb-16 md:pb-3">
           <input
             ref={fileInputRef}
             type="file"
