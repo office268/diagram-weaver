@@ -42,7 +42,7 @@ function AuthenticatedLayout() {
     <OnboardingProvider>
       <div className="flex min-h-screen flex-col bg-background">
         <header className="border-b border-border bg-card">
-          <div className="flex w-full items-center justify-end px-4 pt-3 [direction:rtl]" data-tour="user-menu">
+          <div className="flex w-full items-center justify-start px-4 pt-3 [direction:rtl]" data-tour="user-menu">
             <UserMenu user={user} />
           </div>
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
