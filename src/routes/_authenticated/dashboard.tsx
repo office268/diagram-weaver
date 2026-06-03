@@ -125,7 +125,7 @@ function HomePage() {
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-1 min-h-[calc(100dvh-9rem)]">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-0 min-h-[calc(100dvh-9rem)]">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items} strategy={rectSortingStrategy}>
           <div className="grid flex-1 auto-rows-min content-evenly grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
