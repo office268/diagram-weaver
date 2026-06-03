@@ -356,13 +356,15 @@ function ChatPage() {
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {messages.length === 0 && (
-            <div className="mx-auto max-w-md py-4 text-center">
-              {def && (
-                <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
-                  <def.icon className="h-6 w-6" />
-                </div>
-              )}
-              <h2 className="text-lg font-medium text-foreground">אני סוכן AI מומחה לכתיבת {def?.label}</h2>
+            <div className="flex h-full items-center justify-center">
+              <div className="mx-auto max-w-md text-center">
+                {def && (
+                  <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
+                    <def.icon className="h-6 w-6" />
+                  </div>
+                )}
+                <h2 className="text-lg font-medium text-foreground">אני סוכן AI מומחה לכתיבת {def?.label}</h2>
+              </div>
             </div>
           )}
           <div className="mx-auto max-w-3xl space-y-5">
