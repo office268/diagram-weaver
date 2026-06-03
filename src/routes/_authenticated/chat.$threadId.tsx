@@ -354,9 +354,9 @@ function ChatPage() {
       <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-card">
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {messages.length === 0 && (
-            <div className="mx-auto max-w-md py-12 text-center">
+            <div className="mx-auto max-w-md py-4 text-center">
               {def && (
                 <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
                   <def.icon className="h-6 w-6" />
@@ -482,7 +482,7 @@ function ChatPage() {
                 }
                 rows={promptBoxSettings.rows}
                 disabled={sending}
-                className="min-h-[36px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[72px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
                 {(promptBoxSettings.allowedUploads.file ||
