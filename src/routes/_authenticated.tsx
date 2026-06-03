@@ -124,3 +124,17 @@ function AuthenticatedLayout() {
     </OnboardingProvider>
   );
 }
+
+function OrgNameLabel() {
+  const { data, isLoading } = useCurrentOrganization();
+  if (isLoading) {
+    return <span className="h-3 w-20 animate-pulse rounded bg-muted" aria-hidden />;
+  }
+  if (!data) return null;
+  return (
+    <span className="text-sm font-medium text-foreground truncate" title={data.name}>
+      {data.name}
+    </span>
+  );
+}
+
