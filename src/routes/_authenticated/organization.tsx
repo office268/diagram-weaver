@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2, MapPin, Globe, Hash, Loader2, Pencil } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Building2, MapPin, Globe, Hash, Loader2, Pencil, X } from "lucide-react";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { OrganizationLogoCard } from "@/components/organization-logo-card";
 
 export const Route = createFileRoute("/_authenticated/organization")({
   component: OrganizationHomePage,
@@ -24,6 +26,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 function OrganizationHomePage() {
   const { data: org, isLoading } = useCurrentOrganization();
+  const [editing, setEditing] = useState(false);
 
   if (isLoading) {
     return (
@@ -46,6 +49,21 @@ function OrganizationHomePage() {
   }
 
   const canEdit = org.role === "owner" || org.role === "admin";
+
+  if (editing) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 space-y-4 [direction:rtl]">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold">עריכת פרטי ארגון</h1>
+          <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+            <X className="ml-1.5 h-4 w-4" />
+            סיום
+          </Button>
+        </div>
+        <OrganizationLogoCard />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 [direction:rtl]">
@@ -92,11 +110,9 @@ function OrganizationHomePage() {
 
           {canEdit && (
             <div className="pt-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/settings">
-                  <Pencil className="ml-2 h-4 w-4" />
-                  ערוך פרטי ארגון
-                </Link>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="ml-2 h-4 w-4" />
+                ערוך פרטי ארגון
               </Button>
             </div>
           )}
