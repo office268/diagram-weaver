@@ -83,11 +83,12 @@ function SettingsPage() {
       </SettingsSection>
 
       <SettingsSection
-        title="לוגו הארגון"
-        description="העלאת לוגו שיוצג ליד שם הארגון בכותרת המערכת."
+        title="פרטי הארגון"
+        description="שם, לוגו, כתובת, אתר, סוג ומזהה הארגון."
       >
         <OrganizationLogoCard />
       </SettingsSection>
+
 
       <SettingsSection
         title="ידע ארגוני / עסקי שלי"

@@ -457,28 +457,40 @@ export type Database = {
       }
       organizations: {
         Row: {
+          address: string | null
           created_at: string
           id: string
+          identifier: string | null
           logo_url: string | null
           name: string
+          org_kind: Database["public"]["Enums"]["org_kind"] | null
           slug: string
           updated_at: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
+          identifier?: string | null
           logo_url?: string | null
           name: string
+          org_kind?: Database["public"]["Enums"]["org_kind"] | null
           slug: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
+          identifier?: string | null
           logo_url?: string | null
           name?: string
+          org_kind?: Database["public"]["Enums"]["org_kind"] | null
           slug?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -822,6 +834,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      org_kind: "public" | "nonprofit" | "government" | "private"
       org_role: "owner" | "admin" | "member"
     }
     CompositeTypes: {
@@ -951,6 +964,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      org_kind: ["public", "nonprofit", "government", "private"],
       org_role: ["owner", "admin", "member"],
     },
   },
