@@ -89,20 +89,7 @@ function AuthenticatedLayout() {
             </div>
           </div>
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-          <div className="flex w-full items-center justify-end px-4 pt-3 [direction:rtl]">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
-              onClick={() => setSearchOpen((v) => !v)}
-            >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
-            </Button>
-          </div>
-          {searchOpen && (
-            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
-          )}
+          <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
 
 
@@ -155,6 +142,22 @@ function AuthenticatedLayout() {
                 <CommandTriggerButton />
               </div>
             </div>
+          </div>
+          <div className="flex w-full items-center justify-end px-4 pt-3 [direction:rtl]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </Button>
+          </div>
+          {searchOpen && (
+            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
+          )}
+
           </div>
         </header>
 
