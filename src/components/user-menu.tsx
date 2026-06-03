@@ -22,13 +22,14 @@ function initialsFromEmail(email: string | null | undefined): string {
   return letters.toUpperCase();
 }
 
-export function UserMenu({ user }: { user: User }) {
+export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvatarUrl?: string | null }) {
   const navigate = useNavigate();
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
   const email = user.email ?? "";
   const avatarUrl =
+    overrideAvatarUrl ||
     (user.user_metadata?.avatar_url as string | undefined) ||
     (user.user_metadata?.picture as string | undefined) ||
     null;
