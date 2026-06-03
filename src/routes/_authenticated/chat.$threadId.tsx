@@ -354,9 +354,9 @@ function ChatPage() {
       <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-card">
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {messages.length === 0 && (
-            <div className="mx-auto max-w-md py-12 text-center">
+            <div className="mx-auto max-w-md py-4 text-center">
               {def && (
                 <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
                   <def.icon className="h-6 w-6" />
