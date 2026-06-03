@@ -183,13 +183,13 @@ function UserMenuWithOrgLogo() {
   return (
     <Link
       to="/organization"
-      className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
       aria-label="דף הארגון"
     >
       {avatarUrl ? (
         <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
       ) : (
-        <Workflow className="h-4 w-4 text-muted-foreground" />
+        <Workflow className="h-5 w-5 text-muted-foreground" />
       )}
     </Link>
   );
