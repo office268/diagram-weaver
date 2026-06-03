@@ -64,9 +64,8 @@ function AuthenticatedLayout() {
           ? "בקשת הרישום שלך נדחתה."
           : "בקשת הרישום שלך ממתינה לאישור מנהל.";
       toast.info(msg, { duration: 6000 });
-      supabase.auth.signOut().then(() => {
-        navigate({ to: "/pending-approval", replace: true });
-      });
+      navigate({ to: "/pending-approval", replace: true });
+      supabase.auth.signOut();
     }
   }, [approvalData, approvalLoading, user, navigate]);
 
