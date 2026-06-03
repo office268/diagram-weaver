@@ -143,7 +143,7 @@ function AuthenticatedLayout() {
               </div>
             </div>
           </div>
-          <div className="flex w-full items-center justify-end px-4 pt-3 [direction:rtl]">
+          <div className="flex w-full items-center justify-center px-4 py-3 border-t border-dashed border-border/50 [direction:rtl]">
             <Button
               variant="ghost"
               size="icon"
