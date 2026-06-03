@@ -512,12 +512,14 @@ function ChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={
                   messages.length === 0
-                    ? `תאר/י את ה${def?.label ?? "מסמך"}...`
+                    ? promptBoxSettings.defaultPlaceholder?.trim()
+                      ? promptBoxSettings.defaultPlaceholder
+                      : `תאר/י את ה${def?.label ?? "מסמך"}...`
                     : "הוסף/י הבהרה או בקשת שינוי..."
                 }
-                rows={1}
+                rows={promptBoxSettings.rows}
                 disabled={sending}
-                className="min-h-[36px] max-h-[176px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[36px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
                 <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
