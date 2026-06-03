@@ -179,7 +179,20 @@ function UserMenuWithOrgLogo() {
   const { user } = useAuth();
   const { data } = useCurrentOrganization();
   if (!user) return null;
-  return <UserMenu user={user} overrideAvatarUrl={data?.logo_url ?? null} />;
+  const avatarUrl = data?.logo_url ?? null;
+  return (
+    <Link
+      to="/organization"
+      className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label="דף הארגון"
+    >
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
+      ) : (
+        <Workflow className="h-4 w-4 text-muted-foreground" />
+      )}
+    </Link>
+  );
 }
 
 function HamburgerMenu() {
@@ -196,9 +209,14 @@ function OrgNameLabel() {
   }
   if (!data) return null;
   return (
-    <span className="text-sm font-medium text-foreground truncate min-w-0" title={data.name}>
+    <Link
+      to="/organization"
+      className="text-sm font-medium text-foreground truncate min-w-0 hover:underline"
+      title={data.name}
+    >
       {data.name}
-    </span>
+    </Link>
   );
 }
+
 
