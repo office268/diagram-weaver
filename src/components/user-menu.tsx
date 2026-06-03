@@ -27,6 +27,7 @@ export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvat
   const navigate = useNavigate();
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
+  const { isAdmin } = useSiteTexts();
   const isDark = theme === "dark";
   const email = user.email ?? "";
   const avatarUrl =
