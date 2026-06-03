@@ -93,6 +93,11 @@ function AuthenticatedLayout() {
             >
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             </Button>
+            <Button asChild variant="ghost" size="icon" className="h-8 w-8" aria-label="הגדרות">
+              <Link to="/settings">
+                <Settings className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
           {searchOpen && (
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
