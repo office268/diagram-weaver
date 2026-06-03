@@ -82,6 +82,17 @@ export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvat
           {isDark ? <Sun className="ml-2 h-4 w-4" /> : <Moon className="ml-2 h-4 w-4" />}
           {isDark ? "מצב בהיר" : "מצב כהה"}
         </DropdownMenuItem>
+        {isAdmin ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/signup-requests">
+                <ShieldCheck className="ml-2 h-4 w-4" />
+                בקשות הרשמה
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={async () => {
