@@ -362,10 +362,7 @@ function ChatPage() {
                   <def.icon className="h-6 w-6" />
                 </div>
               )}
-              <h2 className="text-lg font-medium text-foreground">{def?.label}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                תאר/י במילים שלך את מה שצריך וה-AI יבנה לך {def?.category === "diagram" ? "תרשים" : "מסמך"}.
-              </p>
+              <h2 className="text-lg font-medium text-foreground">אני סוכן AI מומחה לכתיבת {def?.label}</h2>
             </div>
           )}
           <div className="mx-auto max-w-3xl space-y-5">
@@ -480,7 +477,7 @@ function ChatPage() {
                   messages.length === 0
                     ? promptBoxSettings.defaultPlaceholder?.trim()
                       ? promptBoxSettings.defaultPlaceholder
-                      : `תאר/י את ה${def?.label ?? "מסמך"}...`
+                      : `תאר את ה${def?.label ?? "מסמך"} שתרצה ליצור...`
                     : "הוסף/י הבהרה או בקשת שינוי..."
                 }
                 rows={promptBoxSettings.rows}
