@@ -496,6 +496,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: string
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -503,6 +504,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -510,6 +512,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_status?: string
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -547,6 +550,45 @@ export type Database = {
           name?: string
           pinned_at?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      signup_requests: {
+        Row: {
+          display_name: string | null
+          email: string
+          id: string
+          notes: string | null
+          provider: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          email: string
+          id?: string
+          notes?: string | null
+          provider?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          email?: string
+          id?: string
+          notes?: string | null
+          provider?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []
