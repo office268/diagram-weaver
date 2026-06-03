@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCredits } from "@/hooks/use-credits";
 import { useTheme } from "@/hooks/use-theme";
+import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvat
   const navigate = useNavigate();
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
+  const { isAdmin } = useSiteTexts();
   const isDark = theme === "dark";
   const email = user.email ?? "";
   const avatarUrl =
@@ -80,6 +82,17 @@ export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvat
           {isDark ? <Sun className="ml-2 h-4 w-4" /> : <Moon className="ml-2 h-4 w-4" />}
           {isDark ? "מצב בהיר" : "מצב כהה"}
         </DropdownMenuItem>
+        {isAdmin ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/signup-requests">
+                <ShieldCheck className="ml-2 h-4 w-4" />
+                בקשות הרשמה
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={async () => {

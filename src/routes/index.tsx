@@ -57,10 +57,36 @@ function Landing() {
           options: { emailRedirectTo: window.location.origin + "/dashboard" },
         });
         if (error) throw error;
-        toast.success("החשבון נוצר. ברוכים הבאים!");
+        // Sign out immediately — access requires admin approval
+        await supabase.auth.signOut();
+        toast.success(
+          "בקשת הרישום נשלחה. בשעות הקרובות תקבל אישור ופרטי כניסה במייל.",
+          { duration: 8000 },
+        );
+        setMode("signin");
+        setPassword("");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // Check approval status
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (uid) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("approval_status")
+            .eq("id", uid)
+            .maybeSingle();
+          const status = profile?.approval_status ?? "pending";
+          if (status !== "approved") {
+            await supabase.auth.signOut();
+            if (status === "rejected") {
+              toast.error("בקשת הרישום שלך נדחתה. צור קשר עם המנהל.");
+            } else {
+              toast.info("בקשת הרישום שלך ממתינה לאישור מנהל.", { duration: 8000 });
+            }
+          }
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "האימות נכשל");

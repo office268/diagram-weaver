@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PendingApprovalRouteImport } from './routes/pending-approval'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
@@ -27,6 +28,7 @@ import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
 import { Route as ApiChatAttachRouteImport } from './routes/api/chat-attach'
+import { Route as AuthenticatedSignupRequestsRouteImport } from './routes/_authenticated/signup-requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
 import { Route as AuthenticatedProductRouteImport } from './routes/_authenticated/product'
@@ -62,6 +64,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendingApprovalRoute = PendingApprovalRouteImport.update({
+  id: '/pending-approval',
+  path: '/pending-approval',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -128,6 +135,12 @@ const ApiChatAttachRoute = ApiChatAttachRouteImport.update({
   path: '/api/chat-attach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSignupRequestsRoute =
+  AuthenticatedSignupRequestsRouteImport.update({
+    id: '/signup-requests',
+    path: '/signup-requests',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -193,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -204,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/signup-requests': typeof AuthenticatedSignupRequestsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -223,6 +238,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -234,6 +250,7 @@ export interface FileRoutesByTo {
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/signup-requests': typeof AuthenticatedSignupRequestsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -255,6 +272,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/about': typeof AboutRoute
   '/login': typeof LoginRoute
+  '/pending-approval': typeof PendingApprovalRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/refund-policy': typeof RefundPolicyRoute
@@ -266,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/product': typeof AuthenticatedProductRoute
   '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/signup-requests': typeof AuthenticatedSignupRequestsRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -287,6 +306,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/login'
+    | '/pending-approval'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -298,6 +318,7 @@ export interface FileRouteTypes {
     | '/product'
     | '/projects-management'
     | '/settings'
+    | '/signup-requests'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -317,6 +338,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/login'
+    | '/pending-approval'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -328,6 +350,7 @@ export interface FileRouteTypes {
     | '/product'
     | '/projects-management'
     | '/settings'
+    | '/signup-requests'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -348,6 +371,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/about'
     | '/login'
+    | '/pending-approval'
     | '/pricing'
     | '/privacy'
     | '/refund-policy'
@@ -359,6 +383,7 @@ export interface FileRouteTypes {
     | '/_authenticated/product'
     | '/_authenticated/projects-management'
     | '/_authenticated/settings'
+    | '/_authenticated/signup-requests'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -380,6 +405,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AboutRoute: typeof AboutRoute
   LoginRoute: typeof LoginRoute
+  PendingApprovalRoute: typeof PendingApprovalRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
@@ -432,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pending-approval': {
+      id: '/pending-approval'
+      path: '/pending-approval'
+      fullPath: '/pending-approval'
+      preLoaderRoute: typeof PendingApprovalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -525,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatAttachRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/signup-requests': {
+      id: '/_authenticated/signup-requests'
+      path: '/signup-requests'
+      fullPath: '/signup-requests'
+      preLoaderRoute: typeof AuthenticatedSignupRequestsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -612,6 +652,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProductRoute: typeof AuthenticatedProductRoute
   AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSignupRequestsRoute: typeof AuthenticatedSignupRequestsRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
@@ -625,6 +666,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProductRoute: AuthenticatedProductRoute,
   AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSignupRequestsRoute: AuthenticatedSignupRequestsRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
@@ -640,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AboutRoute: AboutRoute,
   LoginRoute: LoginRoute,
+  PendingApprovalRoute: PendingApprovalRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   RefundPolicyRoute: RefundPolicyRoute,
@@ -659,13 +702,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
