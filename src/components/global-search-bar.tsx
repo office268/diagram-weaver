@@ -100,21 +100,27 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [productsOpen, setProductsOpen] = useState(false);
 
+  const shouldFetch = query.trim().length > 0 || group !== "all";
+
   const { data: specsData, isLoading: l1 } = useQuery({
     queryKey: ["specs-all"],
     queryFn: () => listSpecsFn(),
+    enabled: shouldFetch,
   });
   const { data: diagramsData, isLoading: l2 } = useQuery({
     queryKey: ["diagrams-all"],
     queryFn: () => listDiagramsFn(),
+    enabled: shouldFetch,
   });
   const { data: uploadsData, isLoading: l3 } = useQuery({
     queryKey: ["uploaded-documents", "all"],
     queryFn: () => listDocumentsFn({ data: {} }),
+    enabled: shouldFetch,
   });
   const { data: projectsData, isLoading: l4 } = useQuery({
     queryKey: ["projects"],
     queryFn: () => listProjectsFn(),
+    enabled: shouldFetch,
   });
 
   const isLoading = l1 || l2 || l3 || l4;
