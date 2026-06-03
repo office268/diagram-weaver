@@ -27,6 +27,11 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    setSearchOpen(false);
+  }, [location.pathname]);
 
 
   useEffect(() => {
