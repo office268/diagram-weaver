@@ -11,6 +11,10 @@ import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrganization } from "@/lib/organizations.functions";
+import { listSpecs } from "@/lib/spec.functions";
+import { listDiagrams } from "@/lib/diagrams.functions";
+import { listDocuments } from "@/lib/documents.functions";
+import { listProjects } from "@/lib/project.functions";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
@@ -25,15 +29,20 @@ import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   loader: async ({ context }) => {
-    // Prefetch in parallel with render so the org logo/name appear immediately.
+    // Prefetch in parallel with render so the header + search results appear instantly.
     const { data } = await supabase.auth.getSession();
     if (!data.session) return;
     const userId = data.session.user.id;
-    context.queryClient.prefetchQuery({
+    const qc = context.queryClient;
+    qc.prefetchQuery({
       queryKey: ["current-organization", userId],
       queryFn: () => getCurrentOrganization(),
       staleTime: 5 * 60 * 1000,
     });
+    qc.prefetchQuery({ queryKey: ["specs-all"], queryFn: () => listSpecs() });
+    qc.prefetchQuery({ queryKey: ["diagrams-all"], queryFn: () => listDiagrams() });
+    qc.prefetchQuery({ queryKey: ["uploaded-documents", "all"], queryFn: () => listDocuments({ data: {} }) });
+    qc.prefetchQuery({ queryKey: ["projects"], queryFn: () => listProjects() });
   },
   component: AuthenticatedLayout,
 });
