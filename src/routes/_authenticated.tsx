@@ -237,7 +237,7 @@ function OrgNameLabel() {
   return (
     <Link
       to="/organization"
-      className="text-sm font-medium text-foreground truncate min-w-0 hover:underline"
+      className="text-[15px] font-medium text-foreground truncate min-w-0 hover:underline"
       title={data.name}
     >
       {data.name}
