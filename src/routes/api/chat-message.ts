@@ -91,26 +91,10 @@ export const Route = createFileRoute("/api/chat-message")({
         });
         if (insertUserErr) return new Response(insertUserErr.message, { status: 500 });
 
-        // Consume credits (plan mode costs less since no artifact is generated)
+        // Credit check temporarily disabled — allow creation regardless of balance.
         const creditsToCharge = body.mode === "plan" ? PLAN_CREDITS : BASE_CREDITS;
-        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
-          "consume_credits",
-          {
-            _user_id: userId,
-            _amount: creditsToCharge,
-            _description:
-              body.mode === "plan"
-                ? `תכנון: ${def.label}`
-                : `יצירה: ${def.label}`,
-          },
-        );
-        if (creditErr) return new Response("שגיאת קרדיטים", { status: 500 });
-        if (newBalance === null) {
-          return new Response(
-            `אזלו הקרדיטים (דרושים ${creditsToCharge}). הוסף בדף המחירים.`,
-            { status: 402 },
-          );
-        }
+        void creditsToCharge;
+
 
         // Plan mode: respond with clarifying questions / outline only, no artifact
         if (body.mode === "plan") {
@@ -341,25 +325,13 @@ export const Route = createFileRoute("/api/chat-message")({
           const msg = err instanceof Error ? err.message : String(err);
           console.error("[chat-message] error:", err);
 
-          // Refund the credits we charged at the top of this handler,
-          // since no artifact was produced.
-          try {
-            await supabaseAdmin.rpc("grant_credits", {
-              _user_id: userId,
-              _amount: creditsToCharge,
-              _kind: "refund",
-              _description: `החזר קרדיטים — יצירת ${def.label} נכשלה`,
-              _paddle_event_id: `refund:${body.threadId}:${Date.now()}`,
-            });
-          } catch (refundErr) {
-            console.warn("[chat-message] refund failed:", refundErr);
-          }
+          // Credit refund skipped — credit consumption is currently disabled.
 
           await supabaseAdmin.from("chat_messages").insert({
             thread_id: body.threadId,
             user_id: userId,
             role: "assistant",
-            content: `אירעה שגיאה ביצירת ${def.label}. הקרדיטים הוחזרו, אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
+            content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
           });
           return new Response(msg, { status: 500 });
         }
