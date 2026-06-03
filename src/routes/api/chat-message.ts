@@ -91,26 +91,10 @@ export const Route = createFileRoute("/api/chat-message")({
         });
         if (insertUserErr) return new Response(insertUserErr.message, { status: 500 });
 
-        // Consume credits (plan mode costs less since no artifact is generated)
+        // Credit check temporarily disabled — allow creation regardless of balance.
         const creditsToCharge = body.mode === "plan" ? PLAN_CREDITS : BASE_CREDITS;
-        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
-          "consume_credits",
-          {
-            _user_id: userId,
-            _amount: creditsToCharge,
-            _description:
-              body.mode === "plan"
-                ? `תכנון: ${def.label}`
-                : `יצירה: ${def.label}`,
-          },
-        );
-        if (creditErr) return new Response("שגיאת קרדיטים", { status: 500 });
-        if (newBalance === null) {
-          return new Response(
-            `אזלו הקרדיטים (דרושים ${creditsToCharge}). הוסף בדף המחירים.`,
-            { status: 402 },
-          );
-        }
+        void creditsToCharge;
+
 
         // Plan mode: respond with clarifying questions / outline only, no artifact
         if (body.mode === "plan") {
