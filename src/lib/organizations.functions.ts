@@ -3,11 +3,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+export type OrgKind = "public" | "nonprofit" | "government" | "private";
+
 export type CurrentOrganization = {
   id: string;
   name: string;
   slug: string;
   logo_url: string | null;
+  address: string | null;
+  website: string | null;
+  org_kind: OrgKind | null;
+  identifier: string | null;
   role: "owner" | "admin" | "member";
 } | null;
 
@@ -18,7 +24,9 @@ export const getCurrentOrganization = createServerFn({ method: "GET" })
 
     const { data, error } = await supabase
       .from("organization_members")
-      .select("role, org_id, organizations:org_id ( id, name, slug, logo_url )")
+      .select(
+        "role, org_id, organizations:org_id ( id, name, slug, logo_url, address, website, org_kind, identifier )",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .limit(1)
@@ -32,14 +40,61 @@ export const getCurrentOrganization = createServerFn({ method: "GET" })
       name: string;
       slug: string;
       logo_url: string | null;
+      address: string | null;
+      website: string | null;
+      org_kind: OrgKind | null;
+      identifier: string | null;
     };
     return {
       id: org.id,
       name: org.name,
       slug: org.slug,
       logo_url: org.logo_url ?? null,
+      address: org.address ?? null,
+      website: org.website ?? null,
+      org_kind: org.org_kind ?? null,
+      identifier: org.identifier ?? null,
       role: data.role as "owner" | "admin" | "member",
     };
+  });
+
+const UpdateDetailsSchema = z.object({
+  org_id: z.string().uuid(),
+  name: z.string().trim().min(1).max(200),
+  address: z.string().trim().max(500).nullable().optional(),
+  website: z.string().trim().max(500).nullable().optional(),
+  org_kind: z.enum(["public", "nonprofit", "government", "private"]).nullable().optional(),
+  identifier: z.string().trim().max(100).nullable().optional(),
+});
+
+export const updateOrganizationDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => UpdateDetailsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: member } = await supabaseAdmin
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("org_id", data.org_id)
+      .maybeSingle();
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("רק בעלים או מנהל ארגון יכולים לעדכן פרטי ארגון");
+    }
+    const website = data.website ? data.website.trim() : null;
+    const { error } = await supabaseAdmin
+      .from("organizations")
+      .update({
+        name: data.name.trim(),
+        address: data.address?.trim() || null,
+        website: website || null,
+        org_kind: data.org_kind ?? null,
+        identifier: data.identifier?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.org_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 const UploadSchema = z.object({
