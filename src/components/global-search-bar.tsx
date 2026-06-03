@@ -25,6 +25,8 @@ import {
   SheetTrigger,
   SheetFooter,
 } from "@/components/ui/sheet";
+import { Package } from "lucide-react";
+import { ProductsBrowserSheet } from "@/components/products-browser-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +98,7 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
   const [group, setGroup] = useState<GroupFilter>("all");
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
 
   const { data: specsData, isLoading: l1 } = useQuery({
     queryKey: ["specs-all"],
@@ -284,7 +287,20 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
             </SheetFooter>
           </SheetContent>
         </Sheet>
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0"
+          aria-label="מוצרים"
+          title="מוצרים של הארגון"
+          onClick={() => setProductsOpen(true)}
+        >
+          <Package className="h-4 w-4" />
+        </Button>
       </div>
+
+      <ProductsBrowserSheet open={productsOpen} onOpenChange={setProductsOpen} />
 
       {group !== "all" && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">

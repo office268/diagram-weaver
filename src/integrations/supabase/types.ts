@@ -494,6 +494,44 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           approval_status: string
@@ -529,6 +567,7 @@ export type Database = {
           id: string
           name: string
           pinned_at: string | null
+          product_id: string | null
           updated_at: string
           user_id: string
         }
@@ -539,6 +578,7 @@ export type Database = {
           id?: string
           name?: string
           pinned_at?: string | null
+          product_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -549,10 +589,19 @@ export type Database = {
           id?: string
           name?: string
           pinned_at?: string | null
+          product_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       signup_requests: {
         Row: {
