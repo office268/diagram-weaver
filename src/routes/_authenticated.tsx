@@ -121,7 +121,7 @@ function AuthenticatedLayout() {
           </div>
         </header>
 
-        <main className="flex-1 pb-16 md:pb-0">
+        <main className="flex-1">
           <Outlet />
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
@@ -134,9 +134,6 @@ function AuthenticatedLayout() {
             </nav>
           </div>
         </footer>
-        <div data-tour="mobile-nav">
-          <MobileBottomNav />
-        </div>
         <GlobalCommandPalette />
         <OnboardingOverlay />
       </div>
