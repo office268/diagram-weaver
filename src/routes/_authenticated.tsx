@@ -132,8 +132,17 @@ function OrgNameLabel() {
   }
   if (!data) return null;
   return (
-    <span className="text-sm font-medium text-foreground truncate" title={data.name}>
-      {data.name}
+    <span className="flex items-center gap-1.5 min-w-0">
+      {data.logo_url ? (
+        <img
+          src={data.logo_url}
+          alt={data.name}
+          className="h-5 w-5 rounded-sm object-contain"
+        />
+      ) : null}
+      <span className="text-sm font-medium text-foreground truncate" title={data.name}>
+        {data.name}
+      </span>
     </span>
   );
 }
