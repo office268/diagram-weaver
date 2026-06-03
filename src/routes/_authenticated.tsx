@@ -158,7 +158,6 @@ function AuthenticatedLayout() {
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
 
-          </div>
         </header>
 
         <main className="flex-1">
