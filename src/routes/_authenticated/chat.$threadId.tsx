@@ -477,7 +477,7 @@ function ChatPage() {
                   messages.length === 0
                     ? promptBoxSettings.defaultPlaceholder?.trim()
                       ? promptBoxSettings.defaultPlaceholder
-                      : `תאר/י את ה${def?.label ?? "מסמך"}...`
+                      : `תאר את ה${def?.label ?? "מסמך"} שתרצה ליצור...`
                     : "הוסף/י הבהרה או בקשת שינוי..."
                 }
                 rows={promptBoxSettings.rows}
