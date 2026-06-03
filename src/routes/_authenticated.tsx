@@ -1,17 +1,19 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Loader2, Workflow, KanbanSquare, Rocket } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Workflow, KanbanSquare, Rocket, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { UserMenu } from "@/components/user-menu";
+import { Button } from "@/components/ui/button";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
   GlobalCommandPalette,
   CommandTriggerButton,
 } from "@/components/global-command-palette";
+import { GlobalSearchBar } from "@/components/global-search-bar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
@@ -25,6 +27,11 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname.startsWith("/dashboard");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    setSearchOpen(false);
+  }, [location.pathname]);
 
 
   useEffect(() => {
@@ -46,7 +53,19 @@ function AuthenticatedLayout() {
           <div className="flex w-full items-center justify-start gap-2 px-4 pt-3 [direction:rtl]" data-tour="user-menu">
             <UserMenuWithOrgLogo />
             <OrgNameLabel />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ms-auto h-8 w-8"
+              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </Button>
           </div>
+          {searchOpen && (
+            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
+          )}
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
 
 
