@@ -352,40 +352,6 @@ function ChatPage() {
 
       {/* Chat column */}
       <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-card">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => navigate({ to: "/dashboard" })}
-              aria-label="חזרה"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            {def && (
-              <div className={`flex h-8 w-8 items-center justify-center rounded-md bg-accent ${def.colorClass}`}>
-                <def.icon className="h-4 w-4" />
-              </div>
-            )}
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium">{data.thread.title}</div>
-              {def && (
-                <div className="text-[11px] text-muted-foreground">{def.label}</div>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            onClick={() => setDeleteOpen(true)}
-            aria-label="מחק שיחה"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
