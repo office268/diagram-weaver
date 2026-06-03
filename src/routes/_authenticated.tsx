@@ -14,7 +14,7 @@ import {
   CommandTriggerButton,
 } from "@/components/global-command-palette";
 import { GlobalSearchBar } from "@/components/global-search-bar";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+
 import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
@@ -121,7 +121,7 @@ function AuthenticatedLayout() {
           </div>
         </header>
 
-        <main className="flex-1 pb-16 md:pb-0">
+        <main className="flex-1">
           <Outlet />
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
@@ -134,9 +134,6 @@ function AuthenticatedLayout() {
             </nav>
           </div>
         </footer>
-        <div data-tour="mobile-nav">
-          <MobileBottomNav />
-        </div>
         <GlobalCommandPalette />
         <OnboardingOverlay />
       </div>
