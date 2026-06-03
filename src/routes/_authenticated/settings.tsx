@@ -16,6 +16,7 @@ import { useSiteTexts } from "@/lib/site-texts-context";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
 import { AiUsageCard } from "@/components/ai-usage-card";
+import { PromptBoxSettingsCard } from "@/components/prompt-box-settings-card";
 import {
   getAiSettings,
   updateBusinessKnowledge,
@@ -94,6 +95,13 @@ function SettingsPage() {
             qc.invalidateQueries({ queryKey: ["ai-settings"] });
           }}
         />
+      </SettingsSection>
+
+      <SettingsSection
+        title="ניהול תיבת הפרומפט"
+        description="גודל התיבה, סוגי העלאות, מצבים מאופשרים ומשפט ברירת מחדל."
+      >
+        <PromptBoxSettingsCard />
       </SettingsSection>
 
       <SettingsSection
