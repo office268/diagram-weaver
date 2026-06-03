@@ -105,14 +105,12 @@ function AuthenticatedLayout() {
 
 
             <Link
-              to="/dashboard"
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]",
-              )}
+              to="/product"
+              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
             >
-              <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
-              {isDashboard && (
+              <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
+              {location.pathname.startsWith("/product") && (
                 <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
               )}
             </Link>
@@ -128,14 +126,15 @@ function AuthenticatedLayout() {
               )}
             </Link>
 
-
             <Link
-              to="/product"
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
+              to="/dashboard"
+              className={cn(
+                "relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]",
+              )}
             >
-              <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
-              {location.pathname.startsWith("/product") && (
+              <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
+              {isDashboard && (
                 <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
               )}
             </Link>
