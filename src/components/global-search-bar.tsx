@@ -98,6 +98,7 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
   const [group, setGroup] = useState<GroupFilter>("all");
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
 
   const { data: specsData, isLoading: l1 } = useQuery({
     queryKey: ["specs-all"],
