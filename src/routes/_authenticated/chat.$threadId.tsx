@@ -600,7 +600,9 @@ function ChatPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      {(["auto", "plan", "build"] as const).map((m) => {
+                      {(["auto", "plan", "build"] as const)
+                        .filter((m) => promptBoxSettings.allowedModes[m])
+                        .map((m) => {
                         const meta = MODE_META[m];
                         const Icon = meta.icon;
                         const active = mode === m;
