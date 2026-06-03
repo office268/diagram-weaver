@@ -66,6 +66,7 @@ function AuthenticatedLayout() {
           {searchOpen && (
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
+          <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
 
 
