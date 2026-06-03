@@ -125,6 +125,13 @@ function AuthenticatedLayout() {
   );
 }
 
+function UserMenuWithOrgLogo() {
+  const { user } = useAuth();
+  const { data } = useCurrentOrganization();
+  if (!user) return null;
+  return <UserMenu user={user} overrideAvatarUrl={data?.logo_url ?? null} />;
+}
+
 function OrgNameLabel() {
   const { data, isLoading } = useCurrentOrganization();
   if (isLoading) {
@@ -132,17 +139,8 @@ function OrgNameLabel() {
   }
   if (!data) return null;
   return (
-    <span className="flex items-center gap-1.5 min-w-0">
-      {data.logo_url ? (
-        <img
-          src={data.logo_url}
-          alt={data.name}
-          className="h-5 w-5 rounded-sm object-contain"
-        />
-      ) : null}
-      <span className="text-sm font-medium text-foreground truncate" title={data.name}>
-        {data.name}
-      </span>
+    <span className="text-sm font-medium text-foreground truncate min-w-0" title={data.name}>
+      {data.name}
     </span>
   );
 }
