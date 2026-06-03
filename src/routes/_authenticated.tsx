@@ -143,6 +143,9 @@ function AuthenticatedLayout() {
               </div>
             </div>
           </div>
+        </header>
+
+        <main className="flex-1 bg-background">
           <div className="flex w-full items-center justify-center py-2 [direction:rtl]">
             <Button
               variant="ghost"
@@ -157,10 +160,6 @@ function AuthenticatedLayout() {
           {searchOpen && (
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
-
-        </header>
-
-        <main className="flex-1">
           <Outlet />
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
