@@ -522,56 +522,68 @@ function ChatPage() {
                 className="min-h-[36px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
-                <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                      disabled={sending}
-                      aria-label="הוסף"
-                      title="הוסף"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="w-48 p-1">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      <FileIcon className="h-4 w-4 text-muted-foreground" />
-                      קובץ
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        imageInputRef.current?.click();
-                      }}
-                    >
-                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                      תמונה
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        setLinkOpen(true);
-                      }}
-                    >
-                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                      קישור
-                    </button>
-                  </PopoverContent>
-                </Popover>
+                {(promptBoxSettings.allowedUploads.file ||
+                  promptBoxSettings.allowedUploads.image ||
+                  promptBoxSettings.allowedUploads.link) ? (
+                  <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                        disabled={sending}
+                        aria-label="הוסף"
+                        title="הוסף"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" align="start" className="w-48 p-1">
+                      {promptBoxSettings.allowedUploads.file && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                        >
+                          <FileIcon className="h-4 w-4 text-muted-foreground" />
+                          קובץ
+                        </button>
+                      )}
+                      {promptBoxSettings.allowedUploads.image && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            imageInputRef.current?.click();
+                          }}
+                        >
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          תמונה
+                        </button>
+                      )}
+                      {promptBoxSettings.allowedUploads.link && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            setLinkOpen(true);
+                          }}
+                        >
+                          <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                          קישור
+                        </button>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <div />
+                )}
                 <div className="flex items-center gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
