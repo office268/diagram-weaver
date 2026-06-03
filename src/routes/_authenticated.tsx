@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Workflow, KanbanSquare, Rocket, Search, X, Settings } from "lucide-react";
+import { Loader2, Workflow, KanbanSquare, Rocket, Search, X, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +95,7 @@ function AuthenticatedLayout() {
             </Button>
             <Button asChild variant="ghost" size="icon" className="h-8 w-8" aria-label="הגדרות">
               <Link to="/settings">
-                <Settings className="h-4 w-4" />
+                <Menu className="h-4 w-4" />
               </Link>
             </Button>
           </div>
