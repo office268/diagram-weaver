@@ -17,6 +17,7 @@ import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
 import { AiUsageCard } from "@/components/ai-usage-card";
 import { PromptBoxSettingsCard } from "@/components/prompt-box-settings-card";
+import { OrganizationLogoCard } from "@/components/organization-logo-card";
 import {
   getAiSettings,
   updateBusinessKnowledge,
@@ -79,6 +80,13 @@ function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+      </SettingsSection>
+
+      <SettingsSection
+        title="לוגו הארגון"
+        description="העלאת לוגו שיוצג ליד שם הארגון בכותרת המערכת."
+      >
+        <OrganizationLogoCard />
       </SettingsSection>
 
       <SettingsSection
