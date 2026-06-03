@@ -25,6 +25,8 @@ import {
   SheetTrigger,
   SheetFooter,
 } from "@/components/ui/sheet";
+import { Package } from "lucide-react";
+import { ProductsBrowserSheet } from "@/components/products-browser-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
