@@ -10,6 +10,7 @@ import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentOrganization } from "@/lib/organizations.functions";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
@@ -22,6 +23,18 @@ import { OnboardingProvider } from "@/components/onboarding/onboarding-provider"
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
+  loader: async ({ context }) => {
+    // Prefetch in parallel with render so the org logo/name appear immediately.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return;
+    const userId = data.session.user.id;
+    context.queryClient.prefetchQuery({
+      queryKey: ["current-organization", userId],
+      queryFn: () => getCurrentOrganization(),
+      staleTime: 5 * 60 * 1000,
+    });
+  },
   component: AuthenticatedLayout,
 });
 
