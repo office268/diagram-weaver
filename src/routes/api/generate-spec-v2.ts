@@ -39,21 +39,8 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("LOVABLE_API_KEY missing", { status: 500 });
 
-        // Consume 1 credit atomically
-        const { data: newBalance, error: creditErr } = await supabaseAdmin.rpc(
-          "consume_credit",
-          { _user_id: userId, _doc_id: undefined as unknown as string },
-        );
-        if (creditErr) {
-          console.error("[generate-spec-v2] consume_credit error:", creditErr);
-          return new Response("שגיאת קרדיטים", { status: 500 });
-        }
-        if (newBalance === null) {
-          return new Response(
-            "אזלו הקרדיטים שלך. בקר בדף המחירים כדי להוסיף קרדיטים או להתחיל מנוי.",
-            { status: 402 },
-          );
-        }
+        // Credit check temporarily disabled — allow generation regardless of balance.
+
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
