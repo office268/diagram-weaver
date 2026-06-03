@@ -1,12 +1,15 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Workflow, KanbanSquare, Rocket, Search, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
@@ -33,12 +36,41 @@ function AuthenticatedLayout() {
     setSearchOpen(false);
   }, [location.pathname]);
 
-
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
 
-  if (loading || !user) {
+  // Approval gate
+  const { data: approvalData, isLoading: approvalLoading } = useQuery({
+    queryKey: ["approval-status", user?.id ?? null],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("approval_status")
+        .eq("id", user.id)
+        .maybeSingle();
+      return data?.approval_status ?? "pending";
+    },
+    enabled: !!user,
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!user || approvalLoading) return;
+    if (approvalData && approvalData !== "approved") {
+      const msg =
+        approvalData === "rejected"
+          ? "בקשת הרישום שלך נדחתה."
+          : "בקשת הרישום שלך ממתינה לאישור מנהל.";
+      toast.info(msg, { duration: 6000 });
+      supabase.auth.signOut().then(() => {
+        navigate({ to: "/pending-approval", replace: true });
+      });
+    }
+  }, [approvalData, approvalLoading, user, navigate]);
+
+  if (loading || !user || approvalLoading || (approvalData && approvalData !== "approved")) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
