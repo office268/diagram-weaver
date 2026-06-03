@@ -182,6 +182,13 @@ function UserMenuWithOrgLogo() {
   return <UserMenu user={user} overrideAvatarUrl={data?.logo_url ?? null} />;
 }
 
+function HamburgerMenu() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return <UserMenu user={user} trigger="hamburger" />;
+}
+
+
 function OrgNameLabel() {
   const { data, isLoading } = useCurrentOrganization();
   if (isLoading) {
