@@ -1,10 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type CurrentOrganization = {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
   role: "owner" | "admin" | "member";
 } | null;
 
@@ -15,7 +18,7 @@ export const getCurrentOrganization = createServerFn({ method: "GET" })
 
     const { data, error } = await supabase
       .from("organization_members")
-      .select("role, org_id, organizations:org_id ( id, name, slug )")
+      .select("role, org_id, organizations:org_id ( id, name, slug, logo_url )")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .limit(1)
@@ -24,11 +27,86 @@ export const getCurrentOrganization = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!data || !data.organizations) return null;
 
-    const org = data.organizations as unknown as { id: string; name: string; slug: string };
+    const org = data.organizations as unknown as {
+      id: string;
+      name: string;
+      slug: string;
+      logo_url: string | null;
+    };
     return {
       id: org.id,
       name: org.name,
       slug: org.slug,
+      logo_url: org.logo_url ?? null,
       role: data.role as "owner" | "admin" | "member",
     };
+  });
+
+const UploadSchema = z.object({
+  org_id: z.string().uuid(),
+  file_base64: z.string().min(10),
+  content_type: z.string().min(3).max(100),
+  filename: z.string().min(1).max(200),
+});
+
+export const uploadOrganizationLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => UploadSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    // Verify the user is owner/admin of the org
+    const { data: member, error: memErr } = await supabaseAdmin
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("org_id", data.org_id)
+      .maybeSingle();
+    if (memErr) throw new Error(memErr.message);
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("רק בעלים או מנהל ארגון יכולים להעלות לוגו");
+    }
+
+    const ext = (data.filename.split(".").pop() || "png").toLowerCase().slice(0, 10);
+    const path = `org-logos/${data.org_id}/${Date.now()}.${ext}`;
+    const bytes = Uint8Array.from(atob(data.file_base64), (c) => c.charCodeAt(0));
+
+    const up = await supabaseAdmin.storage
+      .from("app-assets")
+      .upload(path, bytes, { contentType: data.content_type, upsert: true });
+    if (up.error) throw new Error(`העלאה נכשלה: ${up.error.message}`);
+
+    const { data: pub } = supabaseAdmin.storage.from("app-assets").getPublicUrl(path);
+
+    const { error: updErr } = await supabaseAdmin
+      .from("organizations")
+      .update({ logo_url: pub.publicUrl, updated_at: new Date().toISOString() })
+      .eq("id", data.org_id);
+    if (updErr) throw new Error(updErr.message);
+
+    return { url: pub.publicUrl };
+  });
+
+const RemoveSchema = z.object({ org_id: z.string().uuid() });
+
+export const removeOrganizationLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => RemoveSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: member } = await supabaseAdmin
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("org_id", data.org_id)
+      .maybeSingle();
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("רק בעלים או מנהל ארגון יכולים להסיר לוגו");
+    }
+    const { error } = await supabaseAdmin
+      .from("organizations")
+      .update({ logo_url: null, updated_at: new Date().toISOString() })
+      .eq("id", data.org_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
