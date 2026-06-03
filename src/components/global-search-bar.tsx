@@ -198,7 +198,7 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="חפש פרויקטים, מסמכים, תרשימים, קבצים..."
             className="h-10 pr-9"
-            autoFocus
+            
           />
         </div>
 
