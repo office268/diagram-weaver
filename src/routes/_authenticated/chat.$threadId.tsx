@@ -65,6 +65,7 @@ import {
 } from "@/lib/chat.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { MermaidPreview } from "@/components/mermaid-preview";
+import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({ meta: [{ title: "שיחה — סוכן ניתוח מערכות" }] }),
