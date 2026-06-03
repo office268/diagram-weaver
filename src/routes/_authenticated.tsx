@@ -172,11 +172,11 @@ function AuthenticatedLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-transparent"
+              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-elegant ring-2 ring-primary/25 transition-transform hover:scale-105 hover:bg-primary active:scale-95"
               aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
               onClick={() => setSearchOpen((v) => !v)}
             >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
           </div>
           {searchOpen && (
