@@ -1,40 +1,29 @@
-## הוספת שם ארגון ליד אייקון המשתמש
+## מה נבנה
 
-הצגת שם הארגון של המשתמש המחובר ליד האייקון העגול בשורה העליונה של ה-header, עם תשתית רב-ארגונית (multi-tenant) מלאה.
+הוספת אייקון חיפוש (Search) בקצה ההפוך של שורת הלוגו בהדר. לחיצה עליו פותחת/סוגרת שורה שנייה מתחת לשורת הלוגו, עם אותם רכיבי חיפוש/מיון/סינון כמו בדף "המסמכים שלי", רק שהם פועלים גלובלית על כל הפריטים בארגון (פרויקטים + מסמכים + תרשימים + קבצים שהועלו).
 
-### שלב 1 — תשתית נתונים (DB)
+לחיצה על פריט בתוצאות = ניווט ישיר לעמוד הפריט (`/editor/$id` למסמכים, `/projects/$projectId` לפרויקטים וכו').
 
-טבלאות חדשות:
-- `organizations` — `id`, `name`, `slug`, `created_at`
-- `organization_members` — `org_id`, `user_id`, `role` (owner/admin/member), `created_at`, unique(org_id, user_id)
+## שינויי קבצים
 
-כל טבלה תקבל RLS + GRANTs מתאימים. פונקציית `has_org_role(_user_id, _org_id, _role)` בסגנון SECURITY DEFINER לבדיקות הרשאה (כמו `has_role` הקיים), כדי למנוע רקורסיה ב-RLS.
+### `src/components/global-search-bar.tsx` (חדש)
+קומפוננטה חדשה שעוטפת:
+- `Input` חיפוש חופשי (placeholder: "חפש פרויקטים, מסמכים, תרשימים, קבצים...")
+- כפתור מיון (`DropdownMenu` עם `ArrowUpDown`) — אותם 4 ערכי מיון כמו ב-documents
+- כפתור סינון (`Sheet` עם `SlidersHorizontal` + badge מספרי) — סינון לפי קטגוריה: הכל / פרויקטים / מסמכים / תרשימים / קבצים
+- אזור תוצאות (פאנל מתחת) שמציג עד ~20 תוצאות תואמות, כל אחת `Link` ליעד המתאים, עם אייקון + כותרת + סוג + תאריך
+- מציאת נתונים דרך `useServerFn` ל-`listSpecs`, `listDiagrams`, `listDocuments`, `listProjects` (כולם כבר קיימים, בשימוש ב-`documents.tsx` ו-`global-command-palette.tsx`)
+- שאילתות `useQuery` עם אותם `queryKey` קיימים כדי לנצל מטמון משותף
 
-Seed: יצירת ארגון "עיר דוד" וצירוף המשתמש הנוכחי כ-owner, כדי שיהיה מה להציג מיד.
+### `src/routes/_authenticated.tsx`
+- הוספת state מקומי `searchOpen` ב-`AuthenticatedLayout`
+- בשורה הראשונה (`flex ... [direction:rtl]`) — הוספת אייקון `Search` כ-`Button` ב`variant="ghost" size="icon"` עם `mr-auto` (כלומר בקצה השני בגלל RTL) שמחליף את `searchOpen`
+- כאשר `searchOpen=true` — רנדור `<GlobalSearchBar />` בשורה חדשה בין שורת הלוגו לשורת הטאבים (Workflow/Kanban/Rocket)
+- סגירה אוטומטית בעת ניווט (תוך שימוש ב-`useLocation` שכבר קיים)
 
-### שלב 2 — שליפה בצד שרת
+## הערות
 
-`src/lib/organizations.functions.ts` עם server function `getCurrentOrganization` (משתמש ב-`requireSupabaseAuth`) שמחזירה את הארגון הראשי של המשתמש המחובר (או את הארגון הפעיל, ראה שלב 4).
-
-### שלב 3 — Hook ותצוגה ב-header
-
-- `src/hooks/use-current-organization.ts` — עוטף את ה-server function עם `useQuery`.
-- ב-`src/routes/_authenticated.tsx`, בשורה העליונה (זו שמכילה כרגע את `UserMenu`), להוסיף ליד האייקון `<span>` עם שם הארגון. סטיילינג עדין (טקסט קטן, `text-muted-foreground` או `font-medium`), עם skeleton בזמן טעינה ו-fallback ריק אם אין ארגון.
-
-### שלב 4 — מוכנות לריבוי ארגונים
-
-- אם למשתמש יש יותר מארגון אחד, שם הארגון הופך לכפתור שפותח dropdown לבחירת ארגון פעיל.
-- הארגון הפעיל נשמר ב-`localStorage` (`active_org_id`) ומסונכרן ב-context קל (`OrganizationProvider`) כדי שכל ה-app יוכל לקרוא אותו.
-- ה-server functions העתידיות יקבלו `orgId` מהקליינט (או יקראו את ברירת המחדל מה-DB) — כך כל שאילתת נתונים תהיה תחומה לארגון.
-
-בשלב הראשון יוצג רק שם, ללא dropdown, כי יש ארגון אחד בלבד. ה-context וה-hook יהיו מוכנים להרחבה.
-
-### פרטים טכניים
-
-מיקום ב-header (RTL, השורה העליונה):
-```text
-[ אייקון משתמש ]  עיר דוד
-```
-שני האלמנטים בתוך אותו `<div>` עם `gap-2` ו-`items-center`. ה-`UserMenu` נשאר כמו שהוא; שם הארגון מוצג כ-`<span>` נפרד מימינו (בפועל משמאלו ויזואלית ב-RTL... לפי הצד הנוכחי).
-
-ללא שינוי ב-`UserMenu` עצמו, ללא שינוי בעיצוב הכרטיסים בפנים. ההוספה מינימלית ולא נוגעת בלוגיקת התפריט.
+- אין שינוי ב-`CommandTriggerButton` / `GlobalCommandPalette` הקיימים — נשארים פעילים (Cmd+K).
+- מטמון נתונים משותף עם `documents.tsx` כך שלא נשלחות בקשות כפולות.
+- ה-UI של כפתורי המיון/סינון נבנה במדויק לפי המראה ב-`documents.tsx` (אותם וריאנטים, גדלים, אייקונים, badges).
+- מובייל: ה-Sheet של הסינון נפתח מלמטה (`side="bottom"`) — זהה ל-documents.
