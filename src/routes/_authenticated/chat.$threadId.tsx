@@ -65,6 +65,7 @@ import {
 } from "@/lib/chat.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { MermaidPreview } from "@/components/mermaid-preview";
+import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({ meta: [{ title: "שיחה — סוכן ניתוח מערכות" }] }),
@@ -124,11 +125,21 @@ function ChatPage() {
     const saved = window.localStorage.getItem("chat-mode");
     return saved === "plan" || saved === "build" || saved === "auto" ? saved : "auto";
   });
+  const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("chat-mode", mode);
     }
   }, [mode]);
+  // Keep selected mode in sync with allowed modes from settings
+  useEffect(() => {
+    if (!promptBoxSettings.allowedModes[mode]) {
+      const fallback = (["auto", "plan", "build"] as const).find(
+        (m) => promptBoxSettings.allowedModes[m],
+      );
+      if (fallback) setMode(fallback);
+    }
+  }, [promptBoxSettings, mode]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
@@ -501,64 +512,78 @@ function ChatPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={
                   messages.length === 0
-                    ? `תאר/י את ה${def?.label ?? "מסמך"}...`
+                    ? promptBoxSettings.defaultPlaceholder?.trim()
+                      ? promptBoxSettings.defaultPlaceholder
+                      : `תאר/י את ה${def?.label ?? "מסמך"}...`
                     : "הוסף/י הבהרה או בקשת שינוי..."
                 }
-                rows={1}
+                rows={promptBoxSettings.rows}
                 disabled={sending}
-                className="min-h-[36px] max-h-[176px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-h-[36px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
-                <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
-                      disabled={sending}
-                      aria-label="הוסף"
-                      title="הוסף"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="w-48 p-1">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      <FileIcon className="h-4 w-4 text-muted-foreground" />
-                      קובץ
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        imageInputRef.current?.click();
-                      }}
-                    >
-                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                      תמונה
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        setLinkOpen(true);
-                      }}
-                    >
-                      <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                      קישור
-                    </button>
-                  </PopoverContent>
-                </Popover>
+                {(promptBoxSettings.allowedUploads.file ||
+                  promptBoxSettings.allowedUploads.image ||
+                  promptBoxSettings.allowedUploads.link) ? (
+                  <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+                        disabled={sending}
+                        aria-label="הוסף"
+                        title="הוסף"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" align="start" className="w-48 p-1">
+                      {promptBoxSettings.allowedUploads.file && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            fileInputRef.current?.click();
+                          }}
+                        >
+                          <FileIcon className="h-4 w-4 text-muted-foreground" />
+                          קובץ
+                        </button>
+                      )}
+                      {promptBoxSettings.allowedUploads.image && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            imageInputRef.current?.click();
+                          }}
+                        >
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          תמונה
+                        </button>
+                      )}
+                      {promptBoxSettings.allowedUploads.link && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            setLinkOpen(true);
+                          }}
+                        >
+                          <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                          קישור
+                        </button>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <div />
+                )}
                 <div className="flex items-center gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -575,7 +600,9 @@ function ChatPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      {(["auto", "plan", "build"] as const).map((m) => {
+                      {(["auto", "plan", "build"] as const)
+                        .filter((m) => promptBoxSettings.allowedModes[m])
+                        .map((m) => {
                         const meta = MODE_META[m];
                         const Icon = meta.icon;
                         const active = mode === m;
