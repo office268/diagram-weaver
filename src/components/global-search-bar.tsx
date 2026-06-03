@@ -240,17 +240,6 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
               )}
             </Button>
           </SheetTrigger>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 shrink-0"
-            aria-label="מוצרים"
-            title="מוצרים של הארגון"
-            onClick={() => setProductsOpen(true)}
-          >
-            <Package className="h-4 w-4" />
-          </Button>
           <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
             <SheetHeader>
               <SheetTitle className="text-right">סינון</SheetTitle>
