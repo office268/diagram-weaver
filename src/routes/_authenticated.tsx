@@ -14,7 +14,7 @@ import {
   CommandTriggerButton,
 } from "@/components/global-command-palette";
 import { GlobalSearchBar } from "@/components/global-search-bar";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+
 import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
