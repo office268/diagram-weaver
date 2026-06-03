@@ -143,11 +143,11 @@ function AuthenticatedLayout() {
               </div>
             </div>
           </div>
-          <div className="flex w-full items-center justify-center px-4 py-3 border-t-2 border-border [direction:rtl]">
+          <div className="flex w-full items-center justify-center py-2 [direction:rtl]">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-transparent"
               aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
               onClick={() => setSearchOpen((v) => !v)}
             >
