@@ -10,11 +10,6 @@ import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentOrganization } from "@/lib/organizations.functions";
-import { listSpecs } from "@/lib/spec.functions";
-import { listDiagrams } from "@/lib/diagrams.functions";
-import { listDocuments } from "@/lib/documents.functions";
-import { listProjects } from "@/lib/project.functions";
 
 import { RecentItemsMenu } from "@/components/recent-items-menu";
 import {
@@ -27,23 +22,6 @@ import { OnboardingProvider } from "@/components/onboarding/onboarding-provider"
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
 
 export const Route = createFileRoute("/_authenticated")({
-  ssr: false,
-  loader: async ({ context }) => {
-    // Prefetch in parallel with render so the header + search results appear instantly.
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) return;
-    const userId = data.session.user.id;
-    const qc = context.queryClient;
-    qc.prefetchQuery({
-      queryKey: ["current-organization", userId],
-      queryFn: () => getCurrentOrganization(),
-      staleTime: 5 * 60 * 1000,
-    });
-    qc.prefetchQuery({ queryKey: ["specs-all"], queryFn: () => listSpecs() });
-    qc.prefetchQuery({ queryKey: ["diagrams-all"], queryFn: () => listDiagrams() });
-    qc.prefetchQuery({ queryKey: ["uploaded-documents", "all"], queryFn: () => listDocuments({ data: {} }) });
-    qc.prefetchQuery({ queryKey: ["projects"], queryFn: () => listProjects() });
-  },
   component: AuthenticatedLayout,
 });
 
@@ -106,13 +84,23 @@ function AuthenticatedLayout() {
           <div className="flex w-full items-center justify-start gap-2 px-4 pt-3 [direction:rtl]" data-tour="user-menu">
             <UserMenuWithOrgLogo />
             <OrgNameLabel />
-            <div className="ms-auto">
-              <HamburgerMenu />
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ms-auto h-8 w-8"
+              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+            </Button>
+            <HamburgerMenu />
+
           </div>
+          {searchOpen && (
+            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
+          )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
           <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
-
 
 
 
@@ -167,21 +155,7 @@ function AuthenticatedLayout() {
           </div>
         </header>
 
-        <main className="flex-1 bg-background">
-          <div className="flex w-full items-center justify-center pt-3 pb-0 [direction:rtl]">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-elegant ring-2 ring-primary/25 transition-transform hover:scale-105 hover:bg-primary active:scale-95"
-              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
-              onClick={() => setSearchOpen((v) => !v)}
-            >
-              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-            </Button>
-          </div>
-          {searchOpen && (
-            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
-          )}
+        <main className="flex-1">
           <Outlet />
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
@@ -209,13 +183,13 @@ function UserMenuWithOrgLogo() {
   return (
     <Link
       to="/organization"
-      className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
       aria-label="דף הארגון"
     >
       {avatarUrl ? (
         <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
       ) : (
-        <Workflow className="h-[22px] w-[22px] text-muted-foreground" />
+        <Workflow className="h-5 w-5 text-muted-foreground" />
       )}
     </Link>
   );
@@ -237,7 +211,7 @@ function OrgNameLabel() {
   return (
     <Link
       to="/organization"
-      className="text-[15px] font-medium text-foreground truncate min-w-0 hover:underline"
+      className="text-sm font-medium text-foreground truncate min-w-0 hover:underline"
       title={data.name}
     >
       {data.name}
