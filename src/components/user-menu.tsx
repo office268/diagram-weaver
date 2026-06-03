@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,7 +23,7 @@ function initialsFromEmail(email: string | null | undefined): string {
   return letters.toUpperCase();
 }
 
-export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvatarUrl?: string | null }) {
+export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user: User; overrideAvatarUrl?: string | null; trigger?: "avatar" | "hamburger" }) {
   const navigate = useNavigate();
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
@@ -39,18 +39,28 @@ export function UserMenu({ user, overrideAvatarUrl }: { user: User; overrideAvat
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="תפריט משתמש"
-        >
-          <Avatar className="h-8 w-8">
-            {avatarUrl ? <AvatarImage src={avatarUrl} alt={email} /> : null}
-            <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
-              {initialsFromEmail(email)}
-            </AvatarFallback>
-          </Avatar>
-        </button>
+        {trigger === "hamburger" ? (
+          <button
+            type="button"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="תפריט"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="תפריט משתמש"
+          >
+            <Avatar className="h-8 w-8">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={email} /> : null}
+              <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                {initialsFromEmail(email)}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="flex items-center gap-2">

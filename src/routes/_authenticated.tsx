@@ -93,11 +93,8 @@ function AuthenticatedLayout() {
             >
               {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
             </Button>
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8" aria-label="הגדרות">
-              <Link to="/settings">
-                <Menu className="h-4 w-4" />
-              </Link>
-            </Button>
+            <HamburgerMenu />
+
           </div>
           {searchOpen && (
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
@@ -184,6 +181,13 @@ function UserMenuWithOrgLogo() {
   if (!user) return null;
   return <UserMenu user={user} overrideAvatarUrl={data?.logo_url ?? null} />;
 }
+
+function HamburgerMenu() {
+  const { user } = useAuth();
+  if (!user) return null;
+  return <UserMenu user={user} trigger="hamburger" />;
+}
+
 
 function OrgNameLabel() {
   const { data, isLoading } = useCurrentOrganization();
