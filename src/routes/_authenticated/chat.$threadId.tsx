@@ -125,11 +125,21 @@ function ChatPage() {
     const saved = window.localStorage.getItem("chat-mode");
     return saved === "plan" || saved === "build" || saved === "auto" ? saved : "auto";
   });
+  const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem("chat-mode", mode);
     }
   }, [mode]);
+  // Keep selected mode in sync with allowed modes from settings
+  useEffect(() => {
+    if (!promptBoxSettings.allowedModes[mode]) {
+      const fallback = (["auto", "plan", "build"] as const).find(
+        (m) => promptBoxSettings.allowedModes[m],
+      );
+      if (fallback) setMode(fallback);
+    }
+  }, [promptBoxSettings, mode]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
