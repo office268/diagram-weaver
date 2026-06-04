@@ -107,7 +107,7 @@ export function AgentPersonaDialog({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("organizations")
-        .select("id, name")
+        .select("id, name, identifier")
         .order("name");
       if (error) throw new Error(error.message);
       return data ?? [];
@@ -115,15 +115,25 @@ export function AgentPersonaDialog({
     enabled: open,
   });
 
-  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // Populate the ח.פ. text field when editing, based on current org_id
+  useEffect(() => {
+    if (!open) return;
+    if (!draft.org_id) return;
+    const found = (orgs ?? []).find((o) => o.id === draft.org_id);
+    if (found && found.identifier && !orgIdText) {
+      setOrgIdText(found.identifier);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, orgs, draft.org_id]);
 
   const save = useMutation({
     mutationFn: async () => {
       const trimmedId = orgIdText.trim();
       let finalOrgId: string | null = draft.org_id;
       if (trimmedId) {
-        if (!UUID_RE.test(trimmedId)) throw new Error("מזהה ארגון לא תקין (UUID)");
-        finalOrgId = trimmedId;
+        const match = (orgs ?? []).find((o) => (o.identifier ?? "").trim() === trimmedId);
+        if (!match) throw new Error("לא נמצא ארגון עם ח.פ. זה");
+        finalOrgId = match.id;
       }
       await upsertFn({
         data: {
