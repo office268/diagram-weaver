@@ -172,20 +172,40 @@ export function AgentPersonaDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>שם *</Label>
-              <Input
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                maxLength={120}
-                placeholder="לדוגמה: רינת"
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  maxLength={120}
+                  placeholder="לדוגמה: רינת"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleSuggest("name")}
+                  disabled={suggesting !== null}
+                  title="הצע שם באמצעות AI"
+                >
+                  {suggesting === "name" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>שיוך ארגוני</Label>
               <Select
                 value={draft.org_id ?? "__none__"}
-                onValueChange={(v) =>
-                  setDraft({ ...draft, org_id: v === "__none__" ? null : v })
-                }
+                onValueChange={(v) => {
+                  const id = v === "__none__" ? null : v;
+                  setDraft({ ...draft, org_id: id });
+                  setOrgIdText(id ?? "");
+                  const found = (orgs ?? []).find((o) => o.id === id);
+                  if (found) setOrgNameText(found.name);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="ללא" />
@@ -202,6 +222,27 @@ export function AgentPersonaDialog({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>מזהה ארגון (UUID)</Label>
+              <Input
+                value={orgIdText}
+                onChange={(e) => setOrgIdText(e.target.value)}
+                placeholder="00000000-0000-0000-0000-000000000000"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>שם הארגון</Label>
+              <Input
+                value={orgNameText}
+                onChange={(e) => setOrgNameText(e.target.value)}
+                maxLength={200}
+                placeholder="הקלדה חופשית"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <Label>תפקיד</Label>
             <Input
@@ -213,7 +254,23 @@ export function AgentPersonaDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>תיאור מפורט של התפקיד (Persona)</Label>
+            <div className="flex items-center justify-between">
+              <Label>תיאור מפורט של התפקיד (Persona)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleSuggest("role_description")}
+                disabled={suggesting !== null}
+              >
+                {suggesting === "role_description" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span className="ms-1">מילוי אוטומטי</span>
+              </Button>
+            </div>
             <Textarea
               value={draft.role_description}
               onChange={(e) => setDraft({ ...draft, role_description: e.target.value })}
@@ -233,6 +290,7 @@ export function AgentPersonaDialog({
               placeholder="מידע רקע, נהלים, מערכות מוכרות, אילוצים..."
             />
           </div>
+
 
           <div className="space-y-2">
             <Label>כלים</Label>
