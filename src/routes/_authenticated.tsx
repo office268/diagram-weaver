@@ -56,16 +56,22 @@ function AuthenticatedLayout() {
     staleTime: 60_000,
   });
 
+  const handledRef = useRef(false);
   useEffect(() => {
     if (!user || approvalLoading) return;
     if (approvalData && approvalData !== "approved") {
+      if (handledRef.current) return;
+      handledRef.current = true;
       const msg =
         approvalData === "rejected"
           ? "בקשת הרישום שלך נדחתה."
           : "בקשת הרישום שלך ממתינה לאישור מנהל.";
       toast.info(msg, { duration: 6000 });
-      navigate({ to: "/pending-approval", replace: true });
-      supabase.auth.signOut();
+      // Sign out first, then navigate after the auth event has settled,
+      // so we don't race AuthBridge's router.invalidate() with our navigation.
+      supabase.auth.signOut().finally(() => {
+        navigate({ to: "/pending-approval", replace: true });
+      });
     }
   }, [approvalData, approvalLoading, user, navigate]);
 
