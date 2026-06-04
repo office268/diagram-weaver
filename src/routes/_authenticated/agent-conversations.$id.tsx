@@ -48,6 +48,7 @@ function AgentConversationPage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getAgentConversation);
   const modFn = useServerFn(addModeratorMessage);
+  const pickFn = useServerFn(pickNextSpeaker);
 
   const [speakerId, setSpeakerId] = useState<string>("");
   const [moderatorMsg, setModeratorMsg] = useState("");
