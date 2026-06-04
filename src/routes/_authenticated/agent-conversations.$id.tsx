@@ -53,6 +53,7 @@ function AgentConversationPage() {
   const [speakerId, setSpeakerId] = useState<string>("");
   const [moderatorMsg, setModeratorMsg] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [picking, setPicking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
