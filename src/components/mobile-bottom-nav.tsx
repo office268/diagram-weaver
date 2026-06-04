@@ -1,7 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, FileText, FolderKanban } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { UserMenu } from "@/components/user-menu";
 
 interface ItemProps {
   active: boolean;
