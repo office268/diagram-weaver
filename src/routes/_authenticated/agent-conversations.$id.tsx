@@ -83,8 +83,9 @@ function AgentConversationPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "שליחה נכשלה"),
   });
 
-  async function generateTurn() {
-    if (!speakerId) return;
+  async function generateTurn(personaIdOverride?: string) {
+    const targetId = personaIdOverride ?? speakerId;
+    if (!targetId) return;
     setGenerating(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -96,7 +97,7 @@ function AgentConversationPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ conversationId: id, personaId: speakerId }),
+        body: JSON.stringify({ conversationId: id, personaId: targetId }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -108,6 +109,21 @@ function AgentConversationPage() {
     } finally {
       setGenerating(false);
     }
+  }
+
+  async function pickAndGenerate() {
+    setPicking(true);
+    let chosenId: string | null = null;
+    try {
+      const { personaId } = await pickFn({ data: { conversationId: id } });
+      chosenId = personaId;
+      setSpeakerId(personaId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "בחירה נכשלה");
+    } finally {
+      setPicking(false);
+    }
+    if (chosenId) await generateTurn(chosenId);
   }
 
   async function runRound() {
@@ -254,35 +270,15 @@ function AgentConversationPage() {
           </Select>
           <Button
             type="button"
-            variant="outline"
-            size="icon"
-            title="המנחה יבחר את הדובר הבא"
-            onClick={async () => {
-              setPicking(true);
-              try {
-                const { personaId } = await pickFn({ data: { conversationId: id } });
-                setSpeakerId(personaId);
-              } catch (e) {
-                toast.error(e instanceof Error ? e.message : "בחירה נכשלה");
-              } finally {
-                setPicking(false);
-              }
-            }}
+            onClick={pickAndGenerate}
             disabled={picking || generating || !participants.length}
           >
-            {picking ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-          </Button>
-          <Button onClick={generateTurn} disabled={!speakerId || generating}>
-            {generating ? (
+            {picking || generating ? (
               <Loader2 className="h-4 w-4 animate-spin ml-1" />
             ) : (
               <Sparkles className="h-4 w-4 ml-1" />
             )}
-            צור תגובה
+            {picking ? "בוחר דובר..." : generating ? "יוצר תגובה..." : "בחר דובר וצור תגובה"}
           </Button>
           <Button variant="ghost" onClick={runRound} disabled={generating}>
             סבב מלא
