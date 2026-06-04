@@ -1,6 +1,48 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+
+const SuggestInput = z.object({
+  field: z.enum(["name", "role_description"]),
+  name: z.string().trim().max(120).default(""),
+  role_title: z.string().trim().max(200).default(""),
+  role_description: z.string().trim().max(10000).default(""),
+  org_name: z.string().trim().max(200).default(""),
+});
+
+export const suggestPersonaField = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SuggestInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("חסר מפתח LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+
+    const ctx = [
+      data.role_title ? `תפקיד: ${data.role_title}` : "",
+      data.org_name ? `ארגון: ${data.org_name}` : "",
+      data.name ? `שם נוכחי: ${data.name}` : "",
+      data.role_description ? `תיאור נוכחי: ${data.role_description}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const prompt =
+      data.field === "name"
+        ? `הצע שם פרטי ישראלי יחיד (מילה אחת בלבד, ללא הסברים) לסוכן AI עם הפרטים הבאים:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את השם.`
+        : `כתוב תיאור מפורט (Persona) לסוכן AI בעברית: אופי, סגנון תקשורת, אחריות, גישה לבעיות ותחומי מומחיות. 3-6 משפטים. ללא כותרות וללא Markdown.\n\nהקשר:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את התיאור.`;
+
+    const { text } = await generateText({
+      model: gateway("google/gemini-3-flash-preview"),
+      prompt,
+    });
+    return { text: text.trim() };
+  });
+
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase

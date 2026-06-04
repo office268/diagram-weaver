@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
+
 import {
   Dialog,
   DialogContent,
@@ -23,8 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { upsertAgentPersona } from "@/lib/agents.functions";
+import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const AVAILABLE_TOOLS: { id: string; label: string }[] = [
   { id: "org_knowledge", label: "ידע ארגוני" },
@@ -67,11 +69,40 @@ export function AgentPersonaDialog({
 }) {
   const qc = useQueryClient();
   const upsertFn = useServerFn(upsertAgentPersona);
+  const suggestFn = useServerFn(suggestPersonaField);
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
+  const [orgIdText, setOrgIdText] = useState("");
+  const [orgNameText, setOrgNameText] = useState("");
+  const [suggesting, setSuggesting] = useState<"name" | "role_description" | null>(null);
 
   useEffect(() => {
-    if (open) setDraft(initial ?? EMPTY);
+    if (open) {
+      setDraft(initial ?? EMPTY);
+      setOrgIdText(initial?.org_id ?? "");
+      setOrgNameText("");
+    }
   }, [open, initial]);
+
+  async function handleSuggest(field: "name" | "role_description") {
+    try {
+      setSuggesting(field);
+      const { text } = await suggestFn({
+        data: {
+          field,
+          name: draft.name,
+          role_title: draft.role_title,
+          role_description: draft.role_description,
+          org_name: orgNameText,
+        },
+      });
+      if (text) setDraft((d) => ({ ...d, [field]: text }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "יצירה נכשלה");
+    } finally {
+      setSuggesting(null);
+    }
+  }
+
 
   const { data: orgs } = useQuery({
     queryKey: ["my-organizations-for-personas"],
@@ -86,13 +117,23 @@ export function AgentPersonaDialog({
     enabled: open,
   });
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   const save = useMutation({
     mutationFn: async () => {
+      const trimmedId = orgIdText.trim();
+      let finalOrgId: string | null = draft.org_id;
+      if (trimmedId) {
+        if (!UUID_RE.test(trimmedId)) throw new Error("מזהה ארגון לא תקין (UUID)");
+        finalOrgId = trimmedId;
+      } else if (orgNameText.trim() && !draft.org_id) {
+        finalOrgId = null;
+      }
       await upsertFn({
         data: {
           id: draft.id,
           name: draft.name.trim(),
-          org_id: draft.org_id,
+          org_id: finalOrgId,
           role_title: draft.role_title.trim(),
           role_description: draft.role_description.trim(),
           knowledge: draft.knowledge.trim(),
@@ -108,6 +149,7 @@ export function AgentPersonaDialog({
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירה נכשלה"),
   });
+
 
   function toggleTool(id: string) {
     setDraft((d) => ({
@@ -130,20 +172,40 @@ export function AgentPersonaDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>שם *</Label>
-              <Input
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                maxLength={120}
-                placeholder="לדוגמה: רינת"
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={draft.name}
+                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                  maxLength={120}
+                  placeholder="לדוגמה: רינת"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleSuggest("name")}
+                  disabled={suggesting !== null}
+                  title="הצע שם באמצעות AI"
+                >
+                  {suggesting === "name" ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>שיוך ארגוני</Label>
               <Select
                 value={draft.org_id ?? "__none__"}
-                onValueChange={(v) =>
-                  setDraft({ ...draft, org_id: v === "__none__" ? null : v })
-                }
+                onValueChange={(v) => {
+                  const id = v === "__none__" ? null : v;
+                  setDraft({ ...draft, org_id: id });
+                  setOrgIdText(id ?? "");
+                  const found = (orgs ?? []).find((o) => o.id === id);
+                  if (found) setOrgNameText(found.name);
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="ללא" />
@@ -160,6 +222,27 @@ export function AgentPersonaDialog({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>מזהה ארגון (UUID)</Label>
+              <Input
+                value={orgIdText}
+                onChange={(e) => setOrgIdText(e.target.value)}
+                placeholder="00000000-0000-0000-0000-000000000000"
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>שם הארגון</Label>
+              <Input
+                value={orgNameText}
+                onChange={(e) => setOrgNameText(e.target.value)}
+                maxLength={200}
+                placeholder="הקלדה חופשית"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <Label>תפקיד</Label>
             <Input
@@ -171,7 +254,23 @@ export function AgentPersonaDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>תיאור מפורט של התפקיד (Persona)</Label>
+            <div className="flex items-center justify-between">
+              <Label>תיאור מפורט של התפקיד (Persona)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleSuggest("role_description")}
+                disabled={suggesting !== null}
+              >
+                {suggesting === "role_description" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span className="ms-1">מילוי אוטומטי</span>
+              </Button>
+            </div>
             <Textarea
               value={draft.role_description}
               onChange={(e) => setDraft({ ...draft, role_description: e.target.value })}
@@ -191,6 +290,7 @@ export function AgentPersonaDialog({
               placeholder="מידע רקע, נהלים, מערכות מוכרות, אילוצים..."
             />
           </div>
+
 
           <div className="space-y-2">
             <Label>כלים</Label>
