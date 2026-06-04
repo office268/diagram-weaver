@@ -85,6 +85,74 @@ export const suggestConversationField = createServerFn({ method: "POST" })
     return { text: text.trim() };
   });
 
+export const pickNextSpeaker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ conversationId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("חסר מפתח LOVABLE_API_KEY");
+
+    const [{ data: conv }, { data: parts }, { data: msgs }] = await Promise.all([
+      (supabase as any)
+        .from("agent_conversations")
+        .select("title, topic")
+        .eq("id", data.conversationId)
+        .maybeSingle(),
+      (supabase as any)
+        .from("agent_conversation_participants")
+        .select("agent_personas:persona_id ( id, name, role_title, role_description )")
+        .eq("conversation_id", data.conversationId),
+      (supabase as any)
+        .from("agent_messages")
+        .select("role, content, persona_id, created_at")
+        .eq("conversation_id", data.conversationId)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const personas = (parts ?? [])
+      .map((p: any) => p.agent_personas)
+      .filter(Boolean) as Array<{ id: string; name: string; role_title: string; role_description: string }>;
+    if (personas.length === 0) throw new Error("אין משתתפים בשיחה");
+
+    const personaById = new Map(personas.map((p) => [p.id, p]));
+    const history = (msgs ?? []).slice(-20).map((m: any) => {
+      if (m.role === "moderator" || !m.persona_id) return `מנחה: ${m.content}`;
+      const p = personaById.get(m.persona_id);
+      return `${p?.name ?? "סוכן"} (${p?.role_title ?? ""}): ${m.content}`;
+    }).join("\n\n");
+
+    const roster = personas.map((p, i) =>
+      `${i + 1}. id=${p.id} | ${p.name} — ${p.role_title}${p.role_description ? `\n   ${p.role_description.slice(0, 200)}` : ""}`,
+    ).join("\n");
+
+    const prompt = `אתה המנחה של שיחת סוכנים לקידום פרויקט מערכות מידע.
+כותרת: ${conv?.title ?? ""}
+נושא: ${conv?.topic ?? ""}
+
+משתתפים:
+${roster}
+
+היסטוריית השיחה האחרונה:
+${history || "(אין הודעות עדיין)"}
+
+בחר את המשתתף הבא שהכי נכון שידבר עכשיו כדי לקדם את הפרויקט — לפי תפקידו, ההקשר, ומה שנאמר עד כה (העדף מי שלא דיבר לאחרונה אם אין סיבה אחרת). החזר אך ורק את ה-id של המשתתף שבחרת, ללא טקסט נוסף.`;
+
+    const gateway = createLovableAiGatewayProvider(key);
+    const { text } = await generateText({
+      model: gateway("google/gemini-3-flash-preview"),
+      prompt,
+    });
+    const raw = text.trim();
+    const match = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    const chosen = match?.[0];
+    const valid = chosen && personaById.has(chosen) ? chosen : personas[0].id;
+    return { personaId: valid };
+  });
+
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase
