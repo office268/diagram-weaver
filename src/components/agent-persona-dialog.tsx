@@ -64,15 +64,14 @@ export function AgentPersonaDialog({
   const upsertFn = useServerFn(upsertAgentPersona);
   const suggestFn = useServerFn(suggestPersonaField);
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
-  const [orgIdText, setOrgIdText] = useState("");
   const [suggesting, setSuggesting] = useState<"name" | "role_description" | "knowledge" | null>(null);
 
   useEffect(() => {
     if (open) {
       setDraft(initial ?? EMPTY);
-      setOrgIdText("");
     }
   }, [open, initial]);
+
 
   async function handleSuggest(field: "name" | "role_description" | "knowledge") {
     try {
