@@ -112,7 +112,17 @@ function AgentConversationsPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-8 space-y-6">
       <AppBreadcrumb items={[{ label: "הגדרות", to: "/settings" }, { label: "שיחות סוכנים" }]} />
 
-      <div className="flex items-center justify-between">
+      <section className="space-y-2">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">משתמשי מערכת (סוכני AI)</h2>
+          <p className="text-xs text-muted-foreground">
+            הקמה וניהול של סוכני AI עם פרסונה, ידע וכלים.
+          </p>
+        </div>
+        <AgentPersonasCard />
+      </section>
+
+      <div className="flex items-center justify-between pt-4">
         <h1 className="text-2xl font-semibold tracking-tight">שיחות סוכנים</h1>
         <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 ml-1" />
@@ -157,15 +167,7 @@ function AgentConversationsPage() {
         </ul>
       )}
 
-      <section className="space-y-2 pt-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">משתמשי מערכת (סוכני AI)</h2>
-          <p className="text-xs text-muted-foreground">
-            הקמה וניהול של סוכני AI עם פרסונה, ידע וכלים.
-          </p>
-        </div>
-        <AgentPersonasCard />
-      </section>
+
 
 
       <Dialog open={open} onOpenChange={setOpen}>
