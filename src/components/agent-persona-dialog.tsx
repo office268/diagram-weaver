@@ -95,44 +95,13 @@ export function AgentPersonaDialog({
   }
 
 
-  const { data: orgs } = useQuery({
-    queryKey: ["my-organizations-for-personas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, identifier")
-        .order("name");
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    },
-    enabled: open,
-  });
-
-  // Populate the ח.פ. text field when editing, based on current org_id
-  useEffect(() => {
-    if (!open) return;
-    if (!draft.org_id) return;
-    const found = (orgs ?? []).find((o) => o.id === draft.org_id);
-    if (found && found.identifier && !orgIdText) {
-      setOrgIdText(found.identifier);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, orgs, draft.org_id]);
-
   const save = useMutation({
     mutationFn: async () => {
-      const trimmedId = orgIdText.trim();
-      let finalOrgId: string | null = draft.org_id;
-      if (trimmedId) {
-        const match = (orgs ?? []).find((o) => (o.identifier ?? "").trim() === trimmedId);
-        if (!match) throw new Error("לא נמצא ארגון עם ח.פ. זה");
-        finalOrgId = match.id;
-      }
       await upsertFn({
         data: {
           id: draft.id,
           name: draft.name.trim(),
-          org_id: finalOrgId,
+          org_id: draft.org_id,
           role_title: draft.role_title.trim(),
           role_description: draft.role_description.trim(),
           knowledge: draft.knowledge.trim(),
@@ -141,6 +110,7 @@ export function AgentPersonaDialog({
         },
       });
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agent-personas"] });
       toast.success("נשמר");
