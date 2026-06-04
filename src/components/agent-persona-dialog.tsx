@@ -112,12 +112,6 @@ export function AgentPersonaDialog({
   });
 
 
-  function toggleTool(id: string) {
-    setDraft((d) => ({
-      ...d,
-      tools: d.tools.includes(id) ? d.tools.filter((t) => t !== id) : [...d.tools, id],
-    }));
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
