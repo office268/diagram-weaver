@@ -208,11 +208,47 @@ function AgentConversationsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>כותרת *</Label>
+              <div className="flex items-center justify-between">
+                <Label>כותרת *</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => handleSuggest("title")}
+                  disabled={suggesting !== null}
+                  title="הצע כותרת"
+                >
+                  {suggesting === "title" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="mr-1">הצע</span>
+                </Button>
+              </div>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
             <div className="space-y-1.5">
-              <Label>נושא הפתיחה (יישלח כהודעת מנחה ראשונה)</Label>
+              <div className="flex items-center justify-between">
+                <Label>נושא הפתיחה (יישלח כהודעת מנחה ראשונה)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => handleSuggest("topic")}
+                  disabled={suggesting !== null}
+                  title="הצע נושא"
+                >
+                  {suggesting === "topic" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="mr-1">הצע</span>
+                </Button>
+              </div>
               <Textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
