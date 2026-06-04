@@ -21,14 +21,7 @@ import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions"
 
 
 
-const AVAILABLE_TOOLS: { id: string; label: string }[] = [
-  { id: "org_knowledge", label: "ידע ארגוני" },
-  { id: "project_documents", label: "מסמכי פרויקט" },
-  { id: "web_search", label: "חיפוש באינטרנט" },
-  { id: "create_spec", label: "יצירת מסמך אפיון" },
-];
-
-const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
+const DEFAULT_COLOR = "#6366f1";
 
 export interface PersonaDraft {
   id?: string;
