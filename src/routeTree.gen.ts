@@ -38,9 +38,11 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedAgentConversationsIndexRouteImport } from './routes/_authenticated/agent-conversations.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedAgentConversationsIdRouteImport } from './routes/_authenticated/agent-conversations.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
@@ -191,6 +193,12 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAgentConversationsIndexRoute =
+  AuthenticatedAgentConversationsIndexRouteImport.update({
+    id: '/agent-conversations/',
+    path: '/agent-conversations/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -206,6 +214,12 @@ const AuthenticatedChatThreadIdRoute =
   AuthenticatedChatThreadIdRouteImport.update({
     id: '/chat/$threadId',
     path: '/chat/$threadId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAgentConversationsIdRoute =
+  AuthenticatedAgentConversationsIdRouteImport.update({
+    id: '/agent-conversations/$id',
+    path: '/agent-conversations/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiPublicPaymentsWebhookRoute =
@@ -243,9 +257,11 @@ export interface FileRoutesByFullPath {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -277,9 +293,11 @@ export interface FileRoutesByTo {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -313,9 +331,11 @@ export interface FileRoutesById {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/_authenticated/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -349,9 +369,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/agent-conversations/$id'
     | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
+    | '/agent-conversations/'
     | '/projects/'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -383,9 +405,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/agent-conversations/$id'
     | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
+    | '/agent-conversations'
     | '/projects'
     | '/api/public/payments/webhook'
   id:
@@ -418,9 +442,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/_authenticated/agent-conversations/$id'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/agent-conversations/'
     | '/_authenticated/projects/'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -654,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agent-conversations/': {
+      id: '/_authenticated/agent-conversations/'
+      path: '/agent-conversations'
+      fullPath: '/agent-conversations/'
+      preLoaderRoute: typeof AuthenticatedAgentConversationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/projects/$projectId'
@@ -675,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agent-conversations/$id': {
+      id: '/_authenticated/agent-conversations/$id'
+      path: '/agent-conversations/$id'
+      fullPath: '/agent-conversations/$id'
+      preLoaderRoute: typeof AuthenticatedAgentConversationsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -694,9 +734,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSignupRequestsRoute: typeof AuthenticatedSignupRequestsRoute
+  AuthenticatedAgentConversationsIdRoute: typeof AuthenticatedAgentConversationsIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedAgentConversationsIndexRoute: typeof AuthenticatedAgentConversationsIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -709,9 +751,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSignupRequestsRoute: AuthenticatedSignupRequestsRoute,
+  AuthenticatedAgentConversationsIdRoute:
+    AuthenticatedAgentConversationsIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedAgentConversationsIndexRoute:
+    AuthenticatedAgentConversationsIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
