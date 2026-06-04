@@ -18,6 +18,7 @@ import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   getAgentConversation,
   addModeratorMessage,
+  pickNextSpeaker,
 } from "@/lib/agents.functions";
 
 export const Route = createFileRoute("/_authenticated/agent-conversations/$id")({
@@ -47,10 +48,12 @@ function AgentConversationPage() {
   const qc = useQueryClient();
   const getFn = useServerFn(getAgentConversation);
   const modFn = useServerFn(addModeratorMessage);
+  const pickFn = useServerFn(pickNextSpeaker);
 
   const [speakerId, setSpeakerId] = useState<string>("");
   const [moderatorMsg, setModeratorMsg] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [picking, setPicking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -249,6 +252,30 @@ function AgentConversationPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            title="המנחה יבחר את הדובר הבא"
+            onClick={async () => {
+              setPicking(true);
+              try {
+                const { personaId } = await pickFn({ data: { conversationId: id } });
+                setSpeakerId(personaId);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "בחירה נכשלה");
+              } finally {
+                setPicking(false);
+              }
+            }}
+            disabled={picking || generating || !participants.length}
+          >
+            {picking ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+          </Button>
           <Button onClick={generateTurn} disabled={!speakerId || generating}>
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin ml-1" />
