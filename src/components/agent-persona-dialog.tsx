@@ -175,66 +175,30 @@ export function AgentPersonaDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>שם *</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  maxLength={120}
-                  placeholder="לדוגמה: רינת"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleSuggest("name")}
-                  disabled={suggesting !== null}
-                  title="הצע שם באמצעות AI"
-                >
-                  {suggesting === "name" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>שיוך ארגוני</Label>
-              <Select
-                value={draft.org_id ?? "__none__"}
-                onValueChange={(v) => {
-                  const id = v === "__none__" ? null : v;
-                  setDraft({ ...draft, org_id: id });
-                  const found = (orgs ?? []).find((o) => o.id === id);
-                  setOrgIdText(found?.identifier ?? "");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="ללא" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">ללא</SelectItem>
-                  {(orgs ?? []).map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-1.5">
-            <Label>מזהה ארגון (ח.פ.)</Label>
-            <Input
-              value={orgIdText}
-              onChange={(e) => setOrgIdText(e.target.value)}
-              placeholder="לדוגמה: 514712345"
-              dir="ltr"
-            />
+            <Label>שם *</Label>
+            <div className="flex gap-2">
+              <Input
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                maxLength={120}
+                placeholder="לדוגמה: רינת"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => handleSuggest("name")}
+                disabled={suggesting !== null}
+                title="הצע שם באמצעות AI"
+              >
+                {suggesting === "name" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-1.5">
