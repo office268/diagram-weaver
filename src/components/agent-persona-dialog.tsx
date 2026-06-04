@@ -41,7 +41,7 @@ const EMPTY: PersonaDraft = {
   role_description: "",
   knowledge: "",
   tools: [],
-  color: COLORS[0],
+  color: DEFAULT_COLOR,
 };
 
 export function AgentPersonaDialog({
