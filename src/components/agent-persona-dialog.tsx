@@ -73,7 +73,7 @@ export function AgentPersonaDialog({
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
   const [orgIdText, setOrgIdText] = useState("");
   const [orgNameText, setOrgNameText] = useState("");
-  const [suggesting, setSuggesting] = useState<"name" | "role_description" | null>(null);
+  const [suggesting, setSuggesting] = useState<"name" | "role_description" | "knowledge" | null>(null);
 
   useEffect(() => {
     if (open) {
