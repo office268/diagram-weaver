@@ -82,6 +82,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       isAdmin: false,
     };
   },
+  // App metadata + site texts barely change; cache aggressively.
+  staleTime: 10 * 60_000,
+  gcTime: 30 * 60_000,
   head: ({ loaderData }) => {
     const m = loaderData?.meta;
     const title = m?.title || "סוכן ניתוח מערכות — תרשימים מתוך טקסט";
