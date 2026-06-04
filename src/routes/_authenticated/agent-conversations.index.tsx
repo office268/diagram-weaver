@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { AgentPersonasCard } from "@/components/agent-personas-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   listAgentConversations,
