@@ -147,13 +147,14 @@ function AuthBridge() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Only invalidate on real auth transitions — ignore TOKEN_REFRESHED
-      // and INITIAL_SESSION which fire repeatedly and caused a redirect loop.
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        router.invalidate();
-        queryClient.invalidateQueries();
-      }
+      // Only invalidate on real auth transitions — ignore TOKEN_REFRESHED,
+      // INITIAL_SESSION, and USER_UPDATED which fire repeatedly.
+      // router.invalidate() re-runs loaders which already prime the query
+      // cache via ensureQueryData, so queryClient.invalidateQueries() is
+      // redundant and was causing double-fetches across the app.
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        queryClient.clear();
+        router.invalidate();
         import("@/lib/login-log.functions")
           .then(({ recordLoginEvent }) =>
             recordLoginEvent({
@@ -172,6 +173,7 @@ function AuthBridge() {
   }, [router, queryClient]);
   return null;
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
