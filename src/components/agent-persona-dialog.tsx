@@ -83,7 +83,7 @@ export function AgentPersonaDialog({
     }
   }, [open, initial]);
 
-  async function handleSuggest(field: "name" | "role_description") {
+  async function handleSuggest(field: "name" | "role_description" | "knowledge") {
     try {
       setSuggesting(field);
       const { text } = await suggestFn({
