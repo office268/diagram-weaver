@@ -177,17 +177,27 @@ function AuthBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const loaderData = Route.useLoaderData();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthBridge />
-      <RootProviders />
+      <SiteTextsBridge initialTexts={loaderData?.siteTexts ?? {}}>
+        <Outlet />
+      </SiteTextsBridge>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
 
-function RootProviders() {
-  const loaderData = Route.useLoaderData();
+// Isolates useAuth + is-admin query so auth changes don't re-render
+// the Outlet's parent unnecessarily. children is a stable prop.
+function SiteTextsBridge({
+  initialTexts,
+  children,
+}: {
+  initialTexts: Record<string, string>;
+  children: React.ReactNode;
+}) {
   const { user } = useAuth();
   const isAdminFn = useServerFn(getIsAdmin);
   const { data: adminData } = useQuery({
@@ -198,11 +208,10 @@ function RootProviders() {
   });
   return (
     <SiteTextsProvider
-      initialTexts={loaderData?.siteTexts ?? {}}
+      initialTexts={initialTexts}
       isAdmin={adminData?.isAdmin ?? false}
     >
-      
-      <Outlet />
+      {children}
     </SiteTextsProvider>
   );
 }
