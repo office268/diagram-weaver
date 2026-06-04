@@ -1,7 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, FileText, FolderKanban } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import { UserMenu } from "@/components/user-menu";
 
 interface ItemProps {
   active: boolean;
@@ -30,7 +28,6 @@ function ItemInner({ active, icon, label }: ItemProps) {
 
 export function MobileBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { user } = useAuth();
 
   const isHome = pathname.startsWith("/dashboard");
   const isDocuments = pathname.startsWith("/documents");
@@ -59,11 +56,6 @@ export function MobileBottomNav() {
           label="המסמכים שלי"
         />
       </Link>
-      {user && (
-        <div className="flex flex-1 items-center justify-center py-1.5">
-          <UserMenu user={user} />
-        </div>
-      )}
     </nav>
   );
 }
