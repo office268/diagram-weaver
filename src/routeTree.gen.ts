@@ -28,6 +28,7 @@ import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
 import { Route as ApiChatAttachRouteImport } from './routes/api/chat-attach'
+import { Route as ApiAgentTurnRouteImport } from './routes/api/agent-turn'
 import { Route as AuthenticatedSignupRequestsRouteImport } from './routes/_authenticated/signup-requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
@@ -136,6 +137,11 @@ const ApiChatAttachRoute = ApiChatAttachRouteImport.update({
   path: '/api/chat-attach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAgentTurnRoute = ApiAgentTurnRouteImport.update({
+  id: '/api/agent-turn',
+  path: '/api/agent-turn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSignupRequestsRoute =
   AuthenticatedSignupRequestsRouteImport.update({
     id: '/signup-requests',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -330,6 +339,7 @@ export interface FileRouteTypes {
     | '/projects-management'
     | '/settings'
     | '/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/projects-management'
     | '/settings'
     | '/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects-management'
     | '/_authenticated/settings'
     | '/_authenticated/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiAgentTurnRoute: typeof ApiAgentTurnRoute
   ApiChatAttachRoute: typeof ApiChatAttachRoute
   ApiChatMessageRoute: typeof ApiChatMessageRoute
   ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
@@ -571,6 +584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatAttachRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/agent-turn': {
+      id: '/api/agent-turn'
+      path: '/api/agent-turn'
+      fullPath: '/api/agent-turn'
+      preLoaderRoute: typeof ApiAgentTurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/signup-requests': {
       id: '/_authenticated/signup-requests'
       path: '/signup-requests'
@@ -710,6 +730,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiAgentTurnRoute: ApiAgentTurnRoute,
   ApiChatAttachRoute: ApiChatAttachRoute,
   ApiChatMessageRoute: ApiChatMessageRoute,
   ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
