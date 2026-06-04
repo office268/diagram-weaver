@@ -77,7 +77,7 @@ export function AgentPersonaDialog({
   useEffect(() => {
     if (open) {
       setDraft(initial ?? EMPTY);
-      setOrgIdText(initial?.org_id ?? "");
+      setOrgIdText("");
     }
   }, [open, initial]);
 
