@@ -125,12 +125,6 @@ function SettingsPage() {
 
       {isAdmin ? (
         <>
-          <SettingsSection
-            title="משתמשי מערכת (סוכני AI)"
-            description="הקמה וניהול של סוכני AI עם פרסונה, ידע וכלים. האדמין מנהל ביניהם שיחות מתוזמרות."
-          >
-            <AgentPersonasCard />
-          </SettingsSection>
 
           <SettingsSection title="לוג התחברויות" description="כל ניסיונות ההתחברות לאתר.">
             <LoginLogCard />
