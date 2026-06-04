@@ -69,11 +69,40 @@ export function AgentPersonaDialog({
 }) {
   const qc = useQueryClient();
   const upsertFn = useServerFn(upsertAgentPersona);
+  const suggestFn = useServerFn(suggestPersonaField);
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
+  const [orgIdText, setOrgIdText] = useState("");
+  const [orgNameText, setOrgNameText] = useState("");
+  const [suggesting, setSuggesting] = useState<"name" | "role_description" | null>(null);
 
   useEffect(() => {
-    if (open) setDraft(initial ?? EMPTY);
+    if (open) {
+      setDraft(initial ?? EMPTY);
+      setOrgIdText(initial?.org_id ?? "");
+      setOrgNameText("");
+    }
   }, [open, initial]);
+
+  async function handleSuggest(field: "name" | "role_description") {
+    try {
+      setSuggesting(field);
+      const { text } = await suggestFn({
+        data: {
+          field,
+          name: draft.name,
+          role_title: draft.role_title,
+          role_description: draft.role_description,
+          org_name: orgNameText,
+        },
+      });
+      if (text) setDraft((d) => ({ ...d, [field]: text }));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "יצירה נכשלה");
+    } finally {
+      setSuggesting(null);
+    }
+  }
+
 
   const { data: orgs } = useQuery({
     queryKey: ["my-organizations-for-personas"],
