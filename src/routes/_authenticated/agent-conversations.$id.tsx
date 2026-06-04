@@ -252,6 +252,30 @@ function AgentConversationPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            title="המנחה יבחר את הדובר הבא"
+            onClick={async () => {
+              setPicking(true);
+              try {
+                const { personaId } = await pickFn({ data: { conversationId: id } });
+                setSpeakerId(personaId);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "בחירה נכשלה");
+              } finally {
+                setPicking(false);
+              }
+            }}
+            disabled={picking || generating || !participants.length}
+          >
+            {picking ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+          </Button>
           <Button onClick={generateTurn} disabled={!speakerId || generating}>
             {generating ? (
               <Loader2 className="h-4 w-4 animate-spin ml-1" />
