@@ -227,40 +227,6 @@ export function AgentPersonaDialog({
             />
           </div>
 
-
-          <div className="space-y-2">
-            <Label>כלים</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {AVAILABLE_TOOLS.map((t) => (
-                <label
-                  key={t.id}
-                  className="flex items-center gap-2 rounded-md border border-border p-2 text-sm cursor-pointer hover:bg-accent"
-                >
-                  <Checkbox
-                    checked={draft.tools.includes(t.id)}
-                    onCheckedChange={() => toggleTool(t.id)}
-                  />
-                  <span>{t.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>צבע</Label>
-            <div className="flex flex-wrap gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setDraft({ ...draft, color: c })}
-                  className={`h-7 w-7 rounded-full border-2 ${draft.color === c ? "border-foreground" : "border-transparent"}`}
-                  style={{ backgroundColor: c }}
-                  aria-label={`צבע ${c}`}
-                />
-              ))}
-            </div>
-          </div>
         </div>
 
         <DialogFooter>
