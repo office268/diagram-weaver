@@ -117,13 +117,23 @@ export function AgentPersonaDialog({
     enabled: open,
   });
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   const save = useMutation({
     mutationFn: async () => {
+      const trimmedId = orgIdText.trim();
+      let finalOrgId: string | null = draft.org_id;
+      if (trimmedId) {
+        if (!UUID_RE.test(trimmedId)) throw new Error("מזהה ארגון לא תקין (UUID)");
+        finalOrgId = trimmedId;
+      } else if (orgNameText.trim() && !draft.org_id) {
+        finalOrgId = null;
+      }
       await upsertFn({
         data: {
           id: draft.id,
           name: draft.name.trim(),
-          org_id: draft.org_id,
+          org_id: finalOrgId,
           role_title: draft.role_title.trim(),
           role_description: draft.role_description.trim(),
           knowledge: draft.knowledge.trim(),
@@ -139,6 +149,7 @@ export function AgentPersonaDialog({
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "שמירה נכשלה"),
   });
+
 
   function toggleTool(id: string) {
     setDraft((d) => ({
