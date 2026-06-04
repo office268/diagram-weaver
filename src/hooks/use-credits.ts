@@ -24,7 +24,7 @@ export function useCredits() {
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel(`credits-${userId}-${Math.random().toString(36).slice(2)}`)
+      .channel(`credits-${userId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "credits", filter: `user_id=eq.${userId}` },
