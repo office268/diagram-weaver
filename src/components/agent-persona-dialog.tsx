@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Sparkles } from "lucide-react";
@@ -17,15 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions";
-import { supabase } from "@/integrations/supabase/client";
+
 
 
 const AVAILABLE_TOOLS: { id: string; label: string }[] = [
@@ -71,15 +64,14 @@ export function AgentPersonaDialog({
   const upsertFn = useServerFn(upsertAgentPersona);
   const suggestFn = useServerFn(suggestPersonaField);
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
-  const [orgIdText, setOrgIdText] = useState("");
   const [suggesting, setSuggesting] = useState<"name" | "role_description" | "knowledge" | null>(null);
 
   useEffect(() => {
     if (open) {
       setDraft(initial ?? EMPTY);
-      setOrgIdText("");
     }
   }, [open, initial]);
+
 
   async function handleSuggest(field: "name" | "role_description" | "knowledge") {
     try {
@@ -102,44 +94,13 @@ export function AgentPersonaDialog({
   }
 
 
-  const { data: orgs } = useQuery({
-    queryKey: ["my-organizations-for-personas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, identifier")
-        .order("name");
-      if (error) throw new Error(error.message);
-      return data ?? [];
-    },
-    enabled: open,
-  });
-
-  // Populate the ח.פ. text field when editing, based on current org_id
-  useEffect(() => {
-    if (!open) return;
-    if (!draft.org_id) return;
-    const found = (orgs ?? []).find((o) => o.id === draft.org_id);
-    if (found && found.identifier && !orgIdText) {
-      setOrgIdText(found.identifier);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, orgs, draft.org_id]);
-
   const save = useMutation({
     mutationFn: async () => {
-      const trimmedId = orgIdText.trim();
-      let finalOrgId: string | null = draft.org_id;
-      if (trimmedId) {
-        const match = (orgs ?? []).find((o) => (o.identifier ?? "").trim() === trimmedId);
-        if (!match) throw new Error("לא נמצא ארגון עם ח.פ. זה");
-        finalOrgId = match.id;
-      }
       await upsertFn({
         data: {
           id: draft.id,
           name: draft.name.trim(),
-          org_id: finalOrgId,
+          org_id: draft.org_id,
           role_title: draft.role_title.trim(),
           role_description: draft.role_description.trim(),
           knowledge: draft.knowledge.trim(),
@@ -148,6 +109,7 @@ export function AgentPersonaDialog({
         },
       });
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agent-personas"] });
       toast.success("נשמר");
@@ -175,66 +137,30 @@ export function AgentPersonaDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>שם *</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={draft.name}
-                  onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                  maxLength={120}
-                  placeholder="לדוגמה: רינת"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleSuggest("name")}
-                  disabled={suggesting !== null}
-                  title="הצע שם באמצעות AI"
-                >
-                  {suggesting === "name" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>שיוך ארגוני</Label>
-              <Select
-                value={draft.org_id ?? "__none__"}
-                onValueChange={(v) => {
-                  const id = v === "__none__" ? null : v;
-                  setDraft({ ...draft, org_id: id });
-                  const found = (orgs ?? []).find((o) => o.id === id);
-                  setOrgIdText(found?.identifier ?? "");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="ללא" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">ללא</SelectItem>
-                  {(orgs ?? []).map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="space-y-1.5">
-            <Label>מזהה ארגון (ח.פ.)</Label>
-            <Input
-              value={orgIdText}
-              onChange={(e) => setOrgIdText(e.target.value)}
-              placeholder="לדוגמה: 514712345"
-              dir="ltr"
-            />
+            <Label>שם *</Label>
+            <div className="flex gap-2">
+              <Input
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                maxLength={120}
+                placeholder="לדוגמה: רינת"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => handleSuggest("name")}
+                disabled={suggesting !== null}
+                title="הצע שם באמצעות AI"
+              >
+                {suggesting === "name" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-1.5">
