@@ -244,7 +244,7 @@ function AgentConversationPage() {
             <SelectContent>
               {participants.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
-                  {p.name}
+                  {p.role_title ? `${p.name} — ${p.role_title}` : p.name}
                 </SelectItem>
               ))}
             </SelectContent>
