@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 
 const SuggestInput = z.object({
-  field: z.enum(["name", "role_description"]),
+  field: z.enum(["name", "role_description", "knowledge"]),
   name: z.string().trim().max(120).default(""),
   role_title: z.string().trim().max(200).default(""),
   role_description: z.string().trim().max(10000).default(""),
