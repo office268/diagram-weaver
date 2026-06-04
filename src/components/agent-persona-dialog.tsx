@@ -24,8 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { upsertAgentPersona } from "@/lib/agents.functions";
+import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions";
 import { supabase } from "@/integrations/supabase/client";
+
 
 const AVAILABLE_TOOLS: { id: string; label: string }[] = [
   { id: "org_knowledge", label: "ידע ארגוני" },
