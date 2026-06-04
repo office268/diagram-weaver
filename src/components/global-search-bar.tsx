@@ -103,18 +103,26 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: specsData, isLoading: l1 } = useQuery({
     queryKey: ["specs-all"],
     queryFn: () => listSpecsFn(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
   const { data: diagramsData, isLoading: l2 } = useQuery({
     queryKey: ["diagrams-all"],
     queryFn: () => listDiagramsFn(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
   const { data: uploadsData, isLoading: l3 } = useQuery({
     queryKey: ["uploaded-documents", "all"],
     queryFn: () => listDocumentsFn({ data: {} }),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
   const { data: projectsData, isLoading: l4 } = useQuery({
     queryKey: ["projects"],
     queryFn: () => listProjectsFn(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const isLoading = l1 || l2 || l3 || l4;
