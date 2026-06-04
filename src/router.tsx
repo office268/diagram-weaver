@@ -20,7 +20,14 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreloadStaleTime: 30_000,
+    // Cache loader results across navigations — root loader (app metadata +
+    // site texts) no longer re-runs on every Link click.
+    defaultStaleTime: 5 * 60_000,
+    defaultPreloadStaleTime: 5 * 60_000,
+    defaultGcTime: 10 * 60_000,
+    // Only preload when the user actually intends to navigate (click/touch),
+    // not on every hover. Cuts preload storms on dense link lists.
+    defaultPreload: false,
   });
 
   return router;
