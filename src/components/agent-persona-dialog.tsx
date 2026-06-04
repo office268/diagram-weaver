@@ -72,14 +72,12 @@ export function AgentPersonaDialog({
   const suggestFn = useServerFn(suggestPersonaField);
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
   const [orgIdText, setOrgIdText] = useState("");
-  const [orgNameText, setOrgNameText] = useState("");
   const [suggesting, setSuggesting] = useState<"name" | "role_description" | "knowledge" | null>(null);
 
   useEffect(() => {
     if (open) {
       setDraft(initial ?? EMPTY);
       setOrgIdText(initial?.org_id ?? "");
-      setOrgNameText("");
     }
   }, [open, initial]);
 
