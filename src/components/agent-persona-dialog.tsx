@@ -228,11 +228,11 @@ export function AgentPersonaDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>מזהה ארגון (UUID)</Label>
+            <Label>מזהה ארגון (ח.פ.)</Label>
             <Input
               value={orgIdText}
               onChange={(e) => setOrgIdText(e.target.value)}
-              placeholder="00000000-0000-0000-0000-000000000000"
+              placeholder="לדוגמה: 514712345"
               dir="ltr"
             />
           </div>
