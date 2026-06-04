@@ -16,19 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions";
 
 
 
-const AVAILABLE_TOOLS: { id: string; label: string }[] = [
-  { id: "org_knowledge", label: "ידע ארגוני" },
-  { id: "project_documents", label: "מסמכי פרויקט" },
-  { id: "web_search", label: "חיפוש באינטרנט" },
-  { id: "create_spec", label: "יצירת מסמך אפיון" },
-];
-
-const COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"];
+const DEFAULT_COLOR = "#6366f1";
 
 export interface PersonaDraft {
   id?: string;
@@ -48,7 +41,7 @@ const EMPTY: PersonaDraft = {
   role_description: "",
   knowledge: "",
   tools: [],
-  color: COLORS[0],
+  color: DEFAULT_COLOR,
 };
 
 export function AgentPersonaDialog({
@@ -119,12 +112,6 @@ export function AgentPersonaDialog({
   });
 
 
-  function toggleTool(id: string) {
-    setDraft((d) => ({
-      ...d,
-      tools: d.tools.includes(id) ? d.tools.filter((t) => t !== id) : [...d.tools, id],
-    }));
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,40 +214,6 @@ export function AgentPersonaDialog({
             />
           </div>
 
-
-          <div className="space-y-2">
-            <Label>כלים</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {AVAILABLE_TOOLS.map((t) => (
-                <label
-                  key={t.id}
-                  className="flex items-center gap-2 rounded-md border border-border p-2 text-sm cursor-pointer hover:bg-accent"
-                >
-                  <Checkbox
-                    checked={draft.tools.includes(t.id)}
-                    onCheckedChange={() => toggleTool(t.id)}
-                  />
-                  <span>{t.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>צבע</Label>
-            <div className="flex flex-wrap gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setDraft({ ...draft, color: c })}
-                  className={`h-7 w-7 rounded-full border-2 ${draft.color === c ? "border-foreground" : "border-transparent"}`}
-                  style={{ backgroundColor: c }}
-                  aria-label={`צבע ${c}`}
-                />
-              ))}
-            </div>
-          </div>
         </div>
 
         <DialogFooter>
