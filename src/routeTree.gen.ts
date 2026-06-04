@@ -28,6 +28,7 @@ import { Route as ApiGenerateSpecRouteImport } from './routes/api/generate-spec'
 import { Route as ApiDeleteDocumentRouteImport } from './routes/api/delete-document'
 import { Route as ApiChatMessageRouteImport } from './routes/api/chat-message'
 import { Route as ApiChatAttachRouteImport } from './routes/api/chat-attach'
+import { Route as ApiAgentTurnRouteImport } from './routes/api/agent-turn'
 import { Route as AuthenticatedSignupRequestsRouteImport } from './routes/_authenticated/signup-requests'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
@@ -37,9 +38,11 @@ import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedAgentConversationsIndexRouteImport } from './routes/_authenticated/agent-conversations.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
+import { Route as AuthenticatedAgentConversationsIdRouteImport } from './routes/_authenticated/agent-conversations.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
@@ -136,6 +139,11 @@ const ApiChatAttachRoute = ApiChatAttachRouteImport.update({
   path: '/api/chat-attach',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAgentTurnRoute = ApiAgentTurnRouteImport.update({
+  id: '/api/agent-turn',
+  path: '/api/agent-turn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSignupRequestsRoute =
   AuthenticatedSignupRequestsRouteImport.update({
     id: '/signup-requests',
@@ -185,6 +193,12 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAgentConversationsIndexRoute =
+  AuthenticatedAgentConversationsIndexRouteImport.update({
+    id: '/agent-conversations/',
+    path: '/agent-conversations/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -200,6 +214,12 @@ const AuthenticatedChatThreadIdRoute =
   AuthenticatedChatThreadIdRouteImport.update({
     id: '/chat/$threadId',
     path: '/chat/$threadId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAgentConversationsIdRoute =
+  AuthenticatedAgentConversationsIdRouteImport.update({
+    id: '/agent-conversations/$id',
+    path: '/agent-conversations/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const ApiPublicPaymentsWebhookRoute =
@@ -227,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -236,9 +257,11 @@ export interface FileRoutesByFullPath {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -260,6 +283,7 @@ export interface FileRoutesByTo {
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -269,9 +293,11 @@ export interface FileRoutesByTo {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -295,6 +321,7 @@ export interface FileRoutesById {
   '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/signup-requests': typeof AuthenticatedSignupRequestsRoute
+  '/api/agent-turn': typeof ApiAgentTurnRoute
   '/api/chat-attach': typeof ApiChatAttachRoute
   '/api/chat-message': typeof ApiChatMessageRoute
   '/api/delete-document': typeof ApiDeleteDocumentRoute
@@ -304,9 +331,11 @@ export interface FileRoutesById {
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
+  '/_authenticated/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -330,6 +359,7 @@ export interface FileRouteTypes {
     | '/projects-management'
     | '/settings'
     | '/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -339,9 +369,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/agent-conversations/$id'
     | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
+    | '/agent-conversations/'
     | '/projects/'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -363,6 +395,7 @@ export interface FileRouteTypes {
     | '/projects-management'
     | '/settings'
     | '/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -372,9 +405,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/agent-conversations/$id'
     | '/chat/$threadId'
     | '/editor/$id'
     | '/projects/$projectId'
+    | '/agent-conversations'
     | '/projects'
     | '/api/public/payments/webhook'
   id:
@@ -397,6 +432,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects-management'
     | '/_authenticated/settings'
     | '/_authenticated/signup-requests'
+    | '/api/agent-turn'
     | '/api/chat-attach'
     | '/api/chat-message'
     | '/api/delete-document'
@@ -406,9 +442,11 @@ export interface FileRouteTypes {
     | '/api/ingest-document'
     | '/api/review-spec'
     | '/api/upload-document'
+    | '/_authenticated/agent-conversations/$id'
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/agent-conversations/'
     | '/_authenticated/projects/'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -424,6 +462,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiAgentTurnRoute: typeof ApiAgentTurnRoute
   ApiChatAttachRoute: typeof ApiChatAttachRoute
   ApiChatMessageRoute: typeof ApiChatMessageRoute
   ApiDeleteDocumentRoute: typeof ApiDeleteDocumentRoute
@@ -571,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatAttachRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/agent-turn': {
+      id: '/api/agent-turn'
+      path: '/api/agent-turn'
+      fullPath: '/api/agent-turn'
+      preLoaderRoute: typeof ApiAgentTurnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/signup-requests': {
       id: '/_authenticated/signup-requests'
       path: '/signup-requests'
@@ -634,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agent-conversations/': {
+      id: '/_authenticated/agent-conversations/'
+      path: '/agent-conversations'
+      fullPath: '/agent-conversations/'
+      preLoaderRoute: typeof AuthenticatedAgentConversationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/$projectId': {
       id: '/_authenticated/projects/$projectId'
       path: '/projects/$projectId'
@@ -655,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatThreadIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/agent-conversations/$id': {
+      id: '/_authenticated/agent-conversations/$id'
+      path: '/agent-conversations/$id'
+      fullPath: '/agent-conversations/$id'
+      preLoaderRoute: typeof AuthenticatedAgentConversationsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -674,9 +734,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSignupRequestsRoute: typeof AuthenticatedSignupRequestsRoute
+  AuthenticatedAgentConversationsIdRoute: typeof AuthenticatedAgentConversationsIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedAgentConversationsIndexRoute: typeof AuthenticatedAgentConversationsIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -689,9 +751,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSignupRequestsRoute: AuthenticatedSignupRequestsRoute,
+  AuthenticatedAgentConversationsIdRoute:
+    AuthenticatedAgentConversationsIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedAgentConversationsIndexRoute:
+    AuthenticatedAgentConversationsIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
@@ -710,6 +776,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiAgentTurnRoute: ApiAgentTurnRoute,
   ApiChatAttachRoute: ApiChatAttachRoute,
   ApiChatMessageRoute: ApiChatMessageRoute,
   ApiDeleteDocumentRoute: ApiDeleteDocumentRoute,
@@ -724,13 +791,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -14,6 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_conversation_participants: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          persona_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          persona_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          persona_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_conversation_participants_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "agent_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          title: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          persona_id: string | null
+          role: string
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          persona_id?: string | null
+          role?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          persona_id?: string | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_messages_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "agent_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_personas: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          id: string
+          knowledge: string
+          name: string
+          org_id: string | null
+          role_description: string
+          role_title: string
+          tools: Json
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          knowledge?: string
+          name: string
+          org_id?: string | null
+          role_description?: string
+          role_title?: string
+          tools?: Json
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          knowledge?: string
+          name?: string
+          org_id?: string | null
+          role_description?: string
+          role_title?: string
+          tools?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_personas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_settings: {
         Row: {
           business_knowledge: string

@@ -1,0 +1,216 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+async function assertAdmin(supabase: any, userId: string) {
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("רק אדמין יכול לבצע פעולה זו");
+}
+
+// ============ PERSONAS ============
+
+export const listAgentPersonas = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { data, error } = await (supabase as any)
+      .from("agent_personas")
+      .select("*, organizations:org_id ( id, name )")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { personas: data ?? [] };
+  });
+
+const PersonaInput = z.object({
+  id: z.string().uuid().optional(),
+  name: z.string().trim().min(1).max(120),
+  org_id: z.string().uuid().nullable().optional(),
+  role_title: z.string().trim().max(200).default(""),
+  role_description: z.string().trim().max(10000).default(""),
+  knowledge: z.string().trim().max(20000).default(""),
+  tools: z.array(z.string().min(1).max(64)).max(20).default([]),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#6366f1"),
+});
+
+export const upsertAgentPersona = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => PersonaInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const payload = {
+      name: data.name,
+      org_id: data.org_id ?? null,
+      role_title: data.role_title,
+      role_description: data.role_description,
+      knowledge: data.knowledge,
+      tools: data.tools,
+      color: data.color,
+      created_by: userId,
+    };
+    if (data.id) {
+      const { error } = await (supabase as any)
+        .from("agent_personas")
+        .update(payload)
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { id: data.id };
+    }
+    const { data: row, error } = await (supabase as any)
+      .from("agent_personas")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: row.id as string };
+  });
+
+export const deleteAgentPersona = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { error } = await (supabase as any)
+      .from("agent_personas")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ============ CONVERSATIONS ============
+
+export const listAgentConversations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { data, error } = await (supabase as any)
+      .from("agent_conversations")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { conversations: data ?? [] };
+  });
+
+const CreateConvSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  topic: z.string().trim().max(5000).default(""),
+  persona_ids: z.array(z.string().uuid()).min(1).max(20),
+});
+
+export const createAgentConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => CreateConvSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { data: conv, error } = await (supabase as any)
+      .from("agent_conversations")
+      .insert({ title: data.title, topic: data.topic, created_by: userId })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    const rows = data.persona_ids.map((pid) => ({
+      conversation_id: conv.id as string,
+      persona_id: pid,
+    }));
+    const { error: pErr } = await (supabase as any)
+      .from("agent_conversation_participants")
+      .insert(rows);
+    if (pErr) throw new Error(pErr.message);
+    // Seed conversation with topic as a moderator message if provided
+    if (data.topic.trim()) {
+      await (supabase as any).from("agent_messages").insert({
+        conversation_id: conv.id,
+        persona_id: null,
+        role: "moderator",
+        content: data.topic.trim(),
+      });
+    }
+    return { id: conv.id as string };
+  });
+
+export const getAgentConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ conversationId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const [{ data: conv, error: cErr }, { data: parts, error: pErr }, { data: msgs, error: mErr }] =
+      await Promise.all([
+        (supabase as any)
+          .from("agent_conversations")
+          .select("*")
+          .eq("id", data.conversationId)
+          .maybeSingle(),
+        (supabase as any)
+          .from("agent_conversation_participants")
+          .select("persona_id, agent_personas:persona_id ( id, name, role_title, color )")
+          .eq("conversation_id", data.conversationId),
+        (supabase as any)
+          .from("agent_messages")
+          .select("*")
+          .eq("conversation_id", data.conversationId)
+          .order("created_at", { ascending: true }),
+      ]);
+    if (cErr) throw new Error(cErr.message);
+    if (pErr) throw new Error(pErr.message);
+    if (mErr) throw new Error(mErr.message);
+    if (!conv) throw new Error("שיחה לא נמצאה");
+    const participants = (parts ?? []).map((p: any) => p.agent_personas).filter(Boolean);
+    return { conversation: conv, participants, messages: msgs ?? [] };
+  });
+
+export const deleteAgentConversation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ conversationId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { error } = await (supabase as any)
+      .from("agent_conversations")
+      .delete()
+      .eq("id", data.conversationId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const addModeratorMessage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        conversationId: z.string().uuid(),
+        content: z.string().trim().min(1).max(5000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const { error } = await (supabase as any).from("agent_messages").insert({
+      conversation_id: data.conversationId,
+      persona_id: null,
+      role: "moderator",
+      content: data.content,
+    });
+    if (error) throw new Error(error.message);
+    await (supabase as any)
+      .from("agent_conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", data.conversationId);
+    return { ok: true };
+  });
