@@ -90,7 +90,7 @@ export function AgentPersonaDialog({
           name: draft.name,
           role_title: draft.role_title,
           role_description: draft.role_description,
-          org_name: orgNameText,
+          org_name: "",
         },
       });
       if (text) setDraft((d) => ({ ...d, [field]: text }));
@@ -124,8 +124,6 @@ export function AgentPersonaDialog({
       if (trimmedId) {
         if (!UUID_RE.test(trimmedId)) throw new Error("מזהה ארגון לא תקין (UUID)");
         finalOrgId = trimmedId;
-      } else if (orgNameText.trim() && !draft.org_id) {
-        finalOrgId = null;
       }
       await upsertFn({
         data: {
@@ -201,8 +199,6 @@ export function AgentPersonaDialog({
                   const id = v === "__none__" ? null : v;
                   setDraft({ ...draft, org_id: id });
                   setOrgIdText(id ?? "");
-                  const found = (orgs ?? []).find((o) => o.id === id);
-                  if (found) setOrgNameText(found.name);
                 }}
               >
                 <SelectTrigger>
@@ -220,25 +216,14 @@ export function AgentPersonaDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>מזהה ארגון (UUID)</Label>
-              <Input
-                value={orgIdText}
-                onChange={(e) => setOrgIdText(e.target.value)}
-                placeholder="00000000-0000-0000-0000-000000000000"
-                dir="ltr"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>שם הארגון</Label>
-              <Input
-                value={orgNameText}
-                onChange={(e) => setOrgNameText(e.target.value)}
-                maxLength={200}
-                placeholder="הקלדה חופשית"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label>מזהה ארגון (UUID)</Label>
+            <Input
+              value={orgIdText}
+              onChange={(e) => setOrgIdText(e.target.value)}
+              placeholder="00000000-0000-0000-0000-000000000000"
+              dir="ltr"
+            />
           </div>
 
           <div className="space-y-1.5">
