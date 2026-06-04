@@ -73,7 +73,7 @@ export function AgentPersonaDialog({
   const [draft, setDraft] = useState<PersonaDraft>(EMPTY);
   const [orgIdText, setOrgIdText] = useState("");
   const [orgNameText, setOrgNameText] = useState("");
-  const [suggesting, setSuggesting] = useState<"name" | "role_description" | null>(null);
+  const [suggesting, setSuggesting] = useState<"name" | "role_description" | "knowledge" | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -83,7 +83,7 @@ export function AgentPersonaDialog({
     }
   }, [open, initial]);
 
-  async function handleSuggest(field: "name" | "role_description") {
+  async function handleSuggest(field: "name" | "role_description" | "knowledge") {
     try {
       setSuggesting(field);
       const { text } = await suggestFn({
@@ -281,7 +281,23 @@ export function AgentPersonaDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>ידע שעומד לרשותו</Label>
+            <div className="flex items-center justify-between">
+              <Label>ידע שעומד לרשותו</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleSuggest("knowledge")}
+                disabled={suggesting !== null}
+              >
+                {suggesting === "knowledge" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span className="ms-1">מילוי אוטומטי</span>
+              </Button>
+            </div>
             <Textarea
               value={draft.knowledge}
               onChange={(e) => setDraft({ ...draft, knowledge: e.target.value })}

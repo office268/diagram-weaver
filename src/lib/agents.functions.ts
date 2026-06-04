@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 
 const SuggestInput = z.object({
-  field: z.enum(["name", "role_description"]),
+  field: z.enum(["name", "role_description", "knowledge"]),
   name: z.string().trim().max(120).default(""),
   role_title: z.string().trim().max(200).default(""),
   role_description: z.string().trim().max(10000).default(""),
@@ -31,10 +31,14 @@ export const suggestPersonaField = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    const prompt =
-      data.field === "name"
-        ? `הצע שם פרטי ישראלי יחיד (מילה אחת בלבד, ללא הסברים) לסוכן AI עם הפרטים הבאים:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את השם.`
-        : `כתוב תיאור מפורט (Persona) לסוכן AI בעברית: אופי, סגנון תקשורת, אחריות, גישה לבעיות ותחומי מומחיות. 3-6 משפטים. ללא כותרות וללא Markdown.\n\nהקשר:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את התיאור.`;
+    let prompt: string;
+    if (data.field === "name") {
+      prompt = `הצע שם פרטי ישראלי יחיד (מילה אחת בלבד, ללא הסברים) לסוכן AI עם הפרטים הבאים:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את השם.`;
+    } else if (data.field === "role_description") {
+      prompt = `כתוב תיאור מפורט (Persona) לסוכן AI בעברית: אופי, סגנון תקשורת, אחריות, גישה לבעיות ותחומי מומחיות. 3-6 משפטים. ללא כותרות וללא Markdown.\n\nהקשר:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את התיאור.`;
+    } else {
+      prompt = `פרט את הידע והמומחיות שסוכן AI צריך שייעמד לרשותו על מנת לבצע את תפקידו היטב. התייחס לנהלים, מערכות, מונחים מקצועיים, אילוצים עסקיים וכל מידע רקע רלוונטי. 4-8 משפטים בעברית. ללא כותרות וללא Markdown.\n\nהקשר:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את תוכן הידע.`;
+    }
 
     const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
