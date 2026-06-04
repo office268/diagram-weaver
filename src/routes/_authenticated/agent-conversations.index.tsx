@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { AgentPersonasCard } from "@/components/agent-personas-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   listAgentConversations,
@@ -155,6 +156,17 @@ function AgentConversationsPage() {
           ))}
         </ul>
       )}
+
+      <section className="space-y-2 pt-4">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">משתמשי מערכת (סוכני AI)</h2>
+          <p className="text-xs text-muted-foreground">
+            הקמה וניהול של סוכני AI עם פרסונה, ידע וכלים.
+          </p>
+        </div>
+        <AgentPersonasCard />
+      </section>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent dir="rtl" className="max-w-lg max-h-[90vh] overflow-y-auto">

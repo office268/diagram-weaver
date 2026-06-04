@@ -18,7 +18,7 @@ import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboard
 import { AiUsageCard } from "@/components/ai-usage-card";
 import { PromptBoxSettingsCard } from "@/components/prompt-box-settings-card";
 import { OrganizationLogoCard } from "@/components/organization-logo-card";
-import { AgentPersonasCard } from "@/components/agent-personas-card";
+
 import {
   getAiSettings,
   updateBusinessKnowledge,
@@ -125,12 +125,6 @@ function SettingsPage() {
 
       {isAdmin ? (
         <>
-          <SettingsSection
-            title="משתמשי מערכת (סוכני AI)"
-            description="הקמה וניהול של סוכני AI עם פרסונה, ידע וכלים. האדמין מנהל ביניהם שיחות מתוזמרות."
-          >
-            <AgentPersonasCard />
-          </SettingsSection>
 
           <SettingsSection title="לוג התחברויות" description="כל ניסיונות ההתחברות לאתר.">
             <LoginLogCard />
