@@ -31,11 +31,13 @@ import {
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { AgentPersonasCard } from "@/components/agent-personas-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import {
   listAgentConversations,
   listAgentPersonas,
   createAgentConversation,
   deleteAgentConversation,
+  suggestConversationField,
 } from "@/lib/agents.functions";
 
 export const Route = createFileRoute("/_authenticated/agent-conversations/")({
