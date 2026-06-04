@@ -208,7 +208,8 @@ export function AgentPersonaDialog({
                 onValueChange={(v) => {
                   const id = v === "__none__" ? null : v;
                   setDraft({ ...draft, org_id: id });
-                  setOrgIdText(id ?? "");
+                  const found = (orgs ?? []).find((o) => o.id === id);
+                  setOrgIdText(found?.identifier ?? "");
                 }}
               >
                 <SelectTrigger>
