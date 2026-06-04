@@ -53,12 +53,40 @@ function AgentConversationsPage() {
   const listPers = useServerFn(listAgentPersonas);
   const createFn = useServerFn(createAgentConversation);
   const deleteFn = useServerFn(deleteAgentConversation);
+  const suggestFn = useServerFn(suggestConversationField);
+  const { data: currentOrg } = useCurrentOrganization();
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [suggesting, setSuggesting] = useState<"title" | "topic" | null>(null);
   const [toDelete, setToDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const handleSuggest = async (field: "title" | "topic") => {
+    try {
+      setSuggesting(field);
+      const participants = (personas?.personas ?? [])
+        .filter((p: any) => selected.includes(p.id))
+        .map((p: any) => p.role_title ? `${p.name} (${p.role_title})` : p.name);
+      const res = await suggestFn({
+        data: {
+          field,
+          org_name: currentOrg?.name ?? "",
+          org_description: currentOrg?.address ?? "",
+          participants,
+          title: title.trim(),
+          topic: topic.trim(),
+        },
+      });
+      if (field === "title") setTitle(res.text);
+      else setTopic(res.text);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ההצעה נכשלה");
+    } finally {
+      setSuggesting(null);
+    }
+  };
 
   const { data: convs, isLoading } = useQuery({
     queryKey: ["agent-conversations"],
