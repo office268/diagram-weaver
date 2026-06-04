@@ -47,6 +47,44 @@ export const suggestPersonaField = createServerFn({ method: "POST" })
     return { text: text.trim() };
   });
 
+const SuggestConvInput = z.object({
+  field: z.enum(["title", "topic"]),
+  org_name: z.string().trim().max(200).default(""),
+  org_description: z.string().trim().max(2000).default(""),
+  participants: z.array(z.string().trim().max(200)).max(20).default([]),
+  title: z.string().trim().max(200).default(""),
+  topic: z.string().trim().max(5000).default(""),
+});
+
+export const suggestConversationField = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SuggestConvInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("חסר מפתח LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+
+    const ctx = [
+      data.org_name ? `ארגון: ${data.org_name}` : "",
+      data.org_description ? `על הארגון: ${data.org_description}` : "",
+      data.participants.length ? `משתתפים: ${data.participants.join(", ")}` : "",
+      data.title ? `כותרת נוכחית: ${data.title}` : "",
+      data.topic ? `נושא נוכחי: ${data.topic}` : "",
+    ].filter(Boolean).join("\n");
+
+    const prompt = data.field === "title"
+      ? `הצע כותרת קצרה וברורה בעברית (עד 8 מילים) לשיחה/פרויקט עבור הארגון, על בסיס ההקשר. החזר רק את הכותרת, ללא מרכאות וללא הסבר.\n\nהקשר:\n${ctx || "(ללא הקשר)"}`
+      : `הצע נושא פתיחה לשיחת סוכנים בעברית: תאר את מטרת השיחה, השאלות המרכזיות, והתוצאה הרצויה. 2-4 משפטים, ללא כותרות וללא Markdown.\n\nהקשר:\n${ctx || "(ללא הקשר)"}\n\nהחזר רק את התוכן.`;
+
+    const { text } = await generateText({
+      model: gateway("google/gemini-3-flash-preview"),
+      prompt,
+    });
+    return { text: text.trim() };
+  });
+
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase

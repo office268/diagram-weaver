@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, MessagesSquare, Trash2, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, MessagesSquare, Trash2, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,11 +31,13 @@ import {
 import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { AgentPersonasCard } from "@/components/agent-personas-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import {
   listAgentConversations,
   listAgentPersonas,
   createAgentConversation,
   deleteAgentConversation,
+  suggestConversationField,
 } from "@/lib/agents.functions";
 
 export const Route = createFileRoute("/_authenticated/agent-conversations/")({
@@ -51,12 +53,40 @@ function AgentConversationsPage() {
   const listPers = useServerFn(listAgentPersonas);
   const createFn = useServerFn(createAgentConversation);
   const deleteFn = useServerFn(deleteAgentConversation);
+  const suggestFn = useServerFn(suggestConversationField);
+  const { data: currentOrg } = useCurrentOrganization();
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [suggesting, setSuggesting] = useState<"title" | "topic" | null>(null);
   const [toDelete, setToDelete] = useState<{ id: string; title: string } | null>(null);
+
+  const handleSuggest = async (field: "title" | "topic") => {
+    try {
+      setSuggesting(field);
+      const participants = (personas?.personas ?? [])
+        .filter((p: any) => selected.includes(p.id))
+        .map((p: any) => p.role_title ? `${p.name} (${p.role_title})` : p.name);
+      const res = await suggestFn({
+        data: {
+          field,
+          org_name: currentOrg?.name ?? "",
+          org_description: currentOrg?.address ?? "",
+          participants,
+          title: title.trim(),
+          topic: topic.trim(),
+        },
+      });
+      if (field === "title") setTitle(res.text);
+      else setTopic(res.text);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ההצעה נכשלה");
+    } finally {
+      setSuggesting(null);
+    }
+  };
 
   const { data: convs, isLoading } = useQuery({
     queryKey: ["agent-conversations"],
@@ -178,11 +208,47 @@ function AgentConversationsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>כותרת *</Label>
+              <div className="flex items-center justify-between">
+                <Label>כותרת *</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => handleSuggest("title")}
+                  disabled={suggesting !== null}
+                  title="הצע כותרת"
+                >
+                  {suggesting === "title" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="mr-1">הצע</span>
+                </Button>
+              </div>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} />
             </div>
             <div className="space-y-1.5">
-              <Label>נושא הפתיחה (יישלח כהודעת מנחה ראשונה)</Label>
+              <div className="flex items-center justify-between">
+                <Label>נושא הפתיחה (יישלח כהודעת מנחה ראשונה)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={() => handleSuggest("topic")}
+                  disabled={suggesting !== null}
+                  title="הצע נושא"
+                >
+                  {suggesting === "topic" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="mr-1">הצע</span>
+                </Button>
+              </div>
               <Textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
