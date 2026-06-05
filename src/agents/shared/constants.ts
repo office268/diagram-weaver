@@ -1,8 +1,8 @@
 export const SCORE_THRESHOLD = 7;
 export const MAX_ITERATIONS = 3;
 
-// Use the same default model as the existing system; swappable per agent
-export const DEFAULT_AGENT_MODEL = "google/gemini-3-flash-preview" as const;
+// Default reasoning model for all agents. Admin can override via DB setting.
+export const DEFAULT_AGENT_MODEL = "google/gemini-2.5-pro" as const;
 
 export const AGENT_MODELS = {
   requirements:  DEFAULT_AGENT_MODEL,
@@ -10,7 +10,7 @@ export const AGENT_MODELS = {
   dataModel:     DEFAULT_AGENT_MODEL,
   useCases:      DEFAULT_AGENT_MODEL,
   diagrams:      DEFAULT_AGENT_MODEL,
-  review:        "google/gemini-2.5-pro" as const,
+  review:        DEFAULT_AGENT_MODEL,
 } as const;
 
 export const AGENT_TEMPERATURES = {
@@ -21,3 +21,17 @@ export const AGENT_TEMPERATURES = {
   diagrams:      0.1,
   review:        0.2,
 } as const;
+
+// Whitelist of models that admin can select for the agents.
+export const ALLOWED_AGENT_MODELS = [
+  "google/gemini-2.5-pro",
+  "google/gemini-3.1-pro-preview",
+  "google/gemini-3-flash-preview",
+  "google/gemini-2.5-flash",
+  "openai/gpt-5.4",
+  "openai/gpt-5.4-pro",
+  "openai/gpt-5.5",
+  "openai/gpt-5.5-pro",
+] as const;
+
+export type AllowedAgentModel = typeof ALLOWED_AGENT_MODELS[number];

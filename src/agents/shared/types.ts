@@ -9,6 +9,8 @@ export interface AgentContext {
   previousSections?: Partial<SpecOutput>;
   reviewNotes?: string[];
   isRevision: boolean;
+  /** Optional model override selected by admin; overrides AGENT_MODELS defaults. */
+  model?: string;
 }
 
 export interface RequirementsOutput {
