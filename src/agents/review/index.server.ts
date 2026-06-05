@@ -39,23 +39,25 @@ export async function runReviewAgent(
   userPrompt: string,
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
   tracker?: UsageTracker,
+  modelOverride?: string,
 ): Promise<SpecReview> {
   const prompt = [
     "## פרומפט מקורי\n" + userPrompt,
     "## מסמך האפיון\n" + JSON.stringify(spec),
   ].join("\n\n");
 
+  const model = modelOverride ?? AGENT_MODELS.review;
   let text: string;
   try {
     const res = await generateText({
-      model: gateway(AGENT_MODELS.review),
+      model: gateway(model),
       system: REVIEW_SYSTEM,
       prompt,
       maxOutputTokens: 2000,
       temperature: AGENT_TEMPERATURES.review,
     });
     text = res.text;
-    tracker?.track(AGENT_MODELS.review, res.usage);
+    tracker?.track(model, res.usage);
   } catch (err) {
     console.warn("[review-agent] generateText failed, using default review:", err);
     return { score: 8, notes: [] };
