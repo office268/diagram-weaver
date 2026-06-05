@@ -173,6 +173,8 @@ export const Route = createFileRoute("/api/chat-message")({
               cleanUserMsg,
             ].join("\n\n---\n\n");
 
+            const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+            const modelOverride = await loadAgentModelOverride();
             const result = await runOrchestrator({
               userPrompt: combinedPrompt,
               docType: (outputType as DocumentOutputKey) as DocTypeKey,
@@ -181,6 +183,7 @@ export const Route = createFileRoute("/api/chat-message")({
               lovableApiKey: apiKey,
               previousSpec,
               reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
+              modelOverride,
             });
 
             const title = result.spec.title || def.label;

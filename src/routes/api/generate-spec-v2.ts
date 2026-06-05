@@ -60,6 +60,8 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
               // Stream progress tokens so the UI knows work is happening
               enqueue("__PROGRESS__:start\n");
 
+              const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+              const modelOverride = await loadAgentModelOverride();
               const result = await runOrchestrator({
                 userPrompt: body.prompt,
                 docType: body.docType ?? "spec_overview",
@@ -68,6 +70,7 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
                 lovableApiKey: key,
                 previousSpec: body.previousSpec,
                 reviewerNotes: body.reviewerNotes,
+                modelOverride,
               });
 
               console.log(
