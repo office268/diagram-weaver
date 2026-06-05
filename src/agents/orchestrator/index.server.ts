@@ -77,7 +77,7 @@ export async function runOrchestrator(params: {
   let currentSpec = assembleSpec(requirements, architecture, dataModel, useCases, diagrams);
 
   // Step 7: Review
-  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
+  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker, modelOverride);
   let iterations = 1;
 
   // Step 8: Improvement loop
@@ -116,7 +116,7 @@ export async function runOrchestrator(params: {
       currentSpec = mergeUseCases(currentSpec, improvedUC, improvedDiagrams);
     }
 
-    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
+    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker, modelOverride);
     iterations++;
   }
 
