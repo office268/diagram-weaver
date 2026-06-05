@@ -76,6 +76,20 @@ export const Route = createFileRoute("/api/generate-spec")({
             const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
             try {
+              // Load admin-configured model (fallback to default if missing)
+              const { DEFAULT_AGENT_MODEL, ALLOWED_AGENT_MODELS } = await import(
+                "@/agents/shared/constants"
+              );
+              const { data: modelRow } = await (supabaseAdmin as any)
+                .from("ai_model_setting")
+                .select("model")
+                .eq("id", "singleton")
+                .maybeSingle();
+              const candidate = (modelRow?.model as string | undefined) ?? DEFAULT_AGENT_MODEL;
+              const modelOverride = (ALLOWED_AGENT_MODELS as readonly string[]).includes(candidate)
+                ? candidate
+                : DEFAULT_AGENT_MODEL;
+
               const result = await runOrchestrator({
                 userPrompt: sanitizePrompt(body.prompt),
                 docType: (body.docType ?? "spec_overview") as DocTypeKey,
@@ -84,6 +98,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                 lovableApiKey: key,
                 previousSpec: body.previousSpec,
                 reviewerNotes: body.reviewerNotes,
+                modelOverride,
               });
 
               console.log(
