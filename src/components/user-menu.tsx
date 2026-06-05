@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -105,6 +105,12 @@ export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user
               <Link to="/agent-conversations">
                 <MessagesSquare className="ml-2 h-4 w-4" />
                 שיחות סוכנים
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/agents">
+                <Bot className="ml-2 h-4 w-4" />
+                סוכנים
               </Link>
             </DropdownMenuItem>
           </>
