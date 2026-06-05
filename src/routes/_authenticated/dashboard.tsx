@@ -84,14 +84,38 @@ function saveOrder(userId: string | undefined, order: OutputKey[]) {
 
 function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAdmin } = useSiteTexts();
+  const qc = useQueryClient();
   const createFn = useServerFn(createChatThread);
+  const getOrderFn = useServerFn(getDashboardTileOrder);
+  const setOrderFn = useServerFn(setDashboardTileOrder);
 
-  const [order, setOrder] = useState<OutputKey[]>(() => loadOrder(user?.id));
+  const { data: orderData } = useQuery({
+    queryKey: ["dashboard-tile-order"],
+    queryFn: () => getOrderFn(),
+  });
+
+  const [order, setOrder] = useState<OutputKey[]>(() => [...OUTPUT_TYPE_ORDER]);
 
   useEffect(() => {
-    setOrder(loadOrder(user?.id));
-  }, [user?.id]);
+    if (orderData?.order) setOrder(orderData.order);
+  }, [orderData]);
+
+  const saveMut = useMutation({
+    mutationFn: (next: OutputKey[]) => setOrderFn({ data: { order: next } }),
+    onMutate: (next) => {
+      const previous = order;
+      setOrder(next);
+      return { previous };
+    },
+    onError: (e, _vars, ctx) => {
+      toast.error(e instanceof Error ? e.message : "שמירת סדר נכשלה");
+      if (ctx?.previous) setOrder(ctx.previous);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dashboard-tile-order"] });
+    },
+  });
 
   const createMut = useMutation({
     mutationFn: (outputType: OutputKey) =>
@@ -113,16 +137,14 @@ function HomePage() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!isAdmin) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setOrder((prev) => {
-      const oldIndex = prev.indexOf(active.id as OutputKey);
-      const newIndex = prev.indexOf(over.id as OutputKey);
-      if (oldIndex < 0 || newIndex < 0) return prev;
-      const next = arrayMove(prev, oldIndex, newIndex);
-      saveOrder(user?.id, next);
-      return next;
-    });
+    const oldIndex = order.indexOf(active.id as OutputKey);
+    const newIndex = order.indexOf(over.id as OutputKey);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(order, oldIndex, newIndex);
+    saveMut.mutate(next);
   };
 
   const items = useMemo(() => order, [order]);
@@ -140,6 +162,7 @@ function HomePage() {
                 index={i}
                 pending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
+                draggable={isAdmin}
                 onActivate={() => createMut.mutate(key)}
               />
             ))}
