@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import type { AgentConfig } from "@/lib/agents-config.functions";
 
 export function AgentConfigCard({ agent }: { agent: AgentConfig }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
