@@ -3,16 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Send, ArrowRight, Bot, User as UserIcon, Sparkles } from "lucide-react";
+import { Loader2, Send, ArrowRight, Bot, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import {
@@ -50,10 +43,8 @@ function AgentConversationPage() {
   const modFn = useServerFn(addModeratorMessage);
   const pickFn = useServerFn(pickNextSpeaker);
 
-  const [speakerId, setSpeakerId] = useState<string>("");
   const [moderatorMsg, setModeratorMsg] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [picking, setPicking] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading } = useQuery({
@@ -63,29 +54,10 @@ function AgentConversationPage() {
   });
 
   useEffect(() => {
-    if (data?.participants?.length && !speakerId) {
-      setSpeakerId((data.participants[0] as PersonaLite).id);
-    }
-  }, [data, speakerId]);
-
-  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.messages?.length, generating]);
 
-  const sendModerator = useMutation({
-    mutationFn: async () => {
-      await modFn({ data: { conversationId: id, content: moderatorMsg.trim() } });
-    },
-    onSuccess: () => {
-      setModeratorMsg("");
-      qc.invalidateQueries({ queryKey: ["agent-conversation", id] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "שליחה נכשלה"),
-  });
-
-  async function generateTurn(personaIdOverride?: string) {
-    const targetId = personaIdOverride ?? speakerId;
-    if (!targetId) return;
+  async function generateTurn(personaId: string) {
     setGenerating(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -97,7 +69,7 @@ function AgentConversationPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ conversationId: id, personaId: targetId }),
+        body: JSON.stringify({ conversationId: id, personaId }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -111,46 +83,22 @@ function AgentConversationPage() {
     }
   }
 
-  async function pickAndGenerate() {
-    setPicking(true);
-    let chosenId: string | null = null;
-    try {
-      const { personaId } = await pickFn({ data: { conversationId: id } });
-      chosenId = personaId;
-      setSpeakerId(personaId);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "בחירה נכשלה");
-    } finally {
-      setPicking(false);
-    }
-    if (chosenId) await generateTurn(chosenId);
-  }
-
-  async function runRound() {
-    if (!data?.participants?.length) return;
-    setGenerating(true);
-    try {
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token;
-      if (!token) throw new Error("חסר אימות");
-      for (const p of data.participants as PersonaLite[]) {
-        const res = await fetch("/api/agent-turn", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ conversationId: id, personaId: p.id }),
-        });
-        if (!res.ok) throw new Error(await res.text());
-        await qc.invalidateQueries({ queryKey: ["agent-conversation", id] });
+  const sendModerator = useMutation({
+    mutationFn: async () => {
+      await modFn({ data: { conversationId: id, content: moderatorMsg.trim() } });
+    },
+    onSuccess: async () => {
+      setModeratorMsg("");
+      await qc.invalidateQueries({ queryKey: ["agent-conversation", id] });
+      try {
+        const { personaId } = await pickFn({ data: { conversationId: id } });
+        await generateTurn(personaId);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "בחירת דובר נכשלה");
       }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "סבב נכשל");
-    } finally {
-      setGenerating(false);
-    }
-  }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שליחה נכשלה"),
+  });
 
   if (!isAdmin) {
     return (
@@ -170,6 +118,7 @@ function AgentConversationPage() {
 
   const participants = (data?.participants ?? []) as PersonaLite[];
   const personaById = new Map(participants.map((p) => [p.id, p]));
+  const busy = sendModerator.isPending || generating;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col h-[calc(100vh-160px)] px-4 py-4">
@@ -231,57 +180,25 @@ function AgentConversationPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-t border-border pt-3 space-y-2">
+      <div className="border-t border-border pt-3">
         <div className="flex gap-2">
           <Textarea
             dir="auto"
             value={moderatorMsg}
             onChange={(e) => setModeratorMsg(e.target.value)}
             rows={2}
-            placeholder="הודעת מנחה (אופציונלי) — הכוונה, שאלה או הקשר..."
+            placeholder="הודעת מנחה — כתוב הנחיה או שאלה. ניתן לציין מי תרצה שיענה..."
             className="flex-1 text-sm"
           />
           <Button
-            variant="outline"
             onClick={() => sendModerator.mutate()}
-            disabled={!moderatorMsg.trim() || sendModerator.isPending}
+            disabled={!moderatorMsg.trim() || busy}
           >
-            {sendModerator.isPending ? (
+            {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />
             )}
-          </Button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">מי ידבר עכשיו?</span>
-          <Select value={speakerId} onValueChange={setSpeakerId}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="בחר משתתף" />
-            </SelectTrigger>
-            <SelectContent>
-              {participants.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.role_title ? `${p.name} — ${p.role_title}` : p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            onClick={pickAndGenerate}
-            disabled={picking || generating || !participants.length}
-          >
-            {picking || generating ? (
-              <Loader2 className="h-4 w-4 animate-spin ml-1" />
-            ) : (
-              <Sparkles className="h-4 w-4 ml-1" />
-            )}
-            {picking ? "בוחר דובר..." : generating ? "יוצר תגובה..." : "בחר דובר וצור תגובה"}
-          </Button>
-          <Button variant="ghost" onClick={runRound} disabled={generating}>
-            סבב מלא
           </Button>
         </div>
       </div>
