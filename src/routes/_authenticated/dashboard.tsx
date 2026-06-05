@@ -1,9 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Shapes } from "lucide-react";
+import {
+  getDashboardTileOrder,
+  setDashboardTileOrder,
+} from "@/lib/dashboard-tile-order.functions";
+import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   DndContext,
   MouseSensor,
@@ -29,7 +34,6 @@ import {
   type OutputKey,
 } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
-import { useAuth } from "@/hooks/use-auth";
 import {
   Drawer,
   DrawerContent,
@@ -49,45 +53,41 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: HomePage,
 });
 
-const STORAGE_PREFIX = "dashboard-tile-order:";
-
-function loadOrder(userId: string | undefined): OutputKey[] {
-  const defaults = [...OUTPUT_TYPE_ORDER];
-  if (!userId || typeof window === "undefined") return defaults;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_PREFIX + userId);
-    if (!raw) return defaults;
-    const saved = JSON.parse(raw) as string[];
-    const valid = saved.filter((k): k is OutputKey =>
-      (OUTPUT_TYPE_ORDER as readonly string[]).includes(k),
-    );
-    // merge any new keys not present in saved order at the end
-    const missing = defaults.filter((k) => !valid.includes(k));
-    return [...valid, ...missing];
-  } catch {
-    return defaults;
-  }
-}
-
-function saveOrder(userId: string | undefined, order: OutputKey[]) {
-  if (!userId || typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(order));
-  } catch {
-    // ignore
-  }
-}
 
 function HomePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAdmin } = useSiteTexts();
+  const qc = useQueryClient();
   const createFn = useServerFn(createChatThread);
+  const getOrderFn = useServerFn(getDashboardTileOrder);
+  const setOrderFn = useServerFn(setDashboardTileOrder);
 
-  const [order, setOrder] = useState<OutputKey[]>(() => loadOrder(user?.id));
+  const { data: orderData } = useQuery({
+    queryKey: ["dashboard-tile-order"],
+    queryFn: () => getOrderFn(),
+  });
+
+  const [order, setOrder] = useState<OutputKey[]>(() => [...OUTPUT_TYPE_ORDER]);
 
   useEffect(() => {
-    setOrder(loadOrder(user?.id));
-  }, [user?.id]);
+    if (orderData?.order) setOrder(orderData.order);
+  }, [orderData]);
+
+  const saveMut = useMutation({
+    mutationFn: (next: OutputKey[]) => setOrderFn({ data: { order: next } }),
+    onMutate: (next) => {
+      const previous = order;
+      setOrder(next);
+      return { previous };
+    },
+    onError: (e, _vars, ctx) => {
+      toast.error(e instanceof Error ? e.message : "שמירת סדר נכשלה");
+      if (ctx?.previous) setOrder(ctx.previous);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dashboard-tile-order"] });
+    },
+  });
 
   const createMut = useMutation({
     mutationFn: (outputType: OutputKey) =>
@@ -109,16 +109,14 @@ function HomePage() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!isAdmin) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setOrder((prev) => {
-      const oldIndex = prev.indexOf(active.id as OutputKey);
-      const newIndex = prev.indexOf(over.id as OutputKey);
-      if (oldIndex < 0 || newIndex < 0) return prev;
-      const next = arrayMove(prev, oldIndex, newIndex);
-      saveOrder(user?.id, next);
-      return next;
-    });
+    const oldIndex = order.indexOf(active.id as OutputKey);
+    const newIndex = order.indexOf(over.id as OutputKey);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(order, oldIndex, newIndex);
+    saveMut.mutate(next);
   };
 
   const items = useMemo(() => order, [order]);
@@ -136,6 +134,7 @@ function HomePage() {
                 index={i}
                 pending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
+                draggable={isAdmin}
                 onActivate={() => createMut.mutate(key)}
               />
             ))}
@@ -240,18 +239,21 @@ function SortableTile({
   index,
   pending,
   disabled,
+  draggable,
   onActivate,
 }: {
   outputKey: OutputKey;
   index: number;
   pending: boolean;
   disabled: boolean;
+  draggable: boolean;
   onActivate: () => void;
 }) {
   const t = OUTPUT_TYPES[outputKey];
   const Icon = t.icon;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: outputKey,
+    disabled: !draggable,
   });
 
   const style: React.CSSProperties = {
@@ -261,7 +263,7 @@ function SortableTile({
     animationFillMode: "backwards",
     zIndex: isDragging ? 50 : undefined,
     opacity: isDragging ? 0.85 : undefined,
-    touchAction: "none",
+    touchAction: draggable ? "none" : undefined,
   };
 
   return (
@@ -271,8 +273,8 @@ function SortableTile({
       disabled={disabled}
       onClick={onActivate}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
       className={`cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50 ${
         isDragging ? "shadow-lg ring-2 ring-primary/40" : ""
       }`}

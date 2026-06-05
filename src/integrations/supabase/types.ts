@@ -423,6 +423,27 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_tile_order: {
+        Row: {
+          id: string
+          order: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          order?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          order?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       diagrams: {
         Row: {
           created_at: string
