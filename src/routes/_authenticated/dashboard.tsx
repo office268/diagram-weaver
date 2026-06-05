@@ -1,9 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Shapes } from "lucide-react";
+import {
+  getDashboardTileOrder,
+  setDashboardTileOrder,
+} from "@/lib/dashboard-tile-order.functions";
+import { useSiteTexts } from "@/lib/site-texts-context";
 import {
   DndContext,
   MouseSensor,
