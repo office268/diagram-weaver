@@ -55,25 +55,26 @@ export async function runDataModelAgent(
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
   tracker?: UsageTracker,
 ): Promise<DataModelOutput> {
+  const model = ctx.model ?? AGENT_MODELS.dataModel;
   const { text, usage } = await generateText({
-    model: gateway(AGENT_MODELS.dataModel),
+    model: gateway(model),
     system: DATA_MODEL_SYSTEM,
     prompt: buildPrompt(ctx, reqs),
     maxOutputTokens: 3000,
     temperature: AGENT_TEMPERATURES.dataModel,
   });
-  tracker?.track(AGENT_MODELS.dataModel, usage);
+  tracker?.track(model, usage);
   try {
     return OutputSchema.parse(JSON.parse(extractJson(text)));
   } catch {
     const { text: text2, usage: usage2 } = await generateText({
-      model: gateway(AGENT_MODELS.dataModel),
+      model: gateway(model),
       system: DATA_MODEL_SYSTEM,
       prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד.",
       maxOutputTokens: 3000,
       temperature: 0,
     });
-    tracker?.track(AGENT_MODELS.dataModel, usage2);
+    tracker?.track(model, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }

@@ -28,14 +28,15 @@ export async function runRequirementsAgent(
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
   tracker?: UsageTracker,
 ): Promise<RequirementsOutput> {
+  const model = ctx.model ?? AGENT_MODELS.requirements;
   const { text, usage } = await generateText({
-    model: gateway(AGENT_MODELS.requirements),
+    model: gateway(model),
     system: REQUIREMENTS_SYSTEM,
     prompt: buildRequirementsPrompt(ctx),
     maxOutputTokens: 4000,
     temperature: AGENT_TEMPERATURES.requirements,
   });
-  tracker?.track(AGENT_MODELS.requirements, usage);
+  tracker?.track(model, usage);
 
   try {
     const parsed = OutputSchema.parse(JSON.parse(extractJson(text)));
@@ -44,13 +45,13 @@ export async function runRequirementsAgent(
     console.error("[requirements-agent] parse failed, retrying:", err);
     // Retry once with explicit correction instruction
     const { text: text2, usage: usage2 } = await generateText({
-      model: gateway(AGENT_MODELS.requirements),
+      model: gateway(model),
       system: REQUIREMENTS_SYSTEM,
       prompt: buildRequirementsPrompt(ctx) + "\n\nחשוב: החזר JSON תקני בלבד, ללא טקסט נוסף.",
       maxOutputTokens: 4000,
       temperature: 0,
     });
-    tracker?.track(AGENT_MODELS.requirements, usage2);
+    tracker?.track(model, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }
