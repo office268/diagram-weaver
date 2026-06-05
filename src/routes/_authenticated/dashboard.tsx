@@ -34,7 +34,6 @@ import {
   type OutputKey,
 } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
-import { useAuth } from "@/hooks/use-auth";
 import {
   Drawer,
   DrawerContent,
