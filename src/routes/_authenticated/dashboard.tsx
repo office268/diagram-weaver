@@ -239,18 +239,21 @@ function SortableTile({
   index,
   pending,
   disabled,
+  draggable,
   onActivate,
 }: {
   outputKey: OutputKey;
   index: number;
   pending: boolean;
   disabled: boolean;
+  draggable: boolean;
   onActivate: () => void;
 }) {
   const t = OUTPUT_TYPES[outputKey];
   const Icon = t.icon;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: outputKey,
+    disabled: !draggable,
   });
 
   const style: React.CSSProperties = {
@@ -260,7 +263,7 @@ function SortableTile({
     animationFillMode: "backwards",
     zIndex: isDragging ? 50 : undefined,
     opacity: isDragging ? 0.85 : undefined,
-    touchAction: "none",
+    touchAction: draggable ? "none" : undefined,
   };
 
   return (
@@ -270,8 +273,8 @@ function SortableTile({
       disabled={disabled}
       onClick={onActivate}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
       className={`cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50 ${
         isDragging ? "shadow-lg ring-2 ring-primary/40" : ""
       }`}
