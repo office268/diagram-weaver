@@ -1,71 +1,54 @@
 
-## מה בונים
+## מטרה
+1. להעביר את כל 6 הסוכנים לשימוש במודל `google/gemini-2.5-pro` (reasoning) במקום `gemini-3-flash-preview`.
+2. להוסיף בדף ההגדרות שדה "מודל AI" שרק admin יכול לראות ולערוך, שישלוט בכל הסוכנים.
 
-מערכת חדשה בדף ההגדרות לניהול "משתמשי מערכת" — סוכני AI עם פרסונה (שם, תפקיד, ידע, כלים), והאדמין מנהל ביניהם שיחות צ'אט מתוזמרות שבהן הוא בוחר מי מדבר בכל תור. כל מה שנאמר נשמר בבסיס הנתונים.
+## שינויים
 
-## חוויית משתמש
+### 1. טבלה חדשה ב-DB: `ai_model_setting` (singleton, admin-only)
+שדות:
+- `id text PK default 'singleton'`
+- `model text not null default 'google/gemini-2.5-pro'`
+- `updated_at`, `updated_by`
 
-### בדף ההגדרות (לאדמין בלבד)
-קולפס חדש בשם **"משתמשי מערכת (סוכני AI)"** עם:
-- כפתור **"הקמת משתמש מערכת חדש"** → פותח דיאלוג עם השדות:
-  - שם
-  - שיוך ארגוני (dropdown מהארגונים של האדמין)
-  - תפקיד (טקסט קצר, למשל "אנליסט מערכות בכיר")
-  - תיאור מפורט של התפקיד (textarea — זה ה-system prompt של הסוכן)
-  - ידע שעומד לרשותו (textarea — מידע רקע)
-  - כלים (checkboxes: גישה למסמכי הפרויקט, חיפוש ידע ארגוני, יצירת אפיון וכו' — להתחלה: רק "ידע ארגוני")
-- רשימת הסוכנים הקיימים עם עריכה/מחיקה
+RLS:
+- קריאה: כל authenticated (כדי שה-server יוכל לטעון, וגם UI להציג ל-admin)
+- כתיבה (insert/update): רק `has_role(auth.uid(), 'admin')`
+- GRANTs מתאימים ל-authenticated ו-service_role.
 
-### דף שיחות סוכנים חדש (`/agent-conversations`)
-- רשימת שיחות בצד + כפתור "שיחה חדשה"
-- בעת יצירת שיחה: האדמין נותן כותרת + נושא פתיחה + בוחר אילו סוכנים משתתפים (multi-select)
-- מסך השיחה (צ'אט):
-  - הודעות מוצגות כבועות עם שם הסוכן + תפקיד + אווטאר צבעוני
-  - האדמין יכול להוסיף הודעת הקשר משלו (כ"מנחה")
-  - בתחתית: dropdown "מי ידבר עכשיו?" עם רשימת המשתתפים + כפתור "צור תגובה"
-  - לחיצה מפעילה את הסוכן הנבחר עם ההיסטוריה המלאה + הפרסונה שלו, התשובה נשמרת ומוצגת
-  - כפתור "המשך אוטומטי" (אופציונלי) — סבב אחד שבו כל סוכן מגיב לפי הסדר
+### 2. Server functions חדשים: `src/lib/ai-model-setting.functions.ts`
+- `getAiModelSetting` — מחזיר את המודל הנוכחי.
+- `updateAiModelSetting` — admin-only, מקבל `{ model: string }` מתוך whitelist של מודלים נתמכים, ומעדכן.
 
-### ניווט
-קישור חדש בתפריט הצדדי "שיחות סוכנים" (גלוי רק לאדמין).
+### 3. עדכון ברירות מחדל של הסוכנים
+ב-`src/agents/shared/constants.ts`:
+- `DEFAULT_AGENT_MODEL` → `"google/gemini-2.5-pro"`.
+- כל ה-`AGENT_MODELS` ישתמשו ב-default (כולל review שכבר במילא 2.5-pro).
 
-## מודל נתונים
+### 4. שילוב המודל הדינמי בזרימה
+- ב-`src/routes/api/generate-spec.ts`: לפני קריאת `runOrchestrator`, לטעון את המודל הנבחר מה-DB דרך `supabaseAdmin` ולהעביר אותו כפרמטר חדש `modelOverride`.
+- ב-`src/agents/orchestrator/index.server.ts`: לקבל `modelOverride?: string` ולהעביר ל-context.
+- בכל הסוכנים (`requirements`, `architecture`, `data-model`, `use-cases`, `diagrams`, `review`): להשתמש ב-`modelOverride ?? AGENT_MODELS.<name>`.
+  - דרך נקייה: להוסיף ל-`AgentContext` שדה `model?: string` ולקרוא ממנו בכל סוכן.
 
-ארבע טבלאות חדשות, כולן עם RLS שמגביל לאדמין בלבד (`has_role(auth.uid(), 'admin')`):
+### 5. UI בדף ההגדרות (`src/routes/_authenticated/settings.tsx`)
+- כרטיס חדש "מודל AI לסוכנים" שמופיע **רק** ל-admin (בדיקה דרך `has_role` כפי שנעשה בשאר חלקי הניהול במערכת).
+- `<Select>` עם רשימת מודלי reasoning נתמכים:
+  - `google/gemini-2.5-pro` (ברירת מחדל)
+  - `google/gemini-3.1-pro-preview`
+  - `openai/gpt-5.4`
+  - `openai/gpt-5.4-pro`
+  - `openai/gpt-5.5`
+  - `openai/gpt-5.5-pro`
+- כפתור "שמור" שקורא ל-`updateAiModelSetting`.
+- טקסט עזר קטן: "המודל ישפיע על כל הסוכנים בעת חילול תוצרים. מודלי reasoning איכותיים יותר אך יקרים יותר."
 
-1. **`agent_personas`** — הסוכנים
-   - `name`, `org_id` (FK organizations), `role_title`, `role_description`, `knowledge`, `tools` (jsonb), `color`, `created_by`
-2. **`agent_conversations`** — השיחות
-   - `title`, `topic`, `created_by`
-3. **`agent_conversation_participants`** — מי משתתף בכל שיחה
-   - `conversation_id`, `persona_id` (unique pair)
-4. **`agent_messages`** — ההודעות
-   - `conversation_id`, `persona_id` (nullable — null = הודעת אדמין/מנחה), `role` ('agent'|'moderator'), `content`, `created_at`
+## פרטים טכניים
+- בדיקת admin ב-UI: שאילתת `user_roles` עם `role='admin'` (כפי שנעשה בקומפוננטות אדמין קיימות).
+- ולידציה של ערך המודל בצד שרת מול whitelist קשיח כדי למנוע הזרקת שם מודל שרירותי.
+- אין שינוי במחירים/חישוב — מערכת ה-usage tracking הקיימת תמשיך לעבוד כי המודל מועבר ל-`tracker.track(model, usage)`.
 
-GRANTs ל-authenticated + service_role; policies מצמצמות ל-admin בלבד.
-
-## Backend (server functions + route)
-
-חדש ב-`src/lib/agents.functions.ts`:
-- `listAgentPersonas`, `createAgentPersona`, `updateAgentPersona`, `deleteAgentPersona`
-- `listAgentConversations`, `createAgentConversation`, `getAgentConversation`
-- `addModeratorMessage`, `listConversationMessages`
-
-ראוט חדש: **`src/routes/api/agent-turn.ts`** — מקבל `{conversationId, personaId}`, טוען פרסונה + היסטוריה + ידע ארגוני, בונה system prompt מהפרסונה, קורא ל-Lovable AI (gemini-2.5-flash), שומר את התגובה כ-`agent_messages` ומחזיר אותה. מתעד שימוש דרך `logAiUsage`.
-
-## Frontend
-
-קומפוננטות חדשות:
-- `src/components/agent-personas-card.tsx` — הקולפס בהגדרות (CRUD לפרסונות)
-- `src/components/agent-persona-dialog.tsx` — דיאלוג יצירה/עריכה
-- `src/routes/_authenticated/agent-conversations.tsx` — רשימת שיחות
-- `src/routes/_authenticated/agent-conversations.$id.tsx` — מסך הצ'אט עם בחירת דובר
-- עדכון `src/routes/_authenticated/settings.tsx` — הוספת הקולפס (תחת `isAdmin`)
-- עדכון תפריט הניווט להוסיף "שיחות סוכנים" לאדמין
-
-## מה לא נכלל בשלב הזה (לאשר/לדחות)
-- אינטגרציה של "כלים" אמיתיים (קריאה ל-RAG, יצירת מסמכים) — בשלב ראשון רק שדה הגדרה טקסטואלי שייכנס ל-system prompt. נוסיף קישוריות בפועל בשלב הבא.
-- מצב "אוטומטי מלא" שבו הסוכנים מדברים ביניהם ללא התערבות — נוסיף רק את "סבב אחד".
-- הרשאות שאינן אדמין — בשלב זה רק האדמין רואה ומשתמש בכלל המערכת.
-
-האם להמשיך לבנייה?
+## מחוץ לסקופ
+- לא משנה את מנגנון הסיום (score threshold, iterations).
+- לא משנה temperatures.
+- לא משנה את סוכן ה-chat (`/api/agent-turn`) שמשתמש ב-gemini-2.5-flash — זה לא חלק מסוכני יצירת התוצרים.
