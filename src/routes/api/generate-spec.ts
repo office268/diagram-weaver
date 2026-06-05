@@ -76,6 +76,9 @@ export const Route = createFileRoute("/api/generate-spec")({
             const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
             try {
+              const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+              const modelOverride = await loadAgentModelOverride();
+
               const result = await runOrchestrator({
                 userPrompt: sanitizePrompt(body.prompt),
                 docType: (body.docType ?? "spec_overview") as DocTypeKey,
@@ -84,6 +87,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                 lovableApiKey: key,
                 previousSpec: body.previousSpec,
                 reviewerNotes: body.reviewerNotes,
+                modelOverride,
               });
 
               console.log(

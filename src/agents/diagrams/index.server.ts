@@ -71,25 +71,26 @@ export async function runDiagramsAgent(
   gateway: ReturnType<typeof createLovableAiGatewayProvider>,
   tracker?: UsageTracker,
 ): Promise<DiagramsOutput> {
+  const model = ctx.model ?? AGENT_MODELS.diagrams;
   const { text, usage } = await generateText({
-    model: gateway(AGENT_MODELS.diagrams),
+    model: gateway(model),
     system: DIAGRAMS_SYSTEM,
     prompt: buildPrompt(ctx, useCases, arch, dm),
     maxOutputTokens: 4000,
     temperature: AGENT_TEMPERATURES.diagrams,
   });
-  tracker?.track(AGENT_MODELS.diagrams, usage);
+  tracker?.track(model, usage);
   try {
     return OutputSchema.parse(JSON.parse(extractJson(text)));
   } catch {
     const { text: text2, usage: usage2 } = await generateText({
-      model: gateway(AGENT_MODELS.diagrams),
+      model: gateway(model),
       system: DIAGRAMS_SYSTEM,
       prompt: buildPrompt(ctx, useCases, arch, dm) + "\n\nהחזר JSON תקני בלבד.",
       maxOutputTokens: 4000,
       temperature: 0,
     });
-    tracker?.track(AGENT_MODELS.diagrams, usage2);
+    tracker?.track(model, usage2);
     return OutputSchema.parse(JSON.parse(extractJson(text2)));
   }
 }

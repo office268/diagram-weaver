@@ -18,6 +18,7 @@ import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboard
 import { AiUsageCard } from "@/components/ai-usage-card";
 import { PromptBoxSettingsCard } from "@/components/prompt-box-settings-card";
 import { OrganizationLogoCard } from "@/components/organization-logo-card";
+import { AiModelSettingCard } from "@/components/ai-model-setting-card";
 
 import {
   getAiSettings,
@@ -141,6 +142,15 @@ function SettingsPage() {
             <DocTypeSectionsCard />
           </SettingsSection>
         </>
+      ) : null}
+
+      {isAdmin ? (
+        <SettingsSection
+          title="מודל AI לסוכנים"
+          description="המודל שישמש את כל סוכני יצירת התוצרים. רק מנהל יכול לשנות."
+        >
+          <AiModelSettingCard />
+        </SettingsSection>
       ) : null}
 
       {isAdmin ? (

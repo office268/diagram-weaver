@@ -169,6 +169,27 @@ export type Database = {
           },
         ]
       }
+      ai_model_setting: {
+        Row: {
+          id: string
+          model: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          model?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          model?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
           business_knowledge: string

@@ -23,6 +23,7 @@ export async function runOrchestrator(params: {
   reviewerNotes?: string[];
   scoreThreshold?: number;
   maxIterations?: number;
+  modelOverride?: string;
 }): Promise<OrchestratorOutput & { usage: UsageTotals }> {
   const {
     userPrompt,
@@ -34,6 +35,7 @@ export async function runOrchestrator(params: {
     reviewerNotes,
     scoreThreshold = SCORE_THRESHOLD,
     maxIterations = MAX_ITERATIONS,
+    modelOverride,
   } = params;
 
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
@@ -53,6 +55,7 @@ export async function runOrchestrator(params: {
     ragContext: ragResult.contextBlock,
     isRevision,
     reviewNotes: reviewerNotes,
+    model: modelOverride,
   };
 
   // Step 2: Requirements agent
@@ -74,7 +77,7 @@ export async function runOrchestrator(params: {
   let currentSpec = assembleSpec(requirements, architecture, dataModel, useCases, diagrams);
 
   // Step 7: Review
-  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
+  let currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker, modelOverride);
   let iterations = 1;
 
   // Step 8: Improvement loop
@@ -113,7 +116,7 @@ export async function runOrchestrator(params: {
       currentSpec = mergeUseCases(currentSpec, improvedUC, improvedDiagrams);
     }
 
-    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker);
+    currentReview = await runReviewAgent(currentSpec, userPrompt, gateway, tracker, modelOverride);
     iterations++;
   }
 
