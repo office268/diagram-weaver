@@ -23,6 +23,7 @@ export async function runOrchestrator(params: {
   reviewerNotes?: string[];
   scoreThreshold?: number;
   maxIterations?: number;
+  modelOverride?: string;
 }): Promise<OrchestratorOutput & { usage: UsageTotals }> {
   const {
     userPrompt,
@@ -34,6 +35,7 @@ export async function runOrchestrator(params: {
     reviewerNotes,
     scoreThreshold = SCORE_THRESHOLD,
     maxIterations = MAX_ITERATIONS,
+    modelOverride,
   } = params;
 
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
@@ -53,6 +55,7 @@ export async function runOrchestrator(params: {
     ragContext: ragResult.contextBlock,
     isRevision,
     reviewNotes: reviewerNotes,
+    model: modelOverride,
   };
 
   // Step 2: Requirements agent
