@@ -53,34 +53,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: HomePage,
 });
 
-const STORAGE_PREFIX = "dashboard-tile-order:";
-
-function loadOrder(userId: string | undefined): OutputKey[] {
-  const defaults = [...OUTPUT_TYPE_ORDER];
-  if (!userId || typeof window === "undefined") return defaults;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_PREFIX + userId);
-    if (!raw) return defaults;
-    const saved = JSON.parse(raw) as string[];
-    const valid = saved.filter((k): k is OutputKey =>
-      (OUTPUT_TYPE_ORDER as readonly string[]).includes(k),
-    );
-    // merge any new keys not present in saved order at the end
-    const missing = defaults.filter((k) => !valid.includes(k));
-    return [...valid, ...missing];
-  } catch {
-    return defaults;
-  }
-}
-
-function saveOrder(userId: string | undefined, order: OutputKey[]) {
-  if (!userId || typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(order));
-  } catch {
-    // ignore
-  }
-}
 
 function HomePage() {
   const navigate = useNavigate();
