@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -6,7 +7,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Bot } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Bot, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { AgentConfig } from "@/lib/agents-config.functions";
 
 export function AgentConfigCard({ agent }: { agent: AgentConfig }) {
