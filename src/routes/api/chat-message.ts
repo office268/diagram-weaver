@@ -350,6 +350,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   if (!looksLikePlantUml(retry)) mermaid = retry;
                 }
 
+                mermaid = sanitizeMermaidLabels(mermaid);
+
                 const title = cleanUserMsg.slice(0, 80) || def.label;
 
                 const { data: diagRow, error: diagErr } = await supabaseAdmin
