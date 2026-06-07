@@ -72,7 +72,14 @@ export async function runExtractorAgent(
       merges: parsed.merges ?? [],
     };
   } catch (err) {
-    console.error("[activity extractor] failed:", err instanceof Error ? err.message : err, "raw:", text.slice(0, 500));
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
+    if (/payment required|402/i.test(msg)) {
+      throw new Error("נגמרו הקרדיטים ל-AI. יש להוסיף קרדיטים בהגדרות > שימוש (402 Payment Required).");
+    }
+    if (/rate limit|429/i.test(msg)) {
+      throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
+    }
     return null;
   }
 }
