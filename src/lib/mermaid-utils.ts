@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import DOMPurify from "dompurify";
 
 let initialized = false;
 
@@ -8,7 +9,7 @@ export function initMermaid() {
   mermaid.initialize({
     startOnLoad: false,
     theme: "default",
-    securityLevel: "loose",
+    securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
     flowchart: { curve: "basis", useMaxWidth: true },
     sequence: { useMaxWidth: true },
@@ -20,7 +21,7 @@ export function setMermaidTheme(dark: boolean) {
   mermaid.initialize({
     startOnLoad: false,
     theme: dark ? "dark" : "default",
-    securityLevel: "loose",
+    securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
   });
 }
@@ -33,7 +34,10 @@ export async function renderMermaid(code: string): Promise<{ svg: string; error:
     await mermaid.parse(code);
     const id = `m-${Date.now()}-${++renderCounter}`;
     const { svg } = await mermaid.render(id, code);
-    return { svg, error: null };
+    const cleanSvg = DOMPurify.sanitize(svg, {
+      USE_PROFILES: { svg: true, svgFilters: true },
+    });
+    return { svg: cleanSvg, error: null };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     return { svg: null, error: message };
