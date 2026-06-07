@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Sparkles, Shapes } from "lucide-react";
 import {
@@ -73,6 +73,61 @@ function HomePage() {
     if (orderData?.order) setOrder(orderData.order);
   }, [orderData]);
 
+  // Per-user tile customization stored in localStorage.
+  // movedToExtras: ORDER tiles the user hid from main grid.
+  // movedToMain: EXTRAS tiles the user moved to main grid.
+  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>(() => {
+    try { return JSON.parse(localStorage.getItem("dash-moved-to-extras") ?? "[]"); }
+    catch { return []; }
+  });
+  const [movedToMain, setMovedToMain] = useState<OutputKey[]>(() => {
+    try { return JSON.parse(localStorage.getItem("dash-moved-to-main") ?? "[]"); }
+    catch { return []; }
+  });
+  useEffect(() => {
+    localStorage.setItem("dash-moved-to-extras", JSON.stringify(movedToExtras));
+  }, [movedToExtras]);
+  useEffect(() => {
+    localStorage.setItem("dash-moved-to-main", JSON.stringify(movedToMain));
+  }, [movedToMain]);
+
+  const movedToExtrasSet = useMemo(() => new Set(movedToExtras), [movedToExtras]);
+  const movedToMainSet   = useMemo(() => new Set(movedToMain),   [movedToMain]);
+
+  const mainTiles = useMemo(
+    () => [
+      ...order.filter((k) => !movedToExtrasSet.has(k)),
+      ...movedToMain,
+    ],
+    [order, movedToExtrasSet, movedToMain],
+  );
+
+  const extrasTiles = useMemo(
+    () => [
+      ...OUTPUT_TYPE_EXTRAS.filter((k) => !movedToMainSet.has(k)),
+      ...movedToExtras,
+    ],
+    [movedToExtras, movedToMainSet],
+  );
+
+  const moveToExtras = (key: OutputKey) => {
+    if ((OUTPUT_TYPE_ORDER as readonly string[]).includes(key)) {
+      setMovedToExtras((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    } else {
+      setMovedToMain((prev) => prev.filter((k) => k !== key));
+    }
+    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר ל'עוד'`);
+  };
+
+  const moveToMain = (key: OutputKey) => {
+    if ((OUTPUT_TYPE_EXTRAS as readonly string[]).includes(key)) {
+      setMovedToMain((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    } else {
+      setMovedToExtras((prev) => prev.filter((k) => k !== key));
+    }
+    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר למסך הראשי`);
+  };
+
   const saveMut = useMutation({
     mutationFn: (next: OutputKey[]) => setOrderFn({ data: { order: next } }),
     onMutate: (next) => {
@@ -112,34 +167,35 @@ function HomePage() {
     if (!isAdmin) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = order.indexOf(active.id as OutputKey);
-    const newIndex = order.indexOf(over.id as OutputKey);
+    const oldIndex = mainTiles.indexOf(active.id as OutputKey);
+    const newIndex = mainTiles.indexOf(over.id as OutputKey);
     if (oldIndex < 0 || newIndex < 0) return;
-    const next = arrayMove(order, oldIndex, newIndex);
+    const reordered = arrayMove(mainTiles, oldIndex, newIndex);
+    // Save only the ORDER-based tiles (movedToMain extras aren't in the DB order).
+    const next = reordered.filter((k) => (OUTPUT_TYPE_ORDER as readonly string[]).includes(k));
     saveMut.mutate(next);
   };
-
-  const items = useMemo(() => order, [order]);
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items} strategy={rectSortingStrategy}>
+        <SortableContext items={mainTiles} strategy={rectSortingStrategy}>
           <div className="grid flex-1 auto-rows-min content-evenly grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
-            {items.map((key, i) => (
+            {mainTiles.map((key, i) => (
               <SortableTile
                 key={key}
                 outputKey={key}
                 index={i}
                 pending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
-                draggable={isAdmin}
+                draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                 onActivate={() => createMut.mutate(key)}
+                onMoveToExtras={() => moveToExtras(key)}
               />
             ))}
             <MoreTile
-              index={items.length}
+              index={mainTiles.length}
               disabled={createMut.isPending}
               onActivate={() => setMoreOpen(true)}
             />
@@ -154,36 +210,16 @@ function HomePage() {
             <DrawerDescription>בחר/י סוג מסמך או תרשים פחות נפוץ ליצירה.</DrawerDescription>
           </DrawerHeader>
           <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 px-4 pb-6 sm:grid-cols-3">
-            {OUTPUT_TYPE_EXTRAS.map((key) => {
-              const t = OUTPUT_TYPES[key];
-              const Icon = t.icon;
-              const isPending = createMut.isPending && createMut.variables === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  disabled={createMut.isPending}
-                  onClick={() => {
-                    setMoreOpen(false);
-                    createMut.mutate(key);
-                  }}
-                  className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center transition-colors hover:bg-accent/40 disabled:opacity-50"
-                >
-                  <div
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent ${t.colorClass}`}
-                  >
-                    {isPending ? (
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                    ) : (
-                      <Icon className="h-6 w-6" />
-                    )}
-                  </div>
-                  <div className="text-xs font-semibold leading-tight text-foreground">
-                    {t.label}
-                  </div>
-                </button>
-              );
-            })}
+            {extrasTiles.map((key) => (
+              <ExtrasTile
+                key={key}
+                outputKey={key}
+                isPending={createMut.isPending && createMut.variables === key}
+                disabled={createMut.isPending}
+                onActivate={() => { setMoreOpen(false); createMut.mutate(key); }}
+                onMoveToMain={() => { setMoreOpen(false); moveToMain(key); }}
+              />
+            ))}
           </div>
         </DrawerContent>
       </Drawer>
@@ -241,6 +277,7 @@ function SortableTile({
   disabled,
   draggable,
   onActivate,
+  onMoveToExtras,
 }: {
   outputKey: OutputKey;
   index: number;
@@ -248,6 +285,7 @@ function SortableTile({
   disabled: boolean;
   draggable: boolean;
   onActivate: () => void;
+  onMoveToExtras: () => void;
 }) {
   const t = OUTPUT_TYPES[outputKey];
   const Icon = t.icon;
@@ -255,6 +293,23 @@ function SortableTile({
     id: outputKey,
     disabled: !draggable,
   });
+
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current); }, []);
+
+  const handleClick = () => {
+    if (isDragging) return;
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      if (!disabled) onMoveToExtras();
+      return;
+    }
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null;
+      if (!disabled) onActivate();
+    }, 260);
+  };
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -271,8 +326,9 @@ function SortableTile({
       ref={setNodeRef}
       type="button"
       disabled={disabled}
-      onClick={onActivate}
+      onClick={handleClick}
       style={style}
+      title="לחיצה: פתח | לחיצה כפולה: העבר ל'עוד'"
       {...(draggable ? attributes : {})}
       {...(draggable ? listeners : {})}
       className={`cube-3d animate-fade-in group relative flex h-28 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center sm:h-36 sm:gap-3 sm:p-4 disabled:opacity-50 ${
@@ -301,6 +357,58 @@ function SortableTile({
         </div>
         <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{t.description}</p>
       </div>
+    </button>
+  );
+}
+
+function ExtrasTile({
+  outputKey,
+  isPending,
+  disabled,
+  onActivate,
+  onMoveToMain,
+}: {
+  outputKey: OutputKey;
+  isPending: boolean;
+  disabled: boolean;
+  onActivate: () => void;
+  onMoveToMain: () => void;
+}) {
+  const t = OUTPUT_TYPES[outputKey];
+  const Icon = t.icon;
+
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current); }, []);
+
+  const handleClick = () => {
+    if (clickTimer.current) {
+      clearTimeout(clickTimer.current);
+      clickTimer.current = null;
+      if (!disabled) onMoveToMain();
+      return;
+    }
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null;
+      if (!disabled) onActivate();
+    }, 260);
+  };
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={handleClick}
+      title="לחיצה: פתח | לחיצה כפולה: העבר למסך הראשי"
+      className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-border/60 bg-gradient-to-br from-card to-accent/30 p-3 text-center transition-colors hover:bg-accent/40 disabled:opacity-50"
+    >
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent ${t.colorClass}`}>
+        {isPending ? (
+          <Loader2 className="h-6 w-6 animate-spin" />
+        ) : (
+          <Icon className="h-6 w-6" />
+        )}
+      </div>
+      <div className="text-xs font-semibold leading-tight text-foreground">{t.label}</div>
     </button>
   );
 }
