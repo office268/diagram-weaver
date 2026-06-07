@@ -1,27 +1,21 @@
-## מה משתנה בדף `agent-conversations/$id`
+## הבעיה
 
-מסירים את כל שורת הבקרים התחתונה (בוחר דובר + "בחר דובר וצור תגובה" + "סבב מלא"). נשארת רק תיבת הודעת המנחה עם כפתור השליחה.
+ב-`src/agents/orchestrator/index.server.ts`, לולאת השיפור (שורות 81–118) מריצה סוכנים משופרים אבל ממשיכה להעביר את המשתנים המקוריים (`requirements`, `useCases`, `architecture`, `dataModel`) לקריאות הבאות. כתוצאה מכך, גם אם הדרישות השתפרו, סוכן הארכיטקטורה והדיאגרמות באיטרציה הבאה עדיין רצים על הדרישות הישנות — והלולאה לא מתכנסת.
 
-## התנהגות חדשה
+## התיקון
 
-לאחר שליחת הודעת מנחה: אוטומטית מריצים `pickNextSpeaker` כדי שה-LLM יבחר מי ידבר (תוך התחשבות בהודעת המנחה — אם המשתמש כתב "אני רוצה שX יענה", המודל יזהה ויבחר), ואז קוראים ל-`/api/agent-turn` כדי לייצר תגובה. אם המשתמש שולח הודעת מנחה ריקה — לא נתמך יותר (אין כפתור נפרד); המשתמש חייב לכתוב משהו.
+עדכון `src/agents/orchestrator/index.server.ts`:
 
-> שאלה: האם זה מקובל שאי אפשר יותר "להריץ סיבוב" בלי לכתוב הודעה? אם רוצים גם דרך לדחוף סוכן בלי טקסט — אפשר להשאיר כפתור קטן "המשך" שמפעיל pick+generate בלי הודעה. אחרת — נסיר לגמרי.
+1. החלפת `const` ב-`let` עבור `requirements`, `architecture`, `dataModel`, `useCases` בהגדרות הראשוניות (שלבים 2–4).
+2. בתוך לולאת השיפור, אחרי כל ריצת סוכן משופר — לעדכן את המשתנה המקומי המתאים לפני שמשתמשים בו בקריאה הבאה:
+   - אחרי `runRequirementsAgent` המשופר → `requirements = improved`
+   - אחרי `runArchitectureAgent` המשופר → `architecture = improvedArch`
+   - אחרי `runUseCasesAgent` המשופר → `useCases = improvedUC`
+3. בקריאות ל-`runArchitectureAgent`, `runDiagramsAgent`, `runUseCasesAgent` בתוך הלולאה — להעביר את המשתנים המעודכנים (`requirements`, `useCases`, `architecture`, `dataModel`) במקום ערכי האיטרציה הראשונה.
+4. גם להוסיף ריצה משופרת של `runDataModelAgent` כאשר יש הערות רלוונטיות (אופציונלי — כרגע לא מטופל בכלל בלולאה), או לפחות לוודא ש-`dataModel` מעודכן אם הארכיטקטורה השתנתה. לפי הבקשה המקורית — להתמקד רק בתיקון של הזרימה הקיימת.
 
-## קוד למחיקה
+## קבצים שמשתנים
 
-ב-`src/routes/_authenticated/agent-conversations.$id.tsx`:
-- state: `speakerId`, `picking`
-- imports: `Select*`, `Sparkles`, `pickNextSpeaker`, `pickFn`
-- `useEffect` של ברירת מחדל ל-speakerId
-- פונקציות `pickAndGenerate`, `runRound`
-- ה-`useEffect` שמגדיר speakerId ראשוני
-- שורת ה-`<Select>` + כפתורי "בחר דובר וצור תגובה" + "סבב מלא"
+- `src/agents/orchestrator/index.server.ts` בלבד.
 
-## קוד שמתווסף
-
-ב-`sendModerator.onSuccess`: אחרי `invalidateQueries`, מפעילים:
-1. `pickFn({ data: { conversationId: id } })` → מקבלים personaId
-2. `generateTurn(personaId)` — הקיים, רק נשאיר אותו (לא מוסר).
-
-`generating` עדיין מוצג בזמן יצירת התגובה.
+לא נדרשות מיגרציות, שינויי UI, או שינויים בסוכנים עצמם.
