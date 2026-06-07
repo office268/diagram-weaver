@@ -50,10 +50,21 @@ const UpdateSchema = z.object({
   apple_touch_icon_url: z.string().max(2000).default(""),
 });
 
+async function assertAdmin(userId: string) {
+  const { data: roleRow } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleRow) throw new Error("רק מנהל מערכת רשאי לבצע פעולה זו");
+}
+
 export const updateAppMetadata = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => UpdateSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin
       .from("app_metadata")
       .upsert({ id: "singleton", ...data, updated_at: new Date().toISOString() });
