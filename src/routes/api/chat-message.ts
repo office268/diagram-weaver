@@ -318,7 +318,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
                   `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
                   activityInstructions +
-                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
+                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
+                  `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.`;
 
                 const history: { role: "user" | "assistant"; content: string }[] = prior.map(
                   (m) => ({
