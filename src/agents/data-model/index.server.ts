@@ -24,12 +24,15 @@ const THINKING = buildThinkingInstruction([
   "מה הישויות המרכזיות במערכת?",
   "מה הקשרים בין הישויות?",
   "אילו שדות הכרחיים לכל ישות?",
+  "אילו NFRs קיימים ואיך הם משפיעים על עיצוב הסכמה?",
+  "האם נדרשים soft delete, audit fields, או הפרדת נתונים רגישים?",
 ]);
 
 const SELF_CRITIQUE = buildSelfCritiqueInstruction([
   "כל ישות בדיאגרמה מוצדקת על ידי דרישה?",
   "מזהי ישויות: ASCII בלבד?",
   "הדיאגרמה erDiagram תקנית?",
+  "NFRs של ביצועים/אבטחה/היסטוריה באים לידי ביטוי בתיאור?",
 ]);
 
 function buildPrompt(ctx: AgentContext, reqs: RequirementsOutput): string {
@@ -37,12 +40,20 @@ function buildPrompt(ctx: AgentContext, reqs: RequirementsOutput): string {
   if (ctx.knowledgeBlock) parts.push(ctx.knowledgeBlock);
   if (ctx.ragContext) parts.push(buildRagBlock(ctx.ragContext));
   parts.push(THINKING);
-  parts.push("## דרישות המערכת\n" + JSON.stringify(reqs, null, 2));
+  parts.push("## דרישות פונקציונליות\n" + JSON.stringify(reqs.functional_requirements, null, 2));
+
+  if (reqs.non_functional_requirements?.length) {
+    parts.push(
+      "## דרישות אי-פונקציונליות (NFR) — תרגם להחלטות עיצוב\n" +
+        JSON.stringify(reqs.non_functional_requirements, null, 2),
+    );
+  }
+
   parts.push("## בקשת המשתמש\n" + ctx.userPrompt);
   parts.push(`
 סכמת JSON לפלט:
 { "data_model": { "description": string, "diagram": string } }
-description: תיאור טקסטואלי של מודל הנתונים בעברית.
+description: תיאור טקסטואלי של מודל הנתונים בעברית, כולל הסבר על החלטות עיצוב שנובעות מה-NFRs.
 diagram: קוד erDiagram תקני, ASCII entity names.
 ${JSON_ONLY_INSTRUCTION}`);
   parts.push(SELF_CRITIQUE);
