@@ -55,8 +55,8 @@ export const getChatThread = createServerFn({ method: "POST" })
       ]);
     if (tErr) throw new Error(tErr.message);
     if (mErr) throw new Error(mErr.message);
-    if (!thread) throw new Error("שיחה לא נמצאה");
-    return { thread, messages: messages ?? [] };
+    return { thread: thread ?? null, messages: messages ?? [] };
+
   });
 
 export const deleteChatThread = createServerFn({ method: "POST" })
