@@ -48,12 +48,38 @@ export const STAGE2_SYSTEM =
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
-  // Apply transforms line-by-line so the init directive line (starts with %%)
-  // is never touched by the decision-diamond regex (which would otherwise
-  // mangle `%%{init: {...}}%%` into `%%{{"flowchart...}}%%`).
-  const lines = code.split("\n").map((line) => {
+  // Step 1: assign ASCII IDs to any `subgraph "label"` (without an id) and
+  // remap matching `style "label" ...` lines to the same id. Mermaid's
+  // `style` command requires a node/subgraph identifier — a quoted label
+  // breaks the parser ("got 'STR'").
+  const quotedSubgraphIds = new Map<string, string>();
+  let laneCounter = 0;
+  const idAssigned = code.replace(
+    /^(\s*)subgraph\s+"([^"]+)"\s*$/gm,
+    (_m, indent: string, label: string) => {
+      let id = quotedSubgraphIds.get(label);
+      if (!id) {
+        laneCounter += 1;
+        id = `LANE${laneCounter}`;
+        quotedSubgraphIds.set(label, id);
+      }
+      return `${indent}subgraph ${id}["${label}"]`;
+    },
+  );
+  const styleRemapped = idAssigned.replace(
+    /^(\s*)style\s+"([^"]+)"(\s+)/gm,
+    (m, indent: string, label: string, sp: string) => {
+      const id = quotedSubgraphIds.get(label);
+      return id ? `${indent}style ${id}${sp}` : m;
+    },
+  );
+
+  // Step 2: line-by-line transforms (skip init directive lines).
+  const lines = styleRemapped.split("\n").map((line) => {
     if (line.trimStart().startsWith("%%")) return line;
     let out = line.replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))');
+    // Repair triple-braced diamonds {{{label}}} → {{label}}
+    out = out.replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}");
     // Promote single-brace decision diamonds `{label}` to `{{label}}`, but
     // skip cases that are already `{{...}}` (lookbehind/lookahead on `{`/`}`)
     // and skip JSON-like content starting with `"`.
