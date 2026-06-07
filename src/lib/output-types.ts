@@ -14,6 +14,7 @@ import {
   Database,
   BookOpen,
   Mic,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -33,7 +34,8 @@ export type DiagramOutputKey =
   | "diagram_sequence"
   | "diagram_state"
   | "diagram_deployment"
-  | "diagram_erd";
+  | "diagram_erd"
+  | "diagram_activity";
 
 
 export type OutputKey = DocumentOutputKey | DiagramOutputKey;
@@ -148,6 +150,15 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: Database,
     colorClass: "text-rose-500",
     mermaidHint: "erDiagram",
+  },
+  diagram_activity: {
+    key: "diagram_activity",
+    category: "diagram",
+    label: "תרשים Activity",
+    description: "תרחישי פעילות, זרימות עבודה ותהליכים עסקיים עם התפצלויות.",
+    icon: Workflow,
+    colorClass: "text-orange-500",
+    mermaidHint: "flowchart TD",
   },
   user_guide: {
     key: "user_guide",
