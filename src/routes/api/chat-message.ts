@@ -36,6 +36,17 @@ function extractMermaid(text: string): string {
   return text.trim();
 }
 
+function looksLikePlantUml(code: string): boolean {
+  const t = code.trimStart();
+  return (
+    /^activityDiagram\b/i.test(t) ||
+    /^@startuml\b/i.test(t) ||
+    /^start\b/im.test(t.split("\n").slice(0, 3).join("\n")) ||
+    /^\s*:[^;\n]+;/m.test(t)
+  );
+}
+
+
 export const Route = createFileRoute("/api/chat-message")({
   server: {
     handlers: {
