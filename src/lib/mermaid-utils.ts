@@ -84,14 +84,32 @@ function sanitizeMermaidSvg(svg: string): string {
 
 let renderCounter = 0;
 
+/** Repair stored diagrams whose init directive was mangled by an older
+ * post-processor (e.g. `%%{{"flowchart": ...}}%%`). Strip any malformed
+ * leading `%%...%%` directive — the renderer falls back to defaults. */
+function repairMermaidInitDirective(code: string): string {
+  const trimmed = code.trimStart();
+  if (!trimmed.startsWith("%%")) return code;
+  const end = trimmed.indexOf("%%", 2);
+  if (end === -1) return code;
+  const directive = trimmed.slice(0, end + 2);
+  // A valid init directive looks like `%%{init: {...}}%%` (single braces).
+  // Anything with `{{` inside the directive is the mangled form.
+  if (directive.includes("{{") || directive.includes("}}")) {
+    return trimmed.slice(end + 2).trimStart();
+  }
+  return code;
+}
+
 export async function renderMermaid(
   code: string
 ): Promise<{ svg: string; error: null } | { svg: null; error: string }> {
   initMermaid();
+  const safeCode = repairMermaidInitDirective(code);
   try {
-    await mermaid.parse(code);
+    await mermaid.parse(safeCode);
     const id = `m-${Date.now()}-${++renderCounter}`;
-    const { svg } = await mermaid.render(id, code);
+    const { svg } = await mermaid.render(id, safeCode);
     return { svg: sanitizeMermaidSvg(svg), error: null };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
