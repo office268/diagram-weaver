@@ -425,6 +425,15 @@ export const Route = createFileRoute("/api/chat-message")({
                     const fixed = extractMermaid(textFixed);
                     if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
                   }
+
+                  const { reviewActivityDiagram } = await import("@/lib/activity-diagram-pipeline.server");
+                  const review = await reviewActivityDiagram(model, mermaid, cleanUserMsg);
+                  if (!review.ok && review.fixedCode) {
+                    const candidate = extractMermaid(review.fixedCode);
+                    if (validateActivityDiagram(candidate).length <= validateActivityDiagram(mermaid).length) {
+                      mermaid = candidate;
+                    }
+                  }
                 }
 
                 mermaid = sanitizeMermaidLabels(mermaid);
@@ -639,6 +648,15 @@ export const Route = createFileRoute("/api/chat-message")({
               });
               const fixed = extractMermaid(textFixed);
               if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
+            }
+
+            const { reviewActivityDiagram } = await import("@/lib/activity-diagram-pipeline.server");
+            const review = await reviewActivityDiagram(model, mermaid, cleanUserMsg);
+            if (!review.ok && review.fixedCode) {
+              const candidate = extractMermaid(review.fixedCode);
+              if (validateActivityDiagram(candidate).length <= validateActivityDiagram(mermaid).length) {
+                mermaid = candidate;
+              }
             }
           }
           mermaid = sanitizeMermaidLabels(mermaid);

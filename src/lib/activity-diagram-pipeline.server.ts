@@ -41,6 +41,58 @@ const STAGE2_SYSTEM =
   `\n❌ שני diamonds עוקבים → ✓ diamond אחד עם כל הענפים` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
+export interface DiagramReviewResult {
+  ok: boolean;
+  violations?: string[];
+  fixedCode?: string;
+}
+
+const REVIEW_SYSTEM =
+  `אתה מבקר תרשימי Mermaid swimlane. קיבלת תרשים Mermaid ותיאור התהליך המקורי.` +
+  `\n\nבדוק את התרשים מול הכללים הבאים:` +
+  `\n1. flowchart RL בשורה הראשונה` +
+  `\n2. כל subgraph חייב לכלול direction TB` +
+  `\n3. DONE(("סיום")) — חייב שני זוגות סוגריים. DONE(["סיום"]) שגוי` +
+  `\n4. כל נקודת החלטה = diamond אחד עם כל הענפים — לא שני diamonds עוקבים` +
+  `\n5. לולאה חוזרת = חץ ישיר בין-subgraph ללא node ביניים` +
+  `\n6. אין nodes לפעולות שלא הוזכרו בתיאור המקורי` +
+  `\n7. כל actor מהתיאור מוצג כ-subgraph, ה-actors מהתיאור מיוצגים נכון` +
+  `\n\nהחזר JSON בלבד ללא markdown:` +
+  `\n- אם הכול תקין: {"ok":true}` +
+  `\n- אם יש הפרות: {"ok":false,"violations":["תיאור הפרה 1","תיאור הפרה 2"],"fixedCode":"\`\`\`mermaid\\n...\\n\`\`\`"}` +
+  `\n\nחשוב: בשדה fixedCode החזר את קוד ה-Mermaid המלא המתוקן בתוך גדר \`\`\`mermaid. אם אין הפרות, אל תכלול fixedCode.`;
+
+export async function reviewActivityDiagram(
+  model: Parameters<typeof generateText>[0]["model"],
+  mermaidCode: string,
+  originalPrompt: string,
+): Promise<DiagramReviewResult> {
+  try {
+    const userMessage =
+      `תיאור התהליך המקורי:\n${originalPrompt}\n\n` +
+      `קוד Mermaid שנוצר:\n\`\`\`mermaid\n${mermaidCode}\n\`\`\`\n\n` +
+      `בדוק את התרשים והחזר JSON לפי הפורמט המבוקש.`;
+
+    const { text } = await generateText({
+      model,
+      system: REVIEW_SYSTEM,
+      messages: [{ role: "user", content: userMessage }],
+      temperature: 0,
+    });
+
+    const clean = text.replace(/```json[^\n]*\n?/g, "").replace(/```\s*/g, "").trim();
+    const parsed = JSON.parse(clean) as Partial<DiagramReviewResult>;
+    if (typeof parsed.ok !== "boolean") return { ok: true };
+    return {
+      ok: parsed.ok,
+      violations: Array.isArray(parsed.violations) ? parsed.violations : undefined,
+      fixedCode: typeof parsed.fixedCode === "string" ? parsed.fixedCode : undefined,
+    };
+  } catch {
+    return { ok: true };
+  }
+}
+
 export async function runTwoStagePipeline(
   model: Parameters<typeof generateText>[0]["model"],
   userPrompt: string,
