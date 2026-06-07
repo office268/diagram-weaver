@@ -34,20 +34,52 @@ export const STAGE2_SYSTEM =
   `\n6. S(["👤"]) = נקודת התחלה, DONE(("סיום")) = סיום — שני זוגות סוגריים חובה` +
   `\n7. לולאה = חץ ישיר בין-subgraph ללא node ביניים: F --> A` +
   `\n8. אל תוסיף פעולות שלא מוזכרות` +
-  `\n9. style לכל subgraph: fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5` +
-  `\n10. מזהי nodes: ASCII בלבד, תוויות עברית ב-["..."]` +
+  `\n9. כל subgraph חייב מזהה ASCII + תווית בעברית בסוגריים מרובעים:` +
+  `\n   ✓ subgraph LANE1["עובד"]` +
+  `\n   ❌ subgraph "עובד"  ← שובר את הפרסר` +
+  `\n10. style מתייחס תמיד למזהה ASCII של ה-subgraph, לא לטקסט מצוטט:` +
+  `\n    ✓ style LANE1 fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5` +
+  `\n    ❌ style "עובד" fill:...  ← שובר את הפרסר` +
+  `\n11. מזהי nodes: ASCII בלבד, תוויות עברית ב-["..."]` +
   `\n\nשגיאות נפוצות:` +
   `\n❌ DONE(["סיום"]) → ✓ DONE(("סיום"))` +
   `\n❌ שני diamonds עוקבים → ✓ diamond אחד עם כל הענפים` +
+  `\n❌ {{{label}}} → ✓ {{label}} (זוג סוגריים אחד בלבד)` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
-  // Apply transforms line-by-line so the init directive line (starts with %%)
-  // is never touched by the decision-diamond regex (which would otherwise
-  // mangle `%%{init: {...}}%%` into `%%{{"flowchart...}}%%`).
-  const lines = code.split("\n").map((line) => {
+  // Step 1: assign ASCII IDs to any `subgraph "label"` (without an id) and
+  // remap matching `style "label" ...` lines to the same id. Mermaid's
+  // `style` command requires a node/subgraph identifier — a quoted label
+  // breaks the parser ("got 'STR'").
+  const quotedSubgraphIds = new Map<string, string>();
+  let laneCounter = 0;
+  const idAssigned = code.replace(
+    /^(\s*)subgraph\s+"([^"]+)"\s*$/gm,
+    (_m, indent: string, label: string) => {
+      let id = quotedSubgraphIds.get(label);
+      if (!id) {
+        laneCounter += 1;
+        id = `LANE${laneCounter}`;
+        quotedSubgraphIds.set(label, id);
+      }
+      return `${indent}subgraph ${id}["${label}"]`;
+    },
+  );
+  const styleRemapped = idAssigned.replace(
+    /^(\s*)style\s+"([^"]+)"(\s+)/gm,
+    (m, indent: string, label: string, sp: string) => {
+      const id = quotedSubgraphIds.get(label);
+      return id ? `${indent}style ${id}${sp}` : m;
+    },
+  );
+
+  // Step 2: line-by-line transforms (skip init directive lines).
+  const lines = styleRemapped.split("\n").map((line) => {
     if (line.trimStart().startsWith("%%")) return line;
     let out = line.replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))');
+    // Repair triple-braced diamonds {{{label}}} → {{label}}
+    out = out.replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}");
     // Promote single-brace decision diamonds `{label}` to `{{label}}`, but
     // skip cases that are already `{{...}}` (lookbehind/lookahead on `{`/`}`)
     // and skip JSON-like content starting with `"`.
@@ -78,6 +110,12 @@ export function validateActivityDiagram(code: string): string[] {
   const diamonds = (code.match(/\{\{[^}]+\}\}/g) ?? []).length;
   if (diamonds > 2)
     violations.push(`נמצאו ${diamonds} diamonds — כשיש נקודת החלטה אחת, השתמש ב-diamond יחיד עם כל הענפים במקום ${diamonds} diamonds עוקבים`);
+  if (/^\s*subgraph\s+"/m.test(code))
+    violations.push('subgraph עם תווית מצוטטת ללא מזהה ASCII — חובה `subgraph LANE1["שם"]` ולא `subgraph "שם"`');
+  if (/^\s*style\s+"/m.test(code))
+    violations.push('פקודת `style` עם שם מצוטט — חובה להפנות למזהה ASCII של ה-subgraph, לדוגמה `style LANE1 fill:...`');
+  if (/\{\{\{/.test(code))
+    violations.push('נמצא diamond כפול-מסגרת `{{{...}}}` — חובה זוג סוגריים אחד בלבד `{{...}}`');
   return violations;
 }
 
