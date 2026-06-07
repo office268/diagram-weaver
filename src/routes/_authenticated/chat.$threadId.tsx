@@ -144,7 +144,9 @@ function ChatPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
     queryFn: () => getThreadFn({ data: { threadId } }),
+    retry: false,
   });
+
 
   const { data: threadsData } = useQuery({
     queryKey: ["chat-threads"],
@@ -318,13 +320,14 @@ function ChatPage() {
       </div>
     );
   }
-  if (error || !data) {
+  if (error || !data || !data.thread) {
     return (
       <div className="mx-auto max-w-2xl p-6 text-center text-destructive">
         {(error as Error)?.message ?? "שיחה לא נמצאה"}
       </div>
     );
   }
+
 
   const def = OUTPUT_TYPES[data.thread.output_type as OutputKey];
   const messages = data.messages;
