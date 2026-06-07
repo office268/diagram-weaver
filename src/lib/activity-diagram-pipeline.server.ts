@@ -7,7 +7,7 @@ export interface ProcessMap {
   merges: Array<{ from: string[]; to: string }>;
 }
 
-const STAGE1_SYSTEM =
+export const STAGE1_SYSTEM =
   `אתה מנתח תהליכים עסקיים. המשתמש מתאר תהליך — חלץ ממנו מבנה JSON תקני ללא markdown.` +
   `\n\nפורמט נדרש (JSON בלבד, ללא הסברים):` +
   `\n{` +
@@ -23,7 +23,7 @@ const STAGE1_SYSTEM =
   `\n- merges: מערך ריק [] אם אין מיזוג נתיבים` +
   `\n- אם ספק — עדיף פחות מידע מאשר מידע שגוי`;
 
-const STAGE2_SYSTEM =
+export const STAGE2_SYSTEM =
   `אתה מומחה Mermaid. קיבלת JSON המתאר תהליך ותיאור מקורי. המר אותו לתרשים Mermaid swimlane.` +
   `\n\nכללים מחייבים:` +
   `\n1. flowchart RL` +
@@ -40,6 +40,22 @@ const STAGE2_SYSTEM =
   `\n❌ DONE(["סיום"]) → ✓ DONE(("סיום"))` +
   `\n❌ שני diamonds עוקבים → ✓ diamond אחד עם כל הענפים` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
+
+export function validateActivityDiagram(code: string): string[] {
+  const violations: string[] = [];
+  if (!/^flowchart\s+RL\b/m.test(code))
+    violations.push("חסר `flowchart RL` — חובה להתחיל בשורה `flowchart RL`");
+  const subgraphs = (code.match(/^\s*subgraph\b/gm) ?? []).length;
+  const dirTB = (code.match(/^\s*direction\s+TB\b/gm) ?? []).length;
+  if (subgraphs > 0 && dirTB < subgraphs)
+    violations.push(`חסר \`direction TB\` ב-${subgraphs - dirTB} subgraph(s) — כל subgraph חייב לכלול \`direction TB\` בתחילתו`);
+  if (/\bDONE\s*\(\s*\[/.test(code))
+    violations.push('node הסיום כתוב כ-`DONE(["סיום"])` במקום `DONE(("סיום"))` — נדרשים שני זוגות סוגריים לעיגול');
+  const diamonds = (code.match(/\{\{[^}]+\}\}/g) ?? []).length;
+  if (diamonds > 2)
+    violations.push(`נמצאו ${diamonds} diamonds — כשיש נקודת החלטה אחת, השתמש ב-diamond יחיד עם כל הענפים במקום ${diamonds} diamonds עוקבים`);
+  return violations;
+}
 
 export interface DiagramReviewResult {
   ok: boolean;

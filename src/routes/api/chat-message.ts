@@ -59,76 +59,6 @@ function sanitizeMermaidLabels(code: string): string {
   );
 }
 
-function validateActivityDiagram(code: string): string[] {
-  const violations: string[] = [];
-  if (!/^flowchart\s+RL\b/m.test(code))
-    violations.push("חסר `flowchart RL` — חובה להתחיל בשורה `flowchart RL`");
-  const subgraphs = (code.match(/^\s*subgraph\b/gm) ?? []).length;
-  const dirTB = (code.match(/^\s*direction\s+TB\b/gm) ?? []).length;
-  if (subgraphs > 0 && dirTB < subgraphs)
-    violations.push(`חסר \`direction TB\` ב-${subgraphs - dirTB} subgraph(s) — כל subgraph חייב לכלול \`direction TB\` בתחילתו`);
-  if (/\bDONE\s*\(\s*\[/.test(code))
-    violations.push('node הסיום כתוב כ-`DONE(["סיום"])` במקום `DONE(("סיום"))` — נדרשים שני זוגות סוגריים לעיגול');
-  const diamonds = (code.match(/\{\{[^}]+\}\}/g) ?? []).length;
-  if (diamonds > 2)
-    violations.push(`נמצאו ${diamonds} diamonds — כשיש נקודת החלטה אחת, השתמש ב-diamond יחיד עם כל הענפים במקום ${diamonds} diamonds עוקבים`);
-  return violations;
-}
-
-
-function buildActivityInstructions(): string {
-  return (
-    `עצב כ-Swimlane diagram לפי ההנחיות הבאות:\n` +
-    `1. כיוון: flowchart RL (ימין לשמאל)\n` +
-    `2. כל שחקן/actor = subgraph נפרד. שם השחקן חייב להיות תיאורי וספציפי לתהליך המבוקש.\n` +
-    `3. כל node חייב לתאר פעולה ספציפית מהתהליך — אסור להשתמש במילים גנריות כמו "פעולה" או "שלב".\n` +
-    `4. השתמש ב-{{תנאי?}} לנקודות החלטה. הענפים יכולים להיות |כן|/|לא| או כל תיוג תיאורי כגון |אישור|/|בירור|/|סירוב|. כשיש נקודת החלטה אחת עם מספר תוצאות — השתמש ב-diamond אחד עם כל הענפים. אל תפצל לשני diamonds עוקבים.\n` +
-    `5. חבר nodes בין subgraphs בחצים לתיאור מעבר אחריות בין שחקנים.\n` +
-    `6. בתוך כל subgraph הוסף \`direction TB\` כך שהזרימה תהיה מלמעלה למטה בתוך הסווימליין.\n` +
-    `7. הגדר את ה-subgraph של הגורם המתחיל בתהליך ראשון בקוד — הוא יופיע בצד הימני.\n` +
-    `8. הוסף אקטור התחלה \`S(["👤"])\` ומסיים \`DONE(("סיום"))\` בסווימליין המתאים. חשוב: אל תשתמש ב-\`(["סיום"])\` — זה מייצר מלבן. רק \`(("סיום"))\` עם שני זוגות סוגריים מייצר עיגול.\n` +
-    `9. כשמספר נתיבים מתמזגים לתוצאה אחת (join/sync), השתמש ב-node מיזוג מפורש, למשל \`MERGE["הצגת תשובה לעובד"]\`, שאליו מצביעים כל הנתיבים לפני ה-DONE.\n` +
-    `10. בסוף הקוד הוסף style לכל subgraph: \`fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\` לקו מקווקו.\n` +
-    `11. כשענף חוזר לסווימליין קודם (לופ), השתמש בחץ ישיר בין-subgraph ללא node ביניים: \`F --> A\`. אל תוסיף node "קבלת בקשה לעדכון" בסווימליין המקורי.\n` +
-    `12. אסור להוסיף nodes לפעולות שלא הוזכרו במפורש בבקשה — אל תשלים שלבים לוגיים שחסרים.\n\n` +
-    `דוגמה לתהליך אישור בקשת חופשה:\n` +
-    `\`\`\`mermaid\n` +
-    `flowchart RL\n` +
-    `  subgraph EMP["עובד"]\n` +
-    `    direction TB\n` +
-    `    S(["👤"]) --> A["מילוי / עדכון טופס בקשת חופשה"]\n` +
-    `    A --> B["שליחת טופס למנהל"]\n` +
-    `    MERGE["הצגת תשובה לעובד"] --> DONE(("סיום"))\n` +
-    `  end\n` +
-    `  subgraph MGR["מנהל ישיר"]\n` +
-    `    direction TB\n` +
-    `    C["בחינת הבקשה"] --> DEC{{"תשובה?"}}\n` +
-    `    DEC -->|בירור| F["בירור"]\n` +
-    `    DEC -->|אישור| E["אישור"]\n` +
-    `    DEC -->|סירוב| G["סירוב"]\n` +
-    `  end\n` +
-    `  subgraph HR["משאבי אנוש"]\n` +
-    `    direction TB\n` +
-    `    H["עדכון מערכת נוכחות"]\n` +
-    `  end\n` +
-    `  B --> C\n` +
-    `  F --> A\n` +
-    `  E --> H\n` +
-    `  G --> MERGE\n` +
-    `  H --> MERGE\n` +
-    `  style EMP fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
-    `  style MGR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
-    `  style HR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
-    `\`\`\`\n\n` +
-    `שגיאות נפוצות — אל תחזור עליהן:\n` +
-    `❌ שגוי: DONE(["סיום"]) — מייצר מלבן\n` +
-    `✓ נכון: DONE(("סיום")) — מייצר עיגול (שני זוגות סוגריים)\n\n` +
-    `❌ שגוי: שני diamonds עוקבים — DEC1{{"צורך בבירור?"}} -->|לא| DEC2{{"מאשר?"}}\n` +
-    `✓ נכון: diamond אחד עם כל הענפים — DEC{{"תשובה?"}} -->|בירור| F -->|אישור| E -->|סירוב| G\n\n` +
-    `כעת צור תרשים דומה עבור התהליך שתואר, עם תוכן ספציפי לבקשה. `
-  );
-}
-
 export const Route = createFileRoute("/api/chat-message")({
   server: {
     handlers: {
@@ -358,88 +288,53 @@ export const Route = createFileRoute("/api/chat-message")({
                 }));
               } else {
                 // Diagram path
-                const provider = createLovableAiGatewayProvider(apiKey);
                 const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-                const model = provider(await loadAgentModelOverride());
+                const modelOverride = await loadAgentModelOverride();
 
-                const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
-                const activityInstructions =
-                  outputType === "diagram_activity"
-                    ? buildActivityInstructions()
-                    : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `;
+                let mermaid: string;
 
-                const system =
-                  `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
-                  `סוג התרשים המבוקש: ${def.label}. ` +
-                  `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
-                  (hint
-                    ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. `
-                    : "") +
-                  `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
-                  `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
-                  activityInstructions +
-                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
-                  `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.`;
-
-                const history: { role: "user" | "assistant"; content: string }[] = prior.map(
-                  (m) => ({
-                    role: m.role === "assistant" ? "assistant" : "user",
-                    content: m.content,
-                  }),
-                );
-                history.push({ role: "user", content: cleanUserMsg });
-
-                let rawText: string;
                 if (outputType === "diagram_activity") {
-                  const { runTwoStagePipeline } = await import("@/lib/activity-diagram-pipeline.server");
-                  const staged = await runTwoStagePipeline(model, cleanUserMsg);
-                  if (staged !== null) {
-                    rawText = staged;
-                  } else {
-                    const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
-                    rawText = text;
-                  }
-                } else {
-                  const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
-                  rawText = text;
-                }
-
-                let mermaid = extractMermaid(rawText);
-                if (looksLikePlantUml(mermaid)) {
-                  const { text: text2 } = await generateText({
-                    model,
-                    system:
-                      system +
-                      `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${hint || "flowchart TD"}.`,
-                    messages: history,
-                    temperature: 0,
+                  const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
+                  const { mermaid: raw } = await runActivitySwimlaneOrchestrator({
+                    userPrompt: cleanUserMsg,
+                    lovableApiKey: apiKey,
+                    modelOverride,
                   });
-                  const retry = extractMermaid(text2);
-                  if (!looksLikePlantUml(retry)) mermaid = retry;
-                }
-
-                if (outputType === "diagram_activity") {
-                  const actViolations = validateActivityDiagram(mermaid);
-                  if (actViolations.length > 0) {
-                    const violationsList = actViolations.map(v => `• ${v}`).join("\n");
-                    const { text: textFixed } = await generateText({
+                  mermaid = raw;
+                } else {
+                  const provider = createLovableAiGatewayProvider(apiKey);
+                  const model = provider(modelOverride);
+                  const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
+                  const system =
+                    `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
+                    `סוג התרשים המבוקש: ${def.label}. ` +
+                    `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
+                    (hint ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. ` : "") +
+                    `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
+                    `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
+                    `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. ` +
+                    `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
+                    `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.`;
+                  const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+                    (m) => ({
+                      role: m.role === "assistant" ? "assistant" : "user",
+                      content: m.content,
+                    }),
+                  );
+                  history.push({ role: "user", content: cleanUserMsg });
+                  const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
+                  let raw = extractMermaid(text);
+                  if (looksLikePlantUml(raw)) {
+                    const { text: text2 } = await generateText({
                       model,
-                      system: system + `\n\nהתרשים שנוצר מכיל את הבעיות הבאות:\n${violationsList}\n\nהחזר את קוד ה-Mermaid המלא מחדש עם כל התיקונים.`,
+                      system: system + `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${hint || "flowchart TD"}.`,
                       messages: history,
                       temperature: 0,
                     });
-                    const fixed = extractMermaid(textFixed);
-                    if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
+                    const retry = extractMermaid(text2);
+                    if (!looksLikePlantUml(retry)) raw = retry;
                   }
-
-                  const { reviewActivityDiagram } = await import("@/lib/activity-diagram-pipeline.server");
-                  const review = await reviewActivityDiagram(model, mermaid, cleanUserMsg);
-                  if (!review.ok && review.fixedCode) {
-                    const candidate = extractMermaid(review.fixedCode);
-                    if (validateActivityDiagram(candidate).length <= validateActivityDiagram(mermaid).length) {
-                      mermaid = candidate;
-                    }
-                  }
+                  mermaid = raw;
                 }
 
                 mermaid = sanitizeMermaidLabels(mermaid);
@@ -542,80 +437,52 @@ export const Route = createFileRoute("/api/chat-message")({
 
           // Diagram path
           const diagDef = def as typeof def & { mermaidHint: string };
-          const provider = createLovableAiGatewayProvider(apiKey);
           const { loadAgentModelOverride: loadModelOverride } = await import("@/lib/ai-model-setting.server");
-          const model = provider(await loadModelOverride());
+          const modelOverride = await loadModelOverride();
 
-          const activitySwimlanesInstructions =
-            outputType === "diagram_activity" ? buildActivityInstructions() : "";
+          let mermaid: string;
 
-          const system =
-            `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
-            `סוג התרשים המבוקש: ${def.label}. ` +
-            `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
-            `התחל בכותרת המתאימה (${def.mermaidHint ?? ""}). ` +
-            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
-            `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. ` +
-            activitySwimlanesInstructions;
-
-          const history: { role: "user" | "assistant"; content: string }[] = prior.map(
-            (m) => ({
-              role: m.role === "assistant" ? "assistant" : "user",
-              content: m.content,
-            }),
-          );
-          history.push({ role: "user", content: cleanUserMsg });
-
-          let rawText: string;
           if (outputType === "diagram_activity") {
-            const { runTwoStagePipeline } = await import("@/lib/activity-diagram-pipeline.server");
-            const staged = await runTwoStagePipeline(model, cleanUserMsg);
-            if (staged !== null) {
-              rawText = staged;
-            } else {
-              const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
-              rawText = text;
-            }
-          } else {
-            const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
-            rawText = text;
-          }
-
-          let mermaid = extractMermaid(rawText);
-          const diagHint = diagDef.mermaidHint ?? "";
-          if (looksLikePlantUml(mermaid)) {
-            const { text: text2 } = await generateText({
-              model,
-              system: system + `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${diagHint || "flowchart TD"}.`,
-              messages: history,
-              temperature: 0,
+            const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
+            const { mermaid: raw } = await runActivitySwimlaneOrchestrator({
+              userPrompt: cleanUserMsg,
+              lovableApiKey: apiKey,
+              modelOverride,
             });
-            const retry = extractMermaid(text2);
-            if (!looksLikePlantUml(retry)) mermaid = retry;
-          }
-          if (outputType === "diagram_activity") {
-            const actViolations = validateActivityDiagram(mermaid);
-            if (actViolations.length > 0) {
-              const violationsList = actViolations.map(v => `• ${v}`).join("\n");
-              const { text: textFixed } = await generateText({
+            mermaid = raw;
+          } else {
+            const provider = createLovableAiGatewayProvider(apiKey);
+            const model = provider(modelOverride);
+            const system =
+              `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
+              `סוג התרשים המבוקש: ${def.label}. ` +
+              `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
+              `התחל בכותרת המתאימה (${diagDef.mermaidHint ?? ""}). ` +
+              `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
+              `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. `;
+            const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+              (m) => ({
+                role: m.role === "assistant" ? "assistant" : "user",
+                content: m.content,
+              }),
+            );
+            history.push({ role: "user", content: cleanUserMsg });
+            const { text: rawText } = await generateText({ model, system, messages: history, temperature: 0.3 });
+            let raw = extractMermaid(rawText);
+            const diagHint = diagDef.mermaidHint ?? "";
+            if (looksLikePlantUml(raw)) {
+              const { text: text2 } = await generateText({
                 model,
-                system: system + `\n\nהתרשים שנוצר מכיל את הבעיות הבאות:\n${violationsList}\n\nהחזר את קוד ה-Mermaid המלא מחדש עם כל התיקונים.`,
+                system: system + `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${diagHint || "flowchart TD"}.`,
                 messages: history,
                 temperature: 0,
               });
-              const fixed = extractMermaid(textFixed);
-              if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
+              const retry = extractMermaid(text2);
+              if (!looksLikePlantUml(retry)) raw = retry;
             }
-
-            const { reviewActivityDiagram } = await import("@/lib/activity-diagram-pipeline.server");
-            const review = await reviewActivityDiagram(model, mermaid, cleanUserMsg);
-            if (!review.ok && review.fixedCode) {
-              const candidate = extractMermaid(review.fixedCode);
-              if (validateActivityDiagram(candidate).length <= validateActivityDiagram(mermaid).length) {
-                mermaid = candidate;
-              }
-            }
+            mermaid = raw;
           }
+
           mermaid = sanitizeMermaidLabels(mermaid);
           const title = cleanUserMsg.slice(0, 80) || def.label;
 
