@@ -31,6 +31,7 @@ import {
   OUTPUT_TYPES,
   OUTPUT_TYPE_ORDER,
   OUTPUT_TYPE_EXTRAS,
+  isDiagramType,
   type OutputKey,
 } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
