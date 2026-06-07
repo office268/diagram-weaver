@@ -37,7 +37,8 @@ const DEFAULTS: AppMetadata = {
 };
 
 export const getAppMetadata = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  const sb = publicServerClient();
+  const { data, error } = await sb
     .from("app_metadata")
     .select("*")
     .eq("id", "singleton")
