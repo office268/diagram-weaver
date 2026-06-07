@@ -4,6 +4,7 @@ import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 import {
   STAGE1_SYSTEM,
   STAGE2_SYSTEM,
+  postProcessActivityMermaid,
   validateActivityDiagram,
   reviewActivityDiagram,
   type ProcessMap,
@@ -141,5 +142,5 @@ export async function runActivitySwimlaneOrchestrator(params: {
     iterations++;
   }
 
-  return { mermaid, iterations };
+  return { mermaid: postProcessActivityMermaid(mermaid), iterations };
 }

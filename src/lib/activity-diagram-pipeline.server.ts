@@ -41,6 +41,12 @@ export const STAGE2_SYSTEM =
   `\n❌ שני diamonds עוקבים → ✓ diamond אחד עם כל הענפים` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
+export function postProcessActivityMermaid(code: string): string {
+  return code
+    .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
+    .replace(/\{([^{][^}]+)\}/g, '{{$1}}');
+}
+
 export function validateActivityDiagram(code: string): string[] {
   const violations: string[] = [];
   if (!/^flowchart\s+RL\b/m.test(code))
