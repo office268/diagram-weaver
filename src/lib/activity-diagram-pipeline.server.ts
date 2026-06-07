@@ -42,11 +42,16 @@ export const STAGE2_SYSTEM =
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
-  const elkDirective = '%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%';
-  const withElk = code.trimStart().startsWith("%%") ? code : `${elkDirective}\n${code}`;
-  return withElk
+  // Apply transforms FIRST (before prepending the init directive), so the
+  // single-brace -> double-brace regex doesn't corrupt the `%%{init: {...}}%%`
+  // directive (which legitimately contains single braces).
+  const transformed = code
     .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
     .replace(/\{([^{][^}]+)\}/g, '{{$1}}');
+  const elkDirective = '%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%';
+  return transformed.trimStart().startsWith("%%")
+    ? transformed
+    : `${elkDirective}\n${transformed}`;
 }
 
 export function validateActivityDiagram(code: string): string[] {
