@@ -124,7 +124,8 @@ export const Route = createFileRoute("/api/chat-message")({
         if (body.mode === "plan") {
           try {
             const provider = createLovableAiGatewayProvider(apiKey);
-            const model = provider("google/gemini-2.5-flash");
+            const { loadAgentModelOverride: loadPlanModel } = await import("@/lib/ai-model-setting.server");
+            const model = provider(await loadPlanModel());
             const planSystem =
               `אתה אנליסט מערכות מנוסה שעוזר ללקוח לחדד את הבקשה לפני יצירת ${def.label}. ` +
               `אל תייצר את המסמך/תרשים עצמו. במקום זה: ` +
@@ -289,7 +290,8 @@ export const Route = createFileRoute("/api/chat-message")({
               } else {
                 // Diagram path
                 const provider = createLovableAiGatewayProvider(apiKey);
-                const model = provider("google/gemini-2.5-flash");
+                const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+                const model = provider(await loadAgentModelOverride());
 
                 const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
                 const activityInstructions =
@@ -482,7 +484,8 @@ export const Route = createFileRoute("/api/chat-message")({
           // Diagram path
           const diagDef = def as typeof def & { mermaidHint: string };
           const provider = createLovableAiGatewayProvider(apiKey);
-          const model = provider("google/gemini-2.5-flash");
+          const { loadAgentModelOverride: loadModelOverride } = await import("@/lib/ai-model-setting.server");
+          const model = provider(await loadModelOverride());
 
           const activitySwimlanesInstructions =
             outputType === "diagram_activity"
