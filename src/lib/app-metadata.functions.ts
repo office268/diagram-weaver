@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+function publicServerClient() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase public env vars");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
 export type AppMetadata = {
   title: string;
@@ -29,7 +37,8 @@ const DEFAULTS: AppMetadata = {
 };
 
 export const getAppMetadata = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  const sb = publicServerClient();
+  const { data, error } = await sb
     .from("app_metadata")
     .select("*")
     .eq("id", "singleton")
