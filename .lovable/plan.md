@@ -1,21 +1,19 @@
 ## הבעיה
-
-בדף "המסמכים שלי" (`/documents`), רק כרטיסיות מסוג "מסמך" עטופות ב-`<Link>` (לעורך). כרטיסיות תרשים (וקבצים שהועלו) הן `<div>` רגיל ללא טיפול בלחיצה — לכן לחיצה על תרשים לא מציגה שום דבר. בנוסף, אין כיום ראוט להצגת תרשים בודד.
+בדף תצוגת תרשים (`/diagram/$id`) ובצ'אט, התרשים מוצג קטן ואין דרך להגדיל/להזיז אותו לבחינה מפורטת.
 
 ## הפתרון
+להוסיף יכולת zoom & pan ל-`MermaidPreview` באמצעות הספרייה `react-zoom-pan-pinch` (קלה, תומכת ב-pinch במובייל וגלגלת בדסקטופ).
 
-1. **ראוט חדש** `src/routes/_authenticated/diagram.$id.tsx`:
-   - טוען את התרשים דרך `getDiagram({ id })`.
-   - מציג כותרת, סוג, ותצוגת `MermaidPreview` עם `mermaid_code`.
-   - כפתור חזרה ל-`/documents`, וכפתור פתיחה/הורדה (אופציונלי SVG כמו ב-editor).
-   - `errorComponent` ו-`notFoundComponent` כנדרש.
+### שינויים
+1. **התקנה**: `bun add react-zoom-pan-pinch`.
+2. **`src/components/mermaid-preview.tsx`**:
+   - לעטוף את ה-SVG ב-`TransformWrapper` / `TransformComponent`.
+   - להוסיף שורת כלים צפה (פינה עליונה) עם כפתורים: הגדל (+), הקטן (−), איפוס, ומסך מלא.
+   - תמיכה ב-pinch-to-zoom במגע ובגלגלת בעכבר.
+   - `minScale=0.5`, `maxScale=4`, `initialScale=1`, `centerOnInit`.
+3. **מצב מסך מלא**:
+   - כפתור שפותח דיאלוג (`Dialog` קיים מ-shadcn) במסך כמעט מלא עם אותו `MermaidPreview` בפנים — חוויית בחינה נוחה במובייל.
 
-2. **`src/routes/_authenticated/documents.tsx`**:
-   - לעטוף כרטיס תרשים ב-`<Link to="/diagram/$id" params={{ id: it.id }}>`.
-   - לעדכן את כפתור ה-"פתח" (ExternalLink) בהובר שיופיע גם עבור תרשימים ויפנה לאותו ראוט.
-   - קבצים שהועלו נשארים ללא פעולת פתיחה (כפי שזה כיום).
-
-## הערות טכניות
-
-- שימוש ב-`useQuery` עם `queryKey: ["diagram", id]` ו-`retry: false`, כמו בדפוס שב-`chat.$threadId.tsx`.
-- אין שינויים ב-DB או ב-server functions — `getDiagram` כבר קיים ב-`src/lib/diagrams.functions.ts`.
+### הערות
+- אין שינויי backend / DB.
+- שינוי מקומי בקומפוננטה אחת — מתפשט אוטומטית לכל מקום שמשתמש ב-`MermaidPreview` (דף תרשים, צ'אט, עורך).
