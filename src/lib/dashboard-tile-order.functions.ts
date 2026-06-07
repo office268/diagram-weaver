@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 
 const VALID = new Set<string>(OUTPUT_TYPE_ORDER as readonly string[]);
@@ -13,15 +12,17 @@ function normalize(order: string[]): OutputKey[] {
   return [...filtered, ...missing] as OutputKey[];
 }
 
-export const getDashboardTileOrder = createServerFn({ method: "GET" }).handler(async () => {
-  const { data } = await (supabaseAdmin as any)
-    .from("dashboard_tile_order")
-    .select("order")
-    .eq("id", "singleton")
-    .maybeSingle();
-  const raw = (data?.order as string[] | undefined) ?? [];
-  return { order: normalize(raw) };
-});
+export const getDashboardTileOrder = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await (context.supabase as any)
+      .from("dashboard_tile_order")
+      .select("order")
+      .eq("id", "singleton")
+      .maybeSingle();
+    const raw = (data?.order as string[] | undefined) ?? [];
+    return { order: normalize(raw) };
+  });
 
 const UpdateSchema = z.object({
   order: z.array(z.string().min(1).max(100)).min(1).max(100),
@@ -31,7 +32,7 @@ export const setDashboardTileOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => UpdateSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: roleRow } = await (supabaseAdmin as any)
+    const { data: roleRow } = await (context.supabase as any)
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
@@ -40,7 +41,7 @@ export const setDashboardTileOrder = createServerFn({ method: "POST" })
     if (!roleRow) throw new Error("רק מנהל מערכת יכול לשנות את סדר הקוביות");
 
     const order = normalize(data.order);
-    const { error } = await (supabaseAdmin as any)
+    const { error } = await (context.supabase as any)
       .from("dashboard_tile_order")
       .upsert({
         id: "singleton",
