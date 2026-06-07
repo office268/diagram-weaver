@@ -34,11 +34,17 @@ export const STAGE2_SYSTEM =
   `\n6. S(["👤"]) = נקודת התחלה, DONE(("סיום")) = סיום — שני זוגות סוגריים חובה` +
   `\n7. לולאה = חץ ישיר בין-subgraph ללא node ביניים: F --> A` +
   `\n8. אל תוסיף פעולות שלא מוזכרות` +
-  `\n9. style לכל subgraph: fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5` +
-  `\n10. מזהי nodes: ASCII בלבד, תוויות עברית ב-["..."]` +
+  `\n9. כל subgraph חייב מזהה ASCII + תווית בעברית בסוגריים מרובעים:` +
+  `\n   ✓ subgraph LANE1["עובד"]` +
+  `\n   ❌ subgraph "עובד"  ← שובר את הפרסר` +
+  `\n10. style מתייחס תמיד למזהה ASCII של ה-subgraph, לא לטקסט מצוטט:` +
+  `\n    ✓ style LANE1 fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5` +
+  `\n    ❌ style "עובד" fill:...  ← שובר את הפרסר` +
+  `\n11. מזהי nodes: ASCII בלבד, תוויות עברית ב-["..."]` +
   `\n\nשגיאות נפוצות:` +
   `\n❌ DONE(["סיום"]) → ✓ DONE(("סיום"))` +
   `\n❌ שני diamonds עוקבים → ✓ diamond אחד עם כל הענפים` +
+  `\n❌ {{{label}}} → ✓ {{label}} (זוג סוגריים אחד בלבד)` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
