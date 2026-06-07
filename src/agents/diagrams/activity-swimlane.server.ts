@@ -25,16 +25,30 @@ export async function runExtractorAgent(
   userPrompt: string,
 ): Promise<ProcessMap> {
   let text = "";
-  try {
-    const result = await generateText({
-      model,
-      system: STAGE1_SYSTEM,
-      messages: [{ role: "user", content: userPrompt }],
-      temperature: 0,
-    });
-    text = result.text;
-    return parseProcessMapResponse(text);
-  } catch (err) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const system =
+        attempt === 0
+          ? STAGE1_SYSTEM
+          : `${STAGE1_SYSTEM}\n\nניסיון חוזר: החזר אובייקט JSON מלא ותקין בלבד. אל תחתוך את הפלט, אל תעטוף ב-markdown, ואל תחזיר טקסט נוסף.`;
+
+      const result = await generateText({
+        model,
+        system,
+        messages: [{ role: "user", content: userPrompt }],
+        temperature: 0,
+      });
+      text = result.text;
+      return parseProcessMapResponse(text);
+    } catch (err) {
+      if (
+        err instanceof ActivityDiagramGenerationError &&
+        attempt === 0 &&
+        (err.code === "extractor_truncated" || err.code === "extractor_invalid_json")
+      ) {
+        continue;
+      }
+
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
     if (/payment required|402/i.test(msg)) {
@@ -57,7 +71,10 @@ export async function runExtractorAgent(
     throw err instanceof Error
       ? err
       : new Error("שלב חילוץ מבנה התהליך נכשל מסיבה לא ידועה.");
+    }
   }
+
+  throw new Error("שלב חילוץ מבנה התהליך נכשל — לא התקבל פלט מובנה תקין.");
 }
 
 /** Agent 2 — generate Mermaid swimlane from ProcessMap + original prompt */
