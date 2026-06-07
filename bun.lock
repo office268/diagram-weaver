@@ -15,6 +15,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@hookform/resolvers": "^5.2.2",
         "@lovable.dev/cloud-auth-js": "^1.1.2",
+        "@mermaid-js/layout-elk": "^0.2.1",
         "@paddle/paddle-node-sdk": "^3.8.0",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -329,6 +330,8 @@
     "@lovable.dev/vite-tanstack-config": ["@lovable.dev/vite-tanstack-config@2.1.1", "", { "dependencies": { "@lovable.dev/vite-plugin-dev-server-bridge": "^1.0.0", "@lovable.dev/vite-plugin-hmr-gate": "^1.0.0", "lovable-tagger": "1.2.0" }, "peerDependencies": { "@tailwindcss/vite": ">=4.0.0", "@tanstack/react-start": ">=1.100.0", "@vitejs/plugin-react": ">=4.0.0", "nitro": ">=3.0.260429-beta", "vite": ">=5.0.0 <9.0.0", "vite-tsconfig-paths": ">=6.0.0" }, "optionalPeers": ["nitro"] }, "sha512-tAQWfpdBzCEK7Yxugu2QuLowdbqNkaHeqNkUc2AvhGawXwYwkJggJG4i05Rnl0FHu2qn9w9mUoHp5GZYIv8fww=="],
 
     "@marijn/find-cluster-break": ["@marijn/find-cluster-break@1.0.2", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@marijn/find-cluster-break/-/find-cluster-break-1.0.2.tgz", {}, "sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g=="],
+
+    "@mermaid-js/layout-elk": ["@mermaid-js/layout-elk@0.2.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@mermaid-js/layout-elk/-/layout-elk-0.2.1.tgz", { "dependencies": { "d3": "^7.9.0", "elkjs": "^0.9.3" }, "peerDependencies": { "mermaid": "^11.0.2" } }, "sha512-MX9jwhMyd5zDcFsYcl3duDUkKhjVRUCGEQrdCeNV5hCIR6+3FuDDbRbFmvVbAu15K1+juzsYGG+K8MDvCY1Amg=="],
 
     "@mermaid-js/parser": ["@mermaid-js/parser@1.1.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@mermaid-js/parser/-/parser-1.1.1.tgz", { "dependencies": { "@chevrotain/types": "~11.1.1" } }, "sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw=="],
 
@@ -993,6 +996,8 @@
     "duck": ["duck@0.1.12", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/duck/-/duck-0.1.12.tgz", { "dependencies": { "underscore": "^1.13.1" } }, "sha512-wkctla1O6VfP89gQ+J/yDesM0S7B7XLXjKGzXxMDVFg7uEn706niAtyYovKbyq1oT9YwDcly721/iUWoc8MVRg=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.344", "", {}, "sha512-4MxfbmNDm+KPh066EZy+eUnkcDPcZ35wNmOWzFuh/ijvHsve6kbLTLURy88uCNK5FbpN+yk2nQY6BYh1GEt+wg=="],
+
+    "elkjs": ["elkjs@0.9.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/elkjs/-/elkjs-0.9.3.tgz", {}, "sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ=="],
 
     "embla-carousel": ["embla-carousel@8.6.0", "", {}, "sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA=="],
 
