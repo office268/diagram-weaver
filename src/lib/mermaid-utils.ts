@@ -11,7 +11,7 @@ export function initMermaid() {
     theme: "default",
     securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-    flowchart: { curve: "basis", useMaxWidth: true },
+    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: false },
     sequence: { useMaxWidth: true },
   });
 }
@@ -23,6 +23,8 @@ export function setMermaidTheme(dark: boolean) {
     theme: dark ? "dark" : "default",
     securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: false },
+    sequence: { useMaxWidth: true },
   });
 }
 
@@ -35,8 +37,7 @@ export async function renderMermaid(code: string): Promise<{ svg: string; error:
     const id = `m-${Date.now()}-${++renderCounter}`;
     const { svg } = await mermaid.render(id, code);
     const cleanSvg = DOMPurify.sanitize(svg, {
-      USE_PROFILES: { svg: true, svgFilters: true, html: true },
-      ADD_TAGS: ["foreignObject"],
+      USE_PROFILES: { svg: true, svgFilters: true },
     });
     return { svg: cleanSvg, error: null };
   } catch (e: unknown) {
