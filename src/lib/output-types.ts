@@ -158,7 +158,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     description: "תרחישי פעילות, זרימות עבודה ותהליכים עסקיים עם התפצלויות.",
     icon: Workflow,
     colorClass: "text-orange-500",
-    mermaidHint: "flowchart TD",
+    mermaidHint: "flowchart RL",
   },
   user_guide: {
     key: "user_guide",

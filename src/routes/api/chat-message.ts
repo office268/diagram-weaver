@@ -279,6 +279,22 @@ export const Route = createFileRoute("/api/chat-message")({
                 const model = provider("google/gemini-2.5-flash");
 
                 const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
+                const activityInstructions =
+                  outputType === "diagram_activity"
+                    ? `עצב כ-Swimlane diagram — כל שחקן כ-subgraph נפרד עם כיוון RL:\n` +
+                      `flowchart RL\n` +
+                      `  subgraph ACTOR1["שם שחקן 1"]\n` +
+                      `    direction RL\n` +
+                      `    A["פעולה"] --> B["פעולה"]\n` +
+                      `  end\n` +
+                      `  subgraph ACTOR2["שם שחקן 2"]\n` +
+                      `    direction RL\n` +
+                      `    C["פעולה"] --> D["פעולה"]\n` +
+                      `  end\n` +
+                      `  B --> C\n` +
+                      `כלול לפחות 2 swimlanes וחבר nodes בין subgraphs להצגת מעבר אחריות. `
+                    : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `;
+
                 const system =
                   `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
                   `סוג התרשים המבוקש: ${def.label}. ` +
@@ -286,8 +302,9 @@ export const Route = createFileRoute("/api/chat-message")({
                   (hint
                     ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. `
                     : "") +
-                  `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. עבור תרשים Activity / זרימת תהליך — חובה להשתמש ב-\`flowchart TD\` עם החלטות בצורת \`{תנאי?}\` ופעולות בצורת \`[פעולה]\`. ` +
+                  `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
                   `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
+                  activityInstructions +
                   `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
 
                 const history: { role: "user" | "assistant"; content: string }[] = prior.map(
