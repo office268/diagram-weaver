@@ -76,7 +76,7 @@ export async function runDiagramsAgent(
     model: gateway(model),
     system: DIAGRAMS_SYSTEM,
     prompt: buildPrompt(ctx, useCases, arch, dm),
-    maxOutputTokens: 4000,
+    maxOutputTokens: 6000,
     temperature: AGENT_TEMPERATURES.diagrams,
   });
   tracker?.track(model, usage);
@@ -86,8 +86,8 @@ export async function runDiagramsAgent(
     const { text: text2, usage: usage2 } = await generateText({
       model: gateway(model),
       system: DIAGRAMS_SYSTEM,
-      prompt: buildPrompt(ctx, useCases, arch, dm) + "\n\nהחזר JSON תקני בלבד.",
-      maxOutputTokens: 4000,
+      prompt: buildPrompt(ctx, useCases, arch, dm) + "\n\nהחזר JSON תקני בלבד, ללא ```json fences. אל תקצר.",
+      maxOutputTokens: 8000,
       temperature: 0,
     });
     tracker?.track(model, usage2);

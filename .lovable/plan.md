@@ -1,41 +1,31 @@
 ## הבעיה
 
-הבקשה האחרונה ב-`/api/chat-message` (יצירת מסמך ניתוח מערכות עבור משרד עורכי דין) נכשלה עם **504 Gateway Timeout** מ-Cloudflare ב-09:19. הסיבה: ה-endpoint רץ סינכרונית — מריץ את כל ה-multi-agent orchestrator (דרישות → ארכיטקטורה → מודל נתונים → use cases → תרשימים → review, עם עד מספר איטרציות שיפור) לפני שהוא מחזיר תגובה. כשהפעולה חורגת מ-~100 שניות, ה-proxy חותך את החיבור ב-504, גם אם השרת ממשיך לעבוד. אין שום log שגיאה ב-orchestrator עצמו — הוא פשוט לא הספיק לסיים בזמן. הודעת ה-assistant לעולם לא נכתבת ל-DB, ולכן המסמך "לא נוצר".
+בלוג השרת מופיע:
+```
+[chat-message] error: SyntaxError: Unexpected token '`', "```json\n{..."
+  at runDataModelAgent (src/agents/data-model/index.server.ts:89)
+```
 
-ה-endpoint המקביל `/api/generate-spec` כבר פותר את זה באותה דרך שאני מציע — stream עם heartbeat כל 10 שניות.
+הסוכן `data-model` מחזיר JSON עטוף ב-```` ```json ```` שנחתך לפני סיום — כי `maxOutputTokens: 3000` קטן מדי לארגון מורכב. כש-`extractJson` לא מוצא `}` סוגר, הוא משאיר את ה-backticks וה-`JSON.parse` נופל. הריטריי השני קורא לאותו מודל עם אותה מגבלה (3000) → נופל שוב → כל ה-`Promise.all` באורקסטרטור קורס וה-API מחזיר `__ERROR__`.
 
-## הפתרון
+## התיקון
 
-להפוך את `POST /api/chat-message` לתגובת stream שמשדרת תווי heartbeat בזמן שה-orchestrator רץ, ומסיימת ב-marker + JSON של התוצאה. ה-proxy לא ינתק כל עוד הוא רואה bytes זורמים. ה-client יקרא את ה-stream עד הסוף וימשוך את ה-JSON האחרון.
+**1. `src/lib/spec-output-schema.ts` — `extractJson` עמיד לחיתוך**
+לפני ה-slice לפי `{...}`: אם יש פתיחת ```` ``` ```` בלי סגירה, להסיר את הפתיחה ידנית. כך גם אם ה-JSON נחתך ללא `}` סוגר, לפחות נחשוף הודעת שגיאה ברורה.
 
-לא נשנה שום לוגיקה עסקית — כתיבת ההודעה ל-DB, יצירת `spec_documents`, עדכון title של ה-thread, חיוב credits, וכל ההתנהגות של מצבי `plan`/`build`/diagram נשארים זהים.
+**2. `src/agents/data-model/index.server.ts` — להעלות תקציב טוקנים**
+- ניסיון ראשון: `maxOutputTokens: 6000` (במקום 3000).
+- ניסיון שני (fallback): `maxOutputTokens: 8000` + טמפ׳ 0 + הוראה מפורשת "JSON only, no markdown fences".
 
-## שינויים
+**3. אותה התאמה בסוכנים האחרים שמייצרים JSON ארוך** — `architecture`, `use-cases`, `diagrams`: העלאה ל-6000/8000 כדי למנוע אותה תקלה בעתיד.
 
-### `src/routes/api/chat-message.ts`
-- להחזיר `Response` עם `ReadableStream` במקום `Response.json(...)` עבור שני המסלולים שעלולים להיות איטיים: מצב document ומצב diagram. מצב `plan` (קצר) נשאר JSON רגיל.
-- לפני קריאה ל-`runOrchestrator` / `generateText`: לפתוח controller, לשלוח heartbeat (רווח בודד) כל 10 שניות באמצעות `setInterval`, ולאחר שהעבודה מסתיימת לשלוח שורה מסיימת בפורמט:
-  ```
-  \n__RESULT__\n{json}
-  ```
-  ואז `controller.close()` ולנקות את ה-interval.
-- במקרה של שגיאה: לשלוח `\n__ERROR__\n{message}` במקום לזרוק 500 אחרי שה-headers כבר נשלחו (כל הכתיבות ל-DB של הודעת השגיאה נשמרות כפי שהן).
-- Headers: `Content-Type: text/plain; charset=utf-8`, `Cache-Control: no-cache, no-transform`, `X-Accel-Buffering: no` — בדיוק כמו ב-`generate-spec.ts`.
-
-### `src/routes/_authenticated/chat.$threadId.tsx`
-- לעדכן את ה-`fetch` ב-`sendMessage` (סביבות שורה 265) לקרוא את גוף ה-stream במקום `res.ok` בלבד:
-  - אם `content-type` הוא `text/plain` (mode document/diagram): לקרוא את ה-body chunk-by-chunk, להתעלם מ-heartbeats, ולחפש `__RESULT__` או `__ERROR__` בסוף.
-  - אם נמצא `__ERROR__` — להציג toast.
-  - אם נמצא `__RESULT__` — לעשות `invalidateQueries` כרגיל.
-- ל-`plan` mode התגובה נשארת JSON — `res.json()` כמו היום (לבדוק לפי `content-type`).
-
-## למה זה הפתרון הנכון
-- מתאים בדיוק לדפוס שכבר קיים ב-`generate-spec` באותו פרויקט — עקביות.
-- שמירה על Cloudflare worker timeout (יש לו תקרה רחבה יותר מ-100s לזרמים פעילים) בלי להעביר את העבודה ל-queue ו-polling.
-- אין שינוי DB, אין מיגרציות, אין פגיעה ב-RLS או באבטחה.
-- ה-Hebrew UX (toasts, הודעות שגיאה) נשמר.
+**4. שיפור הודעת שגיאה באורקסטרטור** (`src/agents/orchestrator/index.server.ts`)
+לעטוף כל קריאת סוכן ב-try/catch עם שם הסוכן בהודעה (`"data-model agent failed: ..."`), כדי שב-`__ERROR__` שמגיע ל-UI נראה איזה סוכן נפל.
 
 ## מה לא משתנה
-- ה-orchestrator עצמו, מספר האיטרציות, ה-models, וה-credit logic.
-- מצב `plan` (כבר מהיר — נשאר JSON).
-- כל שאר ה-API routes.
+- מבנה ה-streaming של `chat-message.ts` שעובד.
+- ה-schema של הפלט.
+- שום שינוי DB.
+
+## בדיקה
+לאחר היישום: לבקש שוב יצירת מסמך עם אותה פרומפט שנכשלה ולוודא שמסתיים בהצלחה. במקביל לעקוב אחרי `sqlite3 /tmp/sandbox-state.db ...` ל-vite logs כדי לוודא שאין `SyntaxError`.
