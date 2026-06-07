@@ -57,9 +57,11 @@ export function clampRows(n: number) {
 }
 
 export function usePromptBoxSettings(): PromptBoxSettings {
-  const [s, setS] = useState<PromptBoxSettings>(() => loadPromptBoxSettings());
+  const [s, setS] = useState<PromptBoxSettings>(DEFAULT_PROMPT_BOX_SETTINGS);
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const update = () => setS(loadPromptBoxSettings());
+    update();
     window.addEventListener("prompt-box-settings-changed", update);
     window.addEventListener("storage", update);
     return () => {

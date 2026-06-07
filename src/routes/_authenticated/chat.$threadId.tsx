@@ -120,17 +120,21 @@ function ChatPage() {
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
-  const [mode, setMode] = useState<"auto" | "plan" | "build">(() => {
-    if (typeof window === "undefined") return "auto";
-    const saved = window.localStorage.getItem("chat-mode");
-    return saved === "plan" || saved === "build" || saved === "auto" ? saved : "auto";
-  });
+  const [mode, setMode] = useState<"auto" | "plan" | "build">("auto");
+  const [modeReady, setModeReady] = useState(false);
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("chat-mode", mode);
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("chat-mode");
+    if (saved === "plan" || saved === "build" || saved === "auto") {
+      setMode(saved);
     }
-  }, [mode]);
+    setModeReady(true);
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined" || !modeReady) return;
+    window.localStorage.setItem("chat-mode", mode);
+  }, [mode, modeReady]);
   // Keep selected mode in sync with allowed modes from settings
   useEffect(() => {
     if (!promptBoxSettings.allowedModes[mode]) {
