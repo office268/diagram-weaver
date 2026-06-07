@@ -259,23 +259,47 @@ export const Route = createFileRoute("/api/chat-message")({
 
           const activitySwimlanesInstructions =
             outputType === "diagram_activity"
-              ? `\n\nהנחיות מיוחדות לתרשים Activity עם Swimlanes:\n` +
-                `- כיוון: flowchart RL (ימין לשמאל — מתאים לעברית)\n` +
-                `- כל שחקן (actor/participant) יוצג כ-subgraph נפרד עם direction RL בתוכו\n` +
-                `- מבנה חובה:\n` +
-                `  flowchart RL\n` +
-                `    subgraph ACTOR1["שם שחקן 1"]\n` +
-                `      direction RL\n` +
-                `      A["פעולה א"] --> B["פעולה ב"]\n` +
-                `    end\n` +
-                `    subgraph ACTOR2["שם שחקן 2"]\n` +
-                `      direction RL\n` +
-                `      C["פעולה ג"] --> D["פעולה ד"]\n` +
-                `    end\n` +
-                `    B --> C\n` +
-                `- חבר nodes בין subgraphs בחצים להצגת מעבר אחריות בין שחקנים\n` +
-                `- כלול לפחות 2 שחקנים (swimlanes)\n` +
-                `- מזהי nodes ו-subgraphs: ASCII בלבד`
+              ? `עצב כ-Swimlane diagram לפי ההנחיות הבאות:\n` +
+                `1. כיוון: flowchart RL (ימין לשמאל)\n` +
+                `2. כל שחקן/actor = subgraph נפרד. שם השחקן חייב להיות תיאורי וספציפי לתהליך המבוקש.\n` +
+                `3. כל node חייב לתאר פעולה ספציפית מהתהליך — אסור להשתמש במילים גנריות כמו "פעולה" או "שלב".\n` +
+                `4. השתמש ב-{{תנאי?}} לנקודות החלטה. הענפים יכולים להיות |כן|/|לא| או כל תיוג תיאורי כגון |אישור|/|בירור|/|סירוב|.\n` +
+                `5. חבר nodes בין subgraphs בחצים לתיאור מעבר אחריות בין שחקנים.\n` +
+                `6. בתוך כל subgraph הוסף \`direction TB\` כך שהזרימה תהיה מלמעלה למטה בתוך הסווימליין.\n` +
+                `7. הגדר את ה-subgraph של הגורם המתחיל בתהליך ראשון בקוד — הוא יופיע בצד הימני.\n` +
+                `8. הוסף אקטור התחלה \`S(["👤"])\` ומסיים \`DONE(("סיום"))\` (עיגול) בסווימליין המתאים.\n` +
+                `9. כשמספר נתיבים מתמזגים לתוצאה אחת (join/sync), השתמש ב-node מיזוג מפורש, למשל \`MERGE["הצגת תשובה לעובד"]\`, שאליו מצביעים כל הנתיבים לפני ה-DONE.\n` +
+                `10. בסוף הקוד הוסף style לכל subgraph: \`fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\` לקו מקווקו.\n\n` +
+                `דוגמה לתהליך אישור בקשת חופשה:\n` +
+                `\`\`\`mermaid\n` +
+                `flowchart RL\n` +
+                `  subgraph EMP["עובד"]\n` +
+                `    direction TB\n` +
+                `    S(["👤"]) --> A["מילוי / עדכון טופס בקשת חופשה"]\n` +
+                `    A --> B["שליחת טופס למנהל"]\n` +
+                `    MERGE["הצגת תשובה לעובד"] --> DONE(("סיום"))\n` +
+                `  end\n` +
+                `  subgraph MGR["מנהל ישיר"]\n` +
+                `    direction TB\n` +
+                `    C["בחינת הבקשה"] --> DEC{{"תשובה?"}}\n` +
+                `    DEC -->|בירור| F["בירור"]\n` +
+                `    DEC -->|אישור| E["אישור"]\n` +
+                `    DEC -->|סירוב| G["סירוב"]\n` +
+                `  end\n` +
+                `  subgraph HR["משאבי אנוש"]\n` +
+                `    direction TB\n` +
+                `    H["עדכון מערכת נוכחות"]\n` +
+                `  end\n` +
+                `  B --> C\n` +
+                `  F --> A\n` +
+                `  E --> H\n` +
+                `  G --> MERGE\n` +
+                `  H --> MERGE\n` +
+                `  style EMP fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
+                `  style MGR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
+                `  style HR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
+                `\`\`\`\n\n` +
+                `כעת צור תרשים דומה עבור התהליך שתואר, עם תוכן ספציפי לבקשה. `
               : "";
 
           const system =
@@ -283,7 +307,8 @@ export const Route = createFileRoute("/api/chat-message")({
             `סוג התרשים המבוקש: ${def.label}. ` +
             `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
             `התחל בכותרת המתאימה (${def.mermaidHint ?? ""}). ` +
-            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].` +
+            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
+            `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. ` +
             activitySwimlanesInstructions;
 
           const history: { role: "user" | "assistant"; content: string }[] = prior.map(
