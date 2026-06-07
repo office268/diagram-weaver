@@ -1,29 +1,12 @@
-## שינוי ב־`src/routes/_authenticated/dashboard.tsx`
+## Changes in `src/routes/_authenticated/dashboard.tsx`
 
-כיום כל הקוביות (`mainTiles`) נטענות לתוך גריד אחד של 3 עמודות, ללא הפרדה ויזואלית בין תרשימים למסמכים.
+1. **Center the section headings**
+   - Change `<h2 className="mb-2 text-sm font-semibold text-muted-foreground">` for both **UML** and **PR-Docs** to include `text-center`.
 
-### מה משתנה
+2. **Add a "עוד" (More) tile to the diagrams (UML) group**
+   - Render `<MoreTile />` at the end of the diagram grid, identical to the one already in PR-Docs.
+   - Both MoreTiles open the same drawer (`setMoreOpen(true)`) — no change needed to the drawer or extras logic.
+   - Filter the drawer contents by which group was clicked: track `moreOpen` as `null | "diagram" | "document"` and filter `extrasTiles` by `OUTPUT_TYPES[k].category` so the UML "עוד" shows only diagram extras (`diagram_state`, `diagram_deployment`) and the PR-Docs "עוד" shows only document extras (`user_guide` + anything moved-to-extras of that category).
+   - Drawer title/description adjusted per group ("תרשימים נוספים" vs "מסמכים נוספים").
 
-1. **פיצול `mainTiles` לשתי רשימות לפי קטגוריה** באמצעות `isDiagramType` / `isDocumentType` מ־`@/lib/output-types`:
-   - `diagramTiles` — כל הקוביות שהן `category: "diagram"`.
-   - `documentTiles` — כל הקוביות שהן `category: "document"`.
-   - הסדר היחסי בתוך כל קבוצה נשמר מהסדר הקיים (`mainTiles`).
-
-2. **שני בלוקים נפרדים ברינדור**, כל אחד עם כותרת מעליו:
-   - בלוק ראשון: כותרת **UML** + גריד הקוביות של התרשימים.
-   - בלוק שני: כותרת **PR-Docs** + גריד הקוביות של המסמכים + קוביית "עוד…" (`MoreTile`) בסוף.
-   - הכותרות יהיו `<h2>` קטן בעיצוב עדין: `text-sm font-semibold text-muted-foreground` עם רווח עליון, מיושר RTL.
-
-3. **גרירה (DnD) ממשיכה לעבוד אך מוגבלת לתוך כל קבוצה בנפרד**:
-   - שני `SortableContext` נפרדים, אחד לכל קבוצה, עם `items` תואם.
-   - `handleDragEnd` יזהה לאיזו קבוצה שייכת ה־`active.id`, יחשב סדר חדש בתוכה בלבד, וישלב חזרה עם הקבוצה השנייה לפני שמירה (כדי שהשמירה הקיימת ל־DB תמשיך לקבל סדר תקין של `OUTPUT_TYPE_ORDER`).
-   - אסור לגרור פריט מקבוצה אחת לשנייה.
-
-4. **אין שינוי**:
-   - ב־`MoreTile`, `SortableTile`, `ExtrasTile`, או ב־`output-types.ts`.
-   - בלוגיקת היצירה (`createMut`), בשמירה (`saveMut`), או ב־Drawer של "עוד".
-   - בקובץ `mermaid-preview.tsx` או בלוגיקת השרת.
-
-### תוצאה
-
-המשתמש רואה שתי קבוצות מובחנות תחת הכותרות **UML** (תרשימים) ו־**PR-Docs** (מסמכים), עם אותו עיצוב קוביות וגרירה פנימית בכל קבוצה.
+No backend, no DB, no other component changes.

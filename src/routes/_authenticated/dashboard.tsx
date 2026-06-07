@@ -190,7 +190,7 @@ function HomePage() {
         <div className="space-y-5">
           {diagramTiles.length > 0 && (
             <section>
-              <h2 className="mb-2 text-sm font-semibold text-muted-foreground">UML</h2>
+              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
                   {diagramTiles.map((key, i) => (
@@ -205,13 +205,18 @@ function HomePage() {
                       onMoveToExtras={() => moveToExtras(key)}
                     />
                   ))}
+                  <MoreTile
+                    index={diagramTiles.length}
+                    disabled={createMut.isPending}
+                    onActivate={() => setMoreGroup("diagram")}
+                  />
                 </div>
               </SortableContext>
             </section>
           )}
 
           <section>
-            <h2 className="mb-2 text-sm font-semibold text-muted-foreground">PR-Docs</h2>
+            <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">PR-Docs</h2>
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
@@ -229,7 +234,7 @@ function HomePage() {
                 <MoreTile
                   index={documentTiles.length}
                   disabled={createMut.isPending}
-                  onActivate={() => setMoreOpen(true)}
+                  onActivate={() => setMoreGroup("document")}
                 />
               </div>
             </SortableContext>
@@ -237,14 +242,24 @@ function HomePage() {
         </div>
       </DndContext>
 
-      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+      <Drawer open={moreGroup !== null} onOpenChange={(o) => !o && setMoreGroup(null)}>
         <DrawerContent>
           <DrawerHeader className="text-right">
-            <DrawerTitle>סוגי מסמכים נוספים</DrawerTitle>
-            <DrawerDescription>בחר/י סוג מסמך או תרשים פחות נפוץ ליצירה.</DrawerDescription>
+            <DrawerTitle>
+              {moreGroup === "diagram" ? "תרשימים נוספים" : "מסמכים נוספים"}
+            </DrawerTitle>
+            <DrawerDescription>
+              {moreGroup === "diagram"
+                ? "בחר/י סוג תרשים פחות נפוץ ליצירה."
+                : "בחר/י סוג מסמך פחות נפוץ ליצירה."}
+            </DrawerDescription>
           </DrawerHeader>
           <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 px-4 pb-6 sm:grid-cols-3">
-            {extrasTiles.map((key) => (
+            {extrasTiles
+              .filter((key) =>
+                moreGroup === "diagram" ? isDiagramType(key) : !isDiagramType(key),
+              )
+              .map((key) => (
               <ExtrasTile
                 key={key}
                 outputKey={key}
