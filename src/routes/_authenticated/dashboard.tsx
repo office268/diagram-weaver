@@ -77,14 +77,17 @@ function HomePage() {
   // Per-user tile customization stored in localStorage.
   // movedToExtras: ORDER tiles the user hid from main grid.
   // movedToMain: EXTRAS tiles the user moved to main grid.
-  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>(() => {
-    try { return JSON.parse(localStorage.getItem("dash-moved-to-extras") ?? "[]"); }
-    catch { return []; }
-  });
-  const [movedToMain, setMovedToMain] = useState<OutputKey[]>(() => {
-    try { return JSON.parse(localStorage.getItem("dash-moved-to-main") ?? "[]"); }
-    catch { return []; }
-  });
+  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>([]);
+  const [movedToMain, setMovedToMain] = useState<OutputKey[]>([]);
+  useEffect(() => {
+    try {
+      setMovedToExtras(JSON.parse(localStorage.getItem("dash-moved-to-extras") ?? "[]"));
+      setMovedToMain(JSON.parse(localStorage.getItem("dash-moved-to-main") ?? "[]"));
+    } catch {
+      setMovedToExtras([]);
+      setMovedToMain([]);
+    }
+  }, []);
   useEffect(() => {
     localStorage.setItem("dash-moved-to-extras", JSON.stringify(movedToExtras));
   }, [movedToExtras]);
