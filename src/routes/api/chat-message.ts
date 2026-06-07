@@ -449,9 +449,6 @@ export const Route = createFileRoute("/api/chat-message")({
           },
         });
 
-            const assistantContent =
-              `נוצר ${def.label} — **${title}**.\n\n` +
-              `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
 
             await supabaseAdmin.from("chat_messages").insert({
               thread_id: body.threadId,
