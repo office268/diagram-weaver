@@ -46,6 +46,19 @@ function looksLikePlantUml(code: string): boolean {
   );
 }
 
+// Mermaid breaks when a quoted label like ["מהעו"ד"] contains an unescaped " —
+// the inner quote closes the label early and the parser fails. Replace inner
+// quotes inside bracket-quoted labels with #quot; (Mermaid renders it as ").
+function sanitizeMermaidLabels(code: string): string {
+  return code.replace(
+    /(\[\[?"|\(\(?"|\{"|>")([\s\S]*?)("\]\]?|"\)\)?|"\}|"\])/g,
+    (_m, open: string, inner: string, close: string) => {
+      const safe = inner.replace(/"/g, "#quot;");
+      return open + safe + close;
+    },
+  );
+}
+
 
 export const Route = createFileRoute("/api/chat-message")({
   server: {
@@ -305,7 +318,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
                   `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
                   activityInstructions +
-                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
+                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
+                  `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.`;
 
                 const history: { role: "user" | "assistant"; content: string }[] = prior.map(
                   (m) => ({
@@ -335,6 +349,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   const retry = extractMermaid(text2);
                   if (!looksLikePlantUml(retry)) mermaid = retry;
                 }
+
+                mermaid = sanitizeMermaidLabels(mermaid);
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
 
