@@ -46,6 +46,19 @@ function looksLikePlantUml(code: string): boolean {
   );
 }
 
+// Mermaid breaks when a quoted label like ["מהעו"ד"] contains an unescaped " —
+// the inner quote closes the label early and the parser fails. Replace inner
+// quotes inside bracket-quoted labels with #quot; (Mermaid renders it as ").
+function sanitizeMermaidLabels(code: string): string {
+  return code.replace(
+    /(\[\[?"|\(\(?"|\{"|>")([\s\S]*?)("\]\]?|"\)\)?|"\}|"\])/g,
+    (_m, open: string, inner: string, close: string) => {
+      const safe = inner.replace(/"/g, "#quot;");
+      return open + safe + close;
+    },
+  );
+}
+
 
 export const Route = createFileRoute("/api/chat-message")({
   server: {
