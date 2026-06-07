@@ -144,7 +144,9 @@ function ChatPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
     queryFn: () => getThreadFn({ data: { threadId } }),
+    retry: false,
   });
+
 
   const { data: threadsData } = useQuery({
     queryKey: ["chat-threads"],
