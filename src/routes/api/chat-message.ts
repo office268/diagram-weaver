@@ -281,18 +281,31 @@ export const Route = createFileRoute("/api/chat-message")({
                 const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
                 const activityInstructions =
                   outputType === "diagram_activity"
-                    ? `עצב כ-Swimlane diagram — כל שחקן כ-subgraph נפרד עם כיוון RL:\n` +
+                    ? `עצב כ-Swimlane diagram לפי ההנחיות הבאות:\n` +
+                      `1. כיוון: flowchart RL (ימין לשמאל)\n` +
+                      `2. כל שחקן/actor = subgraph נפרד. שם השחקן חייב להיות תיאורי וספציפי לתהליך המבוקש.\n` +
+                      `3. כל node חייב לתאר פעולה ספציפית מהתהליך — אסור להשתמש במילים גנריות כמו "פעולה" או "שלב".\n` +
+                      `4. השתמש ב-{תנאי?} לנקודות החלטה עם ענפי |כן|/|לא|.\n` +
+                      `5. חבר nodes בין subgraphs בחצים לתיאור מעבר אחריות בין שחקנים.\n\n` +
+                      `דוגמה לתהליך אישור בקשת חופשה:\n` +
+                      `\`\`\`mermaid\n` +
                       `flowchart RL\n` +
-                      `  subgraph ACTOR1["שם שחקן 1"]\n` +
-                      `    direction RL\n` +
-                      `    A["פעולה"] --> B["פעולה"]\n` +
+                      `  subgraph EMP["עובד"]\n` +
+                      `    A["מגיש בקשת חופשה"] --> B["ממלא טופס ותאריכים"]\n` +
                       `  end\n` +
-                      `  subgraph ACTOR2["שם שחקן 2"]\n` +
-                      `    direction RL\n` +
-                      `    C["פעולה"] --> D["פעולה"]\n` +
+                      `  subgraph MGR["מנהל ישיר"]\n` +
+                      `    C["בוחן זמינות הצוות"] --> D{{"מאשר?"}}\n` +
+                      `    D -->|כן| E["חותם על הבקשה"]\n` +
+                      `    D -->|לא| F["מחזיר עם הערות"]\n` +
+                      `  end\n` +
+                      `  subgraph HR["משאבי אנוש"]\n` +
+                      `    G["מעדכנת מערכת נוכחות"] --> H["שולחת אישור לעובד"]\n` +
                       `  end\n` +
                       `  B --> C\n` +
-                      `כלול לפחות 2 swimlanes וחבר nodes בין subgraphs להצגת מעבר אחריות. `
+                      `  E --> G\n` +
+                      `  F --> A\n` +
+                      `\`\`\`\n\n` +
+                      `כעת צור תרשים דומה עבור התהליך שתואר, עם תוכן ספציפי לבקשה. `
                     : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `;
 
                 const system =
