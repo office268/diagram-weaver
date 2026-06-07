@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import elkLayouts from "@mermaid-js/layout-elk";
 
 let initialized = false;
 
@@ -13,11 +14,13 @@ const MERMAID_CONFIG = {
 export function initMermaid() {
   if (initialized) return;
   initialized = true;
+  mermaid.registerLayoutLoaders(elkLayouts);
   mermaid.initialize({ ...MERMAID_CONFIG, theme: "default" });
 }
 
 export function setMermaidTheme(dark: boolean) {
   initialized = true;
+  mermaid.registerLayoutLoaders(elkLayouts);
   mermaid.initialize({ ...MERMAID_CONFIG, theme: dark ? "dark" : "default" });
 }
 

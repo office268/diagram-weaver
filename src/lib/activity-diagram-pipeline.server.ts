@@ -42,7 +42,9 @@ export const STAGE2_SYSTEM =
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
-  return code
+  const elkDirective = '%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%';
+  const withElk = code.trimStart().startsWith("%%") ? code : `${elkDirective}\n${code}`;
+  return withElk
     .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
     .replace(/\{([^{][^}]+)\}/g, '{{$1}}');
 }
