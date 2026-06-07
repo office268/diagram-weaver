@@ -35,7 +35,8 @@ export async function renderMermaid(code: string): Promise<{ svg: string; error:
     const id = `m-${Date.now()}-${++renderCounter}`;
     const { svg } = await mermaid.render(id, code);
     const cleanSvg = DOMPurify.sanitize(svg, {
-      USE_PROFILES: { svg: true, svgFilters: true },
+      USE_PROFILES: { svg: true, svgFilters: true, html: true },
+      ADD_TAGS: ["foreignObject"],
     });
     return { svg: cleanSvg, error: null };
   } catch (e: unknown) {
