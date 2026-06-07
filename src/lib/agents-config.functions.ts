@@ -202,7 +202,7 @@ export const getAgentsConfig = createServerFn({ method: "GET" })
         key: "diagrams",
         name: "סוכן דיאגרמות (Diagrams)",
         description:
-          "מייצר קוד Mermaid תקין: sequence, activity, use-case, architecture ו-ER.",
+          "מייצר קוד Mermaid תקין: sequence, activity (כ-flowchart TD), use-case, architecture ו-ER.",
         role: "מומחה לדיאגרמות Mermaid",
         model: effectiveModel,
         modelSource,
