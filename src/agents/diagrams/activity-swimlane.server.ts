@@ -19,27 +19,60 @@ function extractMermaid(text: string): string {
 }
 
 /** Agent 1 — extract structured ProcessMap from natural language */
+function extractJsonObject(raw: string): string | null {
+  // Strip code fences if present
+  let s = raw.replace(/```json[^\n]*\n?/gi, "").replace(/```\s*/g, "").trim();
+  // Find first balanced { ... } block
+  const start = s.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === "\\") esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') inStr = true;
+    else if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return s.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 export async function runExtractorAgent(
   model: Model,
   userPrompt: string,
 ): Promise<ProcessMap | null> {
+  let text = "";
   try {
-    const { text } = await generateText({
+    const result = await generateText({
       model,
       system: STAGE1_SYSTEM,
       messages: [{ role: "user", content: userPrompt }],
       temperature: 0,
     });
-    const clean = text.replace(/```json[^\n]*\n?/g, "").replace(/```\s*/g, "").trim();
+    text = result.text;
+    const clean = extractJsonObject(text) ?? text.trim();
     const parsed = JSON.parse(clean) as Partial<ProcessMap>;
-    if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) return null;
+    if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) {
+      console.error("[activity extractor] no actors in parsed JSON:", clean.slice(0, 500));
+      return null;
+    }
     return {
       actors: parsed.actors,
       steps: parsed.steps ?? [],
       decisions: parsed.decisions ?? [],
       merges: parsed.merges ?? [],
     };
-  } catch {
+  } catch (err) {
+    console.error("[activity extractor] failed:", err instanceof Error ? err.message : err, "raw:", text.slice(0, 500));
     return null;
   }
 }
