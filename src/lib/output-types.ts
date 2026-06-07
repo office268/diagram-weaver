@@ -189,7 +189,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "diagram_sequence",
   "diagram_erd",
   "spec_detailed",
-  "user_guide",
+  "diagram_activity",
   "meeting_summary",
 ];
 
@@ -197,6 +197,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
   "diagram_state",
   "diagram_deployment",
+  "user_guide",
 ];
 
 
