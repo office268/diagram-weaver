@@ -257,12 +257,34 @@ export const Route = createFileRoute("/api/chat-message")({
           const provider = createLovableAiGatewayProvider(apiKey);
           const model = provider("google/gemini-2.5-flash");
 
+          const activitySwimlanesInstructions =
+            outputType === "diagram_activity"
+              ? `\n\nהנחיות מיוחדות לתרשים Activity עם Swimlanes:\n` +
+                `- כיוון: flowchart RL (ימין לשמאל — מתאים לעברית)\n` +
+                `- כל שחקן (actor/participant) יוצג כ-subgraph נפרד עם direction RL בתוכו\n` +
+                `- מבנה חובה:\n` +
+                `  flowchart RL\n` +
+                `    subgraph ACTOR1["שם שחקן 1"]\n` +
+                `      direction RL\n` +
+                `      A["פעולה א"] --> B["פעולה ב"]\n` +
+                `    end\n` +
+                `    subgraph ACTOR2["שם שחקן 2"]\n` +
+                `      direction RL\n` +
+                `      C["פעולה ג"] --> D["פעולה ד"]\n` +
+                `    end\n` +
+                `    B --> C\n` +
+                `- חבר nodes בין subgraphs בחצים להצגת מעבר אחריות בין שחקנים\n` +
+                `- כלול לפחות 2 שחקנים (swimlanes)\n` +
+                `- מזהי nodes ו-subgraphs: ASCII בלבד`
+              : "";
+
           const system =
             `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
             `סוג התרשים המבוקש: ${def.label}. ` +
             `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
             `התחל בכותרת המתאימה (${def.mermaidHint ?? ""}). ` +
-            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
+            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].` +
+            activitySwimlanesInstructions;
 
           const history: { role: "user" | "assistant"; content: string }[] = prior.map(
             (m) => ({
