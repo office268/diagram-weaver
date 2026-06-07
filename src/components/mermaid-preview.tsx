@@ -6,6 +6,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
+function downloadSvgFallback(svgMarkup: string) {
+  const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `diagram-${Date.now()}.svg`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function exportSvgAsJpg(svgMarkup: string) {
   try {
     const parser = new DOMParser();
@@ -23,16 +35,19 @@ async function exportSvgAsJpg(svgMarkup: string) {
     svgEl.setAttribute("height", String(height));
     if (!svgEl.getAttribute("xmlns")) svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
 
-    const serialized = new XMLSerializer().serializeToString(svgEl);
-    const svgBlob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svgBlob);
+    const serialized =
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      new XMLSerializer().serializeToString(svgEl);
+    // Use a data URL instead of a blob URL — blob: URLs taint the canvas in
+    // some browsers when the SVG contains <foreignObject> HTML labels.
+    const dataUrl =
+      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(serialized);
 
     const img = new Image();
-    img.crossOrigin = "anonymous";
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = () => reject(new Error("טעינת התמונה נכשלה"));
-      img.src = url;
+      img.src = dataUrl;
     });
 
     const scale = 2;
@@ -44,11 +59,18 @@ async function exportSvgAsJpg(svgMarkup: string) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    URL.revokeObjectURL(url);
 
-    const blob: Blob | null = await new Promise((res) =>
-      canvas.toBlob((b) => res(b), "image/jpeg", 0.95),
-    );
+    let blob: Blob | null = null;
+    try {
+      blob = await new Promise((res) =>
+        canvas.toBlob((b) => res(b), "image/jpeg", 0.95),
+      );
+    } catch {
+      // Canvas tainted (foreignObject HTML in SVG). Fall back to SVG download.
+      toast.message("ייצוא כתמונה לא נתמך לתרשים זה — מוריד כ-SVG");
+      downloadSvgFallback(svgMarkup);
+      return;
+    }
     if (!blob) throw new Error("יצירת JPG נכשלה");
     const dlUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -59,7 +81,12 @@ async function exportSvgAsJpg(svgMarkup: string) {
     a.remove();
     URL.revokeObjectURL(dlUrl);
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : "ייצוא נכשל");
+    try {
+      downloadSvgFallback(svgMarkup);
+      toast.message("ייצוא כתמונה נכשל — הורד כ-SVG");
+    } catch {
+      toast.error(e instanceof Error ? e.message : "ייצוא נכשל");
+    }
   }
 }
 
