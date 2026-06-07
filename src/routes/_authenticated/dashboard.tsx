@@ -179,7 +179,7 @@ function HomePage() {
     const next = reordered.filter((k) => (OUTPUT_TYPE_ORDER as readonly string[]).includes(k));
     saveMut.mutate(next);
   };
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreGroup, setMoreGroup] = useState<null | "diagram" | "document">(null);
 
   const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
   const documentTiles = useMemo(() => mainTiles.filter((k) => !isDiagramType(k)), [mainTiles]);
