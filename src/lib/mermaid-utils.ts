@@ -101,11 +101,19 @@ function repairMermaidInitDirective(code: string): string {
   return code;
 }
 
+/** Repair diamonds wrapped one level too deep: `{{{label}}}` → `{{label}}`.
+ * An older post-processor sometimes double-wrapped decision nodes; Mermaid
+ * fails to parse the result with `got 'DIAMOND_START'`. Strip the extra
+ * outer braces so legacy saved diagrams still render. */
+function repairTripleDiamond(code: string): string {
+  return code.replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}");
+}
+
 export async function renderMermaid(
   code: string
 ): Promise<{ svg: string; error: null } | { svg: null; error: string }> {
   initMermaid();
-  const safeCode = repairMermaidInitDirective(code);
+  const safeCode = repairTripleDiamond(repairMermaidInitDirective(code));
   try {
     await mermaid.parse(safeCode);
     const id = `m-${Date.now()}-${++renderCounter}`;
@@ -116,6 +124,7 @@ export async function renderMermaid(
     return { svg: null, error: message };
   }
 }
+
 
 export const DIAGRAM_TEMPLATES: Record<string, { label: string; code: string }> = {
   flowchart: {

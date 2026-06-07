@@ -47,11 +47,15 @@ export function postProcessActivityMermaid(code: string): string {
   // mangle `%%{init: {...}}%%` into `%%{{"flowchart...}}%%`).
   const lines = code.split("\n").map((line) => {
     if (line.trimStart().startsWith("%%")) return line;
-    return line
-      .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
-      // Match single-brace decision diamonds only — exclude content starting
-      // with `"` to avoid matching JSON-like structures.
-      .replace(/\{([^{}"][^{}]*)\}/g, "{{$1}}");
+    let out = line.replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))');
+    // Promote single-brace decision diamonds `{label}` to `{{label}}`, but
+    // skip cases that are already `{{...}}` (lookbehind/lookahead on `{`/`}`)
+    // and skip JSON-like content starting with `"`.
+    out = out.replace(
+      /(?<!\{)\{([^{}"][^{}]*)\}(?!\})/g,
+      "{{$1}}",
+    );
+    return out;
   });
   const transformed = lines.join("\n");
   const elkDirective = '%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%';
@@ -59,6 +63,7 @@ export function postProcessActivityMermaid(code: string): string {
     ? transformed
     : `${elkDirective}\n${transformed}`;
 }
+
 
 export function validateActivityDiagram(code: string): string[] {
   const violations: string[] = [];
