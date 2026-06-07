@@ -104,7 +104,7 @@ export function MermaidPreview({ code, onSvg, hideFullscreen }: Props) {
                     contentClass="!h-full !w-full"
                   >
                     <div
-                      className="mermaid-svg flex h-full w-full items-center justify-center p-6 [&_svg]:max-h-full [&_svg]:max-w-full"
+                      className="mermaid-svg flex h-full w-full items-center justify-center p-6 [&_svg]:max-h-full [&_svg]:max-w-full [&_foreignObject]:overflow-visible [&_foreignObject_*]:!text-foreground"
                       dangerouslySetInnerHTML={{ __html: svg }}
                     />
                   </TransformComponent>
