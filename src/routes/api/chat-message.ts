@@ -149,195 +149,219 @@ export const Route = createFileRoute("/api/chat-message")({
           }
         }
 
+        // Stream response with heartbeat to avoid proxy timeouts (Cloudflare 504 after ~100s).
+        // Protocol: heartbeat spaces while working, then "\n__RESULT__\n{json}" or "\n__ERROR__\n{message}".
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            let closed = false;
+            const enqueue = (s: string) => {
+              if (closed) return;
+              try { controller.enqueue(encoder.encode(s)); } catch { closed = true; }
+            };
+            const close = () => {
+              if (closed) return;
+              closed = true;
+              try { controller.close(); } catch { /* ignore */ }
+            };
+            const heartbeat = setInterval(() => enqueue(" "), 10_000);
 
-        try {
-          if (def.category === "document") {
-            // Build refinement context from prior assistant artifact (latest)
-            const lastAssistantArtifact = [...prior]
-              .reverse()
-              .find((m) => m.role === "assistant" && m.artifact_kind === "spec_document");
-
-            let previousSpec: SpecOutput | undefined;
-            if (lastAssistantArtifact?.artifact_id) {
-              const { data: prevSpec } = await supabaseAdmin
-                .from("spec_documents")
-                .select("content")
-                .eq("id", lastAssistantArtifact.artifact_id)
-                .maybeSingle();
-              if (prevSpec?.content) previousSpec = prevSpec.content as SpecOutput;
-            }
-
-            // Combine all prior user messages + new one as the prompt
-            const combinedPrompt = [
-              ...prior.filter((m) => m.role === "user").map((m) => m.content),
-              cleanUserMsg,
-            ].join("\n\n---\n\n");
-
-            const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-            const modelOverride = await loadAgentModelOverride();
-            const result = await runOrchestrator({
-              userPrompt: combinedPrompt,
-              docType: (outputType as DocumentOutputKey) as DocTypeKey,
-              userId,
-              projectId: null,
-              lovableApiKey: apiKey,
-              previousSpec,
-              reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
-              modelOverride,
-            });
-
-            const title = result.spec.title || def.label;
-            const { data: specRow, error: specErr } = await supabaseAdmin
-              .from("spec_documents")
-              .insert({
-                user_id: userId,
-                title: `${title} — ${def.label}`,
-                prompt: combinedPrompt,
-                content: result.spec,
-                doc_type: outputType,
-                review_score: result.review.score,
-                review_notes: result.review.notes,
-                variant: previousSpec ? "revised" : "original",
-              })
-              .select()
-              .single();
-            if (specErr) throw new Error(specErr.message);
-
-            // Log AI usage for this spec document
             try {
-              const { logAiUsage } = await import("@/lib/ai-usage.server");
-              await logAiUsage({
-                userId,
-                specDocumentId: specRow.id,
-                model: "multi-agent",
-                purpose: previousSpec ? "regenerate" : "generate",
-                inputTokens: result.usage.inputTokens,
-                outputTokens: result.usage.outputTokens,
-                totalTokens: result.usage.totalTokens,
-                costUsd: result.usage.costUsd,
-              });
-            } catch (e) {
-              console.error("[chat-message] logAiUsage failed:", e);
+              if (def.category === "document") {
+                const lastAssistantArtifact = [...prior]
+                  .reverse()
+                  .find((m) => m.role === "assistant" && m.artifact_kind === "spec_document");
+
+                let previousSpec: SpecOutput | undefined;
+                if (lastAssistantArtifact?.artifact_id) {
+                  const { data: prevSpec } = await supabaseAdmin
+                    .from("spec_documents")
+                    .select("content")
+                    .eq("id", lastAssistantArtifact.artifact_id)
+                    .maybeSingle();
+                  if (prevSpec?.content) previousSpec = prevSpec.content as SpecOutput;
+                }
+
+                const combinedPrompt = [
+                  ...prior.filter((m) => m.role === "user").map((m) => m.content),
+                  cleanUserMsg,
+                ].join("\n\n---\n\n");
+
+                const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+                const modelOverride = await loadAgentModelOverride();
+                const result = await runOrchestrator({
+                  userPrompt: combinedPrompt,
+                  docType: (outputType as DocumentOutputKey) as DocTypeKey,
+                  userId,
+                  projectId: null,
+                  lovableApiKey: apiKey,
+                  previousSpec,
+                  reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
+                  modelOverride,
+                });
+
+                const title = result.spec.title || def.label;
+                const { data: specRow, error: specErr } = await supabaseAdmin
+                  .from("spec_documents")
+                  .insert({
+                    user_id: userId,
+                    title: `${title} — ${def.label}`,
+                    prompt: combinedPrompt,
+                    content: result.spec,
+                    doc_type: outputType,
+                    review_score: result.review.score,
+                    review_notes: result.review.notes,
+                    variant: previousSpec ? "revised" : "original",
+                  })
+                  .select()
+                  .single();
+                if (specErr) throw new Error(specErr.message);
+
+                try {
+                  const { logAiUsage } = await import("@/lib/ai-usage.server");
+                  await logAiUsage({
+                    userId,
+                    specDocumentId: specRow.id,
+                    model: "multi-agent",
+                    purpose: previousSpec ? "regenerate" : "generate",
+                    inputTokens: result.usage.inputTokens,
+                    outputTokens: result.usage.outputTokens,
+                    totalTokens: result.usage.totalTokens,
+                    costUsd: result.usage.costUsd,
+                  });
+                } catch (e) {
+                  console.error("[chat-message] logAiUsage failed:", e);
+                }
+
+                const assistantContent =
+                  `נוצר ${def.label} — **${title}**.\n\n` +
+                  `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
+
+                await supabaseAdmin.from("chat_messages").insert({
+                  thread_id: body.threadId,
+                  user_id: userId,
+                  role: "assistant",
+                  content: assistantContent,
+                  artifact_kind: "spec_document",
+                  artifact_id: specRow.id,
+                });
+
+                if (prior.length === 0) {
+                  await supabaseAdmin
+                    .from("chat_threads")
+                    .update({ title: title.slice(0, 100) })
+                    .eq("id", body.threadId);
+                } else {
+                  await supabaseAdmin
+                    .from("chat_threads")
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq("id", body.threadId);
+                }
+
+                enqueue("\n__RESULT__\n" + JSON.stringify({
+                  ok: true,
+                  artifact: { kind: "spec_document", id: specRow.id, title },
+                }));
+              } else {
+                // Diagram path
+                const provider = createLovableAiGatewayProvider(apiKey);
+                const model = provider("google/gemini-2.5-flash");
+
+                const system =
+                  `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
+                  `סוג התרשים המבוקש: ${def.label}. ` +
+                  `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
+                  `התחל בכותרת המתאימה (${(def as { mermaidHint?: string }).mermaidHint ?? ""}). ` +
+                  `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
+
+                const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+                  (m) => ({
+                    role: m.role === "assistant" ? "assistant" : "user",
+                    content: m.content,
+                  }),
+                );
+                history.push({ role: "user", content: cleanUserMsg });
+
+                const { text } = await generateText({
+                  model,
+                  system,
+                  messages: history,
+                  temperature: 0.3,
+                });
+
+                const mermaid = extractMermaid(text);
+                const title = cleanUserMsg.slice(0, 80) || def.label;
+
+                const { data: diagRow, error: diagErr } = await supabaseAdmin
+                  .from("diagrams")
+                  .insert({
+                    user_id: userId,
+                    thread_id: body.threadId,
+                    kind: outputType,
+                    title,
+                    prompt: cleanUserMsg,
+                    mermaid_code: mermaid,
+                  })
+                  .select()
+                  .single();
+                if (diagErr) throw new Error(diagErr.message);
+
+                const assistantContent =
+                  `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+
+                await supabaseAdmin.from("chat_messages").insert({
+                  thread_id: body.threadId,
+                  user_id: userId,
+                  role: "assistant",
+                  content: assistantContent,
+                  artifact_kind: "diagram",
+                  artifact_id: diagRow.id,
+                });
+
+                if (prior.length === 0) {
+                  await supabaseAdmin
+                    .from("chat_threads")
+                    .update({ title: title.slice(0, 100) })
+                    .eq("id", body.threadId);
+                } else {
+                  await supabaseAdmin
+                    .from("chat_threads")
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq("id", body.threadId);
+                }
+
+                enqueue("\n__RESULT__\n" + JSON.stringify({
+                  ok: true,
+                  artifact: { kind: "diagram", id: diagRow.id, mermaid, title },
+                }));
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.error("[chat-message] error:", err);
+              try {
+                await supabaseAdmin.from("chat_messages").insert({
+                  thread_id: body.threadId,
+                  user_id: userId,
+                  role: "assistant",
+                  content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
+                });
+              } catch { /* swallow */ }
+              enqueue("\n__ERROR__\n" + msg);
+            } finally {
+              clearInterval(heartbeat);
+              close();
             }
+          },
+        });
 
-            const assistantContent =
-              `נוצר ${def.label} — **${title}**.\n\n` +
-              `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
-
-            await supabaseAdmin.from("chat_messages").insert({
-              thread_id: body.threadId,
-              user_id: userId,
-              role: "assistant",
-              content: assistantContent,
-              artifact_kind: "spec_document",
-              artifact_id: specRow.id,
-            });
-
-            // Update thread title if first
-            if (prior.length === 0) {
-              await supabaseAdmin
-                .from("chat_threads")
-                .update({ title: title.slice(0, 100) })
-                .eq("id", body.threadId);
-            } else {
-              await supabaseAdmin
-                .from("chat_threads")
-                .update({ updated_at: new Date().toISOString() })
-                .eq("id", body.threadId);
-            }
-
-            return Response.json({
-              ok: true,
-              artifact: { kind: "spec_document", id: specRow.id, title },
-            });
-          }
-
-          // Diagram path
-          const diagDef = def as typeof def & { mermaidHint: string };
-          const provider = createLovableAiGatewayProvider(apiKey);
-          const model = provider("google/gemini-2.5-flash");
-
-          const system =
-            `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
-            `סוג התרשים המבוקש: ${def.label}. ` +
-            `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
-            `התחל בכותרת המתאימה (${def.mermaidHint ?? ""}). ` +
-            `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
-
-          const history: { role: "user" | "assistant"; content: string }[] = prior.map(
-            (m) => ({
-              role: m.role === "assistant" ? "assistant" : "user",
-              content: m.content,
-            }),
-          );
-          history.push({ role: "user", content: cleanUserMsg });
-
-          const { text } = await generateText({
-            model,
-            system,
-            messages: history,
-            temperature: 0.3,
-          });
-
-          const mermaid = extractMermaid(text);
-          const title = cleanUserMsg.slice(0, 80) || def.label;
-
-          const { data: diagRow, error: diagErr } = await supabaseAdmin
-            .from("diagrams")
-            .insert({
-              user_id: userId,
-              thread_id: body.threadId,
-              kind: outputType,
-              title,
-              prompt: cleanUserMsg,
-              mermaid_code: mermaid,
-            })
-            .select()
-            .single();
-          if (diagErr) throw new Error(diagErr.message);
-
-          const assistantContent =
-            `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
-
-          await supabaseAdmin.from("chat_messages").insert({
-            thread_id: body.threadId,
-            user_id: userId,
-            role: "assistant",
-            content: assistantContent,
-            artifact_kind: "diagram",
-            artifact_id: diagRow.id,
-          });
-
-          if (prior.length === 0) {
-            await supabaseAdmin
-              .from("chat_threads")
-              .update({ title: title.slice(0, 100) })
-              .eq("id", body.threadId);
-          } else {
-            await supabaseAdmin
-              .from("chat_threads")
-              .update({ updated_at: new Date().toISOString() })
-              .eq("id", body.threadId);
-          }
-
-          return Response.json({
-            ok: true,
-            artifact: { kind: "diagram", id: diagRow.id, mermaid, title },
-          });
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.error("[chat-message] error:", err);
-
-          // Credit refund skipped — credit consumption is currently disabled.
-
-          await supabaseAdmin.from("chat_messages").insert({
-            thread_id: body.threadId,
-            user_id: userId,
-            role: "assistant",
-            content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
-          });
-          return new Response(msg, { status: 500 });
-        }
+        return new Response(stream, {
+          status: 200,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+          },
+        });
       },
     },
   },
