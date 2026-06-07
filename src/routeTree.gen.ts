@@ -42,6 +42,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedAgentConversationsIndexRouteImport } from './routes/_authenticated/agent-conversations.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
+import { Route as AuthenticatedDiagramIdRouteImport } from './routes/_authenticated/diagram.$id'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedAgentConversationsIdRouteImport } from './routes/_authenticated/agent-conversations.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -216,6 +217,11 @@ const AuthenticatedEditorIdRoute = AuthenticatedEditorIdRouteImport.update({
   path: '/editor/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDiagramIdRoute = AuthenticatedDiagramIdRouteImport.update({
+  id: '/diagram/$id',
+  path: '/diagram/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedChatThreadIdRoute =
   AuthenticatedChatThreadIdRouteImport.update({
     id: '/chat/$threadId',
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/_authenticated/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
+  '/_authenticated/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
+    | '/diagram/$id'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/agent-conversations/'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
+    | '/diagram/$id'
     | '/editor/$id'
     | '/projects/$projectId'
     | '/agent-conversations'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/api/upload-document'
     | '/_authenticated/agent-conversations/$id'
     | '/_authenticated/chat/$threadId'
+    | '/_authenticated/diagram/$id'
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/agent-conversations/'
@@ -720,6 +732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditorIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/diagram/$id': {
+      id: '/_authenticated/diagram/$id'
+      path: '/diagram/$id'
+      fullPath: '/diagram/$id'
+      preLoaderRoute: typeof AuthenticatedDiagramIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat/$threadId': {
       id: '/_authenticated/chat/$threadId'
       path: '/chat/$threadId'
@@ -756,6 +775,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSignupRequestsRoute: typeof AuthenticatedSignupRequestsRoute
   AuthenticatedAgentConversationsIdRoute: typeof AuthenticatedAgentConversationsIdRoute
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
+  AuthenticatedDiagramIdRoute: typeof AuthenticatedDiagramIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedAgentConversationsIndexRoute: typeof AuthenticatedAgentConversationsIndexRoute
@@ -775,6 +795,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAgentConversationsIdRoute:
     AuthenticatedAgentConversationsIdRoute,
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
+  AuthenticatedDiagramIdRoute: AuthenticatedDiagramIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedAgentConversationsIndexRoute:
