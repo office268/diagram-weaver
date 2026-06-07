@@ -486,6 +486,14 @@ function DocumentsPage() {
                   >
                     {CardInner}
                   </Link>
+                ) : it.category === "diagram" ? (
+                  <Link
+                    to="/diagram/$id"
+                    params={{ id: it.id }}
+                    className="block"
+                  >
+                    {CardInner}
+                  </Link>
                 ) : (
                   <div className="block">{CardInner}</div>
                 )}
@@ -500,6 +508,17 @@ function DocumentsPage() {
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
                   )}
+                  {it.category === "diagram" && (
+                    <Link
+                      to="/diagram/$id"
+                      params={{ id: it.id }}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+                      aria-label="פתח"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => setDeleteTarget(it)}
