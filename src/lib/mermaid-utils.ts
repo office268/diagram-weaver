@@ -11,7 +11,7 @@ export function initMermaid() {
     theme: "default",
     securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: false },
+    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: true },
     sequence: { useMaxWidth: true },
   });
 }
@@ -23,7 +23,7 @@ export function setMermaidTheme(dark: boolean) {
     theme: dark ? "dark" : "default",
     securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: false },
+    flowchart: { curve: "basis", useMaxWidth: true, htmlLabels: true },
     sequence: { useMaxWidth: true },
   });
 }
@@ -36,8 +36,13 @@ export async function renderMermaid(code: string): Promise<{ svg: string; error:
     await mermaid.parse(code);
     const id = `m-${Date.now()}-${++renderCounter}`;
     const { svg } = await mermaid.render(id, code);
+    // Mermaid runs with securityLevel:'strict' (escapes user input). Allow
+    // foreignObject + inner HTML so node labels (which render via <div>
+    // inside <foreignObject>) are preserved by the sanitizer.
     const cleanSvg = DOMPurify.sanitize(svg, {
-      USE_PROFILES: { svg: true, svgFilters: true },
+      USE_PROFILES: { svg: true, svgFilters: true, html: true },
+      ADD_TAGS: ["foreignObject"],
+      ADD_ATTR: ["xmlns", "xmlns:xlink", "requiredFeatures"],
     });
     return { svg: cleanSvg, error: null };
   } catch (e: unknown) {
