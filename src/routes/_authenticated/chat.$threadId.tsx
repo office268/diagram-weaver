@@ -144,7 +144,9 @@ function ChatPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["chat-thread", threadId],
     queryFn: () => getThreadFn({ data: { threadId } }),
+    retry: false,
   });
+
 
   const { data: threadsData } = useQuery({
     queryKey: ["chat-threads"],
@@ -274,6 +276,28 @@ function ChatPage() {
         const t = await res.text().catch(() => "");
         throw new Error(t || `שגיאה ${res.status}`);
       }
+      const contentType = res.headers.get("content-type") ?? "";
+      if (contentType.includes("text/plain") && res.body) {
+        // Streamed response with heartbeats; the final payload follows __RESULT__ or __ERROR__.
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+        }
+        buf += decoder.decode();
+        const errIdx = buf.indexOf("__ERROR__\n");
+        if (errIdx !== -1) {
+          throw new Error(buf.slice(errIdx + "__ERROR__\n".length).trim() || "שליחה נכשלה");
+        }
+        const resIdx = buf.indexOf("__RESULT__\n");
+        if (resIdx === -1) {
+          throw new Error("תגובת השרת נקטעה");
+        }
+      }
       await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       await qc.invalidateQueries({ queryKey: ["chat-threads"] });
     } catch (e) {
@@ -296,13 +320,14 @@ function ChatPage() {
       </div>
     );
   }
-  if (error || !data) {
+  if (error || !data || !data.thread) {
     return (
       <div className="mx-auto max-w-2xl p-6 text-center text-destructive">
         {(error as Error)?.message ?? "שיחה לא נמצאה"}
       </div>
     );
   }
+
 
   const def = OUTPUT_TYPES[data.thread.output_type as OutputKey];
   const messages = data.messages;

@@ -71,7 +71,7 @@ export async function runDataModelAgent(
     model: gateway(model),
     system: DATA_MODEL_SYSTEM,
     prompt: buildPrompt(ctx, reqs),
-    maxOutputTokens: 3000,
+    maxOutputTokens: 6000,
     temperature: AGENT_TEMPERATURES.dataModel,
   });
   tracker?.track(model, usage);
@@ -81,8 +81,8 @@ export async function runDataModelAgent(
     const { text: text2, usage: usage2 } = await generateText({
       model: gateway(model),
       system: DATA_MODEL_SYSTEM,
-      prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד.",
-      maxOutputTokens: 3000,
+      prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד, ללא ```json fences. אל תקצר.",
+      maxOutputTokens: 8000,
       temperature: 0,
     });
     tracker?.track(model, usage2);

@@ -2,38 +2,94 @@ import mermaid from "mermaid";
 
 let initialized = false;
 
+const MERMAID_CONFIG = {
+  startOnLoad: false,
+  securityLevel: "strict" as const,
+  fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+  flowchart: { curve: "basis" as const, useMaxWidth: true, htmlLabels: true },
+  sequence: { useMaxWidth: true, htmlLabels: false },
+};
+
 export function initMermaid() {
   if (initialized) return;
   initialized = true;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: "default",
-    securityLevel: "loose",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-    flowchart: { curve: "basis", useMaxWidth: true },
-    sequence: { useMaxWidth: true },
-  });
+  mermaid.initialize({ ...MERMAID_CONFIG, theme: "default" });
 }
 
 export function setMermaidTheme(dark: boolean) {
   initialized = true;
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: dark ? "dark" : "default",
-    securityLevel: "loose",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
-  });
+  mermaid.initialize({ ...MERMAID_CONFIG, theme: dark ? "dark" : "default" });
+}
+
+/**
+ * Targeted SVG sanitizer for Mermaid output.
+ *
+ * Why not DOMPurify? Mermaid v11 renders node labels as `<foreignObject>`
+ * containing `<div xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">…</span></div>`
+ * and ships a `<style>` block whose CSS rules style those inner spans. DOMPurify's
+ * SVG/HTML profile combinations repeatedly stripped one of: the foreignObject,
+ * the inner HTML elements, or the style block — making labels invisible. The
+ * back-and-forth on profile flags has been the recurring source of regressions.
+ *
+ * Instead we parse the SVG and remove only the dangerous bits. Mermaid runs
+ * with `securityLevel: 'strict'`, which already HTML-escapes any user content
+ * inside labels — so the remaining risk surface is: <script> tags, event-handler
+ * attributes (onclick, onload, …), and javascript:/data: URLs in href/xlink:href.
+ */
+function sanitizeMermaidSvg(svg: string): string {
+  if (typeof window === "undefined") return svg;
+
+  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const root = doc.documentElement;
+  if (!root || root.nodeName === "parsererror") return "";
+
+  // Walk every element and strip script tags + dangerous attributes.
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+  const toRemove: Element[] = [];
+  // visit the root explicitly too
+  const visit = (el: Element) => {
+    const tag = el.tagName.toLowerCase();
+    if (tag === "script") {
+      toRemove.push(el);
+      return;
+    }
+    for (const attr of Array.from(el.attributes)) {
+      const name = attr.name.toLowerCase();
+      const value = attr.value;
+      if (name.startsWith("on")) {
+        el.removeAttribute(attr.name);
+        continue;
+      }
+      if (
+        (name === "href" || name === "xlink:href") &&
+        /^\s*(javascript|data):/i.test(value)
+      ) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  };
+  visit(root);
+  let n: Node | null = walker.nextNode();
+  while (n) {
+    visit(n as Element);
+    n = walker.nextNode();
+  }
+  for (const el of toRemove) el.remove();
+
+  return new XMLSerializer().serializeToString(root);
 }
 
 let renderCounter = 0;
 
-export async function renderMermaid(code: string): Promise<{ svg: string; error: null } | { svg: null; error: string }> {
+export async function renderMermaid(
+  code: string
+): Promise<{ svg: string; error: null } | { svg: null; error: string }> {
   initMermaid();
   try {
     await mermaid.parse(code);
     const id = `m-${Date.now()}-${++renderCounter}`;
     const { svg } = await mermaid.render(id, code);
-    return { svg, error: null };
+    return { svg: sanitizeMermaidSvg(svg), error: null };
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     return { svg: null, error: message };

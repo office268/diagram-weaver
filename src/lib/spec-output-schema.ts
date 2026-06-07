@@ -99,8 +99,14 @@ export function normalizeReviewNotes(raw: unknown): ReviewNote[] {
 
 export function extractJson(text: string): string {
   let t = text.trim();
+  // Strip closed code fence ```json ... ```
   const fence = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   if (fence) t = fence[1].trim();
+  // Strip leading fence even if the response was truncated and never closed
+  const openFence = t.match(/^```(?:json)?\s*([\s\S]*)$/i);
+  if (openFence) t = openFence[1].trim();
+  // Trim any trailing un-closed fence marker
+  t = t.replace(/```\s*$/i, "").trim();
   const first = t.indexOf("{");
   const last = t.lastIndexOf("}");
   if (first >= 0 && last > first) t = t.slice(first, last + 1);

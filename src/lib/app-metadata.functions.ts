@@ -1,7 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+function publicServerClient() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase public env vars");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
 export type AppMetadata = {
   title: string;
@@ -29,7 +37,8 @@ const DEFAULTS: AppMetadata = {
 };
 
 export const getAppMetadata = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  const sb = publicServerClient();
+  const { data, error } = await sb
     .from("app_metadata")
     .select("*")
     .eq("id", "singleton")
@@ -50,10 +59,21 @@ const UpdateSchema = z.object({
   apple_touch_icon_url: z.string().max(2000).default(""),
 });
 
+async function assertAdmin(userId: string) {
+  const { data: roleRow } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleRow) throw new Error("רק מנהל מערכת רשאי לבצע פעולה זו");
+}
+
 export const updateAppMetadata = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => UpdateSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const { error } = await supabaseAdmin
       .from("app_metadata")
       .upsert({ id: "singleton", ...data, updated_at: new Date().toISOString() });
@@ -70,7 +90,8 @@ const GenerateSchema = z.object({
 export const generateAppImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => GenerateSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY missing");
 

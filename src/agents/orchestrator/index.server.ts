@@ -58,20 +58,26 @@ export async function runOrchestrator(params: {
     model: modelOverride,
   };
 
+  const named = <T>(name: string, p: Promise<T>): Promise<T> =>
+    p.catch((e) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new Error(`${name} agent failed: ${msg}`);
+    });
+
   // Step 2: Requirements agent
-  let requirements = await runRequirementsAgent(ctx, gateway, tracker);
+  let requirements = await named("requirements", runRequirementsAgent(ctx, gateway, tracker));
 
   // Step 3: Architecture + Data Model in parallel
   let [architecture, dataModel] = await Promise.all([
-    runArchitectureAgent(ctx, requirements, gateway, tracker),
-    runDataModelAgent(ctx, requirements, gateway, tracker),
+    named("architecture", runArchitectureAgent(ctx, requirements, gateway, tracker)),
+    named("data-model", runDataModelAgent(ctx, requirements, gateway, tracker)),
   ]);
 
   // Step 4: Use Cases agent
-  let useCases = await runUseCasesAgent(ctx, requirements, gateway, tracker);
+  let useCases = await named("use-cases", runUseCasesAgent(ctx, requirements, gateway, tracker));
 
   // Step 5: Diagrams agent
-  const diagrams = await runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway, tracker);
+  const diagrams = await named("diagrams", runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway, tracker));
 
   // Step 6: Assemble full spec
   let currentSpec = assembleSpec(requirements, architecture, dataModel, useCases, diagrams);
