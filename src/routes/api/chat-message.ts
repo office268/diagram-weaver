@@ -383,14 +383,22 @@ export const Route = createFileRoute("/api/chat-message")({
                 );
                 history.push({ role: "user", content: cleanUserMsg });
 
-                const { text } = await generateText({
-                  model,
-                  system,
-                  messages: history,
-                  temperature: 0.3,
-                });
+                let rawText: string;
+                if (outputType === "diagram_activity") {
+                  const { runTwoStagePipeline } = await import("@/lib/activity-diagram-pipeline.server");
+                  const staged = await runTwoStagePipeline(model, cleanUserMsg);
+                  if (staged !== null) {
+                    rawText = staged;
+                  } else {
+                    const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
+                    rawText = text;
+                  }
+                } else {
+                  const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
+                  rawText = text;
+                }
 
-                let mermaid = extractMermaid(text);
+                let mermaid = extractMermaid(rawText);
                 if (looksLikePlantUml(mermaid)) {
                   const { text: text2 } = await generateText({
                     model,
@@ -592,14 +600,22 @@ export const Route = createFileRoute("/api/chat-message")({
           );
           history.push({ role: "user", content: cleanUserMsg });
 
-          const { text } = await generateText({
-            model,
-            system,
-            messages: history,
-            temperature: 0.3,
-          });
+          let rawText: string;
+          if (outputType === "diagram_activity") {
+            const { runTwoStagePipeline } = await import("@/lib/activity-diagram-pipeline.server");
+            const staged = await runTwoStagePipeline(model, cleanUserMsg);
+            if (staged !== null) {
+              rawText = staged;
+            } else {
+              const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
+              rawText = text;
+            }
+          } else {
+            const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
+            rawText = text;
+          }
 
-          let mermaid = extractMermaid(text);
+          let mermaid = extractMermaid(rawText);
           const diagHint = diagDef.mermaidHint ?? "";
           if (looksLikePlantUml(mermaid)) {
             const { text: text2 } = await generateText({
