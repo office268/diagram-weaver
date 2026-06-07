@@ -1,36 +1,12 @@
-## מטרה
-להחזיר את כל הטקסטים בתרשימי Mermaid באופן יציב וקבוע — כולל טקסטים בתוך מלבני הפעולות, על החצים, ובכותרות ה־swimlanes — בלי להישבר שוב בין רינדורים, זום, מצב כהה/בהיר או רענון רכיב.
+## Changes in `src/routes/_authenticated/dashboard.tsx`
 
-## מה איישם
-1. אבודד את שרשרת הרינדור של התרשים לקונפיגורציה אחת עקבית
-   - אבטל מצב שבו Mermaid מאותחל בכמה דרכים שונות או עם הגדרות שמשתנות בין render אחד לאחר.
-   - אקבע תצורת רינדור אחת יציבה ל־flowchart/activity, עם החלטה חד־משמעית אם להשתמש ב־HTML labels או ב־SVG text רגיל.
+1. **Center the section headings**
+   - Change `<h2 className="mb-2 text-sm font-semibold text-muted-foreground">` for both **UML** and **PR-Docs** to include `text-center`.
 
-2. אתקן את שכבת הסניטיזציה כך שלא תמחק אלמנטים חיוניים של הטקסט
-   - אבחן בדיוק אילו תגיות/attributes/styles Mermaid מייצר עבור labelים במלבנים.
-   - אעדכן את הסניטיזציה כך שתשמור רק את מה שנדרש להצגת הטקסט, בלי לפתוח חורים מיותרים באבטחה.
-   - אשמור על הדרישה הקיימת של `securityLevel: 'strict'`.
+2. **Add a "עוד" (More) tile to the diagrams (UML) group**
+   - Render `<MoreTile />` at the end of the diagram grid, identical to the one already in PR-Docs.
+   - Both MoreTiles open the same drawer (`setMoreOpen(true)`) — no change needed to the drawer or extras logic.
+   - Filter the drawer contents by which group was clicked: track `moreOpen` as `null | "diagram" | "document"` and filter `extrasTiles` by `OUTPUT_TYPES[k].category` so the UML "עוד" shows only diagram extras (`diagram_state`, `diagram_deployment`) and the PR-Docs "עוד" shows only document extras (`user_guide` + anything moved-to-extras of that category).
+   - Drawer title/description adjusted per group ("תרשימים נוספים" vs "מסמכים נוספים").
 
-3. אטפל גם בשכבת התצוגה ב־React
-   - אבדוק אם ה־zoom/pan wrapper, ה־fullscreen dialog, או CSS גלובלי גורמים להיעלמות/צבע בלתי נראה/overflow שמסתיר את הטקסט.
-   - אקשיח את ה־CSS של קונטיינר התרשים כדי שטקסטים ב־SVG ו/או בתוך `foreignObject` יישארו קריאים.
-
-4. אאמת את זה מול כמה סוגי תרשימים, לא רק מקרה אחד
-   - Activity / flowchart עם swimlanes
-   - Sequence
-   - לפחות תרשים נוסף מהרשימה הקיימת
-   - אבדוק גם במסך רגיל וגם במסך מלא
-
-5. אוסיף הגנות למניעת רגרסיה
-   - אם יתאים למבנה הקוד, אוסיף בדיקת smoke קטנה או helper בדיקה שמוודא שטקסטי labels נשמרים אחרי sanitize.
-   - כך שינוי עתידי לא יחזיר את התקלה בלי שנשים לב.
-
-## תוצאה צפויה
-- כל הטקסטים בתרשימים יוצגו באופן עקבי.
-- לא תהיה תלות מקרית בזום/מצב כהה/רינדור חוזר.
-- הפתרון יהיה מבוסס על מקור התקלה, לא על טלאי נקודתי.
-
-## פרטים טכניים
-- קבצים סבירים לעדכון: `src/lib/mermaid-utils.ts`, `src/components/mermaid-preview.tsx`, ואולי `src/styles.css` אם יתברר שיש בעיית CSS/visibility.
-- לא אגע בלוגיקה עסקית או בבקאנד.
-- אאמת בתצוגה החיה אחרי התיקון לפני שאסיים.
+No backend, no DB, no other component changes.

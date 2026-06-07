@@ -31,6 +31,7 @@ import {
   OUTPUT_TYPES,
   OUTPUT_TYPE_ORDER,
   OUTPUT_TYPE_EXTRAS,
+  isDiagramType,
   type OutputKey,
 } from "@/lib/output-types";
 import { createChatThread } from "@/lib/chat.functions";
@@ -167,57 +168,105 @@ function HomePage() {
     if (!isAdmin) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = mainTiles.indexOf(active.id as OutputKey);
-    const newIndex = mainTiles.indexOf(over.id as OutputKey);
+    const activeKey = active.id as OutputKey;
+    const overKey = over.id as OutputKey;
+    const sameGroup = isDiagramType(activeKey) === isDiagramType(overKey);
+    if (!sameGroup) return;
+    const oldIndex = mainTiles.indexOf(activeKey);
+    const newIndex = mainTiles.indexOf(overKey);
     if (oldIndex < 0 || newIndex < 0) return;
     const reordered = arrayMove(mainTiles, oldIndex, newIndex);
-    // Save only the ORDER-based tiles (movedToMain extras aren't in the DB order).
     const next = reordered.filter((k) => (OUTPUT_TYPE_ORDER as readonly string[]).includes(k));
     saveMut.mutate(next);
   };
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreGroup, setMoreGroup] = useState<null | "diagram" | "document">(null);
+
+  const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
+  const documentTiles = useMemo(() => mainTiles.filter((k) => !isDiagramType(k)), [mainTiles]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={mainTiles} strategy={rectSortingStrategy}>
-          <div className="grid flex-1 auto-rows-min content-evenly grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
-            {mainTiles.map((key, i) => (
-              <SortableTile
-                key={key}
-                outputKey={key}
-                index={i}
-                pending={createMut.isPending && createMut.variables === key}
-                disabled={createMut.isPending}
-                draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
-                onActivate={() => createMut.mutate(key)}
-                onMoveToExtras={() => moveToExtras(key)}
-              />
-            ))}
-            <MoreTile
-              index={mainTiles.length}
-              disabled={createMut.isPending}
-              onActivate={() => setMoreOpen(true)}
-            />
-          </div>
-        </SortableContext>
+        <div className="space-y-5">
+          {diagramTiles.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
+              <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
+                <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+                  {diagramTiles.map((key, i) => (
+                    <SortableTile
+                      key={key}
+                      outputKey={key}
+                      index={i}
+                      pending={createMut.isPending && createMut.variables === key}
+                      disabled={createMut.isPending}
+                      draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
+                      onActivate={() => createMut.mutate(key)}
+                      onMoveToExtras={() => moveToExtras(key)}
+                    />
+                  ))}
+                  <MoreTile
+                    index={diagramTiles.length}
+                    disabled={createMut.isPending}
+                    onActivate={() => setMoreGroup("diagram")}
+                  />
+                </div>
+              </SortableContext>
+            </section>
+          )}
+
+          <section>
+            <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">PR-Docs</h2>
+            <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
+              <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+                {documentTiles.map((key, i) => (
+                  <SortableTile
+                    key={key}
+                    outputKey={key}
+                    index={i}
+                    pending={createMut.isPending && createMut.variables === key}
+                    disabled={createMut.isPending}
+                    draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
+                    onActivate={() => createMut.mutate(key)}
+                    onMoveToExtras={() => moveToExtras(key)}
+                  />
+                ))}
+                <MoreTile
+                  index={documentTiles.length}
+                  disabled={createMut.isPending}
+                  onActivate={() => setMoreGroup("document")}
+                />
+              </div>
+            </SortableContext>
+          </section>
+        </div>
       </DndContext>
 
-      <Drawer open={moreOpen} onOpenChange={setMoreOpen}>
+      <Drawer open={moreGroup !== null} onOpenChange={(o) => !o && setMoreGroup(null)}>
         <DrawerContent>
           <DrawerHeader className="text-right">
-            <DrawerTitle>סוגי מסמכים נוספים</DrawerTitle>
-            <DrawerDescription>בחר/י סוג מסמך או תרשים פחות נפוץ ליצירה.</DrawerDescription>
+            <DrawerTitle>
+              {moreGroup === "diagram" ? "תרשימים נוספים" : "מסמכים נוספים"}
+            </DrawerTitle>
+            <DrawerDescription>
+              {moreGroup === "diagram"
+                ? "בחר/י סוג תרשים פחות נפוץ ליצירה."
+                : "בחר/י סוג מסמך פחות נפוץ ליצירה."}
+            </DrawerDescription>
           </DrawerHeader>
           <div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3 px-4 pb-6 sm:grid-cols-3">
-            {extrasTiles.map((key) => (
+            {extrasTiles
+              .filter((key) =>
+                moreGroup === "diagram" ? isDiagramType(key) : !isDiagramType(key),
+              )
+              .map((key) => (
               <ExtrasTile
                 key={key}
                 outputKey={key}
                 isPending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
-                onActivate={() => { setMoreOpen(false); createMut.mutate(key); }}
-                onMoveToMain={() => { setMoreOpen(false); moveToMain(key); }}
+                onActivate={() => { setMoreGroup(null); createMut.mutate(key); }}
+                onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
               />
             ))}
           </div>
