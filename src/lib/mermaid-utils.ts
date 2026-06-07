@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import DOMPurify from "dompurify";
 
 let initialized = false;
 
@@ -8,7 +9,7 @@ export function initMermaid() {
   mermaid.initialize({
     startOnLoad: false,
     theme: "default",
-    securityLevel: "loose",
+    securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
     flowchart: { curve: "basis", useMaxWidth: true },
     sequence: { useMaxWidth: true },
@@ -20,7 +21,7 @@ export function setMermaidTheme(dark: boolean) {
   mermaid.initialize({
     startOnLoad: false,
     theme: dark ? "dark" : "default",
-    securityLevel: "loose",
+    securityLevel: "strict",
     fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
   });
 }
