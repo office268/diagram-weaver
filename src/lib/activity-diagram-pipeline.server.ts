@@ -110,6 +110,12 @@ export function validateActivityDiagram(code: string): string[] {
   const diamonds = (code.match(/\{\{[^}]+\}\}/g) ?? []).length;
   if (diamonds > 2)
     violations.push(`נמצאו ${diamonds} diamonds — כשיש נקודת החלטה אחת, השתמש ב-diamond יחיד עם כל הענפים במקום ${diamonds} diamonds עוקבים`);
+  if (/^\s*subgraph\s+"/m.test(code))
+    violations.push('subgraph עם תווית מצוטטת ללא מזהה ASCII — חובה `subgraph LANE1["שם"]` ולא `subgraph "שם"`');
+  if (/^\s*style\s+"/m.test(code))
+    violations.push('פקודת `style` עם שם מצוטט — חובה להפנות למזהה ASCII של ה-subgraph, לדוגמה `style LANE1 fill:...`');
+  if (/\{\{\{/.test(code))
+    violations.push('נמצא diamond כפול-מסגרת `{{{...}}}` — חובה זוג סוגריים אחד בלבד `{{...}}`');
   return violations;
 }
 
