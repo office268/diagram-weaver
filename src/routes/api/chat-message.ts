@@ -59,6 +59,22 @@ function sanitizeMermaidLabels(code: string): string {
   );
 }
 
+function validateActivityDiagram(code: string): string[] {
+  const violations: string[] = [];
+  if (!/^flowchart\s+RL\b/m.test(code))
+    violations.push("חסר `flowchart RL` — חובה להתחיל בשורה `flowchart RL`");
+  const subgraphs = (code.match(/^\s*subgraph\b/gm) ?? []).length;
+  const dirTB = (code.match(/^\s*direction\s+TB\b/gm) ?? []).length;
+  if (subgraphs > 0 && dirTB < subgraphs)
+    violations.push(`חסר \`direction TB\` ב-${subgraphs - dirTB} subgraph(s) — כל subgraph חייב לכלול \`direction TB\` בתחילתו`);
+  if (/\bDONE\s*\(\s*\[/.test(code))
+    violations.push('node הסיום כתוב כ-`DONE(["סיום"])` במקום `DONE(("סיום"))` — נדרשים שני זוגות סוגריים לעיגול');
+  const diamonds = (code.match(/\{\{[^}]+\}\}/g) ?? []).length;
+  if (diamonds > 2)
+    violations.push(`נמצאו ${diamonds} diamonds — כשיש נקודת החלטה אחת, השתמש ב-diamond יחיד עם כל הענפים במקום ${diamonds} diamonds עוקבים`);
+  return violations;
+}
+
 
 export const Route = createFileRoute("/api/chat-message")({
   server: {
@@ -383,6 +399,21 @@ export const Route = createFileRoute("/api/chat-message")({
                   if (!looksLikePlantUml(retry)) mermaid = retry;
                 }
 
+                if (outputType === "diagram_activity") {
+                  const actViolations = validateActivityDiagram(mermaid);
+                  if (actViolations.length > 0) {
+                    const violationsList = actViolations.map(v => `• ${v}`).join("\n");
+                    const { text: textFixed } = await generateText({
+                      model,
+                      system: system + `\n\nהתרשים שנוצר מכיל את הבעיות הבאות:\n${violationsList}\n\nהחזר את קוד ה-Mermaid המלא מחדש עם כל התיקונים.`,
+                      messages: history,
+                      temperature: 0,
+                    });
+                    const fixed = extractMermaid(textFixed);
+                    if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
+                  }
+                }
+
                 mermaid = sanitizeMermaidLabels(mermaid);
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
@@ -558,7 +589,33 @@ export const Route = createFileRoute("/api/chat-message")({
             temperature: 0.3,
           });
 
-          const mermaid = extractMermaid(text);
+          let mermaid = extractMermaid(text);
+          const diagHint = diagDef.mermaidHint ?? "";
+          if (looksLikePlantUml(mermaid)) {
+            const { text: text2 } = await generateText({
+              model,
+              system: system + `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${diagHint || "flowchart TD"}.`,
+              messages: history,
+              temperature: 0,
+            });
+            const retry = extractMermaid(text2);
+            if (!looksLikePlantUml(retry)) mermaid = retry;
+          }
+          if (outputType === "diagram_activity") {
+            const actViolations = validateActivityDiagram(mermaid);
+            if (actViolations.length > 0) {
+              const violationsList = actViolations.map(v => `• ${v}`).join("\n");
+              const { text: textFixed } = await generateText({
+                model,
+                system: system + `\n\nהתרשים שנוצר מכיל את הבעיות הבאות:\n${violationsList}\n\nהחזר את קוד ה-Mermaid המלא מחדש עם כל התיקונים.`,
+                messages: history,
+                temperature: 0,
+              });
+              const fixed = extractMermaid(textFixed);
+              if (validateActivityDiagram(fixed).length < actViolations.length) mermaid = fixed;
+            }
+          }
+          mermaid = sanitizeMermaidLabels(mermaid);
           const title = cleanUserMsg.slice(0, 80) || def.label;
 
           const { data: diagRow, error: diagErr } = await supabaseAdmin
