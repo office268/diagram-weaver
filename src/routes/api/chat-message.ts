@@ -354,6 +354,11 @@ export const Route = createFileRoute("/api/chat-message")({
                       `  style MGR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
                       `  style HR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
                       `\`\`\`\n\n` +
+                      `שגיאות נפוצות — אל תחזור עליהן:\n` +
+                      `❌ שגוי: DONE(["סיום"]) — מייצר מלבן\n` +
+                      `✓ נכון: DONE(("סיום")) — מייצר עיגול (שני זוגות סוגריים)\n\n` +
+                      `❌ שגוי: שני diamonds עוקבים — DEC1{{"צורך בבירור?"}} -->|לא| DEC2{{"מאשר?"}}\n` +
+                      `✓ נכון: diamond אחד עם כל הענפים — DEC{{"תשובה?"}} -->|בירור| F -->|אישור| E -->|סירוב| G\n\n` +
                       `כעת צור תרשים דומה עבור התהליך שתואר, עם תוכן ספציפי לבקשה. `
                     : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `;
 
@@ -562,6 +567,11 @@ export const Route = createFileRoute("/api/chat-message")({
                 `  style MGR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
                 `  style HR fill:#ffffff,stroke:#4444dd,stroke-dasharray:5 5\n` +
                 `\`\`\`\n\n` +
+                `שגיאות נפוצות — אל תחזור עליהן:\n` +
+                `❌ שגוי: DONE(["סיום"]) — מייצר מלבן\n` +
+                `✓ נכון: DONE(("סיום")) — מייצר עיגול (שני זוגות סוגריים)\n\n` +
+                `❌ שגוי: שני diamonds עוקבים — DEC1{{"צורך בבירור?"}} -->|לא| DEC2{{"מאשר?"}}\n` +
+                `✓ נכון: diamond אחד עם כל הענפים — DEC{{"תשובה?"}} -->|בירור| F -->|אישור| E -->|סירוב| G\n\n` +
                 `כעת צור תרשים דומה עבור התהליך שתואר, עם תוכן ספציפי לבקשה. `
               : "";
 
