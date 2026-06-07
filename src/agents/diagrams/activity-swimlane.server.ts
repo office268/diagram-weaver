@@ -107,24 +107,15 @@ export async function runBuilderAgent(
   return extractMermaid(text);
 }
 
-/** Agent 3 — validate Mermaid: regex structural checks + LLM semantic review */
+/** Agent 3 — validate Mermaid: regex structural checks only (LLM semantic review
+ *  skipped to reduce orchestrator wall-time on Workers — was causing stream
+ *  cutoffs/"תגובת השרת נקטעה"). */
 export async function runValidatorAgent(
-  model: Model,
+  _model: Model,
   mermaid: string,
-  userPrompt: string,
+  _userPrompt: string,
 ): Promise<{ violations: string[] }> {
-  const regexViolations = validateActivityDiagram(mermaid);
-  const review = await reviewActivityDiagram(model, mermaid, userPrompt);
-  const llmViolations =
-    !review.ok && Array.isArray(review.violations) ? review.violations : [];
-  // Merge, skipping LLM duplicates already caught by regex
-  const merged = [
-    ...regexViolations,
-    ...llmViolations.filter(
-      (v) => !regexViolations.some((r) => r.slice(0, 25) === v.slice(0, 25)),
-    ),
-  ];
-  return { violations: merged };
+  return { violations: validateActivityDiagram(mermaid) };
 }
 
 /** Agent 4 — fix violations: return corrected Mermaid */
@@ -160,7 +151,7 @@ export async function runActivitySwimlaneOrchestrator(params: {
   modelOverride?: string;
   maxFixIterations?: number;
 }): Promise<{ mermaid: string; iterations: number }> {
-  const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 2 } = params;
+  const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 1 } = params;
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
 
