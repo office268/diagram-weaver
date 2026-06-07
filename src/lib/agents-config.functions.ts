@@ -104,7 +104,7 @@ export const getAgentsConfig = createServerFn({ method: "GET" })
 
     const DIAG_TEMPLATE = [
       "use cases + architecture + data model שכבר נוצרו",
-      "בקשה ליצירת קוד Mermaid עבור: sequence, activity, usecase, architecture, ER",
+      "בקשה ליצירת קוד Mermaid עבור: sequence, activity (כ-flowchart TD), usecase, architecture, ER",
       "Output schema של דיאגרמות עם title + mermaid code",
       "JSON-only instruction",
     ];
