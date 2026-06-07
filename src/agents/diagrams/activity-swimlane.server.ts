@@ -2,8 +2,10 @@ import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 import {
+  ActivityDiagramGenerationError,
   STAGE1_SYSTEM,
   STAGE2_SYSTEM,
+  parseProcessMapResponse,
   postProcessActivityMermaid,
   validateActivityDiagram,
   reviewActivityDiagram,
@@ -18,38 +20,10 @@ function extractMermaid(text: string): string {
   return text.trim();
 }
 
-/** Agent 1 — extract structured ProcessMap from natural language */
-function extractJsonObject(raw: string): string | null {
-  // Strip code fences if present
-  let s = raw.replace(/```json[^\n]*\n?/gi, "").replace(/```\s*/g, "").trim();
-  // Find first balanced { ... } block
-  const start = s.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inStr = false;
-  let esc = false;
-  for (let i = start; i < s.length; i++) {
-    const c = s[i];
-    if (inStr) {
-      if (esc) esc = false;
-      else if (c === "\\") esc = true;
-      else if (c === '"') inStr = false;
-      continue;
-    }
-    if (c === '"') inStr = true;
-    else if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return s.slice(start, i + 1);
-    }
-  }
-  return null;
-}
-
 export async function runExtractorAgent(
   model: Model,
   userPrompt: string,
-): Promise<ProcessMap | null> {
+): Promise<ProcessMap> {
   let text = "";
   try {
     const result = await generateText({
@@ -59,18 +33,7 @@ export async function runExtractorAgent(
       temperature: 0,
     });
     text = result.text;
-    const clean = extractJsonObject(text) ?? text.trim();
-    const parsed = JSON.parse(clean) as Partial<ProcessMap>;
-    if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) {
-      console.error("[activity extractor] no actors in parsed JSON:", clean.slice(0, 500));
-      return null;
-    }
-    return {
-      actors: parsed.actors,
-      steps: parsed.steps ?? [],
-      decisions: parsed.decisions ?? [],
-      merges: parsed.merges ?? [],
-    };
+    return parseProcessMapResponse(text);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
@@ -80,7 +43,20 @@ export async function runExtractorAgent(
     if (/rate limit|429/i.test(msg)) {
       throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
     }
-    return null;
+
+    if (err instanceof ActivityDiagramGenerationError) {
+      if (err.code === "extractor_truncated") {
+        throw new Error("שלב חילוץ מבנה התהליך נכשל — מודל ה-AI החזיר JSON קטוע. נסה שוב; אם זה חוזר, קצר מעט את התיאור או חלק אותו לשלבים.");
+      }
+      if (err.code === "extractor_invalid_schema") {
+        throw new Error("שלב חילוץ מבנה התהליך נכשל — לא זוהו שחקנים תקינים בפלט המובנה. נסה לנסח את התהליך עם שחקנים ושלבים ברורים.");
+      }
+      throw new Error("שלב חילוץ מבנה התהליך נכשל — הפלט המובנה לא היה JSON תקין.");
+    }
+
+    throw err instanceof Error
+      ? err
+      : new Error("שלב חילוץ מבנה התהליך נכשל מסיבה לא ידועה.");
   }
 }
 
@@ -165,7 +141,6 @@ export async function runActivitySwimlaneOrchestrator(params: {
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
 
   const processMap = await runExtractorAgent(model, userPrompt);
-  if (!processMap) throw new Error("שלב חילוץ מבנה התהליך נכשל — לא ניתן היה לזהות שחקנים/שלבים מהתיאור. נסה לנסח מחדש בצורה ברורה יותר.");
 
   let mermaid = await runBuilderAgent(model, processMap, userPrompt);
   let iterations = 1;
