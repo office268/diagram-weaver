@@ -1,12 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+function publicServerClient() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase public env vars");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
 
 export const getSiteTexts = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
-    .from("site_texts")
-    .select("key, value");
+  const sb = publicServerClient();
+  const { data, error } = await sb.from("site_texts").select("key, value");
   if (error) throw new Error(error.message);
   const map: Record<string, string> = {};
   for (const r of data ?? []) map[r.key] = r.value;
@@ -16,7 +22,7 @@ export const getSiteTexts = createServerFn({ method: "GET" }).handler(async () =
 export const getIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (context.supabase as any)
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
@@ -37,7 +43,8 @@ export const updateSiteText = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: roleRow } = await supabaseAdmin
+    const sb = context.supabase as any;
+    const { data: roleRow } = await sb
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
@@ -45,7 +52,7 @@ export const updateSiteText = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!roleRow) throw new Error("רק מנהל מערכת יכול לערוך טקסטים");
 
-    const { error } = await supabaseAdmin
+    const { error } = await sb
       .from("site_texts")
       .upsert(
         { key: data.key, value: data.value, updated_by: context.userId, updated_at: new Date().toISOString() },
