@@ -165,7 +165,7 @@ export async function runActivitySwimlaneOrchestrator(params: {
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
 
   const processMap = await runExtractorAgent(model, userPrompt);
-  if (!processMap) throw new Error("activity extractor failed to parse process structure");
+  if (!processMap) throw new Error("שלב חילוץ מבנה התהליך נכשל — לא ניתן היה לזהות שחקנים/שלבים מהתיאור. נסה לנסח מחדש בצורה ברורה יותר.");
 
   let mermaid = await runBuilderAgent(model, processMap, userPrompt);
   let iterations = 1;
