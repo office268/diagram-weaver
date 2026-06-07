@@ -117,7 +117,7 @@ export function MermaidPreview({ code, onSvg, hideFullscreen }: Props) {
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
-                  <div className="absolute right-2 top-2 z-10 flex gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm backdrop-blur">
+                  <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm backdrop-blur">
                     <Button
                       size="icon"
                       variant="ghost"
@@ -144,6 +144,16 @@ export function MermaidPreview({ code, onSvg, hideFullscreen }: Props) {
                       aria-label="איפוס"
                     >
                       <RotateCcw className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => svg && exportSvgAsJpg(svg)}
+                      aria-label="ייצוא כ-JPG"
+                      title="ייצוא כ-JPG"
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                     {!hideFullscreen && (
                       <Button
