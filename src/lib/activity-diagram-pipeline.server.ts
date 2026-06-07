@@ -42,12 +42,18 @@ export const STAGE2_SYSTEM =
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
 export function postProcessActivityMermaid(code: string): string {
-  // Apply transforms FIRST (before prepending the init directive), so the
-  // single-brace -> double-brace regex doesn't corrupt the `%%{init: {...}}%%`
-  // directive (which legitimately contains single braces).
-  const transformed = code
-    .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
-    .replace(/\{([^{][^}]+)\}/g, '{{$1}}');
+  // Apply transforms line-by-line so the init directive line (starts with %%)
+  // is never touched by the decision-diamond regex (which would otherwise
+  // mangle `%%{init: {...}}%%` into `%%{{"flowchart...}}%%`).
+  const lines = code.split("\n").map((line) => {
+    if (line.trimStart().startsWith("%%")) return line;
+    return line
+      .replace(/DONE\(\["([^"]+)"\]\)/g, 'DONE(("$1"))')
+      // Match single-brace decision diamonds only — exclude content starting
+      // with `"` to avoid matching JSON-like structures.
+      .replace(/\{([^{}"][^{}]*)\}/g, "{{$1}}");
+  });
+  const transformed = lines.join("\n");
   const elkDirective = '%%{init: {"flowchart": {"defaultRenderer": "elk"}} }%%';
   return transformed.trimStart().startsWith("%%")
     ? transformed
