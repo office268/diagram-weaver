@@ -59,16 +59,16 @@ export async function runOrchestrator(params: {
   };
 
   // Step 2: Requirements agent
-  const requirements = await runRequirementsAgent(ctx, gateway, tracker);
+  let requirements = await runRequirementsAgent(ctx, gateway, tracker);
 
   // Step 3: Architecture + Data Model in parallel
-  const [architecture, dataModel] = await Promise.all([
+  let [architecture, dataModel] = await Promise.all([
     runArchitectureAgent(ctx, requirements, gateway, tracker),
     runDataModelAgent(ctx, requirements, gateway, tracker),
   ]);
 
   // Step 4: Use Cases agent
-  const useCases = await runUseCasesAgent(ctx, requirements, gateway, tracker);
+  let useCases = await runUseCasesAgent(ctx, requirements, gateway, tracker);
 
   // Step 5: Diagrams agent
   const diagrams = await runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway, tracker);
@@ -94,9 +94,10 @@ export async function runOrchestrator(params: {
 
     const improveCtx: AgentContext = { ...ctx, isRevision: true, reviewNotes: notes };
 
-    // Run only relevant agents
+    // Run only relevant agents — update local vars so subsequent agents see latest outputs
     if (reqNotes.length > 0) {
       const improved = await runRequirementsAgent(improveCtx, gateway, tracker);
+      requirements = improved;
       currentSpec = mergeRequirements(currentSpec, improved);
     }
 
@@ -105,6 +106,7 @@ export async function runOrchestrator(params: {
         runArchitectureAgent(improveCtx, requirements, gateway, tracker),
         runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
       ]);
+      architecture = improvedArch;
       currentSpec = mergeArchitecture(currentSpec, improvedArch, improvedDiagrams);
     }
 
@@ -113,6 +115,7 @@ export async function runOrchestrator(params: {
         runUseCasesAgent(improveCtx, requirements, gateway, tracker),
         runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
       ]);
+      useCases = improvedUC;
       currentSpec = mergeUseCases(currentSpec, improvedUC, improvedDiagrams);
     }
 
