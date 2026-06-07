@@ -1,9 +1,67 @@
 import { useEffect, useRef, useState } from "react";
 import { renderMermaid } from "@/lib/mermaid-utils";
-import { AlertTriangle, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, Download, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+
+async function exportSvgAsJpg(svgMarkup: string) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
+    const svgEl = doc.documentElement as unknown as SVGSVGElement;
+    if (!svgEl || svgEl.nodeName === "parsererror") throw new Error("SVG לא תקין");
+
+    const vb = svgEl.getAttribute("viewBox")?.split(/\s+/).map(Number);
+    let width = parseFloat(svgEl.getAttribute("width") || "") || (vb && vb[2]) || 1200;
+    let height = parseFloat(svgEl.getAttribute("height") || "") || (vb && vb[3]) || 800;
+    if (!Number.isFinite(width) || width <= 0) width = 1200;
+    if (!Number.isFinite(height) || height <= 0) height = 800;
+
+    svgEl.setAttribute("width", String(width));
+    svgEl.setAttribute("height", String(height));
+    if (!svgEl.getAttribute("xmlns")) svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+
+    const serialized = new XMLSerializer().serializeToString(svgEl);
+    const svgBlob = new Blob([serialized], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("טעינת התמונה נכשלה"));
+      img.src = url;
+    });
+
+    const scale = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(width * scale);
+    canvas.height = Math.ceil(height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas לא נתמך");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+
+    const blob: Blob | null = await new Promise((res) =>
+      canvas.toBlob((b) => res(b), "image/jpeg", 0.95),
+    );
+    if (!blob) throw new Error("יצירת JPG נכשלה");
+    const dlUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = dlUrl;
+    a.download = `diagram-${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(dlUrl);
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "ייצוא נכשל");
+  }
+}
 
 interface Props {
   code: string;
@@ -59,7 +117,7 @@ export function MermaidPreview({ code, onSvg, hideFullscreen }: Props) {
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
-                  <div className="absolute right-2 top-2 z-10 flex gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm backdrop-blur">
+                  <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm backdrop-blur">
                     <Button
                       size="icon"
                       variant="ghost"
@@ -86,6 +144,16 @@ export function MermaidPreview({ code, onSvg, hideFullscreen }: Props) {
                       aria-label="איפוס"
                     >
                       <RotateCcw className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => svg && exportSvgAsJpg(svg)}
+                      aria-label="ייצוא כ-JPG"
+                      title="ייצוא כ-JPG"
+                    >
+                      <Download className="h-4 w-4" />
                     </Button>
                     {!hideFullscreen && (
                       <Button
