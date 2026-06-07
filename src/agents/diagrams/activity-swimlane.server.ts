@@ -157,5 +157,14 @@ export async function runActivitySwimlaneOrchestrator(params: {
     iterations++;
   }
 
-  return { mermaid: postProcessActivityMermaid(mermaid), iterations };
+  const finalMermaid = postProcessActivityMermaid(mermaid);
+  const finalViolations = validateActivityDiagram(finalMermaid);
+  if (finalViolations.length > 0) {
+    throw new ActivityDiagramGenerationError(
+      "builder_invalid_mermaid",
+      `שלב בניית תרשים ה-Activity נכשל — קוד Mermaid שנוצר עדיין אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
+    );
+  }
+
+  return { mermaid: finalMermaid, iterations };
 }
