@@ -1,12 +1,31 @@
-## Changes in `src/routes/_authenticated/dashboard.tsx`
+## מטרה
+לתקן את התקלה ביצירת תרשים Activity כך שהתרשים ירונדר תקין, בלי להחליש את איכות התוצרים האפיוניים ובלי לשנות את לוגיקת ההפקה מעבר למה שנדרש לבאג.
 
-1. **Center the section headings**
-   - Change `<h2 className="mb-2 text-sm font-semibold text-muted-foreground">` for both **UML** and **PR-Docs** to include `text-center`.
+## מה גורם לתקלה
+מקור השגיאה אינו ב-AI extractor אלא בעיבוד שלאחר ההפקה:
+- תרשים תקין שמכיל decision node בצורה `{{החלטה?}}`
+- עובר דרך `postProcessActivityMermaid(...)`
+- הביטוי שם עוטף שוב decision קיים ויוצר `{{{החלטה?}}}`
+- Mermaid נכשל עם `got 'DIAMOND_START'`
 
-2. **Add a "עוד" (More) tile to the diagrams (UML) group**
-   - Render `<MoreTile />` at the end of the diagram grid, identical to the one already in PR-Docs.
-   - Both MoreTiles open the same drawer (`setMoreOpen(true)`) — no change needed to the drawer or extras logic.
-   - Filter the drawer contents by which group was clicked: track `moreOpen` as `null | "diagram" | "document"` and filter `extrasTiles` by `OUTPUT_TYPES[k].category` so the UML "עוד" shows only diagram extras (`diagram_state`, `diagram_deployment`) and the PR-Docs "עוד" shows only document extras (`user_guide` + anything moved-to-extras of that category).
-   - Drawer title/description adjusted per group ("תרשימים נוספים" vs "מסמכים נוספים").
+כלומר: זו רגרסיה של post-processing מקומי, לא ירידה באיכות ההבנה או ההפקה של התהליך.
 
-No backend, no DB, no other component changes.
+## תוכנית תיקון
+1. לתקן את `postProcessActivityMermaid` כך שיעטוף רק החלטות עם סוגריים בודדים `{...}` ולא ייגע בהחלטות שכבר כתובות נכון כ-`{{...}}`.
+2. להוסיף תיקון תאימות לאחור בקוד הרינדור, כך שגם תרשימים שכבר נשמרו עם `{{{...}}}` יתוקנו בזמן תצוגה ולא ימשיכו להישבר.
+3. לשמור על כל כללי האיכות הקיימים של ה-Activity pipeline: extractor, prompts, validation, reviewer, fixer — ללא החלשה וללא שינויי איכות.
+4. לבצע אימות ממוקד שהמקרה מהצילום נרנדר תקין, ושלא נשברה תמיכה במקרי Mermaid תקינים אחרים.
+
+## קבצים צפויים לעדכון
+- `src/lib/activity-diagram-pipeline.server.ts`
+- `src/lib/mermaid-utils.ts`
+
+## פרטים טכניים
+- ב-`postProcessActivityMermaid` אחליף את ההמרה הרגקסית כך שלא תתפוס `{{...}}` קיימים.
+- ב-`renderMermaid` אוסיף repair ממוקד ל-diamond משולש `{{{...}}}` ל-`{{...}}`, בדומה לתיקון התאימות שכבר קיים ל-init directive פגום.
+- לא אשנה model, prompts, temperature, schema, extraction depth, או שלבי הביקורת/תיקון.
+
+## תוצאה צפויה
+- תרשימי Activity חדשים יוצגו תקין.
+- תרשימים ישנים שכבר נשמרו עם התחביר השבור יוכלו להיפתח.
+- איכות ההפקה תישאר כפי שהיא, כי התיקון הוא תחבירי-מקומי בלבד.
