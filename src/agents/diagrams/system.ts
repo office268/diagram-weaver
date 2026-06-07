@@ -9,7 +9,7 @@ export const DIAGRAMS_SYSTEM = [
   "",
   "סוגי דיאגרמות שאתה יוצר:",
   "- sequenceDiagram: לתרחישי שימוש (Actor ->> System: פעולה)",
-  "- activityDiagram (flowchart TD): לזרימות תהליך",
+  "- זרימות תהליך / Activity: flowchart TD בלבד (Mermaid לא תומך ב-activityDiagram; אסור להתחיל ב-start/:label;)",
   "- usecase: לדיאגרמת use case (עם actor ו-usecase)",
   "- flowchart TD: לארכיטקטורה",
   "- erDiagram: למודל נתונים",

@@ -36,6 +36,17 @@ function extractMermaid(text: string): string {
   return text.trim();
 }
 
+function looksLikePlantUml(code: string): boolean {
+  const t = code.trimStart();
+  return (
+    /^activityDiagram\b/i.test(t) ||
+    /^@startuml\b/i.test(t) ||
+    /^start\b/im.test(t.split("\n").slice(0, 3).join("\n")) ||
+    /^\s*:[^;\n]+;/m.test(t)
+  );
+}
+
+
 export const Route = createFileRoute("/api/chat-message")({
   server: {
     handlers: {
@@ -267,11 +278,16 @@ export const Route = createFileRoute("/api/chat-message")({
                 const provider = createLovableAiGatewayProvider(apiKey);
                 const model = provider("google/gemini-2.5-flash");
 
+                const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
                 const system =
                   `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
                   `סוג התרשים המבוקש: ${def.label}. ` +
                   `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
-                  `התחל בכותרת המתאימה (${(def as { mermaidHint?: string }).mermaidHint ?? ""}). ` +
+                  (hint
+                    ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. `
+                    : "") +
+                  `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. עבור תרשים Activity / זרימת תהליך — חובה להשתמש ב-\`flowchart TD\` עם החלטות בצורת \`{תנאי?}\` ופעולות בצורת \`[פעולה]\`. ` +
+                  `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
                   `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"].`;
 
                 const history: { role: "user" | "assistant"; content: string }[] = prior.map(
@@ -289,7 +305,20 @@ export const Route = createFileRoute("/api/chat-message")({
                   temperature: 0.3,
                 });
 
-                const mermaid = extractMermaid(text);
+                let mermaid = extractMermaid(text);
+                if (looksLikePlantUml(mermaid)) {
+                  const { text: text2 } = await generateText({
+                    model,
+                    system:
+                      system +
+                      `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${hint || "flowchart TD"}.`,
+                    messages: history,
+                    temperature: 0,
+                  });
+                  const retry = extractMermaid(text2);
+                  if (!looksLikePlantUml(retry)) mermaid = retry;
+                }
+
                 const title = cleanUserMsg.slice(0, 80) || def.label;
 
                 const { data: diagRow, error: diagErr } = await supabaseAdmin
