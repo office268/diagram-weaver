@@ -49,28 +49,28 @@ export async function runExtractorAgent(
         continue;
       }
 
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
-    if (/payment required|402/i.test(msg)) {
-      throw new Error("נגמרו הקרדיטים ל-AI. יש להוסיף קרדיטים בהגדרות > שימוש (402 Payment Required).");
-    }
-    if (/rate limit|429/i.test(msg)) {
-      throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
-    }
-
-    if (err instanceof ActivityDiagramGenerationError) {
-      if (err.code === "extractor_truncated") {
-        throw new Error("שלב חילוץ מבנה התהליך נכשל — מודל ה-AI החזיר JSON קטוע. נסה שוב; אם זה חוזר, קצר מעט את התיאור או חלק אותו לשלבים.");
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
+      if (/payment required|402/i.test(msg)) {
+        throw new Error("נגמרו הקרדיטים ל-AI. יש להוסיף קרדיטים בהגדרות > שימוש (402 Payment Required).");
       }
-      if (err.code === "extractor_invalid_schema") {
-        throw new Error("שלב חילוץ מבנה התהליך נכשל — לא זוהו שחקנים תקינים בפלט המובנה. נסה לנסח את התהליך עם שחקנים ושלבים ברורים.");
+      if (/rate limit|429/i.test(msg)) {
+        throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
       }
-      throw new Error("שלב חילוץ מבנה התהליך נכשל — הפלט המובנה לא היה JSON תקין.");
-    }
 
-    throw err instanceof Error
-      ? err
-      : new Error("שלב חילוץ מבנה התהליך נכשל מסיבה לא ידועה.");
+      if (err instanceof ActivityDiagramGenerationError) {
+        if (err.code === "extractor_truncated") {
+          throw new Error("שלב חילוץ מבנה התהליך נכשל — מודל ה-AI החזיר JSON קטוע. נסה שוב; אם זה חוזר, קצר מעט את התיאור או חלק אותו לשלבים.");
+        }
+        if (err.code === "extractor_invalid_schema") {
+          throw new Error("שלב חילוץ מבנה התהליך נכשל — לא זוהו שחקנים תקינים בפלט המובנה. נסה לנסח את התהליך עם שחקנים ושלבים ברורים.");
+        }
+        throw new Error("שלב חילוץ מבנה התהליך נכשל — הפלט המובנה לא היה JSON תקין.");
+      }
+
+      throw err instanceof Error
+        ? err
+        : new Error("שלב חילוץ מבנה התהליך נכשל מסיבה לא ידועה.");
     }
   }
 
