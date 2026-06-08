@@ -33,6 +33,7 @@ export function AiUsageCard() {
   });
 
   const rows: AiUsageRow[] = data?.rows ?? [];
+  const isAdmin = !!data?.isAdmin;
 
   const totals = rows.reduce(
     (acc, r) => {
