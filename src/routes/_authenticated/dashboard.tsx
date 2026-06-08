@@ -243,7 +243,7 @@ function HomePage() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 items-start">
           {diagramTiles.length > 0 && (
             <section>
-              <SectionHeading label="uml" variant="uml" />
+              <SectionHeading label="UML" variant="uml" />
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
 
@@ -270,7 +270,7 @@ function HomePage() {
           )}
 
           <section>
-            <SectionHeading label="pr-docs" variant="docs" />
+            <SectionHeading label="PR Docs" variant="docs" />
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
@@ -296,7 +296,7 @@ function HomePage() {
 
           {toolTiles.length > 0 && (
             <section>
-              <SectionHeading label="tools" variant="tools" />
+              <SectionHeading label="Tools" variant="tools" />
               <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                   {toolTiles.map((key, i) => (
@@ -367,7 +367,7 @@ function SectionHeading({
   }[variant];
   return (
     <div className="mb-3 flex flex-col items-center gap-1">
-      <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
+      <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg leading-tight">
         {label}
       </h2>
       <div className={`h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
