@@ -688,19 +688,24 @@ function DocumentsPage() {
               הזן שם חדש למסמך.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (renameTarget) {
-                renameMut.mutate({ item: renameTarget, title: renameValue });
-              }
-            }}
-            className="space-y-3"
-          >
+          <div className="space-y-3">
             <Input
               autoFocus
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (
+                    renameTarget &&
+                    renameValue.trim() &&
+                    renameValue.trim() !== renameTarget.title &&
+                    !renameMut.isPending
+                  ) {
+                    renameMut.mutate({ item: renameTarget, title: renameValue });
+                  }
+                }
+              }}
               maxLength={255}
               className="text-right"
               dir="auto"
@@ -708,7 +713,13 @@ function DocumentsPage() {
             <AlertDialogFooter>
               <AlertDialogCancel type="button">ביטול</AlertDialogCancel>
               <AlertDialogAction
-                type="submit"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (renameTarget) {
+                    renameMut.mutate({ item: renameTarget, title: renameValue });
+                  }
+                }}
                 disabled={
                   renameMut.isPending ||
                   !renameValue.trim() ||
@@ -722,7 +733,7 @@ function DocumentsPage() {
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
-          </form>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
