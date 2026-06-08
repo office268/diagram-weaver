@@ -3,9 +3,6 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import {
-  ActivityDiagramGenerationError,
-} from "@/lib/activity-diagram-pipeline.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
   OUTPUT_TYPES,
@@ -15,6 +12,9 @@ import {
 } from "@/lib/output-types";
 import type { DocTypeKey } from "@/lib/doc-types";
 import type { SpecOutput } from "@/lib/spec-output-schema";
+import { waitUntil } from "@/lib/cf-context.server";
+import { runDiagramJob } from "@/lib/diagram-job.server";
+
 
 const BodySchema = z.object({
   threadId: z.string().uuid(),
