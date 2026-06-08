@@ -455,7 +455,7 @@ function ChatPage() {
         role="separator"
         aria-orientation="vertical"
         onMouseDown={startResize}
-        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:mx-1 md:rounded-full md:bg-border md:hover:bg-primary/40 md:transition-colors"
+        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:w-1.5 md:rounded-full md:bg-border hover:md:bg-primary/60 md:transition-colors"
       />
 
       {/* Chat column */}
