@@ -35,6 +35,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
 import { Route as AuthenticatedProductRouteImport } from './routes/_authenticated/product'
 import { Route as AuthenticatedOrganizationRouteImport } from './routes/_authenticated/organization'
+import { Route as AuthenticatedMeetingTranscribeRouteImport } from './routes/_authenticated/meeting-transcribe'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -180,6 +181,12 @@ const AuthenticatedOrganizationRoute =
     path: '/organization',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMeetingTranscribeRoute =
+  AuthenticatedMeetingTranscribeRouteImport.update({
+    id: '/meeting-transcribe',
+    path: '/meeting-transcribe',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/organization': typeof AuthenticatedOrganizationRoute
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -300,6 +308,7 @@ export interface FileRoutesByTo {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/organization': typeof AuthenticatedOrganizationRoute
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -341,6 +350,7 @@ export interface FileRoutesById {
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/_authenticated/organization': typeof AuthenticatedOrganizationRoute
   '/_authenticated/product': typeof AuthenticatedProductRoute
   '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/documents'
+    | '/meeting-transcribe'
     | '/organization'
     | '/product'
     | '/projects-management'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/documents'
+    | '/meeting-transcribe'
     | '/organization'
     | '/product'
     | '/projects-management'
@@ -461,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
+    | '/_authenticated/meeting-transcribe'
     | '/_authenticated/organization'
     | '/_authenticated/product'
     | '/_authenticated/projects-management'
@@ -696,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrganizationRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/meeting-transcribe': {
+      id: '/_authenticated/meeting-transcribe'
+      path: '/meeting-transcribe'
+      fullPath: '/meeting-transcribe'
+      preLoaderRoute: typeof AuthenticatedMeetingTranscribeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -788,6 +808,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedMeetingTranscribeRoute: typeof AuthenticatedMeetingTranscribeRoute
   AuthenticatedOrganizationRoute: typeof AuthenticatedOrganizationRoute
   AuthenticatedProductRoute: typeof AuthenticatedProductRoute
   AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
@@ -807,6 +828,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedMeetingTranscribeRoute: AuthenticatedMeetingTranscribeRoute,
   AuthenticatedOrganizationRoute: AuthenticatedOrganizationRoute,
   AuthenticatedProductRoute: AuthenticatedProductRoute,
   AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
