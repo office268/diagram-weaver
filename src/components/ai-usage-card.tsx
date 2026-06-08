@@ -63,7 +63,7 @@ export function AiUsageCard() {
     <Card>
       <CardContent className="space-y-4 pt-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <SummaryTile label="מסמכים" value={fmtNumber(totals.docs.size)} />
+          <SummaryTile label="פריטים" value={fmtNumber(totals.artifacts.size)} />
           <SummaryTile label="פעולות AI" value={fmtNumber(rows.length)} />
           <SummaryTile label="סך מילים" value={fmtNumber(totals.words)} />
           <SummaryTile label="סך טוקנים" value={fmtNumber(totals.total)} />
