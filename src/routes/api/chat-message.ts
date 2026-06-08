@@ -315,7 +315,7 @@ export const Route = createFileRoute("/api/chat-message")({
                     }),
                   );
                   const { json } = await runRfJsonDiagramAgent({
-                    kind: outputType as Exclude<typeof outputType, "diagram_activity">,
+                    kind: outputType as Exclude<DiagramOutputKey, "diagram_activity">,
                     userPrompt: cleanUserMsg,
                     history,
                     lovableApiKey: apiKey,
