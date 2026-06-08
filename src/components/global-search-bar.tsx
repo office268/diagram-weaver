@@ -272,12 +272,12 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
+              className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
               aria-label="מיון"
               title={`מיון: ${SORT_LABEL[sortBy]}`}
             >
-              <ArrowUpDown className="h-4 w-4" />
+              <ArrowUpDown className="h-5 w-5" />
+              מיון
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
