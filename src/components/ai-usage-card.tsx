@@ -42,7 +42,11 @@ export function AiUsageCard() {
       acc.output += r.completion_tokens ?? 0;
       acc.total += r.total_tokens ?? 0;
       acc.cost += Number(r.cost_usd ?? 0);
-      acc.docs.add(r.spec_document_id);
+      const key =
+        r.artifact_kind === "spec_document"
+          ? `s:${r.spec_document_id ?? ""}`
+          : `d:${r.diagram_id ?? ""}`;
+      acc.artifacts.add(key);
       return acc;
     },
     {
@@ -51,7 +55,7 @@ export function AiUsageCard() {
       output: 0,
       total: 0,
       cost: 0,
-      docs: new Set<string>(),
+      artifacts: new Set<string>(),
     },
   );
 
