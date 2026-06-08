@@ -302,8 +302,6 @@ function DocumentsPage() {
   });
 
   const isLoading = specsLoading || diagramsLoading || uploadsLoading;
-  const activeFilterCount =
-    (group !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0);
 
   // Sub-types available in the currently selected group
   const subTypeKeys = useMemo<OutputKey[]>(() => {
@@ -314,6 +312,27 @@ function DocumentsPage() {
       return cat === group;
     });
   }, [group]);
+
+  const setSort = (col: SortCol) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir(col === "date" ? "desc" : "asc");
+    }
+  };
+
+  const SortArrow = ({ col }: { col: SortCol }) =>
+    sortCol === col ? (
+      sortDir === "asc" ? (
+        <ArrowUp className="h-3 w-3" />
+      ) : (
+        <ArrowDown className="h-3 w-3" />
+      )
+    ) : null;
+
+  const typeFilterActive = group !== "all" || typeFilter !== "all";
+
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
