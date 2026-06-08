@@ -22,18 +22,20 @@ export async function runExtractorAgent(
   modelName?: string,
 ): Promise<ProcessMap> {
   let text = "";
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     try {
       const system =
         attempt === 0
           ? STAGE1_SYSTEM
-          : `${STAGE1_SYSTEM}\n\nניסיון חוזר: החזר אובייקט JSON מלא ותקין בלבד. אל תחתוך את הפלט, אל תעטוף ב-markdown, ואל תחזיר טקסט נוסף.`;
+          : `${STAGE1_SYSTEM}\n\nניסיון חוזר (${attempt + 1}/${MAX_ATTEMPTS}): החזר אובייקט JSON מלא ותקין בלבד. אל תחתוך את הפלט, אל תעטוף ב-markdown, ואל תחזיר טקסט נוסף. ודא שכל הסוגריים נסגרים והפלט מסתיים ב-}.`;
 
       const result = await generateText({
         model,
         system,
         messages: [{ role: "user", content: userPrompt }],
         temperature: 0,
+        maxOutputTokens: 16000,
       });
       if (tracker && modelName) tracker.track(modelName, result.usage);
       text = result.text;
@@ -41,7 +43,7 @@ export async function runExtractorAgent(
     } catch (err) {
       if (
         err instanceof ActivityDiagramGenerationError &&
-        attempt === 0 &&
+        attempt < MAX_ATTEMPTS - 1 &&
         (err.code === "extractor_truncated" || err.code === "extractor_invalid_json")
       ) {
         continue;
