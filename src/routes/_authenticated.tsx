@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, Workflow } from "lucide-react";
 import { toast } from "sonner";
 
 
