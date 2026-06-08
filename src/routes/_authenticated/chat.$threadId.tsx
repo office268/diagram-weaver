@@ -439,9 +439,8 @@ function ChatPage() {
               <MessageBubble key={m.id} message={m} />
             ))}
             {sending && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {phases[phaseIdx]}...
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
               </div>
             )}
           </div>
