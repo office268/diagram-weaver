@@ -240,8 +240,8 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={createMut.isPending && createMut.variables === key}
-                      disabled={createMut.isPending}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      disabled={createMut.isPending || combinedMut.isPending}
                       draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                       onActivate={() => activateTile(key)}
                       onMoveToExtras={() => moveToExtras(key)}
@@ -249,7 +249,7 @@ function HomePage() {
                   ))}
                   <MoreTile
                     index={diagramTiles.length}
-                    disabled={createMut.isPending}
+                    disabled={createMut.isPending || combinedMut.isPending}
                     onActivate={() => setMoreGroup("diagram")}
                   />
                 </div>
@@ -266,8 +266,8 @@ function HomePage() {
                     key={key}
                     outputKey={key}
                     index={i}
-                    pending={createMut.isPending && createMut.variables === key}
-                    disabled={createMut.isPending}
+                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                    disabled={createMut.isPending || combinedMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                     onActivate={() => activateTile(key)}
                     onMoveToExtras={() => moveToExtras(key)}
@@ -275,7 +275,7 @@ function HomePage() {
                 ))}
                 <MoreTile
                   index={documentTiles.length}
-                  disabled={createMut.isPending}
+                  disabled={createMut.isPending || combinedMut.isPending}
                   onActivate={() => setMoreGroup("document")}
                 />
               </div>
@@ -292,8 +292,8 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={createMut.isPending && createMut.variables === key}
-                      disabled={createMut.isPending}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      disabled={createMut.isPending || combinedMut.isPending}
                       draggable={false}
                       onActivate={() => activateTile(key)}
                       onMoveToExtras={() => moveToExtras(key)}
@@ -328,8 +328,8 @@ function HomePage() {
               <ExtrasTile
                 key={key}
                 outputKey={key}
-                isPending={createMut.isPending && createMut.variables === key}
-                disabled={createMut.isPending}
+                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                disabled={createMut.isPending || combinedMut.isPending}
                 onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
               />
