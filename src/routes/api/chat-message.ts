@@ -33,34 +33,6 @@ function sanitize(s: string): string {
     .trim();
 }
 
-function extractMermaid(text: string): string {
-  const fence = text.match(/```(?:mermaid)?\s*\n([\s\S]*?)```/i);
-  if (fence) return fence[1].trim();
-  return text.trim();
-}
-
-function looksLikePlantUml(code: string): boolean {
-  const t = code.trimStart();
-  return (
-    /^activityDiagram\b/i.test(t) ||
-    /^@startuml\b/i.test(t) ||
-    /^start\b/im.test(t.split("\n").slice(0, 3).join("\n")) ||
-    /^\s*:[^;\n]+;/m.test(t)
-  );
-}
-
-// Mermaid breaks when a quoted label like ["מהעו"ד"] contains an unescaped " —
-// the inner quote closes the label early and the parser fails. Replace inner
-// quotes inside bracket-quoted labels with #quot; (Mermaid renders it as ").
-function sanitizeMermaidLabels(code: string): string {
-  return code.replace(
-    /(\[\[?"|\(\(?"|\{"|>")([\s\S]*?)("\]\]?|"\)\)?|"\}|"\])/g,
-    (_m, open: string, inner: string, close: string) => {
-      const safe = inner.replace(/"/g, "#quot;");
-      return open + safe + close;
-    },
-  );
-}
 
 export const Route = createFileRoute("/api/chat-message")({
   server: {
