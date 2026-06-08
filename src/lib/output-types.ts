@@ -224,22 +224,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "user_story",
   "dashboard",
 ];
-};
 
-// Display order on the home page tiles (primary, most-used).
-export const OUTPUT_TYPE_ORDER: OutputKey[] = [
-  "initiation",
-  "requirements_combined",
-  "diagram_usecase",
-  "spec_overview",
-  "diagram_flow",
-  "diagram_sequence",
-  "diagram_erd",
-  "spec_detailed",
-  "diagram_activity",
-  "meeting_summary",
-  "user_story",
-];
 
 // Less common types — shown inside the "More…" tile.
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
