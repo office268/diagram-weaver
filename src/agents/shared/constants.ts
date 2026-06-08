@@ -30,6 +30,8 @@ export const ALLOWED_AGENT_MODELS = [
   "openai/gpt-5.4-pro",
   "openai/gpt-5.5",
   "openai/gpt-5.5-pro",
+  "anthropic/claude-opus-4-5",
+  "anthropic/claude-sonnet-4-5",
 ] as const;
 
 export type AllowedAgentModel = typeof ALLOWED_AGENT_MODELS[number];
