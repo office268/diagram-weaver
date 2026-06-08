@@ -160,7 +160,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_erd: {
     key: "diagram_erd",
     category: "diagram",
-    label: "תרשים ERD",
+    label: "ERD",
     description: "ישויות, שדות והקשרים ביניהן במודל הנתונים.",
     icon: Database,
     colorClass: "text-rose-500",
