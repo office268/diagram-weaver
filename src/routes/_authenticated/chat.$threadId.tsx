@@ -117,7 +117,7 @@ function ChatPage() {
   const phases = ["חושב", "מתכנן", "בונה", "בודק"] as const;
   useEffect(() => {
     if (!sending) { setPhaseIdx(0); return; }
-    const id = setInterval(() => setPhaseIdx((i) => (i + 1) % 4), 1500);
+    const id = setInterval(() => setPhaseIdx((i) => (i < 3 ? i + 1 : 3)), 2500);
     return () => clearInterval(id);
   }, [sending]);
   const [deleteOpen, setDeleteOpen] = useState(false);
