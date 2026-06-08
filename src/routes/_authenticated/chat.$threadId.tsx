@@ -487,7 +487,7 @@ function ChatPage() {
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}
-            {sending && (
+            {sending && messages.length > 0 && (
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
               </div>
