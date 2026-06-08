@@ -1,54 +1,29 @@
-
 ## הבעיה
+ב-`src/lib/diagram-rf.ts` (פונקציית `buildDiagramRF`) dagre מסדר actors ו-useCases יחד בלי מודעות ל-systemBoundary. ה-boundary מצויר אחר כך סביב ה-useCases, ולכן actors עלולים ליפול בתוכו.
 
-כשפותחים תרשים פעילות לעריכה, המערכת ממירה את ה-SVG המקורי לפורמט React Flow דרך `parseSvgToRF` (ב-`src/lib/activity-rf.ts`). ההמרה הזו **לוסי (lossy)** — היא מזהה רק חלק מהאלמנטים, ולכן בתצוגת העריכה נראה תרשים חלקי ושבור:
+## הפתרון (layout בלבד — בלי שינוי פרומפטים/סכמות/ולידציה)
+לאחר ש-dagre מסיים, ולפני חישוב ה-systemBoundary, בדיאגרמת `diagram_usecase`:
 
-איבודי אלמנטים שזיהיתי בהשוואת שתי התמונות:
-
-1. **משבצות משימה (Tasks) נעלמות** — המסנן ב-`parseSvgToRF` (שורה 187–188) פוסל כל `<rect>` עם `fill="none"` או כל ערך שאינו "white"/ריק. בפועל ה-SVG שמיוצר על-ידי `activity-swimlane.server.ts` מצייר משימות עם `fill="none"` (קונטור בלבד), ולכן רובן נופלות. בתמונה השנייה רואים שנשארו רק 3 משימות מתוך 5, ו"קבלת תשובה סופית" + "עדכון מערכת הוכחות" נעלמו.
-
-2. **דמות העובד (Actor) נחתכת ומופיעה כפסולת ויזואלית** — `parseSvgToRF` לא מכיר בכלל בסוג צומת "actor". במקום זה הוא מזהה את העיגול הקטן של הראש כצומת START (כי `r<20` ו-`cx≈45`), והקווים של הגוף/ידיים/רגליים פשוט מתעלמים ולא נשמרים. בנוסף, אייקון ה-START הקיים (`StartNode` ב-`activity-rf-editor.tsx`) הוא בעצמו דמות שטיק-פיגר, ולכן הוא מצויר על-גבי אזור הכותרת/הכפתור "חזרה לתצוגה".
-
-3. **תווית ההחלטה מתקצרת לשורה אחת** — מחלץ הטקסט של ה-decision (שורה 228) לוקח רק `nearby[0]`. בתרשים המקורי יש "האם הבקשה לפי הנוהל" בשתי שורות → בעריכה נשאר "החלטת מנהל" בלבד.
-
-4. **רוחב/גובה lane אחרון שגוי** — שורה 153 משתמשת ב-`svgWidth - 10` כקצה ימני; לעיתים זה מותח את ה-lane "משאבי אנוש" וגורם ל-overlap עם תיבות אחרות, כפי שנראה בפינה הימנית-תחתונה של התמונה השנייה (מלבנים אפורים מסולפים).
-
-5. **חצים בין צמתים נופלים** — `closestNode` עם `threshold=60` מתבסס על מיקום נקודות הקצה של ה-line, אבל כאשר חלק מהצמתים בכלל לא נכנסו ל-`rfNodes` (סעיף 1) — החצים אליהם פשוט "נעלמים בשקט".
-
-זהו לא באג בתצוגה אלא **המרה לא שלמה**: מה שלא נקלט ב-parse נשמט ולא מוצג ב-React Flow.
-
-## הפתרון
-
-### 1) הרחבת מסנן ה-Tasks ב-`src/lib/activity-rf.ts`
-- לקבל גם `fill="none"` (זה ברירת המחדל בפועל) — להסיר את התנאי `if (fill === "...none") continue;`
-- להשאיר רק את ה-guard נגד "מלבני רקע ענקיים" (`rw>400 || rh>150`) ואת ה-guard `ry<headerH`.
-- להוסיף guard נגד מלבני lane background אם קיימים (למשל זיהוי לפי `width === laneWidth`).
-
-### 2) תמיכה בצומת `actor`
-- להוסיף סוג חדש `actor` ל-`ActivityNodeType` ולמפת הצמתים ב-`activity-rf-editor.tsx` (קומפוננטת `ActorNode` שמציירת stick-figure SVG בדומה ל-server renderer).
-- ב-`parseSvgToRF`: לזהות actor לפי קבוצת `<line>` + `<circle r<10>` סביב `cx≈45..70` ו-`cy<200`, ולקבץ אותם לצומת `actor` יחיד; להשמיט אותם משלב START/Edges.
-- לתקן את `StartNode` כך שלא יצייר stick-figure (לעבור לעיגול ריק קטן בלבד — זה הסטנדרט ב-UML Activity), כדי שלא יחפוף ל-actor ולכפתור "חזרה לתצוגה".
-
-### 3) תווית רב-שורות ל-Decision
-- במקום `nearby[0]`, להחזיר `nearby.join("\n")` (עד 2–3 שורות), ובקומפוננטת `DecisionNode` לאפשר `white-space: pre-line`.
-
-### 4) חישוב lane אחרון מדויק
-- להחליף `svgWidth - 10` בקצה הימני האמיתי שמגיע מה-SVG: למצוא את ה-`<line>` הדקורטיבית הימנית-ביותר, או להשתמש ב-`svgWidth` המלא ללא קיזוז.
-- לוודא ש-`laneHeight` לא חורג מגובה ה-content (להפחית 20–30px מ-`svgHeight`).
-
-### 5) בדיקת מצב לאחר ההמרה
-- אם `rfNodes.filter(n => n.data.nodeType !== "lane").length < 3` או אם מספר ה-edges שזוהו קטן מ-30% ממספר החצים ב-SVG — להציג toast: "התרשים מורכב מדי להמרה אוטומטית; ערוך את הקוד ידנית" ולא להיכנס למצב עריכה ויזואלי (במקום להראות תרשים שבור).
-
-### 6) שמירה על איכות התצוגה הקריאה
-- לא לגעת ב-SVG renderer (`activity-swimlane.server.ts`) ולא ב-prompts/סכמות. שינויים רק בצד הלקוח — parse + רינדור React Flow.
-
-## קבצים שיושפעו
-
-- `src/lib/activity-rf.ts` — סעיפים 1, 2, 3, 4, 5
-- `src/components/activity-rf-editor.tsx` — הוספת `ActorNode`, פישוט `StartNode`, תמיכה ב-`white-space: pre-line` ב-`DecisionNode`
-- `src/components/activity-swimlane-renderer.tsx` — שימוש בתוצאת הבדיקה מסעיף 5 לפני הכניסה למצב עריכה
+1. לחשב את גבולות אשכול ה-useCases (minX/maxX/minY/maxY).
+2. לחלק את ה-actors לשתי קבוצות לפי כיוון הקשר ל-useCases:
+   - **Primary** (מקור של edge ל-useCase) → שמאל לגבול.
+   - **Secondary** (יעד בלבד) → ימין לגבול.
+   - actor ללא קשרים → ברירת מחדל שמאל.
+3. לקבוע מחדש את מיקום ה-actors:
+   - X: `boundary.minX - gap - actorW` לשמאליים, `boundary.maxX + gap` לימניים (gap ≈ 80px, כך שהם נשארים מחוץ ל-padding של ה-boundary שהוא 40px).
+   - Y: לפזר אנכית בתוך טווח גובה ה-boundary, לפי הסדר היחסי שדגרה כבר נתן (שמירה על ה-ordering מצמצמת חציית edges).
+4. לאחר מכן לחשב את ה-systemBoundary כמו היום — מבוסס על useCases בלבד, כך שגם אחרי הזזת ה-actors הוא נשאר חסום לאזור ה-useCases וה-actors תמיד מחוצה לו.
+5. (אופציונלי קטן) להרחיב את `nodesep`/`ranksep` של ה-usecase במעט אם נראה צפוף, אך לא חובה.
 
 ## מה לא משתנה
+- אין שינוי ב-`rf-json.server.ts` (פרומפט, system prompt, סכמות, ולידציה, self-critique, thinking steps).
+- אין שינוי בקומפוננטות הרינדור של React-Flow.
+- אין שינוי בלוגיקה של דיאגרמות אחרות (flow/activity/sequence/state/erd/deployment).
 
-- ה-SVG המקורי (תצוגה לקריאה) נשאר זהה.
-- אין שינוי בפרומפטים, system prompts, סכמות, ולידציה או thinking של הסוכנים — בהתאם להנחיית הפרויקט.
+## קבצים שישתנו
+- `src/lib/diagram-rf.ts` — בלוק חדש בתוך `buildDiagramRF` שרץ רק כאשר `out.kind === "diagram_usecase"`, ממוקם בין סיום ה-`positioned.map(...)` (שורה 287) לבין בניית ה-`sysBoundary` (שורה 325).
+
+## פרטים טכניים
+- שימוש ב-`NODE_SIZE.actor` (60×90) לחישוב הזחה.
+- אם יש >1 actor בצד, פיזור: `y_i = boundary.minY + (i+1) * H / (n+1) - actorH/2`.
+- חישוב כיוון לפי `out.edges`: אם קיים edge עם `source === actor.id` ו-`target` הוא useCase → primary; אחרת אם רק `target === actor.id` → secondary.
