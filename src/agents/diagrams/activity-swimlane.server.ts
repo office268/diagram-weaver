@@ -18,6 +18,8 @@ type Model = Parameters<typeof generateText>[0]["model"];
 export async function runExtractorAgent(
   model: Model,
   userPrompt: string,
+  tracker?: UsageTracker,
+  modelName?: string,
 ): Promise<ProcessMap> {
   let text = "";
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -33,6 +35,7 @@ export async function runExtractorAgent(
         messages: [{ role: "user", content: userPrompt }],
         temperature: 0,
       });
+      if (tracker && modelName) tracker.track(modelName, result.usage);
       text = result.text;
       return parseProcessMapResponse(text);
     } catch (err) {
@@ -77,6 +80,8 @@ export async function runBuilderAgent(
   model: Model,
   processMap: ProcessMap,
   userPrompt: string,
+  tracker?: UsageTracker,
+  modelName?: string,
 ): Promise<string> {
   const prompt =
     `תיאור התהליך המקורי: ${userPrompt}\n\n` +
@@ -86,13 +91,14 @@ export async function runBuilderAgent(
     "\n```\n\n" +
     `צור תרשים activity swimlane כ-SVG לפי המבנה.`;
 
-  const { text } = await generateText({
+  const r = await generateText({
     model,
     system: STAGE2_HTML_SYSTEM,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.1,
   });
-  const svg = extractSvg(text);
+  if (tracker && modelName) tracker.track(modelName, r.usage);
+  const svg = extractSvg(r.text);
   if (!svg) {
     throw new ActivityDiagramGenerationError(
       "builder_invalid_svg",
@@ -107,9 +113,11 @@ export async function runValidatorAgent(
   model: Model,
   svg: string,
   userPrompt: string,
+  tracker?: UsageTracker,
+  modelName?: string,
 ): Promise<{ violations: string[] }> {
   const structuralViolations = validateActivitySvg(svg);
-  const review = await reviewActivitySvg(model, svg, userPrompt);
+  const review = await reviewActivitySvg(model, svg, userPrompt, tracker, modelName);
   const llmViolations =
     !review.ok && Array.isArray(review.violations) ? review.violations : [];
   const merged = [
@@ -127,6 +135,8 @@ export async function runFixerAgent(
   svg: string,
   violations: string[],
   userPrompt: string,
+  tracker?: UsageTracker,
+  modelName?: string,
 ): Promise<string> {
   const violationsList = violations.map((v) => `• ${v}`).join("\n");
   const prompt =
@@ -135,13 +145,14 @@ export async function runFixerAgent(
     `הפרות שנמצאו:\n${violationsList}\n\n` +
     `תקן את כל ההפרות והחזר את קוד ה-SVG המלא המתוקן.`;
 
-  const { text } = await generateText({
+  const r = await generateText({
     model,
     system: STAGE2_HTML_SYSTEM,
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
   });
-  const fixed = extractSvg(text);
+  if (tracker && modelName) tracker.track(modelName, r.usage);
+  const fixed = extractSvg(r.text);
   if (!fixed) return svg;
   return fixed;
 }
@@ -155,21 +166,23 @@ export async function runActivitySwimlaneOrchestrator(params: {
   lovableApiKey: string;
   modelOverride?: string;
   maxFixIterations?: number;
+  tracker?: UsageTracker;
 }): Promise<{ svg: string; iterations: number }> {
-  const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 2 } = params;
+  const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 2, tracker } = params;
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
-  const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
+  const modelName = modelOverride ?? DEFAULT_AGENT_MODEL;
+  const model = gateway(modelName);
 
-  const processMap = await runExtractorAgent(model, userPrompt);
+  const processMap = await runExtractorAgent(model, userPrompt, tracker, modelName);
 
-  let svg = await runBuilderAgent(model, processMap, userPrompt);
+  let svg = await runBuilderAgent(model, processMap, userPrompt, tracker, modelName);
   let iterations = 1;
 
   for (let i = 0; i < maxFixIterations; i++) {
-    const { violations } = await runValidatorAgent(model, svg, userPrompt);
+    const { violations } = await runValidatorAgent(model, svg, userPrompt, tracker, modelName);
     if (violations.length === 0) break;
 
-    const fixed = await runFixerAgent(model, svg, violations, userPrompt);
+    const fixed = await runFixerAgent(model, svg, violations, userPrompt, tracker, modelName);
     if (validateActivitySvg(fixed).length <= validateActivitySvg(svg).length) {
       svg = fixed;
     }
