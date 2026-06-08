@@ -63,6 +63,7 @@ import {
   listChatThreads,
   deleteChatThread,
 } from "@/lib/chat.functions";
+import { ThreadModelSelector } from "@/components/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
@@ -460,6 +461,7 @@ function ChatPage() {
 
   const def = OUTPUT_TYPES[data.thread.output_type as OutputKey];
   const messages = data.messages;
+  const thread = data.thread as typeof data.thread & { model_override?: string | null };
 
   return (
     <div
