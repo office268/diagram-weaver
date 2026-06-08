@@ -132,7 +132,7 @@ function ChatPage() {
     if (!sending) { setPhaseIdx(0); return; }
     const id = setInterval(
       () => setPhaseIdx((i) => (i + 1) % phases.length),
-      1800,
+      3200,
     );
     return () => clearInterval(id);
   }, [sending, phases.length]);
