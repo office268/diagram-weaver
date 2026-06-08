@@ -296,7 +296,7 @@ function HomePage() {
 
           {toolTiles.length > 0 && (
             <section>
-              <SectionHeading label="Tools" />
+              <SectionHeading label="tools" variant="tools" />
               <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                   {toolTiles.map((key, i) => (
