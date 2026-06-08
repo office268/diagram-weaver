@@ -179,8 +179,8 @@ export const Route = createFileRoute("/api/chat-message")({
         const docTracker = createUsageTracker();
         void docTracker; // reserved for future partial-usage logging on doc path
         let usageLogged = false;
-        const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-        const modelOverride = await loadAgentModelOverride();
+        const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+        const modelOverride = await loadEffectiveModelForThread(body.threadId);
 
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
