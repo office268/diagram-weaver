@@ -226,8 +226,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   cleanUserMsg,
                 ].join("\n\n---\n\n");
 
-                const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-                const modelOverride = await loadAgentModelOverride();
+                // modelOverride is hoisted at the handler top
+
                 const result = await runOrchestrator({
                   userPrompt: combinedPrompt,
                   docType: (outputType as DocumentOutputKey) as DocTypeKey,
@@ -257,7 +257,6 @@ export const Route = createFileRoute("/api/chat-message")({
                 if (specErr) throw new Error(specErr.message);
 
                 try {
-                  const { logAiUsage } = await import("@/lib/ai-usage.server");
                   await logAiUsage({
                     userId,
                     specDocumentId: specRow.id,
@@ -268,9 +267,11 @@ export const Route = createFileRoute("/api/chat-message")({
                     totalTokens: result.usage.totalTokens,
                     costUsd: result.usage.costUsd,
                   });
+                  usageLogged = true;
                 } catch (e) {
                   console.error("[chat-message] logAiUsage failed:", e);
                 }
+
 
                 const assistantContent =
                   `נוצר ${def.label} — **${title}**.\n\n` +
@@ -302,11 +303,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   artifact: { kind: "spec_document", id: specRow.id, title },
                 }));
               } else {
-                // Diagram path
-                const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-                const { createUsageTracker } = await import("@/lib/ai-usage.server");
-                const modelOverride = await loadAgentModelOverride();
-                const diagramTracker = createUsageTracker();
+                // Diagram path — diagramTracker and modelOverride are hoisted at the handler top
+
 
                 let diagramCode: string;
                 let assistantFence: "svg" | "rf-json";
@@ -344,7 +342,6 @@ export const Route = createFileRoute("/api/chat-message")({
                 } catch (orchErr) {
                   // Log usage of the failed run before propagating
                   try {
-                    const { logAiUsage } = await import("@/lib/ai-usage.server");
                     const totals = diagramTracker.totals();
                     const failTitle = cleanUserMsg.slice(0, 120) || def.label;
                     const errMsg = orchErr instanceof Error ? orchErr.message : String(orchErr);
@@ -363,11 +360,13 @@ export const Route = createFileRoute("/api/chat-message")({
                       wordCount: 0,
                       errorMessage: errMsg,
                     });
+                    usageLogged = true;
                   } catch (e) {
                     console.error("[chat-message] diagram failure logAiUsage failed:", e);
                   }
                   throw orchErr;
                 }
+
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
 
@@ -386,7 +385,6 @@ export const Route = createFileRoute("/api/chat-message")({
                 if (diagErr) throw new Error(diagErr.message);
 
                 try {
-                  const { logAiUsage } = await import("@/lib/ai-usage.server");
                   const totals = diagramTracker.totals();
                   await logAiUsage({
                     userId,
@@ -403,9 +401,11 @@ export const Route = createFileRoute("/api/chat-message")({
                     docType: outputType,
                     wordCount: 0,
                   });
+                  usageLogged = true;
                 } catch (e) {
                   console.error("[chat-message] diagram logAiUsage failed:", e);
                 }
+
 
 
                 const assistantContent =
@@ -455,8 +455,12 @@ export const Route = createFileRoute("/api/chat-message")({
               enqueue("\n__ERROR__\n" + userFacingMsg);
             } finally {
               clearInterval(heartbeat);
+              if (!usageLogged) {
+                await flushPartialUsage("incomplete");
+              }
               close();
             }
+
           },
         });
 
