@@ -162,7 +162,6 @@ function ActiveModuleTitle() {
   let title: string | null = null;
   let Icon: typeof Workflow | null = null;
   if (
-    path.startsWith("/dashboard") ||
     path.startsWith("/chat") ||
     path.startsWith("/diagram") ||
     path.startsWith("/editor") ||
