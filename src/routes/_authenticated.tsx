@@ -114,7 +114,7 @@ function AuthenticatedLayout() {
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
           <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
-            <span>סוכן ניתוח מערכות · Lovable Cloud</span>
+            <span />
             <nav className="flex items-center gap-4">
               <Link to="/about" className="hover:text-foreground">אודות</Link>
               <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
