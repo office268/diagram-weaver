@@ -1,45 +1,54 @@
-## מטרה
-בתוצאות חיפוש הגלובלי, כל פריט יציג: **שם · סוג · תאריך · נתיב היררכי (מוצר ◂ פרויקט ◂ פריט) · מחבר**.
 
-## שינויים
+## הבעיה
 
-### 1) שרת — העשרת רשימות הקריאה
-מוסיפים לכל אחת מהפונקציות `join`/lookup ל-`profiles.display_name` (מחבר) ולשרשרת ההיררכיה (project → product):
+כשפותחים תרשים פעילות לעריכה, המערכת ממירה את ה-SVG המקורי לפורמט React Flow דרך `parseSvgToRF` (ב-`src/lib/activity-rf.ts`). ההמרה הזו **לוסי (lossy)** — היא מזהה רק חלק מהאלמנטים, ולכן בתצוגת העריכה נראה תרשים חלקי ושבור:
 
-- `src/lib/spec.functions.ts` · `listSpecs`
-  - בנוסף לעמודות הקיימות, להחזיר: `project_id`, `user_id`, ולעשות join: `projects:project_id ( name, products:product_id ( name ) )`, `profile:profiles!spec_documents_user_id_fkey ( display_name )`.
-- `src/lib/diagrams.functions.ts` · `listDiagrams`
-  - להחזיר `user_id`, `kind`, ו-join ל-`profile`. (לתרשימים אין `project_id` בסכמה — הנתיב יוצג רק עם המחבר; אם יש קשר ל-`chat_threads` עם project, ניגש דרכו רק אם קיים. אחרת — מציגים "—" בנתיב.)
-- `src/lib/documents.functions.ts` · `listDocuments`
-  - להוסיף join ל-project→product ולפרופיל.
-- `src/lib/project.functions.ts` · `listProjects`
-  - להוסיף join למוצר ולפרופיל של היוצר.
+איבודי אלמנטים שזיהיתי בהשוואת שתי התמונות:
 
-לכל ה-joins משתמשים ב-`requireSupabaseAuth` הקיים — RLS ממשיכה לחול. לפרופילים מספיק `display_name` כדי לא לחשוף שדות רגישים.
+1. **משבצות משימה (Tasks) נעלמות** — המסנן ב-`parseSvgToRF` (שורה 187–188) פוסל כל `<rect>` עם `fill="none"` או כל ערך שאינו "white"/ריק. בפועל ה-SVG שמיוצר על-ידי `activity-swimlane.server.ts` מצייר משימות עם `fill="none"` (קונטור בלבד), ולכן רובן נופלות. בתמונה השנייה רואים שנשארו רק 3 משימות מתוך 5, ו"קבלת תשובה סופית" + "עדכון מערכת הוכחות" נעלמו.
 
-### 2) קליינט — `src/components/global-search-bar.tsx`
-- להרחיב את ה-type `Item` עם: `path?: string`, `author?: string`.
-- בעת בניית `items`, להרכיב:
-  - `project`: `path = product?.name ?? "—"`, `author = profile.display_name`.
-  - `document` (spec): `path = [product?.name, project?.name].filter(Boolean).join(" ◂ ")`, `author = profile.display_name`.
-  - `diagram`: `path = "—"` (אין לו project ישיר), `author = profile.display_name`. (אם בעתיד נוסיף קשר — נעדכן.)
-  - `upload`: `path = [product?.name, project?.name].filter(Boolean).join(" ◂ ")`, `author = profile.display_name`.
-- בעיצוב כל שורת תוצאה, להחליף את שורת המטא הקיימת בשורה אחת קומפקטית:
-  - `סוג · תאריך · נתיב · מאת מחבר`, עם מפרידי `·`, חיתוך טקסט (`truncate`), ו-`title` לטולטיפ לנתיב.
-  - אייקון/צבע הקטגוריה נשמרים כמו היום.
+2. **דמות העובד (Actor) נחתכת ומופיעה כפסולת ויזואלית** — `parseSvgToRF` לא מכיר בכלל בסוג צומת "actor". במקום זה הוא מזהה את העיגול הקטן של הראש כצומת START (כי `r<20` ו-`cx≈45`), והקווים של הגוף/ידיים/רגליים פשוט מתעלמים ולא נשמרים. בנוסף, אייקון ה-START הקיים (`StartNode` ב-`activity-rf-editor.tsx`) הוא בעצמו דמות שטיק-פיגר, ולכן הוא מצויר על-גבי אזור הכותרת/הכפתור "חזרה לתצוגה".
 
-### 3) ללא שינוי במודל הנתונים
-לא נוספים שדות לטבלאות; משתמשים רק ב-joins דרך Supabase Client.
+3. **תווית ההחלטה מתקצרת לשורה אחת** — מחלץ הטקסט של ה-decision (שורה 228) לוקח רק `nearby[0]`. בתרשים המקורי יש "האם הבקשה לפי הנוהל" בשתי שורות → בעריכה נשאר "החלטת מנהל" בלבד.
 
-## טכני — דוגמת select
-```ts
-supabase.from("spec_documents").select(
-  "id, title, created_at, doc_type, user_id, " +
-  "project:projects!spec_documents_project_id_fkey ( name, product:products!projects_product_id_fkey ( name ) ), " +
-  "author:profiles!spec_documents_user_id_fkey ( display_name )"
-)
-```
-(שמות ה-FK יותאמו לסכמה בפועל; אם relation לא קיים, נשתמש ב-`projects(name, products(name))` בלי alias מפורש.)
+4. **רוחב/גובה lane אחרון שגוי** — שורה 153 משתמשת ב-`svgWidth - 10` כקצה ימני; לעיתים זה מותח את ה-lane "משאבי אנוש" וגורם ל-overlap עם תיבות אחרות, כפי שנראה בפינה הימנית-תחתונה של התמונה השנייה (מלבנים אפורים מסולפים).
 
-## QA
-לאחר השינוי, לרענן את החיפוש בדפדפן ולוודא שכל פריט מציג חמישה שדות בשורה אחת, בלי להישבר ב-RTL. אם פרופיל חסר — להציג "—".
+5. **חצים בין צמתים נופלים** — `closestNode` עם `threshold=60` מתבסס על מיקום נקודות הקצה של ה-line, אבל כאשר חלק מהצמתים בכלל לא נכנסו ל-`rfNodes` (סעיף 1) — החצים אליהם פשוט "נעלמים בשקט".
+
+זהו לא באג בתצוגה אלא **המרה לא שלמה**: מה שלא נקלט ב-parse נשמט ולא מוצג ב-React Flow.
+
+## הפתרון
+
+### 1) הרחבת מסנן ה-Tasks ב-`src/lib/activity-rf.ts`
+- לקבל גם `fill="none"` (זה ברירת המחדל בפועל) — להסיר את התנאי `if (fill === "...none") continue;`
+- להשאיר רק את ה-guard נגד "מלבני רקע ענקיים" (`rw>400 || rh>150`) ואת ה-guard `ry<headerH`.
+- להוסיף guard נגד מלבני lane background אם קיימים (למשל זיהוי לפי `width === laneWidth`).
+
+### 2) תמיכה בצומת `actor`
+- להוסיף סוג חדש `actor` ל-`ActivityNodeType` ולמפת הצמתים ב-`activity-rf-editor.tsx` (קומפוננטת `ActorNode` שמציירת stick-figure SVG בדומה ל-server renderer).
+- ב-`parseSvgToRF`: לזהות actor לפי קבוצת `<line>` + `<circle r<10>` סביב `cx≈45..70` ו-`cy<200`, ולקבץ אותם לצומת `actor` יחיד; להשמיט אותם משלב START/Edges.
+- לתקן את `StartNode` כך שלא יצייר stick-figure (לעבור לעיגול ריק קטן בלבד — זה הסטנדרט ב-UML Activity), כדי שלא יחפוף ל-actor ולכפתור "חזרה לתצוגה".
+
+### 3) תווית רב-שורות ל-Decision
+- במקום `nearby[0]`, להחזיר `nearby.join("\n")` (עד 2–3 שורות), ובקומפוננטת `DecisionNode` לאפשר `white-space: pre-line`.
+
+### 4) חישוב lane אחרון מדויק
+- להחליף `svgWidth - 10` בקצה הימני האמיתי שמגיע מה-SVG: למצוא את ה-`<line>` הדקורטיבית הימנית-ביותר, או להשתמש ב-`svgWidth` המלא ללא קיזוז.
+- לוודא ש-`laneHeight` לא חורג מגובה ה-content (להפחית 20–30px מ-`svgHeight`).
+
+### 5) בדיקת מצב לאחר ההמרה
+- אם `rfNodes.filter(n => n.data.nodeType !== "lane").length < 3` או אם מספר ה-edges שזוהו קטן מ-30% ממספר החצים ב-SVG — להציג toast: "התרשים מורכב מדי להמרה אוטומטית; ערוך את הקוד ידנית" ולא להיכנס למצב עריכה ויזואלי (במקום להראות תרשים שבור).
+
+### 6) שמירה על איכות התצוגה הקריאה
+- לא לגעת ב-SVG renderer (`activity-swimlane.server.ts`) ולא ב-prompts/סכמות. שינויים רק בצד הלקוח — parse + רינדור React Flow.
+
+## קבצים שיושפעו
+
+- `src/lib/activity-rf.ts` — סעיפים 1, 2, 3, 4, 5
+- `src/components/activity-rf-editor.tsx` — הוספת `ActorNode`, פישוט `StartNode`, תמיכה ב-`white-space: pre-line` ב-`DecisionNode`
+- `src/components/activity-swimlane-renderer.tsx` — שימוש בתוצאת הבדיקה מסעיף 5 לפני הכניסה למצב עריכה
+
+## מה לא משתנה
+
+- ה-SVG המקורי (תצוגה לקריאה) נשאר זהה.
+- אין שינוי בפרומפטים, system prompts, סכמות, ולידציה או thinking של הסוכנים — בהתאם להנחיית הפרויקט.
