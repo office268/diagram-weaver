@@ -368,9 +368,22 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
                       <div className="truncate text-sm font-medium text-foreground">
                         {it.title}
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      <div
+                        className="mt-0.5 truncate text-[11px] text-muted-foreground"
+                        title={[
+                          CATEGORY_LABEL[it.category],
+                          new Date(it.createdAt).toLocaleDateString("he-IL"),
+                          it.path ?? "—",
+                          it.author ? `מאת ${it.author}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      >
                         {CATEGORY_LABEL[it.category]} ·{" "}
                         {new Date(it.createdAt).toLocaleDateString("he-IL")}
+                        {" · "}
+                        {it.path ?? "—"}
+                        {it.author ? ` · מאת ${it.author}` : ""}
                       </div>
                     </div>
                   </div>
