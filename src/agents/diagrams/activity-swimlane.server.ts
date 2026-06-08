@@ -1,6 +1,7 @@
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
+import type { UsageTracker } from "@/lib/ai-usage.server";
 import {
   ActivityDiagramGenerationError,
   STAGE1_SYSTEM,
