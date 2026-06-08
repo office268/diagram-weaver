@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Workflow, KanbanSquare, Rocket, Search, X, Menu } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
 
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
