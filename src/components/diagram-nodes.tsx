@@ -145,10 +145,39 @@ export function LaneNode({ data }: N) {
 // ── Actor (stick figure) ────────────────────────────────────────────────────
 
 export function ActorNode({ data }: N) {
+  const stereo = (data.stereotype as string | undefined)?.toLowerCase();
+  const label = (data.label as string | undefined) ?? "";
+  const isExternal =
+    stereo === "external" ||
+    stereo === "system" ||
+    /^(מערכת|שירות|שרת)\s/.test(label) ||
+    /\bapi\b/i.test(label);
+
+  if (isExternal) {
+    return (
+      <div style={{ position: "relative", width: 60, height: 90 }}>
+        <Handle type="source" position={Position.Left} style={handleStyle} />
+        <Handle type="target" position={Position.Left} style={handleStyle} />
+        <Handle type="source" position={Position.Right} style={handleStyle} />
+        <Handle type="target" position={Position.Right} style={handleStyle} />
+        <svg width="60" height="56" viewBox="0 0 60 56">
+          <rect x="6" y="4" width="48" height="34" rx="3" fill="var(--card)" stroke="var(--foreground)" strokeWidth="1.6" />
+          <rect x="10" y="8" width="40" height="26" fill="none" stroke="var(--foreground)" strokeWidth="1" opacity="0.5" />
+          <line x1="30" y1="38" x2="30" y2="46" stroke="var(--foreground)" strokeWidth="1.6" />
+          <line x1="18" y1="48" x2="42" y2="48" stroke="var(--foreground)" strokeWidth="1.6" />
+        </svg>
+        <div className="text-center text-[9px] leading-tight text-muted-foreground">«external»</div>
+        <div className="text-center text-xs font-medium leading-tight text-foreground">{label}</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: "relative", width: 60, height: 90 }}>
       <Handle type="source" position={Position.Right} style={handleStyle} />
       <Handle type="target" position={Position.Right} style={handleStyle} />
+      <Handle type="source" position={Position.Left} style={handleStyle} />
+      <Handle type="target" position={Position.Left} style={handleStyle} />
       <svg width="60" height="70" viewBox="0 0 60 70">
         <circle cx="30" cy="12" r="9" fill="none" stroke="var(--foreground)" strokeWidth="1.6" />
         <line x1="30" y1="21" x2="30" y2="45" stroke="var(--foreground)" strokeWidth="1.6" />
@@ -156,7 +185,7 @@ export function ActorNode({ data }: N) {
         <line x1="30" y1="45" x2="14" y2="65" stroke="var(--foreground)" strokeWidth="1.6" />
         <line x1="30" y1="45" x2="46" y2="65" stroke="var(--foreground)" strokeWidth="1.6" />
       </svg>
-      <div className="text-center text-xs font-medium text-foreground">{data.label}</div>
+      <div className="text-center text-xs font-medium text-foreground">{label}</div>
     </div>
   );
 }
