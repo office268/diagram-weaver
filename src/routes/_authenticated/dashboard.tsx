@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Sparkles, MoreHorizontal } from "lucide-react";
+import { Loader2, Sparkles, MoreHorizontal, Shapes, FileText, Wrench } from "lucide-react";
 import {
   getDashboardTileOrder,
   setDashboardTileOrder,
@@ -243,7 +243,7 @@ function HomePage() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 items-start">
           {diagramTiles.length > 0 && (
             <section>
-              <SectionHeading label="UML" />
+              <SectionHeading label="uml" variant="uml" />
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
 
@@ -270,7 +270,7 @@ function HomePage() {
           )}
 
           <section>
-            <SectionHeading label="PR-Docs" />
+            <SectionHeading label="pr-docs" variant="docs" />
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
@@ -296,7 +296,7 @@ function HomePage() {
 
           {toolTiles.length > 0 && (
             <section>
-              <SectionHeading label="Tools" />
+              <SectionHeading label="tools" variant="tools" />
               <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                   {toolTiles.map((key, i) => (
@@ -353,18 +353,64 @@ function HomePage() {
   );
 }
 
-function SectionHeading({ label }: { label: string }) {
+function SectionHeading({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: "uml" | "docs" | "tools";
+}) {
+  const config = {
+    uml: {
+      Icon: Shapes,
+      iconBg: "bg-orange-100",
+      iconBorder: "border-orange-200/60",
+      iconColor: "text-orange-600",
+      glow: "bg-orange-200/40",
+      underline: "bg-orange-300",
+      rotate: "rotate-3",
+      underlineW: "w-6",
+    },
+    docs: {
+      Icon: FileText,
+      iconBg: "bg-rose-100",
+      iconBorder: "border-rose-200/60",
+      iconColor: "text-rose-600",
+      glow: "bg-rose-200/40",
+      underline: "bg-rose-300",
+      rotate: "-rotate-2",
+      underlineW: "w-8",
+    },
+    tools: {
+      Icon: Wrench,
+      iconBg: "bg-emerald-100",
+      iconBorder: "border-emerald-200/60",
+      iconColor: "text-emerald-600",
+      glow: "bg-emerald-200/40",
+      underline: "bg-emerald-300",
+      rotate: "rotate-1",
+      underlineW: "w-5",
+    },
+  }[variant];
+  const Icon = config.Icon;
   return (
-    <div className="mb-3 flex items-center justify-center">
-      <div className="relative inline-flex items-center gap-2 rounded-full border border-border/60 bg-gradient-to-br from-card via-background to-accent/40 px-3.5 py-1 shadow-sm ring-1 ring-black/5 backdrop-blur-sm sm:px-4 sm:py-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-[0_0_6px_hsl(var(--primary)/0.6)]" aria-hidden />
-        <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/80 sm:text-sm">
+    <div className="group mb-3 flex items-center gap-2.5 sm:gap-3">
+      <div className="relative flex h-9 w-9 items-center justify-center sm:h-10 sm:w-10">
+        <div className={`absolute inset-0 rounded-full blur-md transition-colors ${config.glow} group-hover:opacity-80`} aria-hidden />
+        <div className={`relative flex h-8 w-8 items-center justify-center rounded-2xl border-2 ${config.iconBg} ${config.iconBorder} ${config.rotate} transition-transform group-hover:rotate-0 sm:h-9 sm:w-9`}>
+          <Icon className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${config.iconColor}`} aria-hidden />
+        </div>
+      </div>
+      <div className="min-w-0">
+        <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
           {label}
         </h2>
+        <div className={`mt-0.5 h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
       </div>
     </div>
   );
 }
+
 
 function MoreTile({
   index,
