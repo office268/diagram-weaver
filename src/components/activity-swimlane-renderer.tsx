@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { sanitizeMermaidSvg } from "@/lib/mermaid-utils";
-import { MermaidPreview } from "@/components/mermaid-preview";
+import { sanitizeSvg } from "@/lib/svg-sanitize";
 import { ActivityRFEditor } from "@/components/activity-rf-editor";
 import { parseSvgToRF, isActivityRF, type ActivityRFData } from "@/lib/activity-rf";
 import { Download, Maximize2, Minus, Pencil, Plus, RotateCcw } from "lucide-react";
