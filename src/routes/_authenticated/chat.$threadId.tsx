@@ -132,7 +132,7 @@ function ChatPage() {
     if (!sending) { setPhaseIdx(0); return; }
     const id = setInterval(
       () => setPhaseIdx((i) => (i + 1) % phases.length),
-      1800,
+      3200,
     );
     return () => clearInterval(id);
   }, [sending, phases.length]);
@@ -887,19 +887,14 @@ function GenerationProgress({
 }) {
   const label = phases[phaseIdx % phases.length];
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-center gap-2 text-sm">
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-        <span
-          key={label}
-          className="font-medium text-foreground animate-in fade-in slide-in-from-bottom-1 duration-300"
-        >
-          {label}…
-        </span>
-      </div>
-      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
-        <div className="absolute inset-y-0 w-1/3 rounded-full bg-primary animate-[progress-indeterminate_1.6s_ease-in-out_infinite]" />
-      </div>
+    <div className="flex items-center justify-center gap-2 text-base">
+      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      <span
+        key={label}
+        className="font-medium text-foreground animate-in fade-in slide-in-from-bottom-1 duration-300"
+      >
+        {label}…
+      </span>
     </div>
   );
 }
