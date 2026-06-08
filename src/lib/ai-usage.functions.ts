@@ -113,6 +113,8 @@ export const listAiUsage = createServerFn({ method: "GET" })
         spec_document_id: r.spec_document_id,
         diagram_id: r.diagram_id,
         artifact_kind: r.artifact_kind,
+        status: r.status ?? "success",
+        error_message: r.error_message ?? null,
         doc_title: r.doc_title,
         doc_type: r.doc_type,
         word_count: r.word_count,
