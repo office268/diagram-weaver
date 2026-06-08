@@ -464,6 +464,7 @@ export type Database = {
       }
       diagram_jobs: {
         Row: {
+          attempts: number
           completed_at: string | null
           created_at: string
           diagram_id: string | null
@@ -471,6 +472,8 @@ export type Database = {
           id: string
           iterations: number | null
           kind: string
+          locked_at: string | null
+          max_attempts: number
           model_override: string | null
           prompt: string
           started_at: string | null
@@ -480,6 +483,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attempts?: number
           completed_at?: string | null
           created_at?: string
           diagram_id?: string | null
@@ -487,6 +491,8 @@ export type Database = {
           id?: string
           iterations?: number | null
           kind: string
+          locked_at?: string | null
+          max_attempts?: number
           model_override?: string | null
           prompt: string
           started_at?: string | null
@@ -496,6 +502,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attempts?: number
           completed_at?: string | null
           created_at?: string
           diagram_id?: string | null
@@ -503,6 +510,8 @@ export type Database = {
           id?: string
           iterations?: number | null
           kind?: string
+          locked_at?: string | null
+          max_attempts?: number
           model_override?: string | null
           prompt?: string
           started_at?: string | null
@@ -1145,6 +1154,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_diagram_job: {
+        Args: never
+        Returns: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          diagram_id: string | null
+          error_message: string | null
+          id: string
+          iterations: number | null
+          kind: string
+          locked_at: string | null
+          max_attempts: number
+          model_override: string | null
+          prompt: string
+          started_at: string | null
+          status: string
+          thread_id: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "diagram_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       consume_credit: {
         Args: { _doc_id?: string; _user_id: string }
         Returns: number
@@ -1202,6 +1239,10 @@ export type Database = {
           id: string
           similarity: number
         }[]
+      }
+      reset_stuck_diagram_jobs: {
+        Args: { _stale_minutes?: number }
+        Returns: number
       }
     }
     Enums: {
