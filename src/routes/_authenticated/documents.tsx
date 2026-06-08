@@ -261,6 +261,29 @@ function DocumentsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
 
+  const renameMut = useMutation({
+    mutationFn: async ({ item, title }: { item: Item; title: string }) => {
+      const t = title.trim();
+      if (!t) throw new Error("שם לא יכול להיות ריק");
+      if (item.category === "document") {
+        await updateSpecFn({ data: { id: item.id, title: t } });
+      } else if (item.category === "diagram") {
+        await updateDiagramFn({ data: { id: item.id, title: t } });
+      } else {
+        await renameDocumentFn({ data: { id: item.id, file_name: t } });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["specs-all"] });
+      qc.invalidateQueries({ queryKey: ["diagrams-all"] });
+      qc.invalidateQueries({ queryKey: ["uploaded-documents", "all"] });
+      setRenameTarget(null);
+      setRenameValue("");
+      toast.success("שונה השם");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שינוי השם נכשל"),
+  });
+
   const isLoading = specsLoading || diagramsLoading || uploadsLoading;
   const activeFilterCount =
     (group !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0);
