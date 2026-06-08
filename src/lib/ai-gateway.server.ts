@@ -40,7 +40,9 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
     return lovable(modelId);
   };
 
-  return dispatch as ((modelId: string) => LanguageModel) & {
-    chatModel: (modelId: string) => LanguageModel;
-  };
+  return Object.assign(dispatch, {
+    chatModel: (modelId: string) => dispatch(modelId),
+    textEmbeddingModel: (modelId: string) => lovable.textEmbeddingModel(modelId),
+    imageModel: (modelId: string) => lovable.imageModel(modelId),
+  });
 }
