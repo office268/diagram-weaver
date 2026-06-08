@@ -106,7 +106,6 @@ function AuthenticatedLayout() {
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-          <ActiveModuleTitle />
 
         </header>
 
