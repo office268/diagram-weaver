@@ -33,6 +33,7 @@ export function AiUsageCard() {
   });
 
   const rows: AiUsageRow[] = data?.rows ?? [];
+  const isAdmin = !!data?.isAdmin;
 
   const totals = rows.reduce(
     (acc, r) => {
@@ -82,6 +83,7 @@ export function AiUsageCard() {
                 <TableRow>
                   <TableHead className="text-right">תאריך</TableHead>
                   <TableHead className="text-right">מסמך</TableHead>
+                  {isAdmin ? <TableHead className="text-right">משתמש</TableHead> : null}
                   <TableHead className="text-right">סוג</TableHead>
                   <TableHead className="text-right">פעולה</TableHead>
                   <TableHead className="text-right">מודל</TableHead>
@@ -109,6 +111,11 @@ export function AiUsageCard() {
                           </span>
                         ) : null}
                       </TableCell>
+                      {isAdmin ? (
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {r.user_email ?? "—"}
+                        </TableCell>
+                      ) : null}
                       <TableCell className="text-xs text-muted-foreground">
                         {r.doc_type ?? "—"}
                       </TableCell>
