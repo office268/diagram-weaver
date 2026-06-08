@@ -211,7 +211,8 @@ function HomePage() {
             <section>
               <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
-                <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+                <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
+
                   {diagramTiles.map((key, i) => (
                     <SortableTile
                       key={key}
