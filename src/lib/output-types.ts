@@ -108,7 +108,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   spec_overview: {
     key: "spec_overview",
     category: "document",
-    label: "מסמך אפיון על",
+    label: "אפיון על",
     description: "אפיון מערכת ברמה גבוהה: דרישות, ארכיטקטורה ומודל נתונים.",
     icon: LayoutTemplate,
     colorClass: "text-primary",
