@@ -62,23 +62,17 @@ export const listAiUsage = createServerFn({ method: "GET" })
       existing = new Map((docs ?? []).map((d) => [d.id, d.title ?? null]));
     }
 
-    let emails = new Map<string, string | null>();
+    const emails = new Map<string, string | null>();
     if (isAdmin) {
       const userIds = Array.from(
         new Set(rows.map((r) => r.user_id).filter(Boolean)),
       );
-      if (userIds.length > 0) {
-        const { data: profs } = await supabaseAdmin
-          .from("profiles")
-          .select("id, email")
-          .in("id", userIds);
-        emails = new Map(
-          (profs ?? []).map((p: { id: string; email: string | null }) => [
-            p.id,
-            p.email ?? null,
-          ]),
-        );
-      }
+      await Promise.all(
+        userIds.map(async (uid) => {
+          const { data: u } = await supabaseAdmin.auth.admin.getUserById(uid);
+          emails.set(uid, u?.user?.email ?? null);
+        }),
+      );
     }
 
     const out: AiUsageRow[] = rows.map((r) => ({
