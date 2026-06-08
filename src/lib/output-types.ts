@@ -125,7 +125,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_sequence: {
     key: "diagram_sequence",
     category: "diagram",
-    label: "תרשים Sequence",
+    label: "sequence diagram",
     description: "סדר הקריאות בין רכיבים/שחקנים לאורך זמן.",
     icon: ArrowRightLeft,
     colorClass: "text-sky-500",
