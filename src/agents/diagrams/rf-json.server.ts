@@ -193,6 +193,7 @@ const KIND_CONFIG: Record<Exclude<DiagramOutputKey, "diagram_activity">, KindCon
       "actors מחוץ ל-systemBoundary; use cases רעיונית בתוכו.",
       "edges מותרים: style=\"association\" (actor↔useCase), style=\"include\" (useCase→useCase), style=\"extend\" (useCase→useCase). labels ל-include/extend: \"«include»\" או \"«extend»\".",
       "אסור: צמתי start/end/decision/task. אסור lanes. אסור פעלים-בהווה-מתמשך (\"בודק...\"). השתמש בשם פעולה מופשט (\"ביצוע הזמנה\").",
+      "אם actor הוא מערכת/שירות חיצוני (לא בן-אדם) — סמן אותו עם stereotype=\"external\". דוגמה: מערכת תשלום, שירות SMS, מערכת CRM חיצונית, API חיצוני.",
     ].join("\n"),
     example: USECASE_EXAMPLE,
     critique: [
@@ -200,6 +201,7 @@ const KIND_CONFIG: Record<Exclude<DiagramOutputKey, "diagram_activity">, KindCon
       "האם יש systemBoundary אחד?",
       "האם אין decisions / tasks / start / end?",
       "האם כל include/extend בין שני use cases (לא בין actor ל-useCase)?",
+      "האם כל actor שאינו אנושי (מערכת/שירות חיצוני) סומן עם stereotype=\"external\"?",
     ],
   },
   diagram_sequence: {
