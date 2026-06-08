@@ -426,18 +426,24 @@ export type Database = {
       dashboard_tile_order: {
         Row: {
           id: string
+          moved_to_extras: Json
+          moved_to_main: Json
           order: Json
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           id?: string
+          moved_to_extras?: Json
+          moved_to_main?: Json
           order?: Json
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           id?: string
+          moved_to_extras?: Json
+          moved_to_main?: Json
           order?: Json
           updated_at?: string
           updated_by?: string | null
