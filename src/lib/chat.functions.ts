@@ -87,3 +87,34 @@ export const renameChatThread = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const updateChatThreadModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { threadId: string; model: string | null }) => {
+    // Lazy import keeps the constants file out of the validator's hot path.
+    const { ALLOWED_AGENT_MODELS } = require("@/agents/shared/constants") as {
+      ALLOWED_AGENT_MODELS: readonly string[];
+    };
+    const schema = z.object({
+      threadId: z.string().uuid(),
+      model: z
+        .union([
+          z.enum(ALLOWED_AGENT_MODELS as unknown as [string, ...string[]]),
+          z.null(),
+        ])
+        .nullable(),
+    });
+    return schema.parse(d);
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // RLS on chat_threads scopes by user_id; the .eq below is defense in depth.
+    const { error } = await supabase
+      .from("chat_threads")
+      .update({ model_override: data.model } as never)
+      .eq("id", data.threadId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, model: data.model };
+  });
+
