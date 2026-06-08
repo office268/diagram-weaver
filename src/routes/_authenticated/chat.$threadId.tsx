@@ -367,7 +367,7 @@ function ChatPage() {
   const messages = data.messages;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl gap-4 px-2 py-3 md:px-4">
+    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-cols-[16rem_1fr] md:grid-rows-[1fr_auto] md:px-4">
       {/* Sidebar — threads */}
       <aside className="hidden w-64 shrink-0 flex-col gap-2 md:flex">
         <Button
