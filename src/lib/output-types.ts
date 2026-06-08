@@ -199,6 +199,31 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: List,
     colorClass: "text-fuchsia-500",
   },
+  dashboard: {
+    key: "dashboard",
+    category: "document",
+    label: "dashboard",
+    description: "",
+    icon: LayoutDashboard,
+    colorClass: "text-cyan-500",
+  },
+};
+
+// Display order on the home page tiles (primary, most-used).
+export const OUTPUT_TYPE_ORDER: OutputKey[] = [
+  "initiation",
+  "requirements_combined",
+  "diagram_usecase",
+  "spec_overview",
+  "diagram_flow",
+  "diagram_sequence",
+  "diagram_erd",
+  "spec_detailed",
+  "diagram_activity",
+  "meeting_summary",
+  "user_story",
+  "dashboard",
+];
 };
 
 // Display order on the home page tiles (primary, most-used).
