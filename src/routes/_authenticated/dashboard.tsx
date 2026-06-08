@@ -243,7 +243,7 @@ function HomePage() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 items-start">
           {diagramTiles.length > 0 && (
             <section>
-              <SectionHeading label="uml" variant="uml" />
+              <SectionHeading label="UML" variant="uml" />
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
 
