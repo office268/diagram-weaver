@@ -195,24 +195,24 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
-          size="icon"
-          className="h-10 w-10 shrink-0"
+          className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
           aria-label="מוצרים"
           title="מוצרים של הארגון"
           onClick={() => setProductsOpen(true)}
         >
-          <Package className="h-4 w-4" />
+          <Package className="h-5 w-5" />
+          מוצרים
         </Button>
 
         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              className="relative h-10 w-10 shrink-0"
+              className="relative h-11 gap-2 px-4 shrink-0 text-sm font-medium"
               aria-label="סינון"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-5 w-5" />
+              סינון
               {activeFilterCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
                   {activeFilterCount}
@@ -272,12 +272,12 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
+              className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
               aria-label="מיון"
               title={`מיון: ${SORT_LABEL[sortBy]}`}
             >
-              <ArrowUpDown className="h-4 w-4" />
+              <ArrowUpDown className="h-5 w-5" />
+              מיון
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -296,12 +296,12 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative flex-1">
+        <div className="relative max-w-[240px]">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="חפש פרויקטים, מסמכים, תרשימים, קבצים..."
+            placeholder="חפש..."
             className="h-10 pr-9"
             autoFocus
           />
