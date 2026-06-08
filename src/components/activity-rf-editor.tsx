@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   ReactFlow,
   Controls,
@@ -121,7 +121,7 @@ function StartNode(_props: NodeProps<Node<ActivityNodeData>>) {
       <Handle type="source" position={Position.Right}  style={handleStyle} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
       <svg width="40" height="40" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="14" fill="#222" stroke="#222" strokeWidth="1.6" />
+        <circle cx="20" cy="20" r="14" fill="white" stroke="#222" strokeWidth="1.6" />
       </svg>
     </div>
   );
@@ -193,8 +193,13 @@ interface Props {
 }
 
 export function ActivityRFEditor({ rfData, onSave, saving, readOnly }: Props) {
-  const [nodes, , onNodesChange] = useNodesState<Node<ActivityNodeData>>(rfData.nodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<ActivityNodeData>>(rfData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(rfData.edges);
+
+  useEffect(() => {
+    setNodes(rfData.nodes);
+    setEdges(rfData.edges);
+  }, [rfData.nodes, rfData.edges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges(eds => addEdge(params, eds)),
