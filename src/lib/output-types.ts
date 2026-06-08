@@ -116,7 +116,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_flow: {
     key: "diagram_flow",
     category: "diagram",
-    label: "תרשים Flow Chart",
+    label: "Flow Chart",
     description: "זרימת תהליך עסקי או טכני עם החלטות וצעדים.",
     icon: GitBranch,
     colorClass: "text-primary",
