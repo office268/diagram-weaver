@@ -183,18 +183,19 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
     });
   }
 
-  // 3b. TASK nodes — white/unset fill, below header, bounded size
+  // 3b. TASK nodes — accept any rect that isn't joinBar/background/lane
+  const laneWidths = new Set(lanes.map(l => Math.round(l.width)));
   for (const rect of svg.querySelectorAll("rect")) {
-    const fill = rect.getAttribute("fill") ?? "";
-    if (fill === "#111" || fill === "none") continue;
-    if (fill !== "" && fill.toLowerCase() !== "white") continue;
+    const fill = (rect.getAttribute("fill") ?? "").toLowerCase();
+    if (fill === "#111") continue; // joinBar
     const rx = parseFloat2(rect.getAttribute("x"));
     const ry = parseFloat2(rect.getAttribute("y"));
     const rw = parseFloat2(rect.getAttribute("width"));
     const rh = parseFloat2(rect.getAttribute("height"));
-    if (ry < headerH) continue;
+    if (ry < headerH - 2) continue;
     if (rw < 50 || rh < 20) continue;
-    if (rw > 400 || rh > 150) continue; // skip large background rects
+    if (rw > 260 || rh > 110) continue; // skip large background/lane rects
+    if (laneWidths.has(Math.round(rw))) continue; // exact lane-width rect → lane bg
     const cx = rx + rw / 2;
     const cy = ry + rh / 2;
     const labelLines = allTexts
@@ -225,25 +226,55 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
       .filter(t => {
         const ty = parseFloat2(t.getAttribute("y"));
         const tx = parseFloat2(t.getAttribute("x"));
-        return Math.abs(ty - cy) < 60 && Math.abs(tx - cx) < 80;
+        return Math.abs(ty - cy) < 40 && Math.abs(tx - cx) < 70;
       })
+      .sort((a, b) => parseFloat2(a.getAttribute("y")) - parseFloat2(b.getAttribute("y")))
       .map(t => t.textContent?.trim() ?? "")
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, 3);
     rfNodes.push({
       id: `decision-${idx++}`,
       type: "decision",
       position: centerToTopLeft("decision", cx, cy),
-      data: { label: nearby[0] ?? "", laneIndex: getLaneIndex(cx, laneXArr), nodeType: "decision" },
+      data: { label: nearby.join("\n"), laneIndex: getLaneIndex(cx, laneXArr), nodeType: "decision" },
     });
   }
 
-  // 3d. START and END circles (always at x≈45)
+  // 3d. ACTOR (stick figure) — small head circle near left + body lines
+  // Detect actors first so we don't mis-classify their head as START.
+  const actorCxSet = new Set<number>();
+  for (const circle of svg.querySelectorAll("circle")) {
+    const cx = parseFloat2(circle.getAttribute("cx"));
+    const cy = parseFloat2(circle.getAttribute("cy"));
+    const r  = parseFloat2(circle.getAttribute("r"));
+    if (r > 0 && r <= 12 && cy < 200) {
+      // body line below the head?
+      const hasBody = allLines.some(l => {
+        const lx1 = parseFloat2(l.getAttribute("x1"));
+        const lx2 = parseFloat2(l.getAttribute("x2"));
+        const ly1 = parseFloat2(l.getAttribute("y1"));
+        return Math.abs(lx1 - cx) < 4 && Math.abs(lx2 - cx) < 4 && ly1 > cy && ly1 < cy + 30;
+      });
+      if (hasBody) {
+        actorCxSet.add(Math.round(cx));
+        rfNodes.push({
+          id: `actor-${idx++}`,
+          type: "actor",
+          position: centerToTopLeft("actor", cx, cy + 25),
+          data: { label: "", laneIndex: getLaneIndex(cx, laneXArr), nodeType: "actor" },
+        });
+      }
+    }
+  }
+
+  // 3e. START and END circles (always at x≈45, excluding actor heads)
   let startAdded = false;
   for (const circle of svg.querySelectorAll("circle")) {
     const cx = parseFloat2(circle.getAttribute("cx"));
     const cy = parseFloat2(circle.getAttribute("cy"));
     const r  = parseFloat2(circle.getAttribute("r"));
     if (Math.abs(cx - 45) > 15) continue;
+    if (actorCxSet.has(Math.round(cx)) && r < 15) continue;
     if (r < 20 && !startAdded) {
       rfNodes.push({
         id: "start",
