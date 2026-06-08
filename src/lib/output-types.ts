@@ -15,6 +15,7 @@ import {
   BookOpen,
   Mic,
   Workflow,
+  List,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,7 +27,8 @@ export type DocumentOutputKey =
   | "spec_overview"
   | "spec_detailed"
   | "user_guide"
-  | "meeting_summary";
+  | "meeting_summary"
+  | "user_story";
 
 
 
@@ -186,6 +188,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     description: "תמלול של ישיבה וסיכום החלטות, משימות ונקודות מפתח.",
     icon: Mic,
     colorClass: "text-rose-500",
+  },
+  user_story: {
+    key: "user_story",
+    category: "document",
+    label: "user story",
+    description: "(azure/jira)",
+    icon: List,
+    colorClass: "text-fuchsia-500",
   },
 };
 
