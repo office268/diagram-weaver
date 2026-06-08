@@ -66,6 +66,7 @@ import {
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/mermaid-preview";
+import { DiagramRenderer } from "@/components/diagram-renderer";
 import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
