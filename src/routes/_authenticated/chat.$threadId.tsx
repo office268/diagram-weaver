@@ -404,7 +404,7 @@ function ChatPage() {
   return (
     <div
       className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-rows-[1fr_auto] md:px-4"
-      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 8px 1fr` } : undefined}
+      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 12px 1fr` } : undefined}
     >
       {/* Sidebar — threads */}
       <aside
@@ -455,7 +455,7 @@ function ChatPage() {
         role="separator"
         aria-orientation="vertical"
         onMouseDown={startResize}
-        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:mx-1 md:rounded-full md:bg-border md:hover:bg-primary/40 md:transition-colors"
+        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:w-1.5 md:rounded-full md:bg-muted-foreground/30 md:hover:bg-primary/60 md:transition-colors"
       />
 
       {/* Chat column */}
