@@ -219,7 +219,7 @@ function HomePage() {
     if (oldIndex < 0 || newIndex < 0) return;
     const reordered = arrayMove(mainTiles, oldIndex, newIndex);
     const next = reordered.filter((k) => (OUTPUT_TYPE_ORDER as readonly string[]).includes(k));
-    saveMut.mutate(next);
+    saveMut.mutate({ order: next });
   };
   const [moreGroup, setMoreGroup] = useState<null | "diagram" | "document">(null);
 
