@@ -243,7 +243,7 @@ function HomePage() {
         <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 items-start">
           {diagramTiles.length > 0 && (
             <section>
-              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
+              <SectionHeading label="UML" />
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
 
@@ -270,7 +270,7 @@ function HomePage() {
           )}
 
           <section>
-            <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">PR-Docs</h2>
+            <SectionHeading label="PR-Docs" />
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
@@ -296,7 +296,7 @@ function HomePage() {
 
           {toolTiles.length > 0 && (
             <section>
-              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">Tools</h2>
+              <SectionHeading label="Tools" />
               <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
                 <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                   {toolTiles.map((key, i) => (
@@ -349,6 +349,19 @@ function HomePage() {
           </div>
         </DrawerContent>
       </Drawer>
+    </div>
+  );
+}
+
+function SectionHeading({ label }: { label: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-center">
+      <div className="relative inline-flex items-center gap-2 rounded-full border border-border/60 bg-gradient-to-br from-card via-background to-accent/40 px-3.5 py-1 shadow-sm ring-1 ring-black/5 backdrop-blur-sm sm:px-4 sm:py-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-primary to-primary/60 shadow-[0_0_6px_hsl(var(--primary)/0.6)]" aria-hidden />
+        <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-foreground/80 sm:text-sm">
+          {label}
+        </h2>
+      </div>
     </div>
   );
 }
