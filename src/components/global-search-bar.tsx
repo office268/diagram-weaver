@@ -195,13 +195,13 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
-          size="icon"
-          className="h-10 w-10 shrink-0"
+          className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
           aria-label="מוצרים"
           title="מוצרים של הארגון"
           onClick={() => setProductsOpen(true)}
         >
-          <Package className="h-4 w-4" />
+          <Package className="h-5 w-5" />
+          מוצרים
         </Button>
 
         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
