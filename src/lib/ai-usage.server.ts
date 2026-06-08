@@ -114,6 +114,8 @@ export async function logAiUsage(params: {
   docTitle?: string | null;
   docType?: string | null;
   wordCount?: number;
+  status?: "success" | "failed";
+  errorMessage?: string | null;
 }): Promise<void> {
   try {
     const cost =
@@ -121,12 +123,14 @@ export async function logAiUsage(params: {
       calcCostUsd(params.model, params.inputTokens, params.outputTokens);
 
     const artifactKind = params.artifactKind ?? "spec_document";
+    const status = params.status ?? "success";
     let docTitle = params.docTitle ?? null;
     let docType = params.docType ?? null;
     let wordCount = params.wordCount ?? 0;
 
     if (
       artifactKind === "spec_document" &&
+      status === "success" &&
       params.specDocumentId &&
       (params.docTitle === undefined || params.wordCount === undefined)
     ) {
@@ -136,13 +140,16 @@ export async function logAiUsage(params: {
       if (params.wordCount === undefined) wordCount = snap.word_count;
     }
 
+    const isSpec = artifactKind === "spec_document";
     const { error } = await supabaseAdmin.from("ai_usage_events").insert({
       user_id: params.userId,
       spec_document_id:
-        artifactKind === "spec_document" ? params.specDocumentId ?? null : null,
+        isSpec && status === "success" ? params.specDocumentId ?? null : null,
       diagram_id:
-        artifactKind === "spec_document" ? null : params.diagramId ?? null,
+        !isSpec && status === "success" ? params.diagramId ?? null : null,
       artifact_kind: artifactKind,
+      status,
+      error_message: params.errorMessage ? params.errorMessage.slice(0, 500) : null,
       model: params.model,
       purpose: params.purpose,
       prompt_tokens: params.inputTokens,

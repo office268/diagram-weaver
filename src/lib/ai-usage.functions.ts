@@ -8,6 +8,8 @@ export interface AiUsageRow {
   spec_document_id: string | null;
   diagram_id: string | null;
   artifact_kind: string;
+  status: string;
+  error_message: string | null;
   doc_title: string | null;
   doc_type: string | null;
   word_count: number;
@@ -39,7 +41,7 @@ export const listAiUsage = createServerFn({ method: "GET" })
     let q = client
       .from("ai_usage_events")
       .select(
-        "id, created_at, spec_document_id, diagram_id, artifact_kind, doc_title, doc_type, word_count, model, purpose, prompt_tokens, completion_tokens, total_tokens, cost_usd, user_id",
+        "id, created_at, spec_document_id, diagram_id, artifact_kind, status, error_message, doc_title, doc_type, word_count, model, purpose, prompt_tokens, completion_tokens, total_tokens, cost_usd, user_id",
       )
       .order("created_at", { ascending: false });
     if (!isAdmin) q = q.eq("user_id", userId);
@@ -111,6 +113,8 @@ export const listAiUsage = createServerFn({ method: "GET" })
         spec_document_id: r.spec_document_id,
         diagram_id: r.diagram_id,
         artifact_kind: r.artifact_kind,
+        status: r.status ?? "success",
+        error_message: r.error_message ?? null,
         doc_title: r.doc_title,
         doc_type: r.doc_type,
         word_count: r.word_count,

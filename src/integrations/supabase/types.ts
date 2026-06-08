@@ -223,11 +223,13 @@ export type Database = {
           diagram_id: string | null
           doc_title: string | null
           doc_type: string | null
+          error_message: string | null
           id: string
           model: string
           prompt_tokens: number
           purpose: string
           spec_document_id: string | null
+          status: string
           total_tokens: number
           user_id: string
           word_count: number
@@ -240,11 +242,13 @@ export type Database = {
           diagram_id?: string | null
           doc_title?: string | null
           doc_type?: string | null
+          error_message?: string | null
           id?: string
           model: string
           prompt_tokens?: number
           purpose?: string
           spec_document_id?: string | null
+          status?: string
           total_tokens?: number
           user_id: string
           word_count?: number
@@ -257,11 +261,13 @@ export type Database = {
           diagram_id?: string | null
           doc_title?: string | null
           doc_type?: string | null
+          error_message?: string | null
           id?: string
           model?: string
           prompt_tokens?: number
           purpose?: string
           spec_document_id?: string | null
+          status?: string
           total_tokens?: number
           user_id?: string
           word_count?: number
