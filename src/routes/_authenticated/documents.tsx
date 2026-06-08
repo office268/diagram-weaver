@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   Search,
@@ -15,7 +15,9 @@ import {
   FileUp,
   X,
   Check,
+  Pencil,
 } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,9 +48,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { listSpecs, deleteSpec } from "@/lib/spec.functions";
-import { listDiagrams, deleteDiagram } from "@/lib/diagrams.functions";
-import { listDocuments, deleteDocument } from "@/lib/documents.functions";
+import { listSpecs, deleteSpec, updateSpec } from "@/lib/spec.functions";
+import { listDiagrams, deleteDiagram, updateDiagram } from "@/lib/diagrams.functions";
+import { listDocuments, deleteDocument, renameDocument } from "@/lib/documents.functions";
+
 import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
@@ -105,6 +108,9 @@ function DocumentsPage() {
   const deleteSpecFn = useServerFn(deleteSpec);
   const deleteDiagramFn = useServerFn(deleteDiagram);
   const deleteDocumentFn = useServerFn(deleteDocument);
+  const updateSpecFn = useServerFn(updateSpec);
+  const updateDiagramFn = useServerFn(updateDiagram);
+  const renameDocumentFn = useServerFn(renameDocument);
 
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
@@ -112,6 +118,55 @@ function DocumentsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
   const [filterOpen, setFilterOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Item | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  // Column widths (Windows Explorer-like resizable columns).
+  // `name` is the flex column (1fr); others are pixel widths.
+  const COL_STORAGE_KEY = "documents-col-widths-v1";
+  const DEFAULT_COLS = { type: 140, date: 120, size: 90, actions: 80 };
+  type ColKey = keyof typeof DEFAULT_COLS;
+  const [cols, setCols] = useState<typeof DEFAULT_COLS>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLS;
+    try {
+      const raw = localStorage.getItem(COL_STORAGE_KEY);
+      if (raw) return { ...DEFAULT_COLS, ...JSON.parse(raw) };
+    } catch { /* ignore */ }
+    return DEFAULT_COLS;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+  }, [cols]);
+
+  const gridTemplate = `minmax(160px,1fr) ${cols.type}px ${cols.date}px ${cols.size}px ${cols.actions}px`;
+
+  const dragRef = useRef<{ key: ColKey; startX: number; startW: number } | null>(null);
+  const startResize = useCallback((key: ColKey) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current = { key, startX: e.clientX, startW: cols[key] };
+    const onMove = (ev: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      // RTL layout: handles sit on each column's start edge (right side visually).
+      // Dragging mouse leftwards (lower clientX) increases the column width.
+      const delta = d.startX - ev.clientX;
+      const next = Math.max(60, Math.min(600, d.startW + delta));
+      setCols((c) => ({ ...c, [d.key]: next }));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [cols]);
+
 
   const { data: specsData, isLoading: specsLoading } = useQuery({
     queryKey: ["specs-all"],
@@ -204,6 +259,29 @@ function DocumentsPage() {
       toast.success("נמחק");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
+  });
+
+  const renameMut = useMutation({
+    mutationFn: async ({ item, title }: { item: Item; title: string }) => {
+      const t = title.trim();
+      if (!t) throw new Error("שם לא יכול להיות ריק");
+      if (item.category === "document") {
+        await updateSpecFn({ data: { id: item.id, title: t } });
+      } else if (item.category === "diagram") {
+        await updateDiagramFn({ data: { id: item.id, title: t } });
+      } else {
+        await renameDocumentFn({ data: { id: item.id, file_name: t } });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["specs-all"] });
+      qc.invalidateQueries({ queryKey: ["diagrams-all"] });
+      qc.invalidateQueries({ queryKey: ["uploaded-documents", "all"] });
+      setRenameTarget(null);
+      setRenameValue("");
+      toast.success("שונה השם");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "שינוי השם נכשל"),
   });
 
   const isLoading = specsLoading || diagramsLoading || uploadsLoading;
@@ -435,13 +513,45 @@ function DocumentsPage() {
       ) : (
         <div className="overflow-hidden rounded-md border border-border bg-card [direction:rtl]">
           {/* Explorer header */}
-          <div className="grid grid-cols-[1fr_140px_120px_90px_70px] items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground">
-            <div>שם</div>
-            <div>סוג</div>
-            <div>תאריך</div>
-            <div>גודל</div>
-            <div className="text-left">פעולות</div>
+          <div
+            className="grid items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground"
+            style={{ gridTemplateColumns: gridTemplate }}
+          >
+            <div className="truncate">שם</div>
+            <div className="relative truncate">
+              <span
+                onMouseDown={startResize("type")}
+                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                aria-hidden
+              />
+              סוג
+            </div>
+            <div className="relative truncate">
+              <span
+                onMouseDown={startResize("date")}
+                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                aria-hidden
+              />
+              תאריך
+            </div>
+            <div className="relative truncate">
+              <span
+                onMouseDown={startResize("size")}
+                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                aria-hidden
+              />
+              גודל
+            </div>
+            <div className="relative truncate text-left">
+              <span
+                onMouseDown={startResize("actions")}
+                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                aria-hidden
+              />
+              פעולות
+            </div>
           </div>
+
           <ul className="divide-y divide-border">
             {filtered.map((it) => {
               const def = it.category !== "upload" ? OUTPUT_TYPES[it.type as OutputKey] : null;
@@ -484,7 +594,8 @@ function DocumentsPage() {
               return (
                 <li
                   key={`${it.category}-${it.id}`}
-                  className="group grid grid-cols-[1fr_140px_120px_90px_70px] items-center gap-2 px-3 py-1.5 hover:bg-accent/60"
+                  className="group grid items-center gap-2 px-3 py-1.5 hover:bg-accent/60"
+                  style={{ gridTemplateColumns: gridTemplate }}
                 >
                   {openTo ? (
                     <Link
@@ -510,6 +621,18 @@ function DocumentsPage() {
                     )}
                     <button
                       type="button"
+                      onClick={() => {
+                        setRenameTarget(it);
+                        setRenameValue(it.title);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="שנה שם"
+                      title="שנה שם"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setDeleteTarget(it)}
                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
                       aria-label="מחק"
@@ -518,6 +641,7 @@ function DocumentsPage() {
                     </button>
                   </div>
                 </li>
+
               );
             })}
           </ul>
@@ -547,6 +671,61 @@ function DocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!renameTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRenameTarget(null);
+            setRenameValue("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">שינוי שם</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              הזן שם חדש למסמך.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (renameTarget) {
+                renameMut.mutate({ item: renameTarget, title: renameValue });
+              }
+            }}
+            className="space-y-3"
+          >
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={255}
+              className="text-right"
+              dir="auto"
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel type="button">ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                type="submit"
+                disabled={
+                  renameMut.isPending ||
+                  !renameValue.trim() ||
+                  renameValue.trim() === renameTarget?.title
+                }
+              >
+                {renameMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "שמור"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
