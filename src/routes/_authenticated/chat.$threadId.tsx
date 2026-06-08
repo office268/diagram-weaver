@@ -413,7 +413,11 @@ function ChatPage() {
                     <def.icon className="h-6 w-6" />
                   </div>
                 )}
-                <h2 className="text-lg font-medium text-foreground">אני סוכן AI מומחה לכתיבת {def?.label}</h2>
+                <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לתרשימי</h2>
+                <p className="mt-1 text-base font-medium text-foreground">{def?.label}</p>
+                <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">
+                  {sending ? `${phases[phaseIdx]}...` : "ממתין להוראות"}
+                </p>
               </div>
             </div>
           )}
@@ -424,11 +428,12 @@ function ChatPage() {
             {sending && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                חושב...
+                {phases[phaseIdx]}...
               </div>
             )}
           </div>
         </div>
+
 
         {/* Composer */}
         <div className="px-3 pt-3 pb-16 md:pb-3">
