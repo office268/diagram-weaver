@@ -27,7 +27,8 @@ function buildSegments(words: ElevenLabsWord[]): Segment[] {
     if (w.type && w.type !== "word" && w.type !== "spacing") continue;
     const speaker = w.speaker_id ?? "speaker_1";
     const text = w.text ?? "";
-    const start = typeof w.start === "number" ? w.start : current?.end ?? 0;
+    const start: number =
+      typeof w.start === "number" ? w.start : (current?.end ?? 0);
     const end = typeof w.end === "number" ? w.end : start;
     if (!current || current.speaker !== speaker) {
       if (current) segments.push(current);

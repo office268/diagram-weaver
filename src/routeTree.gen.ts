@@ -20,6 +20,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
+import { Route as ApiTranscribeAudioRouteImport } from './routes/api/transcribe-audio'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
 import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
@@ -99,6 +100,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiUploadDocumentRoute = ApiUploadDocumentRouteImport.update({
   id: '/api/upload-document',
   path: '/api/upload-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeAudioRoute = ApiTranscribeAudioRouteImport.update({
+  id: '/api/transcribe-audio',
+  path: '/api/transcribe-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/_authenticated/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/_authenticated/agent-conversations/$id'
     | '/_authenticated/chat/$threadId'
@@ -495,6 +507,7 @@ export interface RootRouteChildren {
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
+  ApiTranscribeAudioRoute: typeof ApiTranscribeAudioRoute
   ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       path: '/api/upload-document'
       fullPath: '/api/upload-document'
       preLoaderRoute: typeof ApiUploadDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe-audio': {
+      id: '/api/transcribe-audio'
+      path: '/api/transcribe-audio'
+      fullPath: '/api/transcribe-audio'
+      preLoaderRoute: typeof ApiTranscribeAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/review-spec': {
@@ -827,19 +847,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiIngestDocumentRoute: ApiIngestDocumentRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
+  ApiTranscribeAudioRoute: ApiTranscribeAudioRoute,
   ApiUploadDocumentRoute: ApiUploadDocumentRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
