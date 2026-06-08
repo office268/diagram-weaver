@@ -92,6 +92,15 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: Cpu,
     colorClass: "text-sky-500",
   },
+  requirements_combined: {
+    key: "requirements_combined",
+    category: "document",
+    label: "מסמך דרישות (עסקי + טכני)",
+    description: "יצירה של שני המסמכים — דרישות עסקי (BRD) ודרישות טכני (TRD) — בלחיצה אחת.",
+    icon: Briefcase,
+    colorClass: "text-amber-500",
+  },
+
   spec_overview: {
     key: "spec_overview",
     category: "document",
