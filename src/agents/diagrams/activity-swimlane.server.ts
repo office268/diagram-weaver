@@ -94,7 +94,7 @@ export async function runBuilderAgent(
   const svg = extractSvg(text);
   if (!svg) {
     throw new ActivityDiagramGenerationError(
-      "builder_invalid_mermaid",
+      "builder_invalid_svg",
       "שלב בניית תרשים ה-Activity נכשל — המודל לא החזיר SVG תקין.",
     );
   }
@@ -178,7 +178,7 @@ export async function runActivitySwimlaneOrchestrator(params: {
   const finalViolations = validateActivitySvg(svg);
   if (finalViolations.length > 0) {
     throw new ActivityDiagramGenerationError(
-      "builder_invalid_mermaid",
+      "builder_invalid_svg",
       `שלב בניית תרשים ה-Activity נכשל — SVG שנוצר אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
     );
   }
