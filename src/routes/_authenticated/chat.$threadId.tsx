@@ -424,9 +424,13 @@ function ChatPage() {
                 )}
                 <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לניתוח מערכות מידע</h2>
                 <p className="mt-1 text-base font-medium text-foreground">{def?.label}</p>
-                <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">
-                  {sending ? `${phases[phaseIdx]}...` : "ממתין להוראות"}
-                </p>
+                {sending ? (
+                  <div className="mt-3">
+                    <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">ממתין להוראות</p>
+                )}
               </div>
             </div>
           )}
