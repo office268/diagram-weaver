@@ -3,9 +3,6 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import {
-  ActivityDiagramGenerationError,
-} from "@/lib/activity-diagram-pipeline.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
   OUTPUT_TYPES,
@@ -15,6 +12,8 @@ import {
 } from "@/lib/output-types";
 import type { DocTypeKey } from "@/lib/doc-types";
 import type { SpecOutput } from "@/lib/spec-output-schema";
+import { waitUntil } from "@/lib/cf-context.server";
+import { runDiagramJob } from "@/lib/diagram-job.server";
 
 const BodySchema = z.object({
   threadId: z.string().uuid(),
@@ -148,47 +147,62 @@ export const Route = createFileRoute("/api/chat-message")({
           }
         }
 
-        // Stream response with heartbeat to avoid proxy timeouts (Cloudflare 504 after ~100s).
-        // Protocol: heartbeat spaces while working, then "\n__RESULT__\n{json}" or "\n__ERROR__\n{message}".
+        // ── Diagram path: create an async job and return immediately ──
+        // The heavy pipeline runs via `waitUntil` so a dropped HTTP connection
+        // does not kill the generation. The client polls `diagram_jobs` for
+        // completion and refreshes the chat when the job is done/failed.
+        if (def.category === "diagram") {
+          const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+          const modelOverride = await loadAgentModelOverride();
+          const diagramKind = outputType as DiagramOutputKey;
+
+          const { data: jobRow, error: jobErr } = await supabaseAdmin
+            .from("diagram_jobs")
+            .insert({
+              user_id: userId,
+              thread_id: body.threadId,
+              kind: diagramKind,
+              prompt: cleanUserMsg,
+              status: "pending",
+              model_override: modelOverride ?? null,
+            })
+            .select()
+            .single();
+          if (jobErr) return new Response(jobErr.message, { status: 500 });
+
+          const priorHistory = prior.map((m) => ({
+            role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+            content: m.content,
+          }));
+
+          // Fire-and-forget — Cloudflare keeps the Worker alive via waitUntil
+          // until the pipeline finishes writing its results.
+          waitUntil(
+            runDiagramJob({
+              jobId: jobRow.id,
+              threadId: body.threadId,
+              userId,
+              kind: diagramKind,
+              prompt: cleanUserMsg,
+              lovableApiKey: apiKey,
+              modelOverride: modelOverride ?? undefined,
+              priorHistory,
+              isFirstMessage: prior.length === 0,
+            }),
+          );
+
+          return Response.json({ ok: true, async: true, jobId: jobRow.id });
+        }
+
+        // ── Document (spec) path: keep the existing streaming flow ──
         const encoder = new TextEncoder();
 
-        // Tracker + abort logging — hoisted so both the abort listener and the
-        // finally block can flush partial usage if the stream is cut.
         const { createUsageTracker, logAiUsage } = await import("@/lib/ai-usage.server");
-        const diagramTracker = createUsageTracker();
+        const docTracker = createUsageTracker();
+        void docTracker; // reserved for future partial-usage logging on doc path
         let usageLogged = false;
         const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
         const modelOverride = await loadAgentModelOverride();
-
-        const flushPartialUsage = async (reason: string) => {
-          if (usageLogged) return;
-          usageLogged = true;
-          try {
-            const totals = diagramTracker.totals();
-            const failTitle = cleanUserMsg.slice(0, 120) || def.label;
-            await logAiUsage({
-              userId,
-              artifactKind: outputType,
-              status: "failed",
-              model: modelOverride ?? "agent",
-              purpose: def.category === "document" ? "generate" : "diagram",
-              inputTokens: totals.inputTokens,
-              outputTokens: totals.outputTokens,
-              totalTokens: totals.totalTokens,
-              costUsd: totals.costUsd,
-              docTitle: failTitle,
-              docType: outputType,
-              wordCount: 0,
-              errorMessage: reason,
-            });
-          } catch (e) {
-            console.error("[chat-message] flushPartialUsage failed:", e);
-          }
-        };
-
-        request.signal.addEventListener("abort", () => {
-          void flushPartialUsage("stream aborted");
-        });
 
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
@@ -204,266 +218,118 @@ export const Route = createFileRoute("/api/chat-message")({
             };
             const heartbeat = setInterval(() => enqueue(" "), 10_000);
 
-
             try {
-              if (def.category === "document") {
-                const lastAssistantArtifact = [...prior]
-                  .reverse()
-                  .find((m) => m.role === "assistant" && m.artifact_kind === "spec_document");
+              const lastAssistantArtifact = [...prior]
+                .reverse()
+                .find((m) => m.role === "assistant" && m.artifact_kind === "spec_document");
 
-                let previousSpec: SpecOutput | undefined;
-                if (lastAssistantArtifact?.artifact_id) {
-                  const { data: prevSpec } = await supabaseAdmin
-                    .from("spec_documents")
-                    .select("content")
-                    .eq("id", lastAssistantArtifact.artifact_id)
-                    .maybeSingle();
-                  if (prevSpec?.content) previousSpec = prevSpec.content as SpecOutput;
-                }
-
-                const combinedPrompt = [
-                  ...prior.filter((m) => m.role === "user").map((m) => m.content),
-                  cleanUserMsg,
-                ].join("\n\n---\n\n");
-
-                // modelOverride is hoisted at the handler top
-
-                const result = await runOrchestrator({
-                  userPrompt: combinedPrompt,
-                  docType: (outputType as DocumentOutputKey) as DocTypeKey,
-                  userId,
-                  projectId: null,
-                  lovableApiKey: apiKey,
-                  previousSpec,
-                  reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
-                  modelOverride,
-                });
-
-                const title = result.spec.title || def.label;
-                const { data: specRow, error: specErr } = await supabaseAdmin
+              let previousSpec: SpecOutput | undefined;
+              if (lastAssistantArtifact?.artifact_id) {
+                const { data: prevSpec } = await supabaseAdmin
                   .from("spec_documents")
-                  .insert({
-                    user_id: userId,
-                    title: `${title} — ${def.label}`,
-                    prompt: combinedPrompt,
-                    content: result.spec,
-                    doc_type: outputType,
-                    review_score: result.review.score,
-                    review_notes: result.review.notes,
-                    variant: previousSpec ? "revised" : "original",
-                  })
-                  .select()
-                  .single();
-                if (specErr) throw new Error(specErr.message);
-
-                try {
-                  await logAiUsage({
-                    userId,
-                    specDocumentId: specRow.id,
-                    model: "multi-agent",
-                    purpose: previousSpec ? "regenerate" : "generate",
-                    inputTokens: result.usage.inputTokens,
-                    outputTokens: result.usage.outputTokens,
-                    totalTokens: result.usage.totalTokens,
-                    costUsd: result.usage.costUsd,
-                  });
-                  usageLogged = true;
-                } catch (e) {
-                  console.error("[chat-message] logAiUsage failed:", e);
-                }
-
-
-                const assistantContent =
-                  `נוצר ${def.label} — **${title}**.\n\n` +
-                  `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
-
-                await supabaseAdmin.from("chat_messages").insert({
-                  thread_id: body.threadId,
-                  user_id: userId,
-                  role: "assistant",
-                  content: assistantContent,
-                  artifact_kind: "spec_document",
-                  artifact_id: specRow.id,
-                });
-
-                if (prior.length === 0) {
-                  await supabaseAdmin
-                    .from("chat_threads")
-                    .update({ title: title.slice(0, 100) })
-                    .eq("id", body.threadId);
-                } else {
-                  await supabaseAdmin
-                    .from("chat_threads")
-                    .update({ updated_at: new Date().toISOString() })
-                    .eq("id", body.threadId);
-                }
-
-                enqueue("\n__RESULT__\n" + JSON.stringify({
-                  ok: true,
-                  artifact: { kind: "spec_document", id: specRow.id, title },
-                }));
-              } else {
-                // Diagram path — diagramTracker and modelOverride are hoisted at the handler top
-
-
-                let diagramCode: string;
-                let assistantFence: "svg" | "rf-json";
-
-                try {
-                  if (outputType === "diagram_activity") {
-                    const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
-                    const { svg: raw } = await runActivitySwimlaneOrchestrator({
-                      userPrompt: cleanUserMsg,
-                      lovableApiKey: apiKey,
-                      modelOverride,
-                      tracker: diagramTracker,
-                    });
-                    diagramCode = raw;
-                    assistantFence = "svg";
-                  } else {
-                    const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
-                    const history: { role: "user" | "assistant"; content: string }[] = prior.map(
-                      (m) => ({
-                        role: m.role === "assistant" ? "assistant" : "user",
-                        content: m.content,
-                      }),
-                    );
-                    const { json } = await runRfJsonDiagramAgent({
-                      kind: outputType as Exclude<DiagramOutputKey, "diagram_activity">,
-                      userPrompt: cleanUserMsg,
-                      history,
-                      lovableApiKey: apiKey,
-                      modelOverride,
-                      tracker: diagramTracker,
-                    });
-                    diagramCode = json;
-                    assistantFence = "rf-json";
-                  }
-                } catch (orchErr) {
-                  // Log usage of the failed run before propagating
-                  try {
-                    const totals = diagramTracker.totals();
-                    const failTitle = cleanUserMsg.slice(0, 120) || def.label;
-                    const errMsg = orchErr instanceof Error ? orchErr.message : String(orchErr);
-                    await logAiUsage({
-                      userId,
-                      artifactKind: outputType,
-                      status: "failed",
-                      model: modelOverride ?? "agent",
-                      purpose: "diagram",
-                      inputTokens: totals.inputTokens,
-                      outputTokens: totals.outputTokens,
-                      totalTokens: totals.totalTokens,
-                      costUsd: totals.costUsd,
-                      docTitle: failTitle,
-                      docType: outputType,
-                      wordCount: 0,
-                      errorMessage: errMsg,
-                    });
-                    usageLogged = true;
-                  } catch (e) {
-                    console.error("[chat-message] diagram failure logAiUsage failed:", e);
-                  }
-                  throw orchErr;
-                }
-
-
-                const title = cleanUserMsg.slice(0, 80) || def.label;
-
-                const { data: diagRow, error: diagErr } = await supabaseAdmin
-                  .from("diagrams")
-                  .insert({
-                    user_id: userId,
-                    thread_id: body.threadId,
-                    kind: outputType,
-                    title,
-                    prompt: cleanUserMsg,
-                    mermaid_code: diagramCode,
-                  })
-                  .select()
-                  .single();
-                if (diagErr) throw new Error(diagErr.message);
-
-                try {
-                  const totals = diagramTracker.totals();
-                  await logAiUsage({
-                    userId,
-                    diagramId: diagRow.id,
-                    artifactKind: outputType,
-                    status: "success",
-                    model: modelOverride ?? "agent",
-                    purpose: "diagram",
-                    inputTokens: totals.inputTokens,
-                    outputTokens: totals.outputTokens,
-                    totalTokens: totals.totalTokens,
-                    costUsd: totals.costUsd,
-                    docTitle: title,
-                    docType: outputType,
-                    wordCount: 0,
-                  });
-                  usageLogged = true;
-                } catch (e) {
-                  console.error("[chat-message] diagram logAiUsage failed:", e);
-                }
-
-
-
-                const assistantContent =
-                  `הנה ${def.label}:\n\n\`\`\`${assistantFence}\n${diagramCode}\n\`\`\``;
-
-                await supabaseAdmin.from("chat_messages").insert({
-                  thread_id: body.threadId,
-                  user_id: userId,
-                  role: "assistant",
-                  content: assistantContent,
-                  artifact_kind: "diagram",
-                  artifact_id: diagRow.id,
-                });
-
-                if (prior.length === 0) {
-                  await supabaseAdmin
-                    .from("chat_threads")
-                    .update({ title: title.slice(0, 100) })
-                    .eq("id", body.threadId);
-                } else {
-                  await supabaseAdmin
-                    .from("chat_threads")
-                    .update({ updated_at: new Date().toISOString() })
-                    .eq("id", body.threadId);
-                }
-
-                enqueue("\n__RESULT__\n" + JSON.stringify({
-                  ok: true,
-                  artifact: { kind: "diagram", id: diagRow.id, mermaid: diagramCode, title },
-                }));
+                  .select("content")
+                  .eq("id", lastAssistantArtifact.artifact_id)
+                  .maybeSingle();
+                if (prevSpec?.content) previousSpec = prevSpec.content as SpecOutput;
               }
+
+              const combinedPrompt = [
+                ...prior.filter((m) => m.role === "user").map((m) => m.content),
+                cleanUserMsg,
+              ].join("\n\n---\n\n");
+
+              const result = await runOrchestrator({
+                userPrompt: combinedPrompt,
+                docType: (outputType as DocumentOutputKey) as DocTypeKey,
+                userId,
+                projectId: null,
+                lovableApiKey: apiKey,
+                previousSpec,
+                reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
+                modelOverride,
+              });
+
+              const title = result.spec.title || def.label;
+              const { data: specRow, error: specErr } = await supabaseAdmin
+                .from("spec_documents")
+                .insert({
+                  user_id: userId,
+                  title: `${title} — ${def.label}`,
+                  prompt: combinedPrompt,
+                  content: result.spec,
+                  doc_type: outputType,
+                  review_score: result.review.score,
+                  review_notes: result.review.notes,
+                  variant: previousSpec ? "revised" : "original",
+                })
+                .select()
+                .single();
+              if (specErr) throw new Error(specErr.message);
+
+              try {
+                await logAiUsage({
+                  userId,
+                  specDocumentId: specRow.id,
+                  model: "multi-agent",
+                  purpose: previousSpec ? "regenerate" : "generate",
+                  inputTokens: result.usage.inputTokens,
+                  outputTokens: result.usage.outputTokens,
+                  totalTokens: result.usage.totalTokens,
+                  costUsd: result.usage.costUsd,
+                });
+                usageLogged = true;
+              } catch (e) {
+                console.error("[chat-message] logAiUsage failed:", e);
+              }
+
+              const assistantContent =
+                `נוצר ${def.label} — **${title}**.\n\n` +
+                `ציון ביקורת: ${result.review.score}/10 · איטרציות: ${result.iterations}`;
+
+              await supabaseAdmin.from("chat_messages").insert({
+                thread_id: body.threadId,
+                user_id: userId,
+                role: "assistant",
+                content: assistantContent,
+                artifact_kind: "spec_document",
+                artifact_id: specRow.id,
+              });
+
+              if (prior.length === 0) {
+                await supabaseAdmin
+                  .from("chat_threads")
+                  .update({ title: title.slice(0, 100) })
+                  .eq("id", body.threadId);
+              } else {
+                await supabaseAdmin
+                  .from("chat_threads")
+                  .update({ updated_at: new Date().toISOString() })
+                  .eq("id", body.threadId);
+              }
+
+              enqueue("\n__RESULT__\n" + JSON.stringify({
+                ok: true,
+                artifact: { kind: "spec_document", id: specRow.id, title },
+              }));
             } catch (err) {
               const msg = err instanceof Error ? err.message : String(err);
-              const userFacingMsg =
-                err instanceof ActivityDiagramGenerationError
-                  ? err.message
-                  : msg;
               console.error("[chat-message] error:", err);
               try {
                 await supabaseAdmin.from("chat_messages").insert({
                   thread_id: body.threadId,
                   user_id: userId,
                   role: "assistant",
-                  content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${userFacingMsg}`,
+                  content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
                 });
               } catch { /* swallow */ }
-              enqueue("\n__ERROR__\n" + userFacingMsg);
+              enqueue("\n__ERROR__\n" + msg);
             } finally {
               clearInterval(heartbeat);
-              if (!usageLogged) {
-                await flushPartialUsage("incomplete");
-              }
+              void usageLogged;
               close();
             }
-
           },
         });
-
 
         return new Response(stream, {
           status: 200,

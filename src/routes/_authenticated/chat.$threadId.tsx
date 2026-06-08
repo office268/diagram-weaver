@@ -362,7 +362,42 @@ function ChatPage() {
         throw new Error(t || `שגיאה ${res.status}`);
       }
       const contentType = res.headers.get("content-type") ?? "";
-      if (contentType.includes("text/plain") && res.body) {
+      if (contentType.includes("application/json")) {
+        const json = (await res.json()) as {
+          ok?: boolean;
+          async?: boolean;
+          jobId?: string;
+          mode?: string;
+        };
+        // Async diagram job — poll diagram_jobs until done/failed
+        if (json.async && json.jobId) {
+          const jobId = json.jobId;
+          // Refresh chat so the user message shows + a "מעבד..." indicator can render
+          await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+          const startedAt = Date.now();
+          const MAX_MS = 10 * 60 * 1000; // 10 minutes safety cap
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            await new Promise((r) => setTimeout(r, 2000));
+            if (Date.now() - startedAt > MAX_MS) {
+              throw new Error("חרגנו מזמן ההמתנה ליצירת התרשים. אפשר לנסות שוב.");
+            }
+            const { data: job, error: jobErr } = await supabase
+              .from("diagram_jobs")
+              .select("status,error_message")
+              .eq("id", jobId)
+              .maybeSingle();
+            if (jobErr) throw new Error(jobErr.message);
+            if (!job) continue;
+            if (job.status === "done") break;
+            if (job.status === "failed") {
+              throw new Error(job.error_message || "יצירת התרשים נכשלה");
+            }
+            // pending/processing — keep polling, refresh chat so progress is visible
+            await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+          }
+        }
+      } else if (contentType.includes("text/plain") && res.body) {
         // Streamed response with heartbeats; the final payload follows __RESULT__ or __ERROR__.
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -383,6 +418,7 @@ function ChatPage() {
           throw new Error("תגובת השרת נקטעה");
         }
       }
+
       await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       await qc.invalidateQueries({ queryKey: ["chat-threads"] });
     } catch (e) {
