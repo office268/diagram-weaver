@@ -594,7 +594,8 @@ function DocumentsPage() {
               return (
                 <li
                   key={`${it.category}-${it.id}`}
-                  className="group grid grid-cols-[1fr_140px_120px_90px_70px] items-center gap-2 px-3 py-1.5 hover:bg-accent/60"
+                  className="group grid items-center gap-2 px-3 py-1.5 hover:bg-accent/60"
+                  style={{ gridTemplateColumns: gridTemplate }}
                 >
                   {openTo ? (
                     <Link
@@ -620,6 +621,18 @@ function DocumentsPage() {
                     )}
                     <button
                       type="button"
+                      onClick={() => {
+                        setRenameTarget(it);
+                        setRenameValue(it.title);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="שנה שם"
+                      title="שנה שם"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setDeleteTarget(it)}
                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
                       aria-label="מחק"
@@ -628,6 +641,7 @@ function DocumentsPage() {
                     </button>
                   </div>
                 </li>
+
               );
             })}
           </ul>
