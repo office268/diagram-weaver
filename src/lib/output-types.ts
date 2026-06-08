@@ -21,11 +21,13 @@ import {
 export type DocumentOutputKey =
   | "business_requirements"
   | "technical_requirements"
+  | "requirements_combined"
   | "initiation"
   | "spec_overview"
   | "spec_detailed"
   | "user_guide"
   | "meeting_summary";
+
 
 
 export type DiagramOutputKey =
