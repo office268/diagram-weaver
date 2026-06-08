@@ -154,7 +154,7 @@ export async function runActivitySwimlaneOrchestrator(params: {
   lovableApiKey: string;
   modelOverride?: string;
   maxFixIterations?: number;
-}): Promise<{ mermaid: string; iterations: number }> {
+}): Promise<{ svg: string; iterations: number }> {
   const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 2 } = params;
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
@@ -183,5 +183,5 @@ export async function runActivitySwimlaneOrchestrator(params: {
     );
   }
 
-  return { mermaid: svg, iterations };
+  return { svg, iterations };
 }
