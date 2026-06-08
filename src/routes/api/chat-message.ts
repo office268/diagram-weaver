@@ -3,8 +3,10 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { ActivityDiagramGenerationError } from "@/lib/activity-diagram-pipeline.server";
-import { getMermaidValidationError } from "@/lib/mermaid-utils";
+import {
+  ActivityDiagramGenerationError,
+  getActivityMermaidValidationError,
+} from "@/lib/activity-diagram-pipeline.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
   OUTPUT_TYPES,
@@ -342,7 +344,7 @@ export const Route = createFileRoute("/api/chat-message")({
                 mermaid = sanitizeMermaidLabels(mermaid);
 
                 if (outputType === "diagram_activity") {
-                  const validationError = getMermaidValidationError(mermaid);
+                  const validationError = getActivityMermaidValidationError(mermaid);
                   if (validationError) {
                     throw new ActivityDiagramGenerationError(
                       "builder_invalid_mermaid",
