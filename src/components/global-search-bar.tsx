@@ -193,44 +193,16 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="border-t border-border bg-card px-4 py-3 [direction:rtl]">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="חפש פרויקטים, מסמכים, תרשימים, קבצים..."
-            className="h-10 pr-9"
-            autoFocus
-          />
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              aria-label="מיון"
-              title={`מיון: ${SORT_LABEL[sortBy]}`}
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>מיון</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
-              <DropdownMenuItem
-                key={k}
-                onClick={() => setSortBy(k)}
-                className="flex items-center justify-between gap-3"
-              >
-                <span>{SORT_LABEL[k]}</span>
-                {sortBy === k && <Check className="h-3.5 w-3.5" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0"
+          aria-label="מוצרים"
+          title="מוצרים של הארגון"
+          onClick={() => setProductsOpen(true)}
+        >
+          <Package className="h-4 w-4" />
+        </Button>
 
         <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
           <SheetTrigger asChild>
@@ -296,16 +268,44 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           </SheetContent>
         </Sheet>
 
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 shrink-0"
-          aria-label="מוצרים"
-          title="מוצרים של הארגון"
-          onClick={() => setProductsOpen(true)}
-        >
-          <Package className="h-4 w-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0"
+              aria-label="מיון"
+              title={`מיון: ${SORT_LABEL[sortBy]}`}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuLabel>מיון</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
+              <DropdownMenuItem
+                key={k}
+                onClick={() => setSortBy(k)}
+                className="flex items-center justify-between gap-3"
+              >
+                <span>{SORT_LABEL[k]}</span>
+                {sortBy === k && <Check className="h-3.5 w-3.5" />}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="חפש פרויקטים, מסמכים, תרשימים, קבצים..."
+            className="h-10 pr-9"
+            autoFocus
+          />
+        </div>
       </div>
 
       <ProductsBrowserSheet open={productsOpen} onOpenChange={setProductsOpen} />
