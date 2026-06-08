@@ -671,6 +671,61 @@ function DocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        open={!!renameTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRenameTarget(null);
+            setRenameValue("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">שינוי שם</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              הזן שם חדש למסמך.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (renameTarget) {
+                renameMut.mutate({ item: renameTarget, title: renameValue });
+              }
+            }}
+            className="space-y-3"
+          >
+            <Input
+              autoFocus
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              maxLength={255}
+              className="text-right"
+              dir="auto"
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel type="button">ביטול</AlertDialogCancel>
+              <AlertDialogAction
+                type="submit"
+                disabled={
+                  renameMut.isPending ||
+                  !renameValue.trim() ||
+                  renameValue.trim() === renameTarget?.title
+                }
+              >
+                {renameMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "שמור"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
