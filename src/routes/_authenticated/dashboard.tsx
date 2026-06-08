@@ -361,52 +361,16 @@ function SectionHeading({
   variant: "uml" | "docs" | "tools";
 }) {
   const config = {
-    uml: {
-      Icon: Shapes,
-      iconBg: "bg-orange-100",
-      iconBorder: "border-orange-200/60",
-      iconColor: "text-orange-600",
-      glow: "bg-orange-200/40",
-      underline: "bg-orange-300",
-      rotate: "rotate-3",
-      underlineW: "w-6",
-    },
-    docs: {
-      Icon: FileText,
-      iconBg: "bg-rose-100",
-      iconBorder: "border-rose-200/60",
-      iconColor: "text-rose-600",
-      glow: "bg-rose-200/40",
-      underline: "bg-rose-300",
-      rotate: "-rotate-2",
-      underlineW: "w-8",
-    },
-    tools: {
-      Icon: Wrench,
-      iconBg: "bg-emerald-100",
-      iconBorder: "border-emerald-200/60",
-      iconColor: "text-emerald-600",
-      glow: "bg-emerald-200/40",
-      underline: "bg-emerald-300",
-      rotate: "rotate-1",
-      underlineW: "w-5",
-    },
+    uml: { underline: "bg-orange-300", underlineW: "w-6" },
+    docs: { underline: "bg-rose-300", underlineW: "w-8" },
+    tools: { underline: "bg-emerald-300", underlineW: "w-5" },
   }[variant];
-  const Icon = config.Icon;
   return (
-    <div className="group mb-3 flex flex-col items-center gap-1.5">
-      <div className="relative flex h-10 w-10 items-center justify-center">
-        <div className={`absolute inset-0 rounded-full blur-md transition-colors ${config.glow} group-hover:opacity-80`} aria-hidden />
-        <div className={`relative flex h-9 w-9 items-center justify-center rounded-2xl border-2 ${config.iconBg} ${config.iconBorder} ${config.rotate} transition-transform group-hover:rotate-0`}>
-          <Icon className={`h-4.5 w-4.5 ${config.iconColor}`} aria-hidden />
-        </div>
-      </div>
-      <div className="flex flex-col items-center gap-1">
-        <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
-          {label}
-        </h2>
-        <div className={`h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
-      </div>
+    <div className="mb-3 flex flex-col items-center gap-1">
+      <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
+        {label}
+      </h2>
+      <div className={`h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
     </div>
   );
 }
