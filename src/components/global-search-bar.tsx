@@ -210,7 +210,7 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="border-t border-border bg-card px-4 py-3 [direction:rtl]">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         <Button
           variant="outline"
           className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
@@ -314,13 +314,13 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative max-w-[240px]">
-          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative w-full max-w-[480px]">
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="חפש..."
-            className="h-10 pr-9"
+            className="h-11 pr-10 text-base"
             autoFocus
           />
         </div>
