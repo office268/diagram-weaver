@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { sanitizeMermaidSvg } from "@/lib/mermaid-utils";
-import { MermaidPreview } from "@/components/mermaid-preview";
+import { sanitizeSvg } from "@/lib/svg-sanitize";
 import { ActivityRFEditor } from "@/components/activity-rf-editor";
 import { parseSvgToRF, isActivityRF, type ActivityRFData } from "@/lib/activity-rf";
 import { Download, Maximize2, Minus, Pencil, Plus, RotateCcw } from "lucide-react";
@@ -168,7 +167,7 @@ export function ActivitySwimlaneRenderer({
   const isRF  = isActivityRF(code);
 
   const safeSvg = useMemo(
-    () => (isSvg ? sanitizeMermaidSvg(code) : null),
+    () => (isSvg ? sanitizeSvg(code) : null),
     [isSvg, code],
   );
 
@@ -282,6 +281,10 @@ export function ActivitySwimlaneRenderer({
     );
   }
 
-  // ── Legacy Mermaid fallback ───────────────────────────────────────────────
-  return <MermaidPreview code={code} hideFullscreen={hideFullscreen} />;
+  // ── Unsupported format fallback ───────────────────────────────────────────
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6 text-sm text-muted-foreground">
+      פורמט התרשים אינו נתמך.
+    </div>
+  );
 }

@@ -271,7 +271,7 @@ export const Route = createFileRoute("/api/chat-message")({
 
                 if (outputType === "diagram_activity") {
                   const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
-                  const { mermaid: raw } = await runActivitySwimlaneOrchestrator({
+                  const { svg: raw } = await runActivitySwimlaneOrchestrator({
                     userPrompt: cleanUserMsg,
                     lovableApiKey: apiKey,
                     modelOverride,

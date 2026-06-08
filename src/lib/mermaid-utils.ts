@@ -1,5 +1,6 @@
 import mermaid from "mermaid";
 import elkLayouts from "@mermaid-js/layout-elk";
+import { sanitizeSvg } from "./svg-sanitize";
 
 let initialized = false;
 
@@ -24,63 +25,8 @@ export function setMermaidTheme(dark: boolean) {
   mermaid.initialize({ ...MERMAID_CONFIG, theme: dark ? "dark" : "default" });
 }
 
-/**
- * Targeted SVG sanitizer for Mermaid output.
- *
- * Why not DOMPurify? Mermaid v11 renders node labels as `<foreignObject>`
- * containing `<div xmlns="http://www.w3.org/1999/xhtml"><span class="nodeLabel">…</span></div>`
- * and ships a `<style>` block whose CSS rules style those inner spans. DOMPurify's
- * SVG/HTML profile combinations repeatedly stripped one of: the foreignObject,
- * the inner HTML elements, or the style block — making labels invisible. The
- * back-and-forth on profile flags has been the recurring source of regressions.
- *
- * Instead we parse the SVG and remove only the dangerous bits. Mermaid runs
- * with `securityLevel: 'strict'`, which already HTML-escapes any user content
- * inside labels — so the remaining risk surface is: <script> tags, event-handler
- * attributes (onclick, onload, …), and javascript:/data: URLs in href/xlink:href.
- */
-export function sanitizeMermaidSvg(svg: string): string {
-  if (typeof window === "undefined") return svg;
-
-  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
-  const root = doc.documentElement;
-  if (!root || root.nodeName === "parsererror") return "";
-
-  // Walk every element and strip script tags + dangerous attributes.
-  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  const toRemove: Element[] = [];
-  // visit the root explicitly too
-  const visit = (el: Element) => {
-    const tag = el.tagName.toLowerCase();
-    if (tag === "script") {
-      toRemove.push(el);
-      return;
-    }
-    for (const attr of Array.from(el.attributes)) {
-      const name = attr.name.toLowerCase();
-      const value = attr.value;
-      if (name.startsWith("on")) {
-        el.removeAttribute(attr.name);
-        continue;
-      }
-      if (
-        (name === "href" || name === "xlink:href") &&
-        /^\s*(javascript|data):/i.test(value)
-      ) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  };
-  visit(root);
-  let n: Node | null = walker.nextNode();
-  while (n) {
-    visit(n as Element);
-    n = walker.nextNode();
-  }
-  for (const el of toRemove) el.remove();
-
-  return new XMLSerializer().serializeToString(root);
-}
+/** @deprecated use `sanitizeSvg` from "@/lib/svg-sanitize" directly. */
+export const sanitizeMermaidSvg = sanitizeSvg;
 
 let renderCounter = 0;
 

@@ -94,7 +94,7 @@ export async function runBuilderAgent(
   const svg = extractSvg(text);
   if (!svg) {
     throw new ActivityDiagramGenerationError(
-      "builder_invalid_mermaid",
+      "builder_invalid_svg",
       "שלב בניית תרשים ה-Activity נכשל — המודל לא החזיר SVG תקין.",
     );
   }
@@ -154,7 +154,7 @@ export async function runActivitySwimlaneOrchestrator(params: {
   lovableApiKey: string;
   modelOverride?: string;
   maxFixIterations?: number;
-}): Promise<{ mermaid: string; iterations: number }> {
+}): Promise<{ svg: string; iterations: number }> {
   const { userPrompt, lovableApiKey, modelOverride, maxFixIterations = 2 } = params;
   const gateway = createLovableAiGatewayProvider(lovableApiKey);
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
@@ -178,10 +178,10 @@ export async function runActivitySwimlaneOrchestrator(params: {
   const finalViolations = validateActivitySvg(svg);
   if (finalViolations.length > 0) {
     throw new ActivityDiagramGenerationError(
-      "builder_invalid_mermaid",
+      "builder_invalid_svg",
       `שלב בניית תרשים ה-Activity נכשל — SVG שנוצר אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
     );
   }
 
-  return { mermaid: svg, iterations };
+  return { svg, iterations };
 }
