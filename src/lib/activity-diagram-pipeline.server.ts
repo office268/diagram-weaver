@@ -47,6 +47,177 @@ export const STAGE2_SYSTEM =
   `\n❌ {{{label}}} → ✓ {{label}} (זוג סוגריים אחד בלבד)` +
   `\n\nהחזר אך ורק קוד Mermaid בתוך \`\`\`mermaid ... \`\`\`.`;
 
+export type ActivityDiagramErrorCode =
+  | "extractor_truncated"
+  | "extractor_invalid_json"
+  | "extractor_invalid_schema"
+  | "builder_invalid_mermaid";
+
+export class ActivityDiagramGenerationError extends Error {
+  constructor(
+    public readonly code: ActivityDiagramErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ActivityDiagramGenerationError";
+  }
+}
+
+function stripJsonCodeFences(raw: string): string {
+  return raw.replace(/```json[^\n]*\n?/gi, "").replace(/```\s*/g, "").trim();
+}
+
+function extractBalancedJsonBlock(raw: string): string | null {
+  const start = raw.search(/[\[{]/);
+  if (start === -1) return null;
+
+  const stack: string[] = [];
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < raw.length; i++) {
+    const char = raw[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{" || char === "[") {
+      stack.push(char);
+      continue;
+    }
+
+    if (char === "}" || char === "]") {
+      const open = stack.at(-1);
+      if (!open) return null;
+      if ((open === "{" && char !== "}") || (open === "[" && char !== "]")) {
+        return null;
+      }
+      stack.pop();
+      if (stack.length === 0) return raw.slice(start, i + 1);
+    }
+  }
+
+  return null;
+}
+
+function repairCommonJsonIssues(raw: string): string {
+  return raw
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+}
+
+export function detectJsonTruncation(raw: string): boolean {
+  const cleaned = stripJsonCodeFences(raw);
+  if (!cleaned) return false;
+
+  if (/\.\.\.$|…$|\[truncated\]$|\[continued\]$/i.test(cleaned)) {
+    return true;
+  }
+
+  const hasJsonStart = /[\[{]/.test(cleaned);
+  if (!hasJsonStart) return false;
+
+  return extractBalancedJsonBlock(cleaned) === null;
+}
+
+export function parseProcessMapResponse(raw: string): ProcessMap {
+  const cleaned = stripJsonCodeFences(raw);
+  const jsonCandidate = extractBalancedJsonBlock(cleaned);
+
+  if (!jsonCandidate) {
+    if (detectJsonTruncation(cleaned)) {
+      throw new ActivityDiagramGenerationError(
+        "extractor_truncated",
+        "Activity extractor returned truncated JSON.",
+      );
+    }
+
+    throw new ActivityDiagramGenerationError(
+      "extractor_invalid_json",
+      "Activity extractor did not return a JSON object.",
+    );
+  }
+
+  let parsed: Partial<ProcessMap>;
+  try {
+    parsed = JSON.parse(repairCommonJsonIssues(jsonCandidate)) as Partial<ProcessMap>;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/Unexpected end of JSON input/i.test(message) || detectJsonTruncation(jsonCandidate)) {
+      throw new ActivityDiagramGenerationError(
+        "extractor_truncated",
+        "Activity extractor returned truncated JSON.",
+      );
+    }
+
+    throw new ActivityDiagramGenerationError(
+      "extractor_invalid_json",
+      `Activity extractor returned invalid JSON: ${message}`,
+    );
+  }
+
+  if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) {
+    throw new ActivityDiagramGenerationError(
+      "extractor_invalid_schema",
+      "Activity extractor JSON is missing actors.",
+    );
+  }
+
+  const steps = Array.isArray(parsed.steps)
+    ? parsed.steps.filter(
+        (step): step is { actor: string; action: string } =>
+          !!step &&
+          typeof step === "object" &&
+          typeof step.actor === "string" &&
+          typeof step.action === "string",
+      )
+    : [];
+
+  const decisions = Array.isArray(parsed.decisions)
+    ? parsed.decisions.filter(
+        (
+          decision,
+        ): decision is { label: string; branches: string[] } =>
+          !!decision &&
+          typeof decision === "object" &&
+          typeof decision.label === "string" &&
+          Array.isArray(decision.branches) &&
+          decision.branches.every((branch) => typeof branch === "string"),
+      )
+    : [];
+
+  const merges = Array.isArray(parsed.merges)
+    ? parsed.merges.filter(
+        (merge): merge is { from: string[]; to: string } =>
+          !!merge &&
+          typeof merge === "object" &&
+          Array.isArray(merge.from) &&
+          merge.from.every((item) => typeof item === "string") &&
+          typeof merge.to === "string",
+      )
+    : [];
+
+  return {
+    actors: parsed.actors.filter((actor): actor is string => typeof actor === "string"),
+    steps,
+    decisions,
+    merges,
+  };
+}
+
 export function postProcessActivityMermaid(code: string): string {
   // Step 1: assign ASCII IDs to any `subgraph "label"` (without an id) and
   // remap matching `style "label" ...` lines to the same id. Mermaid's
@@ -94,6 +265,35 @@ export function postProcessActivityMermaid(code: string): string {
   return transformed.trimStart().startsWith("%%")
     ? transformed
     : `${elkDirective}\n${transformed}`;
+}
+
+export function normalizeActivityMermaidForValidation(code: string): string {
+  return postProcessActivityMermaid(code)
+    .replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}")
+    .trim();
+}
+
+export function getActivityMermaidValidationError(code: string): string | null {
+  const normalized = normalizeActivityMermaidForValidation(code);
+  const violations = validateActivityDiagram(normalized);
+  if (violations.length > 0) return violations[0];
+
+  const lines = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const subgraphStarts = lines.filter((line) => /^subgraph\b/.test(line)).length;
+  const subgraphEnds = lines.filter((line) => line === "end").length;
+  if (subgraphStarts !== subgraphEnds) {
+    return "מספר פקודות subgraph/end אינו מאוזן.";
+  }
+
+  if (lines.some((line) => /fill:[^,\s]+,[a-z]/i.test(line))) {
+    return "נמצאה פקודת style פגומה עם פסיק/טקסט צמודים.";
+  }
+
+  return null;
 }
 
 
@@ -184,15 +384,7 @@ export async function runTwoStagePipeline(
       messages: [{ role: "user", content: userPrompt }],
       temperature: 0,
     });
-    const clean = text.replace(/```json[^\n]*\n?/g, "").replace(/```\s*/g, "").trim();
-    const parsed = JSON.parse(clean) as Partial<ProcessMap>;
-    if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) throw new Error("invalid");
-    processMap = {
-      actors: parsed.actors,
-      steps: parsed.steps ?? [],
-      decisions: parsed.decisions ?? [],
-      merges: parsed.merges ?? [],
-    };
+    processMap = parseProcessMapResponse(text);
   } catch {
     return null;
   }

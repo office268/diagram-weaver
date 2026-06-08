@@ -109,11 +109,52 @@ function repairTripleDiamond(code: string): string {
   return code.replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}");
 }
 
+export function normalizeMermaidForValidation(code: string): string {
+  return repairTripleDiamond(repairMermaidInitDirective(code));
+}
+
+export function getMermaidValidationError(code: string): string | null {
+  const normalized = normalizeMermaidForValidation(code);
+
+  const lines = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return "קוד Mermaid ריק.";
+
+  const subgraphStarts = lines.filter((line) => /^subgraph\b/.test(line)).length;
+  const subgraphEnds = lines.filter((line) => line === "end").length;
+  if (subgraphStarts !== subgraphEnds) {
+    return "מספר פקודות subgraph/end אינו מאוזן.";
+  }
+
+  for (const line of lines) {
+    if (/^style\s+"/.test(line)) {
+      return 'פקודת style מפנה לטקסט מצוטט במקום למזהה ASCII.';
+    }
+    if (/^subgraph\s+"/.test(line)) {
+      return 'subgraph חייב מזהה ASCII לפני התווית, למשל subgraph LANE1["עובד"].';
+    }
+    if (/\{\{\{/.test(line)) {
+      return 'diamond הוגדר עם שלוש שכבות סוגריים במקום שתיים.';
+    }
+    if (/\bDONE\s*\(\s*\[/.test(line)) {
+      return 'צומת הסיום DONE חייב להיכתב עם סוגריים עגולים כפולים.';
+    }
+    if (/fill:[^,\s]+,[a-z]/i.test(line)) {
+      return 'נמצאה פקודת style פגומה עם פסיק/טקסט צמודים.';
+    }
+  }
+
+  return null;
+}
+
 export async function renderMermaid(
   code: string
 ): Promise<{ svg: string; error: null } | { svg: null; error: string }> {
   initMermaid();
-  const safeCode = repairTripleDiamond(repairMermaidInitDirective(code));
+  const safeCode = normalizeMermaidForValidation(code);
   try {
     await mermaid.parse(safeCode);
     const id = `m-${Date.now()}-${++renderCounter}`;

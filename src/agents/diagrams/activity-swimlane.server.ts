@@ -2,8 +2,10 @@ import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 import {
+  ActivityDiagramGenerationError,
   STAGE1_SYSTEM,
   STAGE2_SYSTEM,
+  parseProcessMapResponse,
   postProcessActivityMermaid,
   validateActivityDiagram,
   reviewActivityDiagram,
@@ -18,70 +20,61 @@ function extractMermaid(text: string): string {
   return text.trim();
 }
 
-/** Agent 1 — extract structured ProcessMap from natural language */
-function extractJsonObject(raw: string): string | null {
-  // Strip code fences if present
-  let s = raw.replace(/```json[^\n]*\n?/gi, "").replace(/```\s*/g, "").trim();
-  // Find first balanced { ... } block
-  const start = s.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let inStr = false;
-  let esc = false;
-  for (let i = start; i < s.length; i++) {
-    const c = s[i];
-    if (inStr) {
-      if (esc) esc = false;
-      else if (c === "\\") esc = true;
-      else if (c === '"') inStr = false;
-      continue;
-    }
-    if (c === '"') inStr = true;
-    else if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) return s.slice(start, i + 1);
-    }
-  }
-  return null;
-}
-
 export async function runExtractorAgent(
   model: Model,
   userPrompt: string,
-): Promise<ProcessMap | null> {
+): Promise<ProcessMap> {
   let text = "";
-  try {
-    const result = await generateText({
-      model,
-      system: STAGE1_SYSTEM,
-      messages: [{ role: "user", content: userPrompt }],
-      temperature: 0,
-    });
-    text = result.text;
-    const clean = extractJsonObject(text) ?? text.trim();
-    const parsed = JSON.parse(clean) as Partial<ProcessMap>;
-    if (!Array.isArray(parsed.actors) || parsed.actors.length === 0) {
-      console.error("[activity extractor] no actors in parsed JSON:", clean.slice(0, 500));
-      return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const system =
+        attempt === 0
+          ? STAGE1_SYSTEM
+          : `${STAGE1_SYSTEM}\n\nניסיון חוזר: החזר אובייקט JSON מלא ותקין בלבד. אל תחתוך את הפלט, אל תעטוף ב-markdown, ואל תחזיר טקסט נוסף.`;
+
+      const result = await generateText({
+        model,
+        system,
+        messages: [{ role: "user", content: userPrompt }],
+        temperature: 0,
+      });
+      text = result.text;
+      return parseProcessMapResponse(text);
+    } catch (err) {
+      if (
+        err instanceof ActivityDiagramGenerationError &&
+        attempt === 0 &&
+        (err.code === "extractor_truncated" || err.code === "extractor_invalid_json")
+      ) {
+        continue;
+      }
+
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
+      if (/payment required|402/i.test(msg)) {
+        throw new Error("נגמרו הקרדיטים ל-AI. יש להוסיף קרדיטים בהגדרות > שימוש (402 Payment Required).");
+      }
+      if (/rate limit|429/i.test(msg)) {
+        throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
+      }
+
+      if (err instanceof ActivityDiagramGenerationError) {
+        if (err.code === "extractor_truncated") {
+          throw new Error("שלב חילוץ מבנה התהליך נכשל — מודל ה-AI החזיר JSON קטוע. נסה שוב; אם זה חוזר, קצר מעט את התיאור או חלק אותו לשלבים.");
+        }
+        if (err.code === "extractor_invalid_schema") {
+          throw new Error("שלב חילוץ מבנה התהליך נכשל — לא זוהו שחקנים תקינים בפלט המובנה. נסה לנסח את התהליך עם שחקנים ושלבים ברורים.");
+        }
+        throw new Error("שלב חילוץ מבנה התהליך נכשל — הפלט המובנה לא היה JSON תקין.");
+      }
+
+      throw err instanceof Error
+        ? err
+        : new Error("שלב חילוץ מבנה התהליך נכשל מסיבה לא ידועה.");
     }
-    return {
-      actors: parsed.actors,
-      steps: parsed.steps ?? [],
-      decisions: parsed.decisions ?? [],
-      merges: parsed.merges ?? [],
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[activity extractor] failed:", msg, "raw:", text.slice(0, 500));
-    if (/payment required|402/i.test(msg)) {
-      throw new Error("נגמרו הקרדיטים ל-AI. יש להוסיף קרדיטים בהגדרות > שימוש (402 Payment Required).");
-    }
-    if (/rate limit|429/i.test(msg)) {
-      throw new Error("חרגת ממכסת הבקשות ל-AI. נסה שוב בעוד כמה רגעים (429 Rate Limit).");
-    }
-    return null;
   }
+
+  throw new Error("שלב חילוץ מבנה התהליך נכשל — לא התקבל פלט מובנה תקין.");
 }
 
 /** Agent 2 — generate Mermaid swimlane from ProcessMap + original prompt */
@@ -165,7 +158,6 @@ export async function runActivitySwimlaneOrchestrator(params: {
   const model = gateway(modelOverride ?? DEFAULT_AGENT_MODEL);
 
   const processMap = await runExtractorAgent(model, userPrompt);
-  if (!processMap) throw new Error("שלב חילוץ מבנה התהליך נכשל — לא ניתן היה לזהות שחקנים/שלבים מהתיאור. נסה לנסח מחדש בצורה ברורה יותר.");
 
   let mermaid = await runBuilderAgent(model, processMap, userPrompt);
   let iterations = 1;
@@ -182,5 +174,14 @@ export async function runActivitySwimlaneOrchestrator(params: {
     iterations++;
   }
 
-  return { mermaid: postProcessActivityMermaid(mermaid), iterations };
+  const finalMermaid = postProcessActivityMermaid(mermaid);
+  const finalViolations = validateActivityDiagram(finalMermaid);
+  if (finalViolations.length > 0) {
+    throw new ActivityDiagramGenerationError(
+      "builder_invalid_mermaid",
+      `שלב בניית תרשים ה-Activity נכשל — קוד Mermaid שנוצר עדיין אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
+    );
+  }
+
+  return { mermaid: finalMermaid, iterations };
 }
