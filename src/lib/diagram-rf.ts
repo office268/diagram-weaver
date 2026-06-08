@@ -321,6 +321,58 @@ export function buildDiagramRF(out: DiagramAiOutput): DiagramRFData {
     });
   }
 
+  // Use-case: force actors OUTSIDE the system boundary (dagre is unaware of it).
+  if (out.kind === "diagram_usecase") {
+    const useCases = positioned.filter((n) => n.data.nodeType === "useCase");
+    const actors = positioned.filter((n) => n.data.nodeType === "actor");
+    if (useCases.length > 0 && actors.length > 0) {
+      const ucW = NODE_SIZE.useCase.w;
+      const ucH = NODE_SIZE.useCase.h;
+      const aW = NODE_SIZE.actor.w;
+      const aH = NODE_SIZE.actor.h;
+      const ucBounds = useCases.reduce(
+        (acc, n) => ({
+          minX: Math.min(acc.minX, n.position.x),
+          maxX: Math.max(acc.maxX, n.position.x + ucW),
+          minY: Math.min(acc.minY, n.position.y),
+          maxY: Math.max(acc.maxY, n.position.y + ucH),
+        }),
+        { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+      );
+
+      const ucIds = new Set(useCases.map((u) => u.id));
+      const gap = 80; // > sysBoundary padding (40) so actors stay outside frame
+      const left: Node<DiagramNodeData>[] = [];
+      const right: Node<DiagramNodeData>[] = [];
+      for (const a of actors) {
+        const isSource = out.edges.some(
+          (e) => e.source === a.id && ucIds.has(e.target),
+        );
+        const isTargetOnly =
+          !isSource &&
+          out.edges.some((e) => e.target === a.id && ucIds.has(e.source));
+        if (isTargetOnly) right.push(a);
+        else left.push(a);
+      }
+
+      const placeColumn = (
+        col: Node<DiagramNodeData>[],
+        x: number,
+      ) => {
+        // preserve dagre's vertical ordering
+        col.sort((p, q) => p.position.y - q.position.y);
+        const H = Math.max(ucBounds.maxY - ucBounds.minY, aH * col.length);
+        const n = col.length;
+        col.forEach((a, i) => {
+          const cy = ucBounds.minY + ((i + 1) * H) / (n + 1);
+          a.position = { x, y: cy - aH / 2 };
+        });
+      };
+      placeColumn(left, ucBounds.minX - gap - aW);
+      placeColumn(right, ucBounds.maxX + gap);
+    }
+  }
+
   // systemBoundary backdrop for use-case
   const sysBoundary = out.nodes.find((n) => n.type === "systemBoundary");
   if (sysBoundary && positioned.length > 0) {
