@@ -127,6 +127,8 @@ export async function reviewActivitySvg(
   model: Parameters<typeof generateText>[0]["model"],
   svgCode: string,
   originalPrompt: string,
+  tracker?: { track(model: string, usage: unknown): void },
+  modelName?: string,
 ): Promise<DiagramReviewResult> {
   try {
     const userMessage =
@@ -134,12 +136,14 @@ export async function reviewActivitySvg(
       `קוד SVG שנוצר:\n${svgCode.slice(0, 6000)}\n\n` +
       `בדוק את התרשים והחזר JSON לפי הפורמט המבוקש.`;
 
-    const { text } = await generateText({
+    const r = await generateText({
       model,
       system: SVG_REVIEW_SYSTEM,
       messages: [{ role: "user", content: userMessage }],
       temperature: 0,
     });
+    if (tracker && modelName) tracker.track(modelName, r.usage as never);
+    const text = r.text;
 
     const clean = text.replace(/```json[^\n]*\n?/g, "").replace(/```\s*/g, "").trim();
     const parsed = JSON.parse(clean) as Partial<DiagramReviewResult>;
