@@ -211,6 +211,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "spec_detailed",
   "diagram_activity",
   "meeting_summary",
+  "user_story",
 ];
 
 // Less common types — shown inside the "More…" tile.
