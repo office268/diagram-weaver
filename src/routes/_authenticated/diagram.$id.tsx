@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MermaidPreview } from "@/components/mermaid-preview";
-import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { getDiagram } from "@/lib/diagrams.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 
@@ -90,11 +89,7 @@ function DiagramPage() {
       </div>
 
       <div className="h-[70vh] overflow-hidden rounded-xl border border-border bg-card">
-        {d.kind === "diagram_activity" ? (
-          <ActivitySwimlaneRenderer mermaidCode={d.mermaid_code ?? ""} title={d.title} />
-        ) : (
-          <MermaidPreview code={d.mermaid_code ?? ""} />
-        )}
+        <MermaidPreview code={d.mermaid_code ?? ""} />
       </div>
     </div>
   );
