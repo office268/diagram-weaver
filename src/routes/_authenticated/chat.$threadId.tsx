@@ -676,7 +676,6 @@ function ChatPage() {
             </div>
           </div>
 
-        </div>
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
