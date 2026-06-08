@@ -194,7 +194,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   user_story: {
     key: "user_story",
     category: "document",
-    label: "user story",
+    label: "User Story",
     description: "(azure/jira)",
     icon: List,
     colorClass: "text-fuchsia-500",
