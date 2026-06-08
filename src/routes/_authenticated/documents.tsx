@@ -10,26 +10,21 @@ import {
   GitBranch,
   ExternalLink,
   Loader2,
-  SlidersHorizontal,
-  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   FileUp,
+
   X,
   Check,
   Pencil,
+  Filter,
 } from "lucide-react";
+
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-} from "@/components/ui/sheet";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,15 +70,10 @@ type Item = {
   meta?: string; // for uploads: size/mime
 };
 
-type SortKey = "date_desc" | "date_asc" | "name" | "type";
+type SortCol = "name" | "type" | "date" | "size";
+type SortDir = "asc" | "desc";
 type GroupFilter = "all" | "document" | "diagram" | "upload";
 
-const SORT_LABEL: Record<SortKey, string> = {
-  date_desc: "חדש → ישן",
-  date_asc: "ישן → חדש",
-  name: "לפי שם (א׳-ת׳)",
-  type: "לפי סוג",
-};
 
 const GROUP_LABEL: Record<GroupFilter, string> = {
   all: "הכל",
@@ -115,11 +105,12 @@ function DocumentsPage() {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
   const [typeFilter, setTypeFilter] = useState<OutputKey | "all">("all");
-  const [sortBy, setSortBy] = useState<SortKey>("date_desc");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<SortCol>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
   const [renameTarget, setRenameTarget] = useState<Item | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
 
   // Column widths (Windows Explorer-like resizable columns).
   // `name` is the flex column (1fr); others are pixel widths.
@@ -224,22 +215,40 @@ function DocumentsPage() {
         it.prompt.toLowerCase().includes(q)
       );
     });
+    const dir = sortDir === "asc" ? 1 : -1;
     out.sort((a, b) => {
-      switch (sortBy) {
-        case "date_asc":
-          return a.createdAt < b.createdAt ? -1 : 1;
+      let cmp = 0;
+      switch (sortCol) {
         case "name":
-          return a.title.localeCompare(b.title, "he");
+          cmp = a.title.localeCompare(b.title, "he");
+          break;
         case "type":
-          return a.category.localeCompare(b.category) ||
+          cmp =
+            a.category.localeCompare(b.category) ||
             String(a.type).localeCompare(String(b.type));
-        case "date_desc":
+          break;
+        case "size": {
+          // uploads expose a size string in meta; others = 0
+          const parse = (s?: string) => {
+            if (!s) return 0;
+            const m = s.match(/([\d.]+)\s*(B|KB|MB)/i);
+            if (!m) return 0;
+            const n = parseFloat(m[1]);
+            const u = m[2].toUpperCase();
+            return u === "MB" ? n * 1024 * 1024 : u === "KB" ? n * 1024 : n;
+          };
+          cmp = parse(a.meta) - parse(b.meta);
+          break;
+        }
+        case "date":
         default:
-          return a.createdAt < b.createdAt ? 1 : -1;
+          cmp = a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
       }
+      return cmp * dir;
     });
     return out;
-  }, [items, query, group, typeFilter, sortBy]);
+  }, [items, query, group, typeFilter, sortCol, sortDir]);
+
 
   const deleteMut = useMutation({
     mutationFn: async (item: Item) => {
@@ -285,8 +294,6 @@ function DocumentsPage() {
   });
 
   const isLoading = specsLoading || diagramsLoading || uploadsLoading;
-  const activeFilterCount =
-    (group !== "all" ? 1 : 0) + (typeFilter !== "all" ? 1 : 0);
 
   // Sub-types available in the currently selected group
   const subTypeKeys = useMemo<OutputKey[]>(() => {
@@ -298,6 +305,27 @@ function DocumentsPage() {
     });
   }, [group]);
 
+  const setSort = (col: SortCol) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortCol(col);
+      setSortDir(col === "date" ? "desc" : "asc");
+    }
+  };
+
+  const SortArrow = ({ col }: { col: SortCol }) =>
+    sortCol === col ? (
+      sortDir === "asc" ? (
+        <ArrowUp className="h-3 w-3" />
+      ) : (
+        <ArrowDown className="h-3 w-3" />
+      )
+    ) : null;
+
+  const typeFilterActive = group !== "all" || typeFilter !== "all";
+
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-5">
@@ -306,7 +334,7 @@ function DocumentsPage() {
         </h1>
       </div>
 
-      {/* Toolbar: search + sort + filter */}
+      {/* Toolbar: search only — sort/filter moved to column headers */}
       <div className="mb-4 flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -317,177 +345,9 @@ function DocumentsPage() {
             className="h-10 pr-9"
           />
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0"
-              aria-label="מיון"
-              title={`מיון: ${SORT_LABEL[sortBy]}`}
-            >
-              <ArrowUpDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>מיון</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => (
-              <DropdownMenuItem
-                key={k}
-                onClick={() => setSortBy(k)}
-                className="flex items-center justify-between gap-3"
-              >
-                <span>{SORT_LABEL[k]}</span>
-                {sortBy === k && <Check className="h-3.5 w-3.5" />}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-          <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="relative h-10 w-10 shrink-0"
-              aria-label="סינון"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {activeFilterCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
-                  {activeFilterCount}
-                </span>
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="text-right">סינון</SheetTitle>
-            </SheetHeader>
-
-            <div className="mt-4 space-y-5">
-              <div>
-                <div className="mb-2 text-xs font-medium text-muted-foreground">
-                  קטגוריה
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(GROUP_LABEL) as GroupFilter[]).map((g) => {
-                    const active = group === g;
-                    return (
-                      <button
-                        key={g}
-                        onClick={() => {
-                          setGroup(g);
-                          setTypeFilter("all");
-                        }}
-                        className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                          active
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-card hover:bg-accent"
-                        }`}
-                      >
-                        {GROUP_LABEL[g]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {subTypeKeys.length > 0 && (
-                <div>
-                  <div className="mb-2 text-xs font-medium text-muted-foreground">
-                    סוג
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => setTypeFilter("all")}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                        typeFilter === "all"
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-card hover:bg-accent"
-                      }`}
-                    >
-                      כל הסוגים
-                    </button>
-                    {subTypeKeys.map((key) => {
-                      const t = OUTPUT_TYPES[key];
-                      const active = typeFilter === key;
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => setTypeFilter(key)}
-                          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
-                            active
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-card hover:bg-accent"
-                          }`}
-                        >
-                          <t.icon
-                            className={`h-3 w-3 ${active ? "" : t.colorClass}`}
-                          />
-                          {t.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <SheetFooter className="mt-6 flex-row justify-between gap-2 sm:justify-between">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setGroup("all");
-                  setTypeFilter("all");
-                }}
-                disabled={activeFilterCount === 0}
-              >
-                <X className="ml-1 h-4 w-4" />
-                נקה הכל
-              </Button>
-              <Button onClick={() => setFilterOpen(false)} className="btn-gradient border-0">
-                הצג תוצאות
-              </Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
       </div>
 
-      {/* Active filter chips summary */}
-      {activeFilterCount > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
-          {group !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-2">
-              {GROUP_LABEL[group]}
-              <button
-                onClick={() => {
-                  setGroup("all");
-                  setTypeFilter("all");
-                }}
-                aria-label="הסר"
-                className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-          {typeFilter !== "all" && (
-            <Badge variant="secondary" className="gap-1 pr-2">
-              {OUTPUT_TYPES[typeFilter]?.label}
-              <button
-                onClick={() => setTypeFilter("all")}
-                aria-label="הסר"
-                className="ml-0.5 rounded-full hover:bg-muted-foreground/20"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-        </div>
-      )}
+
 
       {isLoading ? (
         <div className="flex h-32 items-center justify-center">
@@ -517,31 +377,141 @@ function DocumentsPage() {
             className="grid items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground"
             style={{ gridTemplateColumns: gridTemplate }}
           >
-            <div className="truncate">שם</div>
-            <div className="relative truncate">
+            <div className="flex min-w-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSort("name")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                שם
+                <SortArrow col="name" />
+              </button>
+            </div>
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("type")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              סוג
+              <button
+                type="button"
+                onClick={() => setSort("type")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                סוג
+                <SortArrow col="type" />
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="סנן לפי סוג"
+                    className={`relative ms-auto inline-flex h-5 w-5 items-center justify-center rounded hover:bg-accent ${
+                      typeFilterActive ? "text-primary" : ""
+                    }`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    {typeFilterActive && (
+                      <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-80 w-56 overflow-y-auto">
+                  <DropdownMenuLabel>קטגוריה</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {(Object.keys(GROUP_LABEL) as GroupFilter[]).map((g) => (
+                    <DropdownMenuItem
+                      key={g}
+                      onClick={() => {
+                        setGroup(g);
+                        setTypeFilter("all");
+                      }}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span>{GROUP_LABEL[g]}</span>
+                      {group === g && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                  {subTypeKeys.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>סוג</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => setTypeFilter("all")}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <span>כל הסוגים</span>
+                        {typeFilter === "all" && <Check className="h-3.5 w-3.5" />}
+                      </DropdownMenuItem>
+                      {subTypeKeys.map((key) => {
+                        const t = OUTPUT_TYPES[key];
+                        return (
+                          <DropdownMenuItem
+                            key={key}
+                            onClick={() => setTypeFilter(key)}
+                            className="flex items-center justify-between gap-3"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <t.icon className={`h-3 w-3 ${t.colorClass}`} />
+                              {t.label}
+                            </span>
+                            {typeFilter === key && <Check className="h-3.5 w-3.5" />}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </>
+                  )}
+                  {typeFilterActive && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setGroup("all");
+                          setTypeFilter("all");
+                        }}
+                      >
+                        <X className="ml-1 h-3.5 w-3.5" />
+                        נקה סינון
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="relative truncate">
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("date")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              תאריך
+              <button
+                type="button"
+                onClick={() => setSort("date")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                תאריך
+                <SortArrow col="date" />
+              </button>
             </div>
-            <div className="relative truncate">
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("size")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              גודל
+              <button
+                type="button"
+                onClick={() => setSort("size")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                גודל
+                <SortArrow col="size" />
+              </button>
             </div>
+
             <div className="relative truncate text-left">
               <span
                 onMouseDown={startResize("actions")}
@@ -551,6 +521,7 @@ function DocumentsPage() {
               פעולות
             </div>
           </div>
+
 
 
           <ul className="divide-y divide-border">
