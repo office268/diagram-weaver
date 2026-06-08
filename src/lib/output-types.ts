@@ -74,7 +74,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   business_requirements: {
     key: "business_requirements",
     category: "document",
-    label: "מסמך דרישות עסקי",
+    label: "מסמך דרישות עסקי / טכני",
     description: "מטרות עסקיות, KPIs, בעלי עניין ודרישות עסקיות.",
     icon: Briefcase,
     colorClass: "text-amber-500",
