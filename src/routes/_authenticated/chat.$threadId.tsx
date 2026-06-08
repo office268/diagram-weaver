@@ -24,6 +24,9 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  ThumbsUp,
+  ThumbsDown,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
