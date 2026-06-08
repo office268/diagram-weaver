@@ -271,34 +271,62 @@ export const Route = createFileRoute("/api/chat-message")({
                 let diagramCode: string;
                 let assistantFence: "svg" | "rf-json";
 
-                if (outputType === "diagram_activity") {
-                  const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
-                  const { svg: raw } = await runActivitySwimlaneOrchestrator({
-                    userPrompt: cleanUserMsg,
-                    lovableApiKey: apiKey,
-                    modelOverride,
-                    tracker: diagramTracker,
-                  });
-                  diagramCode = raw;
-                  assistantFence = "svg";
-                } else {
-                  const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
-                  const history: { role: "user" | "assistant"; content: string }[] = prior.map(
-                    (m) => ({
-                      role: m.role === "assistant" ? "assistant" : "user",
-                      content: m.content,
-                    }),
-                  );
-                  const { json } = await runRfJsonDiagramAgent({
-                    kind: outputType as Exclude<DiagramOutputKey, "diagram_activity">,
-                    userPrompt: cleanUserMsg,
-                    history,
-                    lovableApiKey: apiKey,
-                    modelOverride,
-                    tracker: diagramTracker,
-                  });
-                  diagramCode = json;
-                  assistantFence = "rf-json";
+                try {
+                  if (outputType === "diagram_activity") {
+                    const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
+                    const { svg: raw } = await runActivitySwimlaneOrchestrator({
+                      userPrompt: cleanUserMsg,
+                      lovableApiKey: apiKey,
+                      modelOverride,
+                      tracker: diagramTracker,
+                    });
+                    diagramCode = raw;
+                    assistantFence = "svg";
+                  } else {
+                    const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
+                    const history: { role: "user" | "assistant"; content: string }[] = prior.map(
+                      (m) => ({
+                        role: m.role === "assistant" ? "assistant" : "user",
+                        content: m.content,
+                      }),
+                    );
+                    const { json } = await runRfJsonDiagramAgent({
+                      kind: outputType as Exclude<DiagramOutputKey, "diagram_activity">,
+                      userPrompt: cleanUserMsg,
+                      history,
+                      lovableApiKey: apiKey,
+                      modelOverride,
+                      tracker: diagramTracker,
+                    });
+                    diagramCode = json;
+                    assistantFence = "rf-json";
+                  }
+                } catch (orchErr) {
+                  // Log usage of the failed run before propagating
+                  try {
+                    const { logAiUsage } = await import("@/lib/ai-usage.server");
+                    const totals = diagramTracker.totals();
+                    const failTitle = cleanUserMsg.slice(0, 120) || def.label;
+                    const errMsg = orchErr instanceof Error ? orchErr.message : String(orchErr);
+                    await logAiUsage({
+                      userId,
+                      artifactKind: outputType,
+                      status: "failed",
+                      model: modelOverride ?? "agent",
+                      purpose: "diagram",
+                      inputTokens: totals.inputTokens,
+                      outputTokens: totals.outputTokens,
+                      totalTokens: totals.totalTokens,
+                      costUsd: totals.costUsd,
+                      docTitle: failTitle,
+                      docType: outputType,
+                      wordCount: 0,
+                      errorMessage: errMsg,
+                    });
+                  } catch (e) {
+                    console.error("[chat-message] diagram failure logAiUsage failed:", e);
+                  }
+                  throw orchErr;
                 }
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
@@ -324,6 +352,7 @@ export const Route = createFileRoute("/api/chat-message")({
                     userId,
                     diagramId: diagRow.id,
                     artifactKind: outputType,
+                    status: "success",
                     model: modelOverride ?? "agent",
                     purpose: "diagram",
                     inputTokens: totals.inputTokens,
@@ -337,6 +366,7 @@ export const Route = createFileRoute("/api/chat-message")({
                 } catch (e) {
                   console.error("[chat-message] diagram logAiUsage failed:", e);
                 }
+
 
                 const assistantContent =
                   `הנה ${def.label}:\n\n\`\`\`${assistantFence}\n${diagramCode}\n\`\`\``;
