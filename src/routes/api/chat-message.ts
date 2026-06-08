@@ -12,8 +12,6 @@ import {
 } from "@/lib/output-types";
 import type { DocTypeKey } from "@/lib/doc-types";
 import type { SpecOutput } from "@/lib/spec-output-schema";
-import { waitUntil } from "@/lib/cf-context.server";
-import { runDiagramJob } from "@/lib/diagram-job.server";
 
 const BodySchema = z.object({
   threadId: z.string().uuid(),
@@ -147,10 +145,11 @@ export const Route = createFileRoute("/api/chat-message")({
           }
         }
 
-        // ── Diagram path: create an async job and return immediately ──
-        // The heavy pipeline runs via `waitUntil` so a dropped HTTP connection
-        // does not kill the generation. The client polls `diagram_jobs` for
-        // completion and refreshes the chat when the job is done/failed.
+        // ── Diagram path: enqueue a job; pg_cron worker picks it up ──
+        // The HTTP request returns immediately with the jobId. A pg_cron
+        // task polls /api/public/hooks/process-diagram-jobs every few
+        // seconds and runs the heavy AI pipeline out of band. The client
+        // polls `diagram_jobs.status` for completion.
         if (def.category === "diagram") {
           const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
           const modelOverride = await loadAgentModelOverride();
@@ -169,27 +168,6 @@ export const Route = createFileRoute("/api/chat-message")({
             .select()
             .single();
           if (jobErr) return new Response(jobErr.message, { status: 500 });
-
-          const priorHistory = prior.map((m) => ({
-            role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
-            content: m.content,
-          }));
-
-          // Fire-and-forget — Cloudflare keeps the Worker alive via waitUntil
-          // until the pipeline finishes writing its results.
-          waitUntil(
-            runDiagramJob({
-              jobId: jobRow.id,
-              threadId: body.threadId,
-              userId,
-              kind: diagramKind,
-              prompt: cleanUserMsg,
-              lovableApiKey: apiKey,
-              modelOverride: modelOverride ?? undefined,
-              priorHistory,
-              isFirstMessage: prior.length === 0,
-            }),
-          );
 
           return Response.json({ ok: true, async: true, jobId: jobRow.id });
         }
