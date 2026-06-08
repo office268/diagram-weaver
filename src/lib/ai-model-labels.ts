@@ -1,8 +1,6 @@
 export const MODEL_LABELS: Record<string, string> = {
   "google/gemini-2.5-pro": "Gemini 2.5 Pro — Reasoning (ברירת מחדל)",
   "google/gemini-3.1-pro-preview": "Gemini 3.1 Pro Preview — Reasoning",
-  "google/gemini-3-flash-preview": "Gemini 3 Flash Preview — מהיר וזול",
-  "google/gemini-2.5-flash": "Gemini 2.5 Flash — מאוזן",
   "openai/gpt-5.4": "GPT-5.4 — Reasoning",
   "openai/gpt-5.4-pro": "GPT-5.4 Pro — Reasoning מתקדם",
   "openai/gpt-5.5": "GPT-5.5 — Reasoning מתקדם",
