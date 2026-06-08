@@ -83,6 +83,7 @@ export function AiUsageCard() {
                 <TableRow>
                   <TableHead className="text-right">תאריך</TableHead>
                   <TableHead className="text-right">מסמך</TableHead>
+                  {isAdmin ? <TableHead className="text-right">משתמש</TableHead> : null}
                   <TableHead className="text-right">סוג</TableHead>
                   <TableHead className="text-right">פעולה</TableHead>
                   <TableHead className="text-right">מודל</TableHead>
