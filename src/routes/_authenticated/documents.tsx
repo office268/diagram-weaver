@@ -436,103 +436,97 @@ function DocumentsPage() {
           }
         />
       ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((it) => {
-            const def = it.category !== "upload" ? OUTPUT_TYPES[it.type as OutputKey] : null;
-            const Icon =
-              it.category === "upload"
-                ? FileUp
-                : def?.icon ?? (it.category === "diagram" ? GitBranch : FileText);
-            const colorClass =
-              it.category === "upload" ? "text-teal-500" : def?.colorClass ?? "";
-            const typeLabel =
-              it.category === "upload" ? "קובץ שהועלה" : def?.label ?? "";
+        <div className="overflow-hidden rounded-md border border-border bg-card [direction:rtl]">
+          {/* Explorer header */}
+          <div className="grid grid-cols-[1fr_140px_120px_90px_70px] items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground">
+            <div>שם</div>
+            <div>סוג</div>
+            <div>תאריך</div>
+            <div>גודל</div>
+            <div className="text-left">פעולות</div>
+          </div>
+          <ul className="divide-y divide-border">
+            {filtered.map((it) => {
+              const def = it.category !== "upload" ? OUTPUT_TYPES[it.type as OutputKey] : null;
+              const Icon =
+                it.category === "upload"
+                  ? FileUp
+                  : def?.icon ?? (it.category === "diagram" ? GitBranch : FileText);
+              const colorClass =
+                it.category === "upload" ? "text-teal-500" : def?.colorClass ?? "";
+              const typeLabel =
+                it.category === "upload" ? "קובץ שהועלה" : def?.label ?? "";
 
-            const CardInner = (
-              <div className="flex items-start gap-2">
-                <div
-                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent ${colorClass}`}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-foreground">
-                    {it.title}
+              const openTo =
+                it.category === "document"
+                  ? { to: "/editor/$id" as const, params: { id: it.id } }
+                  : it.category === "diagram"
+                    ? { to: "/diagram/$id" as const, params: { id: it.id } }
+                    : null;
+
+              const RowInner = (
+                <>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Icon className={`h-4 w-4 shrink-0 ${colorClass}`} />
+                    <span className="truncate text-sm text-foreground">
+                      {it.title}
+                    </span>
                   </div>
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">
-                    {typeLabel} ·{" "}
+                  <div className="truncate text-xs text-muted-foreground">
+                    {typeLabel}
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground">
                     {new Date(it.createdAt).toLocaleDateString("he-IL")}
-                    {it.meta ? ` · ${it.meta}` : ""}
                   </div>
-                  {it.prompt && (
-                    <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">
-                      {it.prompt}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
+                  <div className="truncate text-xs text-muted-foreground">
+                    {it.meta ?? "—"}
+                  </div>
+                </>
+              );
 
-            return (
-              <li
-                key={`${it.category}-${it.id}`}
-                className="group hover-lift relative rounded-xl border border-border bg-card p-4"
-              >
-                {it.category === "document" ? (
-                  <Link
-                    to="/editor/$id"
-                    params={{ id: it.id }}
-                    className="block"
-                  >
-                    {CardInner}
-                  </Link>
-                ) : it.category === "diagram" ? (
-                  <Link
-                    to="/diagram/$id"
-                    params={{ id: it.id }}
-                    className="block"
-                  >
-                    {CardInner}
-                  </Link>
-                ) : (
-                  <div className="block">{CardInner}</div>
-                )}
-                <div className="absolute left-2 top-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  {it.category === "document" && (
+              return (
+                <li
+                  key={`${it.category}-${it.id}`}
+                  className="group grid grid-cols-[1fr_140px_120px_90px_70px] items-center gap-2 px-3 py-1.5 hover:bg-accent/60"
+                >
+                  {openTo ? (
                     <Link
-                      to="/editor/$id"
-                      params={{ id: it.id }}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-                      aria-label="פתח"
+                      to={openTo.to}
+                      params={openTo.params}
+                      className="contents"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
+                      {RowInner}
                     </Link>
+                  ) : (
+                    <div className="contents">{RowInner}</div>
                   )}
-                  {it.category === "diagram" && (
-                    <Link
-                      to="/diagram/$id"
-                      params={{ id: it.id }}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-                      aria-label="פתח"
+                  <div className="flex items-center justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    {openTo && (
+                      <Link
+                        to={openTo.to}
+                        params={openTo.params}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+                        aria-label="פתח"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(it)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
+                      aria-label="מחק"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Link>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(it)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-destructive"
-                    aria-label="מחק"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
+
 
       <AlertDialog
         open={!!deleteTarget}
