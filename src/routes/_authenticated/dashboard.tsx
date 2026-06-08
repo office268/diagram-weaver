@@ -270,7 +270,7 @@ function HomePage() {
           )}
 
           <section>
-            <SectionHeading label="PR-Docs" />
+            <SectionHeading label="pr-docs" variant="docs" />
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
               <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
