@@ -91,20 +91,19 @@ function AuthenticatedLayout() {
             <UserMenuWithOrgLogo />
             <OrgNameLabel />
             <Button
+              asChild
               variant="ghost"
               size="icon"
               className="ms-auto h-10 w-10"
-              aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
-              onClick={() => setSearchOpen((v) => !v)}
+              aria-label="חיפוש מסמכים"
             >
-              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+              <Link to="/documents">
+                <Search className="h-5 w-5" />
+              </Link>
             </Button>
             <HamburgerMenu />
 
           </div>
-          {searchOpen && (
-            <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
-          )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
 
         </header>
