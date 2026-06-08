@@ -1,5 +1,6 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot } from "lucide-react";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot, Workflow, KanbanSquare, Rocket } from "lucide-react";
+
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
