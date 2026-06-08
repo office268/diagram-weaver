@@ -341,16 +341,13 @@ export const Route = createFileRoute("/api/chat-message")({
                   mermaid = raw;
                 }
 
-                mermaid = sanitizeMermaidLabels(mermaid);
+                if (outputType !== "diagram_activity") {
+                  mermaid = sanitizeMermaidLabels(mermaid);
+                }
 
                 if (outputType === "diagram_activity") {
-                  const validationError = getActivityMermaidValidationError(mermaid);
-                  if (validationError) {
-                    throw new ActivityDiagramGenerationError(
-                      "builder_invalid_mermaid",
-                      `יצירת תרשים ה-Activity נכשלה בשלב בדיקת Mermaid: ${validationError}`,
-                    );
-                  }
+                  // ה-orchestrator כבר מפעיל ולידציה פנימית על ה-SVG.
+                  // לא להפעיל כאן ולידציה של Mermaid — הפלט הוא <svg>.
                 }
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
