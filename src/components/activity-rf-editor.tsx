@@ -197,8 +197,10 @@ export function ActivityRFEditor({ rfData, onSave, saving, readOnly }: Props) {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>(rfData.edges);
 
   useEffect(() => {
-    setNodes(rfData.nodes);
-    setEdges(rfData.edges);
+    if (readOnly) {
+      setNodes(rfData.nodes);
+      setEdges(rfData.edges);
+    }
   }, [rfData.nodes, rfData.edges, setNodes, setEdges]);
 
   const onConnect = useCallback(
