@@ -169,7 +169,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_activity: {
     key: "diagram_activity",
     category: "diagram",
-    label: "תרשים Activity",
+    label: "activity diagram",
     description: "תרחישי פעילות, זרימות עבודה ותהליכים עסקיים עם התפצלויות.",
     icon: Workflow,
     colorClass: "text-orange-500",
