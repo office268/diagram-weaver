@@ -216,46 +216,52 @@ export type Database = {
       }
       ai_usage_events: {
         Row: {
+          artifact_kind: string
           completion_tokens: number
           cost_usd: number
           created_at: string
+          diagram_id: string | null
           doc_title: string | null
           doc_type: string | null
           id: string
           model: string
           prompt_tokens: number
           purpose: string
-          spec_document_id: string
+          spec_document_id: string | null
           total_tokens: number
           user_id: string
           word_count: number
         }
         Insert: {
+          artifact_kind?: string
           completion_tokens?: number
           cost_usd?: number
           created_at?: string
+          diagram_id?: string | null
           doc_title?: string | null
           doc_type?: string | null
           id?: string
           model: string
           prompt_tokens?: number
           purpose?: string
-          spec_document_id: string
+          spec_document_id?: string | null
           total_tokens?: number
           user_id: string
           word_count?: number
         }
         Update: {
+          artifact_kind?: string
           completion_tokens?: number
           cost_usd?: number
           created_at?: string
+          diagram_id?: string | null
           doc_title?: string | null
           doc_type?: string | null
           id?: string
           model?: string
           prompt_tokens?: number
           purpose?: string
-          spec_document_id?: string
+          spec_document_id?: string | null
           total_tokens?: number
           user_id?: string
           word_count?: number
