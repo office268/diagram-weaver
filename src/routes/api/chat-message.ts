@@ -264,7 +264,9 @@ export const Route = createFileRoute("/api/chat-message")({
               } else {
                 // Diagram path
                 const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+                const { createUsageTracker } = await import("@/lib/ai-usage.server");
                 const modelOverride = await loadAgentModelOverride();
+                const diagramTracker = createUsageTracker();
 
                 let diagramCode: string;
                 let assistantFence: "svg" | "rf-json";
@@ -275,6 +277,7 @@ export const Route = createFileRoute("/api/chat-message")({
                     userPrompt: cleanUserMsg,
                     lovableApiKey: apiKey,
                     modelOverride,
+                    tracker: diagramTracker,
                   });
                   diagramCode = raw;
                   assistantFence = "svg";
@@ -292,6 +295,7 @@ export const Route = createFileRoute("/api/chat-message")({
                     history,
                     lovableApiKey: apiKey,
                     modelOverride,
+                    tracker: diagramTracker,
                   });
                   diagramCode = json;
                   assistantFence = "rf-json";
@@ -312,6 +316,27 @@ export const Route = createFileRoute("/api/chat-message")({
                   .select()
                   .single();
                 if (diagErr) throw new Error(diagErr.message);
+
+                try {
+                  const { logAiUsage } = await import("@/lib/ai-usage.server");
+                  const totals = diagramTracker.totals();
+                  await logAiUsage({
+                    userId,
+                    diagramId: diagRow.id,
+                    artifactKind: outputType,
+                    model: modelOverride ?? "agent",
+                    purpose: "diagram",
+                    inputTokens: totals.inputTokens,
+                    outputTokens: totals.outputTokens,
+                    totalTokens: totals.totalTokens,
+                    costUsd: totals.costUsd,
+                    docTitle: title,
+                    docType: outputType,
+                    wordCount: 0,
+                  });
+                } catch (e) {
+                  console.error("[chat-message] diagram logAiUsage failed:", e);
+                }
 
                 const assistantContent =
                   `הנה ${def.label}:\n\n\`\`\`${assistantFence}\n${diagramCode}\n\`\`\``;
