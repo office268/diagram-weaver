@@ -18,6 +18,23 @@ import { createUsageTracker, logAiUsage } from "@/lib/ai-usage.server";
 import { ActivityDiagramGenerationError } from "@/lib/activity-diagram-pipeline.server";
 import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/output-types";
 
+const DIAGRAM_JOB_TIMEOUT_MS = 4 * 60 * 1000;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 export interface RunDiagramJobParams {
   jobId: string;
   threadId: string;
@@ -108,12 +125,16 @@ export async function runDiagramJob(params: RunDiagramJobParams): Promise<void> 
       const { runActivitySwimlaneOrchestrator } = await import(
         "@/agents/diagrams/activity-swimlane.server"
       );
-      const { svg, iterations: it } = await runActivitySwimlaneOrchestrator({
-        userPrompt: prompt,
-        lovableApiKey,
-        modelOverride,
-        tracker,
-      });
+      const { svg, iterations: it } = await withTimeout(
+        runActivitySwimlaneOrchestrator({
+          userPrompt: prompt,
+          lovableApiKey,
+          modelOverride,
+          tracker,
+        }),
+        DIAGRAM_JOB_TIMEOUT_MS,
+        "activity diagram generation",
+      );
       diagramCode = svg;
       assistantFence = "svg";
       iterations = it;
@@ -121,14 +142,18 @@ export async function runDiagramJob(params: RunDiagramJobParams): Promise<void> 
       const { runRfJsonDiagramAgent } = await import(
         "@/agents/diagrams/rf-json.server"
       );
-      const { json } = await runRfJsonDiagramAgent({
-        kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
-        userPrompt: prompt,
-        history: priorHistory,
-        lovableApiKey,
-        modelOverride,
-        tracker,
-      });
+      const { json } = await withTimeout(
+        runRfJsonDiagramAgent({
+          kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
+          userPrompt: prompt,
+          history: priorHistory,
+          lovableApiKey,
+          modelOverride,
+          tracker,
+        }),
+        DIAGRAM_JOB_TIMEOUT_MS,
+        "diagram generation",
+      );
       diagramCode = json;
       assistantFence = "rf-json";
     }
