@@ -526,6 +526,12 @@ function ChatPage() {
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="mx-auto max-w-md text-center">
+                <div className="mb-4 flex justify-center">
+                  <ThreadModelSelector
+                    threadId={threadId}
+                    currentOverride={(thread as { model_override?: string | null } | null)?.model_override ?? null}
+                  />
+                </div>
                 {def && (
                   <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
                     <def.icon className="h-6 w-6" />
