@@ -81,9 +81,10 @@ function nodeBounds(n: Node<ActivityNodeData>): {
   switch (n.data.nodeType) {
     case "task":     return { x, y, w: 150, h: 50 };
     case "decision": return { x, y, w: 96,  h: 96 };
-    case "start":    return { x, y, w: 40,  h: 70 };
+    case "start":    return { x, y, w: 40,  h: 40 };
     case "end":      return { x, y, w: 50,  h: 50 };
     case "joinBar":  return { x, y, w: bw,  h: 12 };
+    case "actor":    return { x, y, w: 40,  h: 70 };
     default:         return { x, y, w: 80,  h: 40 };
   }
 }
