@@ -511,7 +511,7 @@ function DocumentsPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-md border border-border bg-card [direction:rtl]">
+        <div className="rounded-md border border-border bg-card [direction:rtl]">
           {/* Explorer header */}
           <div
             className="grid items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground"
@@ -521,7 +521,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("type")}
-                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
                 aria-hidden
               />
               סוג
@@ -529,7 +529,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("date")}
-                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
                 aria-hidden
               />
               תאריך
@@ -537,7 +537,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("size")}
-                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
                 aria-hidden
               />
               גודל
@@ -545,12 +545,13 @@ function DocumentsPage() {
             <div className="relative truncate text-left">
               <span
                 onMouseDown={startResize("actions")}
-                className="absolute right-[-8px] top-1/2 z-10 h-5 w-2 -translate-y-1/2 cursor-col-resize select-none rounded-sm hover:bg-border"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
                 aria-hidden
               />
               פעולות
             </div>
           </div>
+
 
           <ul className="divide-y divide-border">
             {filtered.map((it) => {
