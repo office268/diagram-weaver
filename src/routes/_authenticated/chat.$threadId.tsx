@@ -113,6 +113,13 @@ function ChatPage() {
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const phases = ["חושב", "מתכנן", "בונה", "בודק"] as const;
+  useEffect(() => {
+    if (!sending) { setPhaseIdx(0); return; }
+    const id = setInterval(() => setPhaseIdx((i) => (i + 1) % 4), 1500);
+    return () => clearInterval(id);
+  }, [sending]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
