@@ -109,7 +109,14 @@ export function AiUsageCard() {
                       </TableCell>
                       <TableCell className="max-w-[220px] truncate">
                         <span className="font-medium">{title}</span>
-                        {r.is_deleted ? (
+                        {r.status === "failed" ? (
+                          <span
+                            className="mr-2 inline-flex items-center rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] text-destructive"
+                            title={r.error_message ?? "נכשל"}
+                          >
+                            נכשל
+                          </span>
+                        ) : r.is_deleted ? (
                           <span className="mr-2 inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                             נמחק
                           </span>
