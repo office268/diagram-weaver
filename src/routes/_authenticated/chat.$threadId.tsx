@@ -410,7 +410,7 @@ function ChatPage() {
       </aside>
 
       {/* Chat column */}
-      <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-card">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-2 md:row-span-2">
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
