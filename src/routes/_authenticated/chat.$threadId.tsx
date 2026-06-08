@@ -131,6 +131,15 @@ function ChatPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [mode, setMode] = useState<"auto" | "plan" | "build">("auto");
   const [modeReady, setModeReady] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
