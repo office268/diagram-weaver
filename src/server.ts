@@ -1,7 +1,7 @@
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
-import { setCloudflareCtx } from "./lib/cf-context.server";
+
 
 import { renderErrorPage } from "./lib/error-page";
 
@@ -42,7 +42,6 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      setCloudflareCtx(ctx);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
 
