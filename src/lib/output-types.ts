@@ -192,9 +192,8 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
 // Display order on the home page tiles (primary, most-used).
 export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "initiation",
-  "business_requirements",
+  "requirements_combined",
   "diagram_usecase",
-  "technical_requirements",
   "spec_overview",
   "diagram_flow",
   "diagram_sequence",
@@ -206,10 +205,13 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
 
 // Less common types — shown inside the "More…" tile.
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
+  "business_requirements",
+  "technical_requirements",
   "diagram_state",
   "diagram_deployment",
   "user_guide",
 ];
+
 
 
 
