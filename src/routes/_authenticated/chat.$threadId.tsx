@@ -140,6 +140,41 @@ function ChatPage() {
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(256);
+  const sidebarWidthRef = useRef(256);
+  useEffect(() => { sidebarWidthRef.current = sidebarWidth; }, [sidebarWidth]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("chat-sidebar-width");
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (!Number.isNaN(n)) setSidebarWidth(Math.max(180, Math.min(560, n)));
+    }
+  }, []);
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidthRef.current;
+    const isRtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - startX;
+      const next = Math.max(180, Math.min(560, startW + (isRtl ? -delta : delta)));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      try {
+        window.localStorage.setItem("chat-sidebar-width", String(sidebarWidthRef.current));
+      } catch {}
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -367,9 +402,15 @@ function ChatPage() {
   const messages = data.messages;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-cols-[16rem_1fr] md:grid-rows-[1fr_auto] md:px-4">
+    <div
+      className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-rows-[1fr_auto] md:px-4"
+      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 8px 1fr` } : undefined}
+    >
       {/* Sidebar — threads */}
-      <aside className="hidden w-64 min-h-0 shrink-0 flex-col gap-2 md:col-start-1 md:row-start-1 md:flex">
+      <aside
+        className="hidden min-h-0 shrink-0 flex-col gap-2 md:col-start-1 md:row-start-1 md:flex"
+        style={isDesktop ? { width: sidebarWidth } : undefined}
+      >
         <Button
           variant="outline"
           size="sm"
@@ -409,8 +450,16 @@ function ChatPage() {
         </div>
       </aside>
 
+      {/* Resize handle (desktop only) */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        onMouseDown={startResize}
+        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:mx-1 md:rounded-full md:bg-border md:hover:bg-primary/40 md:transition-colors"
+      />
+
       {/* Chat column */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-2 md:row-span-2">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
@@ -449,7 +498,10 @@ function ChatPage() {
       </div>
 
       {/* Composer */}
-      <div className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3">
+      <div
+        className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3"
+        style={isDesktop ? { width: sidebarWidth } : undefined}
+      >
           <input
             ref={fileInputRef}
             type="file"
