@@ -526,27 +526,19 @@ function ChatPage() {
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
 
-        {messages.length > 0 && (
-          <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
-            <ThreadModelSelector
-              threadId={threadId}
-              currentOverride={thread.model_override ?? null}
-              variant="compact"
-            />
-          </div>
-        )}
+        <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
+          <ThreadModelSelector
+            threadId={threadId}
+            currentOverride={thread.model_override ?? null}
+            variant="compact"
+          />
+        </div>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="mx-auto max-w-md text-center">
-                <div className="mb-4 flex justify-center">
-                  <ThreadModelSelector
-                    threadId={threadId}
-                    currentOverride={(thread as { model_override?: string | null } | null)?.model_override ?? null}
-                  />
-                </div>
                 {def && (
                   <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent ${def.colorClass}`}>
                     <def.icon className="h-6 w-6" />
@@ -554,12 +546,10 @@ function ChatPage() {
                 )}
                 <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לניתוח מערכות מידע</h2>
                 <p className="mt-1 text-base font-medium text-foreground">{def?.label}</p>
-                {sending ? (
+                {sending && (
                   <div className="mt-3">
                     <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
                   </div>
-                ) : (
-                  <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">ממתין להוראות</p>
                 )}
               </div>
             </div>
@@ -580,7 +570,7 @@ function ChatPage() {
 
       {/* Composer */}
       <div
-        className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3"
+        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-2 md:pt-3 md:pb-3"
         style={isDesktop ? { width: sidebarWidth } : undefined}
       >
           <input
