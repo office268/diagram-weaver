@@ -78,15 +78,10 @@ type Item = {
   meta?: string; // for uploads: size/mime
 };
 
-type SortKey = "date_desc" | "date_asc" | "name" | "type";
+type SortCol = "name" | "type" | "date" | "size";
+type SortDir = "asc" | "desc";
 type GroupFilter = "all" | "document" | "diagram" | "upload";
 
-const SORT_LABEL: Record<SortKey, string> = {
-  date_desc: "חדש → ישן",
-  date_asc: "ישן → חדש",
-  name: "לפי שם (א׳-ת׳)",
-  type: "לפי סוג",
-};
 
 const GROUP_LABEL: Record<GroupFilter, string> = {
   all: "הכל",
