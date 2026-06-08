@@ -3,6 +3,26 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ALLOWED_AGENT_MODELS, DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 
+export const getAvailableAgentModels = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data } = await supabase
+      .from("ai_model_setting" as never)
+      .select("model")
+      .eq("id", "singleton")
+      .maybeSingle();
+    const row = data as { model?: string } | null;
+    const adminDefault = row?.model && (ALLOWED_AGENT_MODELS as readonly string[]).includes(row.model)
+      ? row.model
+      : DEFAULT_AGENT_MODEL;
+    return {
+      allowed: ALLOWED_AGENT_MODELS as readonly string[],
+      adminDefault,
+    };
+  });
+
+
 export const getAiModelSetting = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
