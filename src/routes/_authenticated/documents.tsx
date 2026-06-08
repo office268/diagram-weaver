@@ -113,11 +113,12 @@ function DocumentsPage() {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
   const [typeFilter, setTypeFilter] = useState<OutputKey | "all">("all");
-  const [sortBy, setSortBy] = useState<SortKey>("date_desc");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<SortCol>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
   const [renameTarget, setRenameTarget] = useState<Item | null>(null);
   const [renameValue, setRenameValue] = useState("");
+
 
   // Column widths (Windows Explorer-like resizable columns).
   // `name` is the flex column (1fr); others are pixel widths.
