@@ -67,7 +67,7 @@ function sectionMarkdown(
           .map((u, i) => {
             const parts = [`### ${i + 1}. ${u.title}`, u.description];
             if (u.diagram?.trim()) {
-              parts.push("```mermaid", u.diagram.trim(), "```");
+              parts.push("> [תרשים Sequence — זמין במערכת]");
             }
             return parts.join("\n\n");
           })
@@ -79,7 +79,7 @@ function sectionMarkdown(
       if (!desc && !diag) return null;
       const out: string[] = [];
       if (desc) out.push(desc);
-      if (diag) out.push("```mermaid", diag, "```");
+      if (diag) out.push("> [תרשים ארכיטקטורה — זמין במערכת]");
       return out.join("\n\n");
     }
     case "data_model": {
@@ -88,7 +88,7 @@ function sectionMarkdown(
       if (!desc && !diag) return null;
       const out: string[] = [];
       if (desc) out.push(desc);
-      if (diag) out.push("```mermaid", diag, "```");
+      if (diag) out.push("> [תרשים ERD — זמין במערכת]");
       return out.join("\n\n");
     }
     default:

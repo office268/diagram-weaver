@@ -77,7 +77,7 @@ export async function runOrchestrator(params: {
   let useCases = await named("use-cases", runUseCasesAgent(ctx, requirements, gateway, tracker));
 
   // Step 5: Diagrams agent
-  const diagrams = await named("diagrams", runDiagramsAgent(ctx, useCases, architecture, dataModel, gateway, tracker));
+  const diagrams = await named("diagrams", runDiagramsAgent({ ctx, useCases, architecture, dataModel, lovableApiKey, tracker }));
 
   // Step 6: Assemble full spec
   let currentSpec = assembleSpec(requirements, architecture, dataModel, useCases, diagrams);
@@ -108,19 +108,15 @@ export async function runOrchestrator(params: {
     }
 
     if (archNotes.length > 0) {
-      const [improvedArch, improvedDiagrams] = await Promise.all([
-        runArchitectureAgent(improveCtx, requirements, gateway, tracker),
-        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
-      ]);
+      const improvedArch = await runArchitectureAgent(improveCtx, requirements, gateway, tracker);
+      const improvedDiagrams = await runDiagramsAgent({ ctx: improveCtx, useCases, architecture: improvedArch, dataModel, lovableApiKey, tracker });
       architecture = improvedArch;
       currentSpec = mergeArchitecture(currentSpec, improvedArch, improvedDiagrams);
     }
 
     if (ucNotes.length > 0) {
-      const [improvedUC, improvedDiagrams] = await Promise.all([
-        runUseCasesAgent(improveCtx, requirements, gateway, tracker),
-        runDiagramsAgent(improveCtx, useCases, architecture, dataModel, gateway, tracker),
-      ]);
+      const improvedUC = await runUseCasesAgent(improveCtx, requirements, gateway, tracker);
+      const improvedDiagrams = await runDiagramsAgent({ ctx: improveCtx, useCases: improvedUC, architecture, dataModel, lovableApiKey, tracker });
       useCases = improvedUC;
       currentSpec = mergeUseCases(currentSpec, improvedUC, improvedDiagrams);
     }

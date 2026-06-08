@@ -1,96 +1,118 @@
-import { generateText } from "ai";
-import { z } from "zod";
-import type { AgentContext, DiagramsOutput, UseCasesOutput } from "@/agents/shared/types";
-import type { ArchitectureOutput } from "@/agents/shared/types";
-import type { DataModelOutput } from "@/agents/shared/types";
-import { AGENT_MODELS, AGENT_TEMPERATURES } from "@/agents/shared/constants";
-import { extractJson } from "@/lib/spec-output-schema";
-import {
-  buildSelfCritiqueInstruction,
-  JSON_ONLY_INSTRUCTION,
-} from "@/agents/shared/prompt-helpers";
-import { DIAGRAMS_SYSTEM } from "./system";
-import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+// Diagrams agent — unified pipeline.
+// Produces React-Flow JSON for every diagram in the spec by delegating to
+// the same agent used by the chat ("runRfJsonDiagramAgent"). No Mermaid
+// is generated here — single pipeline, single quality bar.
+
+import type {
+  AgentContext,
+  DiagramsOutput,
+  UseCasesOutput,
+  ArchitectureOutput,
+  DataModelOutput,
+} from "@/agents/shared/types";
 import type { UsageTracker } from "@/lib/ai-usage.server";
+import { runRfJsonDiagramAgent } from "./rf-json.server";
 
-const OutputSchema = z.object({
-  use_case_diagrams: z
-    .array(z.object({ id: z.string(), diagram: z.string() }))
-    .default([]),
-  architecture_diagram: z.string().optional(),
-  data_model_diagram: z.string().optional(),
-});
+interface RunInput {
+  ctx: AgentContext;
+  useCases: UseCasesOutput;
+  architecture: ArchitectureOutput;
+  dataModel: DataModelOutput;
+  lovableApiKey: string;
+  tracker?: UsageTracker;
+}
 
-const SELF_CRITIQUE = buildSelfCritiqueInstruction([
-  "כל מזהה צומת (node ID): ASCII בלבד?",
-  "אין עטיפת ``` סביב הקוד?",
-  "sequenceDiagram מתחיל במילה sequenceDiagram?",
-  "erDiagram מתחיל במילה erDiagram?",
-]);
-
-function buildPrompt(
-  ctx: AgentContext,
-  useCases: UseCasesOutput,
-  arch: ArchitectureOutput,
-  dm: DataModelOutput,
-): string {
-  const useCasesList = useCases.use_cases
-    .map((uc) => `id: ${uc.id}\nכותרת: ${uc.title}\nתיאור: ${uc.description}`)
-    .join("\n\n");
-
+/**
+ * Build a per-use-case prompt for a sequence diagram.
+ */
+function useCasePrompt(uc: UseCasesOutput["use_cases"][number]): string {
   return [
-    "## בקשת המשתמש\n" + ctx.userPrompt,
-    "## תרחישי שימוש לדיאגרמות",
-    useCasesList,
-    "## תיאור ארכיטקטורה\n" + arch.architecture.description,
-    "## תיאור מודל נתונים\n" + dm.data_model.description,
-    `
-יצור דיאגרמות Mermaid עבור:
-1. כל תרחיש שימוש: sequenceDiagram שמציג את זרימת הפעולות
-2. ארכיטקטורה: flowchart TD (רק אם הדיאגרמה הקיימת חסרה או קצרה מ-100 תווים)
-3. מודל נתונים: erDiagram (רק אם הדיאגרמה הקיימת חסרה או קצרה מ-100 תווים)
-
-סכמת JSON לפלט:
-{
-  "use_case_diagrams": [{ "id": string, "diagram": string }],
-  "architecture_diagram": string,
-  "data_model_diagram": string
-}
-${JSON_ONLY_INSTRUCTION}`,
-    SELF_CRITIQUE,
-    `ארכיטקטורה קיימת (${arch.architecture.diagram.length} תווים): ${arch.architecture.diagram.slice(0, 50)}...`,
-    `מודל נתונים קיים (${dm.data_model.diagram.length} תווים): ${dm.data_model.diagram.slice(0, 50)}...`,
-  ].join("\n\n");
+    "צור תרשים Sequence עבור התרחיש הבא:",
+    `כותרת: ${uc.title}`,
+    "תיאור:",
+    uc.description,
+    "",
+    "כלול את כל ה-lifelines (משתמשים/רכיבים) הרלוונטיים ואת סדר ההודעות ביניהם.",
+  ].join("\n");
 }
 
-export async function runDiagramsAgent(
-  ctx: AgentContext,
-  useCases: UseCasesOutput,
-  arch: ArchitectureOutput,
-  dm: DataModelOutput,
-  gateway: ReturnType<typeof createLovableAiGatewayProvider>,
-  tracker?: UsageTracker,
-): Promise<DiagramsOutput> {
-  const model = ctx.model ?? AGENT_MODELS.diagrams;
-  const { text, usage } = await generateText({
-    model: gateway(model),
-    system: DIAGRAMS_SYSTEM,
-    prompt: buildPrompt(ctx, useCases, arch, dm),
-    maxOutputTokens: 6000,
-    temperature: AGENT_TEMPERATURES.diagrams,
-  });
-  tracker?.track(model, usage);
-  try {
-    return OutputSchema.parse(JSON.parse(extractJson(text)));
-  } catch {
-    const { text: text2, usage: usage2 } = await generateText({
-      model: gateway(model),
-      system: DIAGRAMS_SYSTEM,
-      prompt: buildPrompt(ctx, useCases, arch, dm) + "\n\nהחזר JSON תקני בלבד, ללא ```json fences. אל תקצר.",
-      maxOutputTokens: 8000,
-      temperature: 0,
-    });
-    tracker?.track(model, usage2);
-    return OutputSchema.parse(JSON.parse(extractJson(text2)));
-  }
+function architecturePrompt(ctx: AgentContext, arch: ArchitectureOutput): string {
+  return [
+    "צור תרשים זרימה (Flow) עבור הארכיטקטורה הבאה:",
+    arch.architecture.description,
+    "",
+    "הקשר העל של הבקשה:",
+    ctx.userPrompt,
+  ].join("\n");
+}
+
+function dataModelPrompt(ctx: AgentContext, dm: DataModelOutput): string {
+  return [
+    "צור תרשים ERD עבור מודל הנתונים הבא:",
+    dm.data_model.description,
+    "",
+    "הקשר העל של הבקשה:",
+    ctx.userPrompt,
+  ].join("\n");
+}
+
+/**
+ * Run the diagrams stage. Uses the unified RF-JSON diagram agent for every
+ * diagram. Failures on individual diagrams are tolerated — the spec is
+ * assembled with whatever succeeded.
+ */
+export async function runDiagramsAgent(input: RunInput): Promise<DiagramsOutput> {
+  const { ctx, useCases, architecture, dataModel, lovableApiKey, tracker } = input;
+
+  const safe = async <T,>(p: Promise<T>): Promise<T | null> => {
+    try { return await p; } catch { return null; }
+  };
+
+  // Run all diagrams in parallel — each call is independent.
+  const useCasePromises = useCases.use_cases.map((uc) =>
+    safe(
+      runRfJsonDiagramAgent({
+        kind: "diagram_sequence",
+        userPrompt: useCasePrompt(uc),
+        history: [],
+        lovableApiKey,
+        modelOverride: ctx.model,
+        tracker,
+      }),
+    ).then((r) => (r ? { id: uc.id, diagram: r.json } : null)),
+  );
+
+  const archPromise = safe(
+    runRfJsonDiagramAgent({
+      kind: "diagram_flow",
+      userPrompt: architecturePrompt(ctx, architecture),
+      history: [],
+      lovableApiKey,
+      modelOverride: ctx.model,
+      tracker,
+    }),
+  );
+
+  const dmPromise = safe(
+    runRfJsonDiagramAgent({
+      kind: "diagram_erd",
+      userPrompt: dataModelPrompt(ctx, dataModel),
+      history: [],
+      lovableApiKey,
+      modelOverride: ctx.model,
+      tracker,
+    }),
+  );
+
+  const [useCaseResults, archResult, dmResult] = await Promise.all([
+    Promise.all(useCasePromises),
+    archPromise,
+    dmPromise,
+  ]);
+
+  return {
+    use_case_diagrams: useCaseResults.filter((x): x is { id: string; diagram: string } => !!x),
+    architecture_diagram: archResult?.json,
+    data_model_diagram: dmResult?.json,
+  };
 }
