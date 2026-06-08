@@ -238,7 +238,7 @@ function HomePage() {
                     pending={createMut.isPending && createMut.variables === key}
                     disabled={createMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
-                    onActivate={() => createMut.mutate(key)}
+                    onActivate={() => activateTile(key)}
                     onMoveToExtras={() => moveToExtras(key)}
                   />
                 ))}
