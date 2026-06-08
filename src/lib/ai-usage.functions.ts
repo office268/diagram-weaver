@@ -8,6 +8,8 @@ export interface AiUsageRow {
   spec_document_id: string | null;
   diagram_id: string | null;
   artifact_kind: string;
+  status: string;
+  error_message: string | null;
   doc_title: string | null;
   doc_type: string | null;
   word_count: number;
