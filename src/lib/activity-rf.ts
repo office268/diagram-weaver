@@ -47,6 +47,22 @@ function parseFloat2(s: string | null | undefined, fallback = 0) {
   return isNaN(n) ? fallback : n;
 }
 
+function finiteOr(value: number | undefined, fallback: number) {
+  return Number.isFinite(value) ? (value as number) : fallback;
+}
+
+function parsePolygonPoints(points: string): Array<{ x: number; y: number }> {
+  const nums = points.match(/-?\d*\.?\d+/g)?.map(Number) ?? [];
+  const pairs: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    const x = nums[i];
+    const y = nums[i + 1];
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    pairs.push({ x, y });
+  }
+  return pairs;
+}
+
 function getLaneIndex(cx: number, laneX: number[]): number {
   for (let i = laneX.length - 1; i >= 0; i--) {
     if (cx >= laneX[i]) return i;
@@ -124,8 +140,8 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
   if (svg.nodeName === "parsererror") return null;
 
   const vb = svg.getAttribute("viewBox")?.split(/\s+/).map(Number);
-  const svgWidth  = vb?.[2] ?? 1200;
-  const svgHeight = vb?.[3] ?? 800;
+  const svgWidth  = finiteOr(vb?.[2], 1200);
+  const svgHeight = finiteOr(vb?.[3], 800);
   const headerH   = 44;
 
   // 1. Lane boundaries — vertical dashed blue lines
@@ -216,12 +232,20 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
 
   // 3c. DECISION diamonds
   for (const poly of svg.querySelectorAll("polygon")) {
-    const pts = (poly.getAttribute("points") ?? "")
-      .trim().split(/\s+/)
-      .map(p => p.split(",").map(Number) as [number, number]);
+    if (poly.closest("defs, marker")) continue;
+    const pts = parsePolygonPoints(poly.getAttribute("points") ?? "");
     if (pts.length < 3) continue;
-    const cx = pts[0][0];
-    const cy = (pts[0][1] + pts[2][1]) / 2;
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const width = maxX - minX;
+    const height = maxY - minY;
+    if (width < 40 || height < 40) continue;
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
     const nearby = allTexts
       .filter(t => {
         const ty = parseFloat2(t.getAttribute("y"));

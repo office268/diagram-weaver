@@ -7,7 +7,7 @@ import { Download, Maximize2, Minus, Pencil, Plus, RotateCcw } from "lucide-reac
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 function downloadSvg(svgMarkup: string) {
   const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
@@ -241,6 +241,8 @@ export function ActivitySwimlaneRenderer({
         {!hideFullscreen && (
           <Dialog open={fullscreen} onOpenChange={setFullscreen}>
             <DialogContent className="h-[95vh] max-w-[95vw] p-0 sm:max-w-[95vw]">
+              <DialogTitle className="sr-only">תצוגת תרשים במסך מלא</DialogTitle>
+              <DialogDescription className="sr-only">תצוגה מלאה של התרשים לצפייה נוחה.</DialogDescription>
               <div className="h-full w-full overflow-hidden rounded-lg">
                 <ActivitySwimlaneRenderer code={code} hideFullscreen />
               </div>
@@ -268,6 +270,8 @@ export function ActivitySwimlaneRenderer({
         {!hideFullscreen && (
           <Dialog open={fullscreen} onOpenChange={setFullscreen}>
             <DialogContent className="h-[95vh] max-w-[95vw] p-0 sm:max-w-[95vw]">
+              <DialogTitle className="sr-only">תצוגת תרשים במסך מלא</DialogTitle>
+              <DialogDescription className="sr-only">תצוגה מלאה של התרשים לצפייה נוחה.</DialogDescription>
               <div className="h-full w-full overflow-hidden rounded-lg">
                 <ActivitySwimlaneRenderer code={code} hideFullscreen />
               </div>
