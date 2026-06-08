@@ -308,6 +308,20 @@ export const Route = createFileRoute("/api/chat-message")({
                   const provider = createLovableAiGatewayProvider(apiKey);
                   const model = provider(modelOverride);
                   const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
+                  const useCaseRules = outputType === "diagram_usecase"
+                    ? (
+                        `\n\nכללי תרשים Use Case (UML) ב-Mermaid flowchart LR — חובה:\n` +
+                        `- כל use case מיוצג כצומת אובלי (אליפסה) בתחביר Mermaid: \`UC1(("חיפוש מוצרים"))\` — סוגריים כפולים יוצרים אליפסה כמו ב-UML.\n` +
+                        `- כל Actor מיוצג כצומת stadium: \`A1(["לקוח"])\`. שחקנים אנושיים מובילים בצד שמאל, מערכות חיצוניות (כמו "מערכת תשלום", "ספק SMS") בצד ימין.\n` +
+                        `- כל ה-use cases חייבים להיות עטופים בתוך \`subgraph SYS["שם המערכת"]\` ... \`end\` — זה ה-System Boundary. השחקנים נשארים מחוץ ל-subgraph.\n` +
+                        `- קשר association בין actor ל-use case: קו רגיל ללא חץ וללא תווית: \`A1 --- UC1\`. אל תשתמש ב-\`-->\` בין actor ל-use case.\n` +
+                        `- קשר «include» (התרחיש הבסיסי תמיד כולל את המשני): חץ מקווקו עם תווית: \`UC3 -.->|"«include»"| UC4\`. הכיוון: מהבסיסי אל הנכלל.\n` +
+                        `- קשר «extend» (תרחיש אופציונלי מרחיב בסיסי): חץ מקווקו עם תווית: \`UC5 -.->|"«extend»"| UC4\`. הכיוון: מהמרחיב אל הבסיסי.\n` +
+                        `- מינימום: 2 actors, 4 use cases, וקשר אחד לפחות מסוג «include» או «extend» אם הגיוני.\n` +
+                        `- מזהי צמתים ASCII קצרים: UC1..UCn, A1..An, EXT1..EXTn. תוויות בעברית בתוך גרשיים בלבד.\n` +
+                        `- אסור: classDef עם צבעי טקסט קשיחים, אימוג'ים, או צמתים מסוג decision/{...}. תרשים use case אינו מכיל החלטות או זרימה.\n`
+                      )
+                    : "";
                   const system =
                     `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
                     `סוג התרשים המבוקש: ${def.label}. ` +
@@ -317,7 +331,8 @@ export const Route = createFileRoute("/api/chat-message")({
                     `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
                     `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. ` +
                     `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
-                    `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.`;
+                    `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.` +
+                    useCaseRules;
                   const history: { role: "user" | "assistant"; content: string }[] = prior.map(
                     (m) => ({
                       role: m.role === "assistant" ? "assistant" : "user",
