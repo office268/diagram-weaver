@@ -20,6 +20,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
+import { Route as ApiTranscribeAudioRouteImport } from './routes/api/transcribe-audio'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
 import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProjectsManagementRouteImport } from './routes/_authenticated/projects-management'
 import { Route as AuthenticatedProductRouteImport } from './routes/_authenticated/product'
 import { Route as AuthenticatedOrganizationRouteImport } from './routes/_authenticated/organization'
+import { Route as AuthenticatedMeetingTranscribeRouteImport } from './routes/_authenticated/meeting-transcribe'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
@@ -99,6 +101,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiUploadDocumentRoute = ApiUploadDocumentRouteImport.update({
   id: '/api/upload-document',
   path: '/api/upload-document',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeAudioRoute = ApiTranscribeAudioRouteImport.update({
+  id: '/api/transcribe-audio',
+  path: '/api/transcribe-audio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
@@ -172,6 +179,12 @@ const AuthenticatedOrganizationRoute =
   AuthenticatedOrganizationRouteImport.update({
     id: '/organization',
     path: '/organization',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedMeetingTranscribeRoute =
+  AuthenticatedMeetingTranscribeRouteImport.update({
+    id: '/meeting-transcribe',
+    path: '/meeting-transcribe',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
@@ -255,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/organization': typeof AuthenticatedOrganizationRoute
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -269,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -293,6 +308,7 @@ export interface FileRoutesByTo {
   '/billing': typeof AuthenticatedBillingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
+  '/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/organization': typeof AuthenticatedOrganizationRoute
   '/product': typeof AuthenticatedProductRoute
   '/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -307,6 +323,7 @@ export interface FileRoutesByTo {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -333,6 +350,7 @@ export interface FileRoutesById {
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
+  '/_authenticated/meeting-transcribe': typeof AuthenticatedMeetingTranscribeRoute
   '/_authenticated/organization': typeof AuthenticatedOrganizationRoute
   '/_authenticated/product': typeof AuthenticatedProductRoute
   '/_authenticated/projects-management': typeof AuthenticatedProjectsManagementRoute
@@ -347,6 +365,7 @@ export interface FileRoutesById {
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
+  '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
   '/_authenticated/agent-conversations/$id': typeof AuthenticatedAgentConversationsIdRoute
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
@@ -373,6 +392,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/documents'
+    | '/meeting-transcribe'
     | '/organization'
     | '/product'
     | '/projects-management'
@@ -387,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
@@ -411,6 +432,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/dashboard'
     | '/documents'
+    | '/meeting-transcribe'
     | '/organization'
     | '/product'
     | '/projects-management'
@@ -425,6 +447,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/agent-conversations/$id'
     | '/chat/$threadId'
@@ -450,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/billing'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
+    | '/_authenticated/meeting-transcribe'
     | '/_authenticated/organization'
     | '/_authenticated/product'
     | '/_authenticated/projects-management'
@@ -464,6 +488,7 @@ export interface FileRouteTypes {
     | '/api/improve-section'
     | '/api/ingest-document'
     | '/api/review-spec'
+    | '/api/transcribe-audio'
     | '/api/upload-document'
     | '/_authenticated/agent-conversations/$id'
     | '/_authenticated/chat/$threadId'
@@ -495,6 +520,7 @@ export interface RootRouteChildren {
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
+  ApiTranscribeAudioRoute: typeof ApiTranscribeAudioRoute
   ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
@@ -576,6 +602,13 @@ declare module '@tanstack/react-router' {
       path: '/api/upload-document'
       fullPath: '/api/upload-document'
       preLoaderRoute: typeof ApiUploadDocumentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe-audio': {
+      id: '/api/transcribe-audio'
+      path: '/api/transcribe-audio'
+      fullPath: '/api/transcribe-audio'
+      preLoaderRoute: typeof ApiTranscribeAudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/review-spec': {
@@ -676,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrganizationRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/meeting-transcribe': {
+      id: '/_authenticated/meeting-transcribe'
+      path: '/meeting-transcribe'
+      fullPath: '/meeting-transcribe'
+      preLoaderRoute: typeof AuthenticatedMeetingTranscribeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -768,6 +808,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
+  AuthenticatedMeetingTranscribeRoute: typeof AuthenticatedMeetingTranscribeRoute
   AuthenticatedOrganizationRoute: typeof AuthenticatedOrganizationRoute
   AuthenticatedProductRoute: typeof AuthenticatedProductRoute
   AuthenticatedProjectsManagementRoute: typeof AuthenticatedProjectsManagementRoute
@@ -787,6 +828,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
+  AuthenticatedMeetingTranscribeRoute: AuthenticatedMeetingTranscribeRoute,
   AuthenticatedOrganizationRoute: AuthenticatedOrganizationRoute,
   AuthenticatedProductRoute: AuthenticatedProductRoute,
   AuthenticatedProjectsManagementRoute: AuthenticatedProjectsManagementRoute,
@@ -827,6 +869,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiIngestDocumentRoute: ApiIngestDocumentRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
+  ApiTranscribeAudioRoute: ApiTranscribeAudioRoute,
   ApiUploadDocumentRoute: ApiUploadDocumentRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }

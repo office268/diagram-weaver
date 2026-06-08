@@ -131,6 +131,18 @@ function ChatPage() {
     }
     setModeReady(true);
   }, []);
+  // Pickup prefilled text (e.g. from meeting transcript flow)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const key = `chat-prefill:${threadId}`;
+      const pre = window.sessionStorage.getItem(key);
+      if (pre) {
+        setInput(pre);
+        window.sessionStorage.removeItem(key);
+      }
+    } catch { /* sessionStorage may be unavailable */ }
+  }, [threadId]);
   useEffect(() => {
     if (typeof window === "undefined" || !modeReady) return;
     window.localStorage.setItem("chat-mode", mode);

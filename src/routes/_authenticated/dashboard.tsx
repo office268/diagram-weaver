@@ -157,6 +157,14 @@ function HomePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
+  const activateTile = (key: OutputKey) => {
+    if (key === "meeting_summary") {
+      navigate({ to: "/meeting-transcribe" });
+      return;
+    }
+    createMut.mutate(key);
+  };
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
@@ -204,7 +212,7 @@ function HomePage() {
                       pending={createMut.isPending && createMut.variables === key}
                       disabled={createMut.isPending}
                       draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
-                      onActivate={() => createMut.mutate(key)}
+                      onActivate={() => activateTile(key)}
                       onMoveToExtras={() => moveToExtras(key)}
                     />
                   ))}
@@ -230,7 +238,7 @@ function HomePage() {
                     pending={createMut.isPending && createMut.variables === key}
                     disabled={createMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
-                    onActivate={() => createMut.mutate(key)}
+                    onActivate={() => activateTile(key)}
                     onMoveToExtras={() => moveToExtras(key)}
                   />
                 ))}
@@ -268,7 +276,7 @@ function HomePage() {
                 outputKey={key}
                 isPending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
-                onActivate={() => { setMoreGroup(null); createMut.mutate(key); }}
+                onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
               />
             ))}
