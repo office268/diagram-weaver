@@ -238,7 +238,7 @@ function HomePage() {
           <section>
             <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">PR-Docs</h2>
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
-              <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+              <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
                   <SortableTile
                     key={key}
@@ -259,6 +259,29 @@ function HomePage() {
               </div>
             </SortableContext>
           </section>
+
+          {toolTiles.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">Tools</h2>
+              <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
+                <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
+                  {toolTiles.map((key, i) => (
+                    <SortableTile
+                      key={key}
+                      outputKey={key}
+                      index={i}
+                      pending={createMut.isPending && createMut.variables === key}
+                      disabled={createMut.isPending}
+                      draggable={false}
+                      onActivate={() => activateTile(key)}
+                      onMoveToExtras={() => moveToExtras(key)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </section>
+          )}
+
         </div>
       </DndContext>
 
