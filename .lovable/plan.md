@@ -1,22 +1,25 @@
-## מטרה
-להציג בכותרת רק את שם המודול הפעיל (כותרת בודדת), במקום שלוש הלשוניות. המעבר בין המודולים יתבצע מתפריט ההמבורגר.
+## הבעיה
+ה-pipeline של activity diagram עבר ל-SVG (`runActivitySwimlaneOrchestrator` מחזיר `<svg>...</svg>`), אבל ב-`src/routes/api/chat-message.ts` הקוד שלאחר היצירה עדיין מתייחס לפלט כאל Mermaid:
 
-## שינויים
+1. `sanitizeMermaidLabels(mermaid)` מופעל על SVG ועלול לעוות אותו.
+2. `getActivityMermaidValidationError(mermaid)` מחפש `flowchart RL` ב-SVG — תמיד נכשל עם השגיאה שראינו בלוגים:
+   `יצירת תרשים ה-Activity נכשלה בשלב בדיקת Mermaid: חסר flowchart RL`.
 
-### `src/routes/_authenticated.tsx`
-- להחליף את שורת שלוש הלשוניות בכותרת בודדת מרכזית של המודול הפעיל: אייקון + שם המודול.
-- מיפוי מודולים:
-  - `/dashboard` (וגם `/chat/*`, `/diagram/*`, `/editor/*`, `/documents/*`) → "ניתוח מערכות" (אייקון `Workflow`).
-  - `/projects-management` (וגם `/projects/*`) → "ניהול פרויקטים" (אייקון `KanbanSquare`).
-  - `/product` → "ניהול מוצר" (אייקון `Rocket`).
-  - מסלולים אחרים (settings, organization, billing וכו') → לא תוצג כותרת מודול.
-- העיצוב: שורה ממורכזת, אייקון קטן + טקסט bold עם קו תחתון `bg-primary` קצר תחתיה (כמו האינדיקטור הקיים), במקום ה-`divide-x` של שלוש הלשוניות.
-- ה-`Link to="/documents"` ו-`CommandTriggerButton` (md+) — נשמרים בצד שמאל של אותה שורה.
+לכן כל ניסיון ליצור activity diagram מסתיים בשגיאה.
 
-### `src/components/user-menu.tsx`
-- להוסיף בראש ה-`DropdownMenuContent` שלושה פריטי ניווט למודולים (`Workflow`, `KanbanSquare`, `Rocket`) — לכל אחד `Link` למסלול שלו. המודול הפעיל יסומן ב-`bg-accent` ובטקסט מודגש לפי `useLocation().pathname`.
-- מתחתיהם `DropdownMenuSeparator`. שאר התפריט נשאר כפי שהוא.
+## התיקון
+ב-`src/routes/api/chat-message.ts` (סביב שורות 300–354), כאשר `outputType === "diagram_activity"`:
 
-## הערות
-- אין שינוי בלוגיקה של המודולים עצמם או במסלולים.
-- אם המשתמש נמצא בעמוד שאינו שייך לאחד משלושת המודולים, הכותרת לא תופיע — והכותרת תכלול רק לוגו/חיפוש/המבורגר.
+- לא להפעיל `sanitizeMermaidLabels` על הפלט (זה SVG).
+- לא להפעיל `getActivityMermaidValidationError` על הפלט.
+- במקום זאת להשתמש ב-`validateActivitySvg` (כבר קיים ב-`activity-diagram-pipeline.server.ts`) — אם יש violations, לזרוק `ActivityDiagramGenerationError("builder_invalid_mermaid", ...)` עם תיאור ההפרות. למעשה ה-orchestrator כבר מריץ ולידציה פנימית ב-`runValidatorAgent` + בדיקה סופית, כך שכפילות הוולידציה כאן מיותרת — מספיק להסיר את שתי הקריאות הללו עבור הענף של SVG.
+
+ה-renderer (`ActivitySwimlaneRenderer`) כבר מזהה SVG לעומת Mermaid, אז שמירת ה-SVG בעמודה `mermaid_code` תמשיך לעבוד.
+
+## פרטים טכניים
+- שינוי הקוד בלבד בקובץ `src/routes/api/chat-message.ts`: לעטוף את שתי הקריאות הקיימות בתנאי `if (outputType !== "diagram_activity")` (או להסירן עבור הענף הזה).
+- אין שינוי ב-prompts, system prompts, סכמות, ולידציה של ה-pipeline, או רף האיכות — להפך, מסירים שלב ולידציה שגוי שחוסם פלט תקין.
+- אין שינוי במסד הנתונים או ב-renderer.
+
+## בדיקה
+לאחר התיקון: לנסות שוב ליצור activity diagram מתיאור של תהליך אישור בקשת חופשה — הפלט אמור להישמר ולהיות מוצג ב-`ActivitySwimlaneRenderer` כ-SVG.
