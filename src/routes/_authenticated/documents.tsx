@@ -48,9 +48,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { listSpecs, deleteSpec } from "@/lib/spec.functions";
-import { listDiagrams, deleteDiagram } from "@/lib/diagrams.functions";
-import { listDocuments, deleteDocument } from "@/lib/documents.functions";
+import { listSpecs, deleteSpec, updateSpec } from "@/lib/spec.functions";
+import { listDiagrams, deleteDiagram, updateDiagram } from "@/lib/diagrams.functions";
+import { listDocuments, deleteDocument, renameDocument } from "@/lib/documents.functions";
+
 import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
