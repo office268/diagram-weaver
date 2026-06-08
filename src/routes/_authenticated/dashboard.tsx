@@ -276,7 +276,7 @@ function HomePage() {
                 outputKey={key}
                 isPending={createMut.isPending && createMut.variables === key}
                 disabled={createMut.isPending}
-                onActivate={() => { setMoreGroup(null); createMut.mutate(key); }}
+                onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
               />
             ))}
