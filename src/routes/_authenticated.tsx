@@ -113,12 +113,11 @@ function AuthenticatedLayout() {
           <Outlet />
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
-          <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-muted-foreground">
-            <span />
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-center gap-3 px-4 py-3 text-xs text-muted-foreground">
             <nav className="flex items-center gap-4">
-              <Link to="/about" className="hover:text-foreground">אודות</Link>
-              <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
               <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
+              <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
+              <Link to="/about" className="hover:text-foreground">אודות</Link>
             </nav>
           </div>
         </footer>
