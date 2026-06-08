@@ -402,9 +402,15 @@ function ChatPage() {
   const messages = data.messages;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-cols-[16rem_1fr] md:grid-rows-[1fr_auto] md:px-4">
+    <div
+      className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-rows-[1fr_auto] md:px-4"
+      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 8px 1fr` } : undefined}
+    >
       {/* Sidebar — threads */}
-      <aside className="hidden w-64 min-h-0 shrink-0 flex-col gap-2 md:col-start-1 md:row-start-1 md:flex">
+      <aside
+        className="hidden min-h-0 shrink-0 flex-col gap-2 md:col-start-1 md:row-start-1 md:flex"
+        style={isDesktop ? { width: sidebarWidth } : undefined}
+      >
         <Button
           variant="outline"
           size="sm"
