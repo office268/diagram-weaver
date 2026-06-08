@@ -99,7 +99,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   requirements_combined: {
     key: "requirements_combined",
     category: "document",
-    label: "מסמך דרישות (עסקי + טכני)",
+    label: "מסמך דרישות\n(עסקי + טכני)",
     description: "",
     icon: Briefcase,
     colorClass: "text-amber-500",
