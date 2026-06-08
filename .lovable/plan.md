@@ -1,37 +1,23 @@
 ## הבעיה
-ב-Use Case actor שמייצג מערכת חיצונית (כמו "מערכת תשלום") מוצג כדמות מקל, בדיוק כמו משתמש אנושי. בפועל הסכמה כבר תומכת ב-`stereotype: "external"` על actor (ראה דוגמה בקובץ הפרומפט), והרכיב `ActorNode` פשוט מתעלם מזה.
+יצירת ה-activity לא נכשלה בקוד — היא נקטעה. שרת ה-dev אותחל (`exited with code 143`) באמצע ריצת האורקסטרטור, ה-stream נסגר ללקוח (`תגובת השרת נקטעה`), והאורקסטרטור פשוט מת. ה-`try/catch` שמתעד `status:'failed'` לא רץ כי לא הייתה זריקת חריגה — התהליך הופסק.
 
-## הפתרון
+לכן: טוקנים נצרכו, אבל אין שום רשומה ב-`ai_usage_events`.
 
-### 1. `src/components/diagram-nodes.tsx` — `ActorNode`
-לבדוק `data.stereotype` (וגם רמז ב-`data.label` כמו "מערכת"/"שירות"/"API") כדי להחליט בין שתי וריאציות רינדור:
+## מטרה
+שכל בקשה שמתחילה ליצור artifact תייצר רשומת עלות סופית, גם אם החיבור נקטע / השרת מת / המשתמש סגר את הטאב.
 
-- **אנושי (ברירת מחדל)**: דמות המקל הקיימת.
-- **מערכת חיצונית** (`stereotype` שווה `"external"` / `"system"` / מתחיל ב"מערכת"): אייקון מסך מחשב + בסיס, ומתחתיו `«external system»` כסטריאוטיפ + הלייבל.
+## פתרון
+ב-`src/routes/api/chat-message.ts`, סביב ה-diagram path וה-spec_document path:
 
-הרוחב/גובה של ה-node נשמר זהה (`60×90` כמו ב-`NODE_SIZE.actor`) כדי שלא לשבור את ה-layout שכבר דוחף actors החוצה מה-boundary.
+1. **מאזין לקטיעה**: לרשום `request.signal.addEventListener('abort', ...)` בתחילת ה-handler. בקריאה: לקרוא `tracker.totals()` ולבצע `logAiUsage` עם `status:'failed'`, `errorMessage:'stream aborted'`.
+2. **דגל "כבר תועד"**: בוליאני `usageLogged` שמסומן ב-true אחרי כל קריאה ל-`logAiUsage` (הצלחה / כשל / abort). ה-handler של abort בודק את הדגל ולא מתעד פעמיים.
+3. **`finally` נוסף**: בבלוק ה-`finally` הקיים (שעושה `clearInterval(heartbeat); close()`), אם `usageLogged === false` וה-tracker צבר טוקנים — לרשום `status:'failed'` עם `errorMessage:'incomplete'`. זה תופס גם את המקרה של SIGTERM שלא מפעיל את ה-abort signal.
+4. **מעבירים את ה-tracker למעלה**: כרגע `diagramTracker` נוצר בתוך ה-`else` של ה-diagram path. צריך להקדים את היצירה שלו ושל ה-tracker של ה-spec_document לפני ה-`try` החיצוני, כדי שה-abort handler וה-`finally` יוכלו לגשת אליהם.
 
-### 2. `src/agents/diagrams/rf-json.server.ts` — `diagram_usecase.contentRules`
-תוספת **לא-מורידת-איכות** של כלל אחד (לא מסיר/מחליש כללים קיימים, רק מוסיף הנחיה לסטריאוטיפ):
+## קבצים
+- `src/routes/api/chat-message.ts` — בלבד. שינוי מינימלי, לא נוגע ב-pipelines של ה-AI עצמם, לא משנה פרומפטים/סכמות/ולידציה.
 
-> "אם actor הוא מערכת/שירות חיצוני (לא בן-אדם) — סמן אותו עם `stereotype: \"external\"`. דוגמה: מערכת תשלום, שירות SMS, מערכת CRM חיצונית."
-
-ולקריטריון self-critique נוסיף שאלה אחת:
-> "האם כל actor שאינו אנושי סומן עם `stereotype: \"external\"`?"
-
-(הדוגמה הקיימת בשורה 58 כבר משתמשת ב-`stereotype: "external"` ל-"מערכת תשלום", אז זה רק מחזק עקביות.)
-
-## מה לא משתנה
-- אין שינוי בסכמת הצמתים/edges (`stereotype` כבר אופציונלי על כל node).
-- אין שינוי ב-layout (`src/lib/diagram-rf.ts`) — actor "מערכת" עדיין נחשב actor לכל דבר ויוצב מחוץ ל-boundary.
-- אין שינוי בקומפוננטות אחרות, ב-validation, ב-thinking steps או ב-pipeline.
-- אין הסרה/החלשה של פרומפטים, מינימומים, או self-critique קיימים — רק תוספת.
-
-## קבצים שישתנו
-- `src/components/diagram-nodes.tsx` — `ActorNode` הופך לשתי וריאציות רינדור.
-- `src/agents/diagrams/rf-json.server.ts` — שורה אחת נוספת ב-`contentRules` של `diagram_usecase` ושאלה אחת נוספת ב-`critique`.
-
-## פרטים טכניים
-- בדיקת "מערכת חיצונית": `stereotype?.toLowerCase()` ∈ {`external`,`system`} **או** `label` מתחיל ב-"מערכת " (fallback לתאימות לאחור עם פלטים ישנים שלא סימנו stereotype).
-- אייקון: SVG inline פשוט — מלבן מסך + בסיס/חצובה, עובי קו `1.6`, צבע `var(--foreground)` (תואם לסגנון של שאר ה-nodes).
-- מתחת לאייקון: שורה קטנה `«external»` ב-`text-muted-foreground` ואז ה-label.
+## מה לא נעשה
+- לא נוגעים ב-`activity-swimlane.server.ts`, ב-`activity-diagram-pipeline.server.ts`, ב-`rf-json.server.ts` — איכות התוצרים האפיוניים נשמרת.
+- לא נוגעים בסכמת ה-DB — `status` ו-`error_message` כבר קיימים.
+- לא נוגעים ב-UI — ה-badge "נכשל" כבר ידע להציג את הרשומה החדשה.
