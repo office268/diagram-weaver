@@ -134,7 +134,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   spec_detailed: {
     key: "spec_detailed",
     category: "document",
-    label: "מסמך אפיון מפורט",
+    label: "אפיון מפורט",
     description: "אפיון מעמיק: תרחישי שימוש, רכיבים, מודל נתונים מלא.",
     icon: FileCode2,
     colorClass: "text-emerald-500",
