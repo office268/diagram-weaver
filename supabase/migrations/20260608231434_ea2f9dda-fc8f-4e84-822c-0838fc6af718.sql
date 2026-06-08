@@ -1,0 +1,1 @@
+ALTER TABLE public.chat_threads ADD COLUMN IF NOT EXISTS model_override TEXT NULL;

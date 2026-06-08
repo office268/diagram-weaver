@@ -95,8 +95,8 @@ export const Route = createFileRoute("/api/chat-message")({
         if (body.mode === "plan") {
           try {
             const provider = createLovableAiGatewayProvider(apiKey);
-            const { loadAgentModelOverride: loadPlanModel } = await import("@/lib/ai-model-setting.server");
-            const model = provider(await loadPlanModel());
+            const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+            const model = provider(await loadEffectiveModelForThread(body.threadId));
             const planSystem =
               `אתה אנליסט מערכות מנוסה שעוזר ללקוח לחדד את הבקשה לפני יצירת ${def.label}. ` +
               `אל תייצר את המסמך/תרשים עצמו. במקום זה: ` +
@@ -151,8 +151,8 @@ export const Route = createFileRoute("/api/chat-message")({
         // seconds and runs the heavy AI pipeline out of band. The client
         // polls `diagram_jobs.status` for completion.
         if (def.category === "diagram") {
-          const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-          const modelOverride = await loadAgentModelOverride();
+          const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+          const modelOverride = await loadEffectiveModelForThread(body.threadId);
           const diagramKind = outputType as DiagramOutputKey;
 
           const { data: jobRow, error: jobErr } = await supabaseAdmin
@@ -179,8 +179,8 @@ export const Route = createFileRoute("/api/chat-message")({
         const docTracker = createUsageTracker();
         void docTracker; // reserved for future partial-usage logging on doc path
         let usageLogged = false;
-        const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
-        const modelOverride = await loadAgentModelOverride();
+        const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+        const modelOverride = await loadEffectiveModelForThread(body.threadId);
 
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {

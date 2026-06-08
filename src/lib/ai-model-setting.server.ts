@@ -20,3 +20,25 @@ export async function loadAgentModelOverride(): Promise<string> {
     return DEFAULT_AGENT_MODEL;
   }
 }
+
+/**
+ * Returns the effective model for a specific chat thread. If the thread has
+ * a per-thread `model_override` that is in the whitelist, returns it.
+ * Otherwise falls back to the admin global default.
+ */
+export async function loadEffectiveModelForThread(threadId: string): Promise<string> {
+  try {
+    const { data } = await (supabaseAdmin as any)
+      .from("chat_threads")
+      .select("model_override")
+      .eq("id", threadId)
+      .maybeSingle();
+    const candidate = (data?.model_override as string | null | undefined) ?? null;
+    if (candidate && (ALLOWED_AGENT_MODELS as readonly string[]).includes(candidate)) {
+      return candidate;
+    }
+  } catch {
+    /* fall through to admin default */
+  }
+  return loadAgentModelOverride();
+}

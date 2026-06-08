@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ALLOWED_AGENT_MODELS } from "@/agents/shared/constants";
+
 
 const OutputKeySchema = z.string().min(1).max(64);
 
@@ -87,3 +89,31 @@ export const renameChatThread = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const updateChatThreadModel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { threadId: string; model: string | null }) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        model: z
+          .union([
+            z.enum(ALLOWED_AGENT_MODELS as unknown as [string, ...string[]]),
+            z.null(),
+          ])
+          .nullable(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // RLS on chat_threads scopes by user_id; the .eq below is defense in depth.
+    const { error } = await supabase
+      .from("chat_threads")
+      .update({ model_override: data.model } as never)
+      .eq("id", data.threadId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return { ok: true, model: data.model };
+  });
+
