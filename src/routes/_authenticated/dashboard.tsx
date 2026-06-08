@@ -367,7 +367,7 @@ function SectionHeading({
   }[variant];
   return (
     <div className="mb-3 flex flex-col items-center gap-1">
-      <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
+      <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg leading-tight">
         {label}
       </h2>
       <div className={`h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
