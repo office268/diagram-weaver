@@ -142,7 +142,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_state: {
     key: "diagram_state",
     category: "diagram",
-    label: "תרשים State",
+    label: "state diagram",
     description: "מצבים והמעברים ביניהם של ישות במערכת.",
     icon: Activity,
     colorClass: "text-emerald-500",
