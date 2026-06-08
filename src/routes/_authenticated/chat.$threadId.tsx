@@ -498,7 +498,10 @@ function ChatPage() {
       </div>
 
       {/* Composer */}
-      <div className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3">
+      <div
+        className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3"
+        style={isDesktop ? { width: sidebarWidth } : undefined}
+      >
           <input
             ref={fileInputRef}
             type="file"
