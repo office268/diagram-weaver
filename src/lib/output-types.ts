@@ -21,11 +21,13 @@ import {
 export type DocumentOutputKey =
   | "business_requirements"
   | "technical_requirements"
+  | "requirements_combined"
   | "initiation"
   | "spec_overview"
   | "spec_detailed"
   | "user_guide"
   | "meeting_summary";
+
 
 
 export type DiagramOutputKey =
@@ -90,6 +92,15 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: Cpu,
     colorClass: "text-sky-500",
   },
+  requirements_combined: {
+    key: "requirements_combined",
+    category: "document",
+    label: "מסמך דרישות (עסקי + טכני)",
+    description: "יצירה של שני המסמכים — דרישות עסקי (BRD) ודרישות טכני (TRD) — בלחיצה אחת.",
+    icon: Briefcase,
+    colorClass: "text-amber-500",
+  },
+
   spec_overview: {
     key: "spec_overview",
     category: "document",
@@ -181,9 +192,8 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
 // Display order on the home page tiles (primary, most-used).
 export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "initiation",
-  "business_requirements",
+  "requirements_combined",
   "diagram_usecase",
-  "technical_requirements",
   "spec_overview",
   "diagram_flow",
   "diagram_sequence",
@@ -195,10 +205,13 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
 
 // Less common types — shown inside the "More…" tile.
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
+  "business_requirements",
+  "technical_requirements",
   "diagram_state",
   "diagram_deployment",
   "user_guide",
 ];
+
 
 
 
