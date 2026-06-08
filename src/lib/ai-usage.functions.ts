@@ -41,7 +41,7 @@ export const listAiUsage = createServerFn({ method: "GET" })
     let q = client
       .from("ai_usage_events")
       .select(
-        "id, created_at, spec_document_id, diagram_id, artifact_kind, doc_title, doc_type, word_count, model, purpose, prompt_tokens, completion_tokens, total_tokens, cost_usd, user_id",
+        "id, created_at, spec_document_id, diagram_id, artifact_kind, status, error_message, doc_title, doc_type, word_count, model, purpose, prompt_tokens, completion_tokens, total_tokens, cost_usd, user_id",
       )
       .order("created_at", { ascending: false });
     if (!isAdmin) q = q.eq("user_id", userId);
