@@ -84,7 +84,7 @@ export const DOC_TEMPLATES: Record<DocTypeKey, DocTemplate[]> = {
     {
       label: "Onboarding flow",
       prompt:
-        "אפיון מפורט של תהליך Onboarding למשתמש חדש: רישום, אימות אימייל/SMS, OAuth, מילוי פרופיל, בחירת תוכנית, hand-off ל-product tour. כללו states, edge cases ו-mermaid sequence diagrams.",
+        "אפיון מפורט של תהליך Onboarding למשתמש חדש: רישום, אימות אימייל/SMS, OAuth, מילוי פרופיל, בחירת תוכנית, hand-off ל-product tour. כללו states, edge cases ותרחישי שימוש מפורטים.",
     },
     {
       label: "תהליך תשלום",
