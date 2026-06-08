@@ -900,6 +900,74 @@ function MessageBubble({ message }: { message: MessageRow }) {
           <ExternalLink className="h-3 w-3 text-muted-foreground" />
         </Link>
       )}
+      <AssistantActions message={message} />
+    </div>
+  );
+}
+
+function AssistantActions({ message }: { message: MessageRow }) {
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content);
+    toast.success("הועתק");
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([message.content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `response-${message.id.slice(0, 8)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFeedback = (v: "up" | "down") => {
+    setFeedback((prev) => (prev === v ? null : v));
+    toast.success(v === "up" ? "תודה על המשוב" : "תודה, נשתפר");
+  };
+
+  return (
+    <div className="flex items-center gap-0.5 pt-1 text-muted-foreground">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0 hover:text-foreground"
+        onClick={() => handleFeedback("up")}
+        title="לייק"
+      >
+        <ThumbsUp className={`h-3.5 w-3.5 ${feedback === "up" ? "fill-current text-primary" : ""}`} />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0 hover:text-foreground"
+        onClick={() => handleFeedback("down")}
+        title="דיסלייק"
+      >
+        <ThumbsDown className={`h-3.5 w-3.5 ${feedback === "down" ? "fill-current text-destructive" : ""}`} />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0 hover:text-foreground"
+        onClick={handleCopy}
+        title="העתק"
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 p-0 hover:text-foreground"
+        onClick={handleDownload}
+        title="הורדה"
+      >
+        <Download className="h-3.5 w-3.5" />
+      </Button>
     </div>
   );
 }
