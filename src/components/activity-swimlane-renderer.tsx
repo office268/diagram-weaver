@@ -167,7 +167,7 @@ export function ActivitySwimlaneRenderer({
   const isRF  = isActivityRF(code);
 
   const safeSvg = useMemo(
-    () => (isSvg ? sanitizeMermaidSvg(code) : null),
+    () => (isSvg ? sanitizeSvg(code) : null),
     [isSvg, code],
   );
 
