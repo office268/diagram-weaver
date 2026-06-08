@@ -394,18 +394,18 @@ function SectionHeading({
   }[variant];
   const Icon = config.Icon;
   return (
-    <div className="group mb-3 flex items-center gap-2.5 sm:gap-3">
-      <div className="relative flex h-9 w-9 items-center justify-center sm:h-10 sm:w-10">
+    <div className="group mb-3 flex flex-col items-center gap-1.5">
+      <div className="relative flex h-10 w-10 items-center justify-center">
         <div className={`absolute inset-0 rounded-full blur-md transition-colors ${config.glow} group-hover:opacity-80`} aria-hidden />
-        <div className={`relative flex h-8 w-8 items-center justify-center rounded-2xl border-2 ${config.iconBg} ${config.iconBorder} ${config.rotate} transition-transform group-hover:rotate-0 sm:h-9 sm:w-9`}>
-          <Icon className={`h-4 w-4 sm:h-4.5 sm:w-4.5 ${config.iconColor}`} aria-hidden />
+        <div className={`relative flex h-9 w-9 items-center justify-center rounded-2xl border-2 ${config.iconBg} ${config.iconBorder} ${config.rotate} transition-transform group-hover:rotate-0`}>
+          <Icon className={`h-4.5 w-4.5 ${config.iconColor}`} aria-hidden />
         </div>
       </div>
-      <div className="min-w-0">
+      <div className="flex flex-col items-center gap-1">
         <h2 className="text-base font-bold tracking-tight text-foreground/85 sm:text-lg lowercase leading-tight">
           {label}
         </h2>
-        <div className={`mt-0.5 h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
+        <div className={`h-1 rounded-full opacity-60 ${config.underline} ${config.underlineW}`} aria-hidden />
       </div>
     </div>
   );
