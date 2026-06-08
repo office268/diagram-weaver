@@ -296,12 +296,12 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="relative flex-1">
+        <div className="relative max-w-[240px]">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="חפש פרויקטים, מסמכים, תרשימים, קבצים..."
+            placeholder="חפש..."
             className="h-10 pr-9"
             autoFocus
           />
