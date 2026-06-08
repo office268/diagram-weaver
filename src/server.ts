@@ -1,6 +1,8 @@
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
+import { setCloudflareCtx } from "./lib/cf-context.server";
+
 import { renderErrorPage } from "./lib/error-page";
 
 type ServerEntry = {
