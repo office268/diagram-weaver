@@ -527,7 +527,7 @@ function ChatPage() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
 
         {messages.length > 0 && (
-          <div className="flex shrink-0 items-center justify-end border-b border-border px-3 py-2">
+          <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
             <ThreadModelSelector
               threadId={threadId}
               currentOverride={thread.model_override ?? null}

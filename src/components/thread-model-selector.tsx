@@ -82,9 +82,7 @@ export function ThreadModelSelector({ threadId, currentOverride, variant = "defa
         </Button>
       </PopoverTrigger>
       <PopoverContent side="bottom" align="start" className="w-80 p-1.5">
-        <div className="px-2 py-1.5 text-xs text-muted-foreground">
-          בחר/י מודל reasoning עבור השיחה הזו. מודלים איכותיים יותר תוצרים טובים יותר אך יקרים ואיטיים יותר.
-        </div>
+
         <button
           type="button"
           disabled={mutation.isPending}
