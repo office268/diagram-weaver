@@ -193,7 +193,15 @@ function HomePage() {
   const [moreGroup, setMoreGroup] = useState<null | "diagram" | "document">(null);
 
   const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
-  const documentTiles = useMemo(() => mainTiles.filter((k) => !isDiagramType(k)), [mainTiles]);
+  const documentTiles = useMemo(
+    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary"),
+    [mainTiles],
+  );
+  const toolTiles = useMemo(
+    () => mainTiles.filter((k) => k === "meeting_summary"),
+    [mainTiles],
+  );
+
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
