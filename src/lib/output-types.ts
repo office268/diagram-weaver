@@ -202,7 +202,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   dashboard: {
     key: "dashboard",
     category: "document",
-    label: "dashboard",
+    label: "Dashboard",
     description: "",
     icon: LayoutDashboard,
     colorClass: "text-cyan-500",
