@@ -63,6 +63,7 @@ import {
   listChatThreads,
   deleteChatThread,
 } from "@/lib/chat.functions";
+import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/mermaid-preview";
@@ -143,6 +144,8 @@ function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const suggestPromptFn = useServerFn(suggestUserPrompt);
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [mode, setMode] = useState<"auto" | "plan" | "build">("auto");
@@ -664,9 +667,7 @@ function ChatPage() {
                 className="min-h-[72px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
-                {(promptBoxSettings.allowedUploads.file ||
-                  promptBoxSettings.allowedUploads.image ||
-                  promptBoxSettings.allowedUploads.link) ? (
+                {true ? (
                   <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -721,6 +722,37 @@ function ChatPage() {
                           קישור
                         </button>
                       )}
+                      <button
+                        type="button"
+                        disabled={suggesting}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent disabled:opacity-60"
+                        onClick={async () => {
+                          setAttachMenuOpen(false);
+                          setSuggesting(true);
+                          try {
+                            const res = await suggestPromptFn({ data: { threadId } });
+                            const text = (res?.prompt ?? "").trim();
+                            if (text) {
+                              setInput((prev) => (prev ? `${prev}\n\n${text}` : text));
+                              requestAnimationFrame(() => textareaRef.current?.focus());
+                            } else {
+                              toast.error("לא הופק פרומפט. נסה/י שוב.");
+                            }
+                          } catch (err) {
+                            const msg = err instanceof Error ? err.message : String(err);
+                            toast.error(`שגיאה ביצירת פרומפט: ${msg}`);
+                          } finally {
+                            setSuggesting(false);
+                          }
+                        }}
+                      >
+                        {suggesting ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 text-primary" />
+                        )}
+                        חולל פרומפט עם AI
+                      </button>
                     </PopoverContent>
                   </Popover>
                 ) : (
