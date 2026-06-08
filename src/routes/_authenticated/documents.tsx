@@ -385,31 +385,141 @@ function DocumentsPage() {
             className="grid items-center gap-2 border-b border-border bg-muted/40 px-3 py-2 text-[11px] font-medium text-muted-foreground"
             style={{ gridTemplateColumns: gridTemplate }}
           >
-            <div className="truncate">שם</div>
-            <div className="relative truncate">
+            <div className="flex min-w-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setSort("name")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                שם
+                <SortArrow col="name" />
+              </button>
+            </div>
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("type")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              סוג
+              <button
+                type="button"
+                onClick={() => setSort("type")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                סוג
+                <SortArrow col="type" />
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="סנן לפי סוג"
+                    className={`relative ms-auto inline-flex h-5 w-5 items-center justify-center rounded hover:bg-accent ${
+                      typeFilterActive ? "text-primary" : ""
+                    }`}
+                  >
+                    <Filter className="h-3 w-3" />
+                    {typeFilterActive && (
+                      <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="max-h-80 w-56 overflow-y-auto">
+                  <DropdownMenuLabel>קטגוריה</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {(Object.keys(GROUP_LABEL) as GroupFilter[]).map((g) => (
+                    <DropdownMenuItem
+                      key={g}
+                      onClick={() => {
+                        setGroup(g);
+                        setTypeFilter("all");
+                      }}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span>{GROUP_LABEL[g]}</span>
+                      {group === g && <Check className="h-3.5 w-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                  {subTypeKeys.length > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel>סוג</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => setTypeFilter("all")}
+                        className="flex items-center justify-between gap-3"
+                      >
+                        <span>כל הסוגים</span>
+                        {typeFilter === "all" && <Check className="h-3.5 w-3.5" />}
+                      </DropdownMenuItem>
+                      {subTypeKeys.map((key) => {
+                        const t = OUTPUT_TYPES[key];
+                        return (
+                          <DropdownMenuItem
+                            key={key}
+                            onClick={() => setTypeFilter(key)}
+                            className="flex items-center justify-between gap-3"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <t.icon className={`h-3 w-3 ${t.colorClass}`} />
+                              {t.label}
+                            </span>
+                            {typeFilter === key && <Check className="h-3.5 w-3.5" />}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </>
+                  )}
+                  {typeFilterActive && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setGroup("all");
+                          setTypeFilter("all");
+                        }}
+                      >
+                        <X className="ml-1 h-3.5 w-3.5" />
+                        נקה סינון
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="relative truncate">
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("date")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              תאריך
+              <button
+                type="button"
+                onClick={() => setSort("date")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                תאריך
+                <SortArrow col="date" />
+              </button>
             </div>
-            <div className="relative truncate">
+
+            <div className="relative flex min-w-0 items-center gap-1">
               <span
                 onMouseDown={startResize("size")}
                 className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
-              גודל
+              <button
+                type="button"
+                onClick={() => setSort("size")}
+                className="flex items-center gap-1 truncate hover:text-foreground"
+              >
+                גודל
+                <SortArrow col="size" />
+              </button>
             </div>
+
             <div className="relative truncate text-left">
               <span
                 onMouseDown={startResize("actions")}
@@ -419,6 +529,7 @@ function DocumentsPage() {
               פעולות
             </div>
           </div>
+
 
 
           <ul className="divide-y divide-border">
