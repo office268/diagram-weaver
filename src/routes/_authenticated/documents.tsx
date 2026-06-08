@@ -226,9 +226,6 @@ function DocumentsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           המסמכים שלי
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          כל המסמכים, התרשימים והקבצים שיצרת והעלית.
-        </p>
       </div>
 
       {/* Toolbar: search + sort + filter */}
