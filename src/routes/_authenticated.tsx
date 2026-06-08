@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Workflow, KanbanSquare, Rocket, Search, X, Menu } from "lucide-react";
+import { Loader2, Search, X, Workflow } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -106,7 +106,6 @@ function AuthenticatedLayout() {
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-          <ActiveModuleTitle />
 
         </header>
 
@@ -156,48 +155,6 @@ function HamburgerMenu() {
   return <UserMenu user={user} trigger="hamburger" />;
 }
 
-function ActiveModuleTitle() {
-  const location = useLocation();
-  const path = location.pathname;
-  let title: string | null = null;
-  let Icon: typeof Workflow | null = null;
-  if (
-    path.startsWith("/chat") ||
-    path.startsWith("/diagram") ||
-    path.startsWith("/editor") ||
-    path.startsWith("/documents")
-  ) {
-    title = "ניתוח מערכות";
-    Icon = Workflow;
-  } else if (path.startsWith("/projects-management") || path.startsWith("/projects")) {
-    title = "ניהול פרויקטים";
-    Icon = KanbanSquare;
-  } else if (path.startsWith("/product")) {
-    title = "ניהול מוצר";
-    Icon = Rocket;
-  }
-  if (!title || !Icon) return <div className="py-3" aria-hidden />;
-  return (
-    <div className="flex w-full items-center justify-between gap-3 px-4 py-4 sm:py-5 [direction:rtl]">
-      <div className="relative flex items-center gap-2 mx-auto">
-        <Icon className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-        <span className="text-sm font-semibold text-foreground sm:text-base">{title}</span>
-        
-      </div>
-      <div className="hidden md:flex items-center gap-1.5">
-        <Link
-          to="/documents"
-          className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          המסמכים שלי
-        </Link>
-        <div data-tour="header-search">
-          <CommandTriggerButton />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 
