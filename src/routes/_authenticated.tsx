@@ -106,7 +106,7 @@ function AuthenticatedLayout() {
         </main>
         <footer className="hidden md:block border-t border-border bg-card">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-center gap-3 px-4 py-3 text-xs text-muted-foreground">
-            <nav className="flex items-center gap-4">
+            <nav className="mx-auto flex items-center justify-center gap-8">
               <Link to="/terms" className="hover:text-foreground">תנאי שימוש</Link>
               <Link to="/privacy" className="hover:text-foreground">פרטיות</Link>
               <Link to="/about" className="hover:text-foreground">אודות</Link>
