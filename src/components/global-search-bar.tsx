@@ -210,7 +210,7 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="border-t border-border bg-card px-4 py-3 [direction:rtl]">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-2">
         <Button
           variant="outline"
           className="h-11 gap-2 px-4 shrink-0 text-sm font-medium"
