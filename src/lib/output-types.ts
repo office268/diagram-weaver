@@ -151,7 +151,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_deployment: {
     key: "diagram_deployment",
     category: "diagram",
-    label: "תרשים Deployment",
+    label: "deployment diagram",
     description: "טופולוגיית פריסה: שרתים, רשתות ורכיבים.",
     icon: Server,
     colorClass: "text-violet-500",
