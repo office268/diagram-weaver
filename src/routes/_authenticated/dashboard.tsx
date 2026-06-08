@@ -77,23 +77,24 @@ function HomePage() {
   // Per-user tile customization stored in localStorage.
   // movedToExtras: ORDER tiles the user hid from main grid.
   // movedToMain: EXTRAS tiles the user moved to main grid.
-  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>([]);
-  const [movedToMain, setMovedToMain] = useState<OutputKey[]>([]);
-  useEffect(() => {
+  const readLS = (key: string): OutputKey[] => {
+    if (typeof window === "undefined") return [];
     try {
-      setMovedToExtras(JSON.parse(localStorage.getItem("dash-moved-to-extras") ?? "[]"));
-      setMovedToMain(JSON.parse(localStorage.getItem("dash-moved-to-main") ?? "[]"));
+      const raw = window.localStorage.getItem(key);
+      return raw ? (JSON.parse(raw) as OutputKey[]) : [];
     } catch {
-      setMovedToExtras([]);
-      setMovedToMain([]);
+      return [];
     }
-  }, []);
+  };
+  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>(() => readLS("dash-moved-to-extras"));
+  const [movedToMain, setMovedToMain] = useState<OutputKey[]>(() => readLS("dash-moved-to-main"));
   useEffect(() => {
     localStorage.setItem("dash-moved-to-extras", JSON.stringify(movedToExtras));
   }, [movedToExtras]);
   useEffect(() => {
     localStorage.setItem("dash-moved-to-main", JSON.stringify(movedToMain));
   }, [movedToMain]);
+
 
   const movedToExtrasSet = useMemo(() => new Set(movedToExtras), [movedToExtras]);
   const movedToMainSet   = useMemo(() => new Set(movedToMain),   [movedToMain]);
@@ -179,7 +180,7 @@ function HomePage() {
       navigate({ to: "/meeting-transcribe" });
       return;
     }
-    if (key === "requirements_combined") {
+    if ((key as string) === "requirements_combined") {
       combinedMut.mutate();
       return;
     }
@@ -240,7 +241,7 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                       disabled={createMut.isPending || combinedMut.isPending}
                       draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                       onActivate={() => activateTile(key)}
@@ -266,7 +267,7 @@ function HomePage() {
                     key={key}
                     outputKey={key}
                     index={i}
-                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                     disabled={createMut.isPending || combinedMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                     onActivate={() => activateTile(key)}
@@ -292,7 +293,7 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                       disabled={createMut.isPending || combinedMut.isPending}
                       draggable={false}
                       onActivate={() => activateTile(key)}
@@ -328,7 +329,7 @@ function HomePage() {
               <ExtrasTile
                 key={key}
                 outputKey={key}
-                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                 disabled={createMut.isPending || combinedMut.isPending}
                 onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
