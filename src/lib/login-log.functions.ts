@@ -23,6 +23,19 @@ export const recordLoginEvent = createServerFn({ method: "POST" })
     }
     const userAgent = getRequestHeader("user-agent") ?? null;
 
+    // Throttle: skip if the same user logged the same event in the last 30 minutes
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: recent } = await supabaseAdmin
+      .from("login_events")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("event", data.event)
+      .gte("created_at", since)
+      .limit(1);
+    if (recent && recent.length > 0) {
+      return { ok: true as const, skipped: true as const };
+    }
+
     const { error } = await supabase.from("login_events").insert({
       user_id: userId,
       event: data.event,
