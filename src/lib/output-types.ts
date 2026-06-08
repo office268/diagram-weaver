@@ -82,7 +82,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
   diagram_usecase: {
     key: "diagram_usecase",
     category: "diagram",
-    label: "תרשים Use Case",
+    label: "useCase diagram",
     description: "מי המשתמשים, אילו פעולות הם מבצעים והאינטראקציות.",
     icon: Users,
     colorClass: "text-amber-500",
