@@ -193,7 +193,15 @@ function HomePage() {
   const [moreGroup, setMoreGroup] = useState<null | "diagram" | "document">(null);
 
   const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
-  const documentTiles = useMemo(() => mainTiles.filter((k) => !isDiagramType(k)), [mainTiles]);
+  const documentTiles = useMemo(
+    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary"),
+    [mainTiles],
+  );
+  const toolTiles = useMemo(
+    () => mainTiles.filter((k) => k === "meeting_summary"),
+    [mainTiles],
+  );
+
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
@@ -203,7 +211,8 @@ function HomePage() {
             <section>
               <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
               <SortableContext items={diagramTiles} strategy={rectSortingStrategy}>
-                <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+                <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
+
                   {diagramTiles.map((key, i) => (
                     <SortableTile
                       key={key}
@@ -229,7 +238,7 @@ function HomePage() {
           <section>
             <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">PR-Docs</h2>
             <SortableContext items={documentTiles} strategy={rectSortingStrategy}>
-              <div className="grid auto-rows-min grid-cols-3 gap-x-3 gap-y-3 sm:gap-x-4 sm:gap-y-4 lg:gap-5">
+              <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
                 {documentTiles.map((key, i) => (
                   <SortableTile
                     key={key}
@@ -250,6 +259,29 @@ function HomePage() {
               </div>
             </SortableContext>
           </section>
+
+          {toolTiles.length > 0 && (
+            <section>
+              <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">Tools</h2>
+              <SortableContext items={toolTiles} strategy={rectSortingStrategy}>
+                <div className="grid auto-rows-min grid-cols-1 gap-y-3 sm:gap-y-4 lg:gap-5">
+                  {toolTiles.map((key, i) => (
+                    <SortableTile
+                      key={key}
+                      outputKey={key}
+                      index={i}
+                      pending={createMut.isPending && createMut.variables === key}
+                      disabled={createMut.isPending}
+                      draggable={false}
+                      onActivate={() => activateTile(key)}
+                      onMoveToExtras={() => moveToExtras(key)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </section>
+          )}
+
         </div>
       </DndContext>
 
