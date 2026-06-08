@@ -49,6 +49,8 @@ type Item = {
   title: string;
   category: Category;
   createdAt: string;
+  path?: string | null;
+  author?: string | null;
   meta?: string;
 };
 
