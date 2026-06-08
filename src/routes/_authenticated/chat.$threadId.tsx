@@ -404,7 +404,7 @@ function ChatPage() {
   return (
     <div
       className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-rows-[1fr_auto] md:px-4"
-      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 8px 1fr` } : undefined}
+      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 12px 1fr` } : undefined}
     >
       {/* Sidebar — threads */}
       <aside
