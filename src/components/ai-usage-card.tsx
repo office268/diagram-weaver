@@ -42,7 +42,11 @@ export function AiUsageCard() {
       acc.output += r.completion_tokens ?? 0;
       acc.total += r.total_tokens ?? 0;
       acc.cost += Number(r.cost_usd ?? 0);
-      acc.docs.add(r.spec_document_id);
+      const key =
+        r.artifact_kind === "spec_document"
+          ? `s:${r.spec_document_id ?? ""}`
+          : `d:${r.diagram_id ?? ""}`;
+      acc.artifacts.add(key);
       return acc;
     },
     {
@@ -51,7 +55,7 @@ export function AiUsageCard() {
       output: 0,
       total: 0,
       cost: 0,
-      docs: new Set<string>(),
+      artifacts: new Set<string>(),
     },
   );
 
@@ -59,7 +63,7 @@ export function AiUsageCard() {
     <Card>
       <CardContent className="space-y-4 pt-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <SummaryTile label="מסמכים" value={fmtNumber(totals.docs.size)} />
+          <SummaryTile label="פריטים" value={fmtNumber(totals.artifacts.size)} />
           <SummaryTile label="פעולות AI" value={fmtNumber(rows.length)} />
           <SummaryTile label="סך מילים" value={fmtNumber(totals.words)} />
           <SummaryTile label="סך טוקנים" value={fmtNumber(totals.total)} />

@@ -102,7 +102,9 @@ export async function fetchDocSnapshot(specDocumentId: string): Promise<{
 
 export async function logAiUsage(params: {
   userId: string;
-  specDocumentId: string;
+  specDocumentId?: string;
+  diagramId?: string;
+  artifactKind?: string; // 'spec_document' (default) or diagram kind
   model: string;
   purpose: string;
   inputTokens: number;
@@ -118,10 +120,16 @@ export async function logAiUsage(params: {
       params.costUsd ??
       calcCostUsd(params.model, params.inputTokens, params.outputTokens);
 
+    const artifactKind = params.artifactKind ?? "spec_document";
     let docTitle = params.docTitle ?? null;
     let docType = params.docType ?? null;
     let wordCount = params.wordCount ?? 0;
-    if (params.docTitle === undefined || params.wordCount === undefined) {
+
+    if (
+      artifactKind === "spec_document" &&
+      params.specDocumentId &&
+      (params.docTitle === undefined || params.wordCount === undefined)
+    ) {
       const snap = await fetchDocSnapshot(params.specDocumentId);
       if (params.docTitle === undefined) docTitle = snap.doc_title;
       if (params.docType === undefined) docType = snap.doc_type;
@@ -130,7 +138,11 @@ export async function logAiUsage(params: {
 
     const { error } = await supabaseAdmin.from("ai_usage_events").insert({
       user_id: params.userId,
-      spec_document_id: params.specDocumentId,
+      spec_document_id:
+        artifactKind === "spec_document" ? params.specDocumentId ?? null : null,
+      diagram_id:
+        artifactKind === "spec_document" ? null : params.diagramId ?? null,
+      artifact_kind: artifactKind,
       model: params.model,
       purpose: params.purpose,
       prompt_tokens: params.inputTokens,
