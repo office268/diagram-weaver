@@ -26,6 +26,14 @@ function initialsFromEmail(email: string | null | undefined): string {
 
 export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user: User; overrideAvatarUrl?: string | null; trigger?: "avatar" | "hamburger" }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname;
+  const modules = [
+    { to: "/dashboard", label: "ניתוח מערכות", Icon: Workflow, active: path.startsWith("/dashboard") || path.startsWith("/chat") || path.startsWith("/diagram") || path.startsWith("/editor") || path.startsWith("/documents") },
+    { to: "/projects-management", label: "ניהול פרויקטים", Icon: KanbanSquare, active: path.startsWith("/projects-management") || path.startsWith("/projects") },
+    { to: "/product", label: "ניהול מוצר", Icon: Rocket, active: path.startsWith("/product") },
+  ] as const;
+
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
   const { isAdmin } = useSiteTexts();
