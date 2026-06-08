@@ -29,7 +29,8 @@ export type DocumentOutputKey =
   | "spec_detailed"
   | "user_guide"
   | "meeting_summary"
-  | "user_story";
+  | "user_story"
+  | "dashboard";
 
 
 
