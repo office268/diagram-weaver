@@ -131,36 +131,52 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
 
   const items: Item[] = useMemo(() => {
     const out: Item[] = [];
+    const joinPath = (...parts: Array<string | null | undefined>) => {
+      const xs = parts.filter((x): x is string => !!x && x.length > 0);
+      return xs.length ? xs.join(" ◂ ") : null;
+    };
     for (const p of projectsData?.projects ?? []) {
+      const pa = p as { product_name?: string | null; author_name?: string | null };
       out.push({
         id: p.id,
         title: p.name,
         category: "project",
         createdAt: p.created_at,
+        path: joinPath(pa.product_name),
+        author: pa.author_name ?? null,
       });
     }
     for (const s of specsData?.specs ?? []) {
+      const sa = s as { product_name?: string | null; project_name?: string | null; author_name?: string | null };
       out.push({
         id: s.id,
         title: s.title,
         category: "document",
         createdAt: s.created_at,
+        path: joinPath(sa.product_name, sa.project_name),
+        author: sa.author_name ?? null,
       });
     }
     for (const d of diagramsData?.diagrams ?? []) {
+      const da = d as { product_name?: string | null; project_name?: string | null; author_name?: string | null };
       out.push({
         id: d.id,
         title: d.title,
         category: "diagram",
         createdAt: d.created_at,
+        path: joinPath(da.product_name, da.project_name),
+        author: da.author_name ?? null,
       });
     }
     for (const u of uploadsData?.documents ?? []) {
+      const ua = u as { product_name?: string | null; project_name?: string | null; author_name?: string | null };
       out.push({
         id: u.id,
         title: u.file_name,
         category: "upload",
         createdAt: u.created_at,
+        path: joinPath(ua.product_name, ua.project_name),
+        author: ua.author_name ?? null,
       });
     }
     return out;
