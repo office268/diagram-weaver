@@ -68,33 +68,18 @@ function HomePage() {
     queryFn: () => getOrderFn(),
   });
 
-  const [order, setOrder] = useState<OutputKey[]>(() => [...OUTPUT_TYPE_ORDER]);
-
-  useEffect(() => {
-    if (orderData?.order) setOrder(orderData.order);
-  }, [orderData]);
-
-  // Per-user tile customization stored in localStorage.
-  // movedToExtras: ORDER tiles the user hid from main grid.
-  // movedToMain: EXTRAS tiles the user moved to main grid.
-  const readLS = (key: string): OutputKey[] => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = window.localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as OutputKey[]) : [];
-    } catch {
-      return [];
-    }
-  };
-  const [movedToExtras, setMovedToExtras] = useState<OutputKey[]>(() => readLS("dash-moved-to-extras"));
-  const [movedToMain, setMovedToMain] = useState<OutputKey[]>(() => readLS("dash-moved-to-main"));
-  useEffect(() => {
-    localStorage.setItem("dash-moved-to-extras", JSON.stringify(movedToExtras));
-  }, [movedToExtras]);
-  useEffect(() => {
-    localStorage.setItem("dash-moved-to-main", JSON.stringify(movedToMain));
-  }, [movedToMain]);
-
+  const order = useMemo<OutputKey[]>(
+    () => (orderData?.order as OutputKey[] | undefined) ?? [...OUTPUT_TYPE_ORDER],
+    [orderData],
+  );
+  const movedToExtras = useMemo<OutputKey[]>(
+    () => ((orderData as any)?.movedToExtras as OutputKey[] | undefined) ?? [],
+    [orderData],
+  );
+  const movedToMain = useMemo<OutputKey[]>(
+    () => ((orderData as any)?.movedToMain as OutputKey[] | undefined) ?? [],
+    [orderData],
+  );
 
   const movedToExtrasSet = useMemo(() => new Set(movedToExtras), [movedToExtras]);
   const movedToMainSet   = useMemo(() => new Set(movedToMain),   [movedToMain]);
@@ -115,39 +100,62 @@ function HomePage() {
     [movedToExtras, movedToMainSet],
   );
 
-  const moveToExtras = (key: OutputKey) => {
-    if ((OUTPUT_TYPE_ORDER as readonly string[]).includes(key)) {
-      setMovedToExtras((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    } else {
-      setMovedToMain((prev) => prev.filter((k) => k !== key));
-    }
-    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר ל'עוד'`);
-  };
-
-  const moveToMain = (key: OutputKey) => {
-    if ((OUTPUT_TYPE_EXTRAS as readonly string[]).includes(key)) {
-      setMovedToMain((prev) => (prev.includes(key) ? prev : [...prev, key]));
-    } else {
-      setMovedToExtras((prev) => prev.filter((k) => k !== key));
-    }
-    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר למסך הראשי`);
+  type TileOrderPayload = {
+    order: OutputKey[];
+    movedToExtras: OutputKey[];
+    movedToMain: OutputKey[];
   };
 
   const saveMut = useMutation({
-    mutationFn: (next: OutputKey[]) => setOrderFn({ data: { order: next } }),
-    onMutate: (next) => {
-      const previous = order;
-      setOrder(next);
+    mutationFn: (input: Partial<TileOrderPayload>) => setOrderFn({ data: input }),
+    onMutate: (input) => {
+      const previous = qc.getQueryData<TileOrderPayload>(["dashboard-tile-order"]);
+      qc.setQueryData<TileOrderPayload>(["dashboard-tile-order"], {
+        order: input.order ?? previous?.order ?? order,
+        movedToExtras: input.movedToExtras ?? previous?.movedToExtras ?? movedToExtras,
+        movedToMain: input.movedToMain ?? previous?.movedToMain ?? movedToMain,
+      });
       return { previous };
     },
     onError: (e, _vars, ctx) => {
       toast.error(e instanceof Error ? e.message : "שמירת סדר נכשלה");
-      if (ctx?.previous) setOrder(ctx.previous);
+      if (ctx?.previous) qc.setQueryData(["dashboard-tile-order"], ctx.previous);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["dashboard-tile-order"] });
     },
   });
+
+  const moveToExtras = (key: OutputKey) => {
+    if (!isAdmin) {
+      toast.error("רק מנהל מערכת יכול להעביר קוביות");
+      return;
+    }
+    if ((OUTPUT_TYPE_ORDER as readonly string[]).includes(key)) {
+      const next = movedToExtras.includes(key) ? movedToExtras : [...movedToExtras, key];
+      saveMut.mutate({ movedToExtras: next });
+    } else {
+      const next = movedToMain.filter((k) => k !== key);
+      saveMut.mutate({ movedToMain: next });
+    }
+    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר ל'עוד'`);
+  };
+
+  const moveToMain = (key: OutputKey) => {
+    if (!isAdmin) {
+      toast.error("רק מנהל מערכת יכול להעביר קוביות");
+      return;
+    }
+    if ((OUTPUT_TYPE_EXTRAS as readonly string[]).includes(key)) {
+      const next = movedToMain.includes(key) ? movedToMain : [...movedToMain, key];
+      saveMut.mutate({ movedToMain: next });
+    } else {
+      const next = movedToExtras.filter((k) => k !== key);
+      saveMut.mutate({ movedToExtras: next });
+    }
+    toast.success(`"${OUTPUT_TYPES[key].label}" הועבר למסך הראשי`);
+  };
+
 
   const createMut = useMutation({
     mutationFn: (outputType: OutputKey) =>
