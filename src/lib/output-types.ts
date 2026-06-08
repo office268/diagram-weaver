@@ -187,7 +187,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     key: "meeting_summary",
     category: "document",
     label: "תמלול וסיכום ישיבה",
-    description: "תמלול של ישיבה וסיכום החלטות, משימות ונקודות מפתח.",
+    description: "",
     icon: Mic,
     colorClass: "text-rose-500",
   },
