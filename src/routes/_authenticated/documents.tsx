@@ -10,13 +10,16 @@ import {
   GitBranch,
   ExternalLink,
   Loader2,
-  SlidersHorizontal,
-  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
   FileUp,
   X,
   Check,
   Pencil,
+  Filter,
 } from "lucide-react";
+
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
