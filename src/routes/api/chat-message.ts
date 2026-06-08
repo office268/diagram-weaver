@@ -310,16 +310,45 @@ export const Route = createFileRoute("/api/chat-message")({
                   const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
                   const useCaseRules = outputType === "diagram_usecase"
                     ? (
-                        `\n\nכללי תרשים Use Case (UML) ב-Mermaid flowchart LR — חובה:\n` +
-                        `- כל use case מיוצג כצומת אובלי (אליפסה) בתחביר Mermaid: \`UC1(("חיפוש מוצרים"))\` — סוגריים כפולים יוצרים אליפסה כמו ב-UML.\n` +
-                        `- כל Actor מיוצג כצומת stadium: \`A1(["לקוח"])\`. שחקנים אנושיים מובילים בצד שמאל, מערכות חיצוניות (כמו "מערכת תשלום", "ספק SMS") בצד ימין.\n` +
-                        `- כל ה-use cases חייבים להיות עטופים בתוך \`subgraph SYS["שם המערכת"]\` ... \`end\` — זה ה-System Boundary. השחקנים נשארים מחוץ ל-subgraph.\n` +
-                        `- קשר association בין actor ל-use case: קו רגיל ללא חץ וללא תווית: \`A1 --- UC1\`. אל תשתמש ב-\`-->\` בין actor ל-use case.\n` +
-                        `- קשר «include» (התרחיש הבסיסי תמיד כולל את המשני): חץ מקווקו עם תווית: \`UC3 -.->|"«include»"| UC4\`. הכיוון: מהבסיסי אל הנכלל.\n` +
-                        `- קשר «extend» (תרחיש אופציונלי מרחיב בסיסי): חץ מקווקו עם תווית: \`UC5 -.->|"«extend»"| UC4\`. הכיוון: מהמרחיב אל הבסיסי.\n` +
-                        `- מינימום: 2 actors, 4 use cases, וקשר אחד לפחות מסוג «include» או «extend» אם הגיוני.\n` +
-                        `- מזהי צמתים ASCII קצרים: UC1..UCn, A1..An, EXT1..EXTn. תוויות בעברית בתוך גרשיים בלבד.\n` +
-                        `- אסור: classDef עם צבעי טקסט קשיחים, אימוג'ים, או צמתים מסוג decision/{...}. תרשים use case אינו מכיל החלטות או זרימה.\n`
+                        `\n\n=== כללי תרשים Use Case (UML) — חובה מוחלטת ===\n` +
+                        `תרשים Use Case הוא סטטי, לא דינמי! הוא מתאר מי משתמש במערכת ואילו פעולות הוא יכול לבצע — לא תהליך, לא זרימה, לא שלבים, לא החלטות.\n\n` +
+                        `גם אם המשתמש מתאר תהליך/זרימה/שלבים — אתה חייב להפשיט אותם ל-use cases (פעולות מנקודת מבט המשתמש) ולזהות actors. אסור בשום אופן להפיק תרשים activity / swimlane.\n\n` +
+                        `מבנה מחייב:\n` +
+                        `1. שורה ראשונה: \`flowchart LR\`\n` +
+                        `2. Actors כצמתי stadium: \`A1(["שם"])\` — מחוץ ל-subgraph של המערכת.\n` +
+                        `3. Use cases כצמתי אליפסה: \`UC1(("שם פעולה"))\` — כל ה-use cases חייבים להיות בתוך \`subgraph SYS["שם המערכת"] ... end\`.\n` +
+                        `4. Association בין actor ל-use case: \`A1 --- UC1\` (קו רגיל ללא חץ, ללא תווית).\n` +
+                        `5. «include»: \`UCa -.->|"«include»"| UCb\` — חץ מקווקו מהבסיסי לנכלל.\n` +
+                        `6. «extend»: \`UCa -.->|"«extend»"| UCb\` — חץ מקווקו מהמרחיב לבסיסי.\n` +
+                        `7. מינימום: 2 actors, 4 use cases, ולפחות include או extend אחד אם הגיוני.\n\n` +
+                        `איסורים מוחלטים (כל אחד מהם פוסל את הפלט):\n` +
+                        `- אסור \`subgraph\` עבור actor או lane (subgraph רק עבור System Boundary אחד SYS).\n` +
+                        `- אסור צמתי \`{...}\` או \`{{...}}\` (decision diamonds) — אין החלטות ב-use case.\n` +
+                        `- אסור \`-->\` (חיצים מוצקים) בין actor ל-use case או בין use cases רגילים.\n` +
+                        `- אסור צמתי \`[...]\` (מלבנים) — פעולות הן אליפסות \`(("..."))\` בלבד.\n` +
+                        `- אסור צמתי start/end/"התחלה"/"סיום"/\`((...))\` עיגול מלא.\n` +
+                        `- אסור תוויות בסגנון פעלים-בהווה-מתמשך של תהליך ("בודק...", "מעדכן..."). השתמש בשם פעולה מופשט ("ביצוע הזמנה", "ניהול משתמשים").\n` +
+                        `- אסור classDef עם צבעים קשיחים, אימוג'ים, או direction בתוך subgraph.\n\n` +
+                        `דוגמה מלאה ותקינה (העתק את המבנה הזה):\n` +
+                        "```mermaid\n" +
+                        `flowchart LR\n` +
+                        `  A1(["לקוח"])\n` +
+                        `  A2(["מנהל מערכת"])\n` +
+                        `  EXT1(["מערכת תשלום"])\n` +
+                        `  subgraph SYS["מערכת הזמנות"]\n` +
+                        `    UC1(("חיפוש מוצרים"))\n` +
+                        `    UC2(("ביצוע הזמנה"))\n` +
+                        `    UC3(("תשלום"))\n` +
+                        `    UC4(("אימות משתמש"))\n` +
+                        `    UC5(("ניהול קטלוג"))\n` +
+                        `  end\n` +
+                        `  A1 --- UC1\n` +
+                        `  A1 --- UC2\n` +
+                        `  A2 --- UC5\n` +
+                        `  UC3 --- EXT1\n` +
+                        `  UC2 -.->|"«include»"| UC3\n` +
+                        `  UC2 -.->|"«include»"| UC4\n` +
+                        "```\n"
                       )
                     : "";
                   const system =
@@ -329,7 +358,9 @@ export const Route = createFileRoute("/api/chat-message")({
                     (hint ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. ` : "") +
                     `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
                     `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
-                    `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. ` +
+                    (outputType === "diagram_usecase"
+                      ? ""
+                      : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `) +
                     `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
                     `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.` +
                     useCaseRules;
@@ -351,6 +382,26 @@ export const Route = createFileRoute("/api/chat-message")({
                     });
                     const retry = extractMermaid(text2);
                     if (!looksLikePlantUml(retry)) raw = retry;
+                  }
+                  if (outputType === "diagram_usecase") {
+                    const violations: string[] = [];
+                    if (!/\(\("[^"]+"\)\)/.test(raw)) violations.push("חסרים use cases כאליפסות `UC#((\"...\"))`.");
+                    if (!/subgraph\s+SYS\b/.test(raw)) violations.push("חסר `subgraph SYS[\"...\"]` עבור System Boundary.");
+                    if (/\{[^{}\n]+\}/.test(raw)) violations.push("נמצאו צמתי decision `{...}` — אסור בתרשים use case.");
+                    const subgraphCount = (raw.match(/^\s*subgraph\b/gm) ?? []).length;
+                    if (subgraphCount > 1) violations.push("יותר מ-subgraph אחד — מותר רק SYS יחיד (אסור lanes/actors כ-subgraph).");
+                    if (violations.length > 0) {
+                      const { text: text3 } = await generateText({
+                        model,
+                        system: system + `\n\nהפלט הקודם פסול כתרשים Use Case. הפרות:\n- ${violations.join("\n- ")}\n\nצור מחדש לפי הדוגמה המלאה בכללים. הפק תרשים use case סטטי בלבד — actors מחוץ ל-SYS, use cases כאליפסות בתוך SYS, association \`---\`, ו-«include»/«extend» כחיצים מקווקווים.`,
+                        messages: history,
+                        temperature: 0,
+                      });
+                      const retry = extractMermaid(text3);
+                      if (retry && /\(\("[^"]+"\)\)/.test(retry) && /subgraph\s+SYS\b/.test(retry)) {
+                        raw = retry;
+                      }
+                    }
                   }
                   mermaid = raw;
                 }
