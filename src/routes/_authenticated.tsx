@@ -106,58 +106,8 @@ function AuthenticatedLayout() {
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-          <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
+          <ActiveModuleTitle />
 
-
-
-            <Link
-              to="/product"
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
-            >
-              <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
-              {location.pathname.startsWith("/product") && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-            <Link
-              to="/projects-management"
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
-            >
-              <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
-              {location.pathname.startsWith("/projects-management") && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]",
-              )}
-            >
-              <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
-              {isDashboard && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-
-            <div className="hidden md:flex flex-1 items-center justify-center gap-1.5">
-              <Link
-                to="/documents"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                המסמכים שלי
-              </Link>
-              <div data-tour="header-search">
-                <CommandTriggerButton />
-              </div>
-            </div>
-          </div>
         </header>
 
         <main className="flex-1">
