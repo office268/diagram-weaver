@@ -26,8 +26,6 @@ export const AGENT_TEMPERATURES = {
 export const ALLOWED_AGENT_MODELS = [
   "google/gemini-2.5-pro",
   "google/gemini-3.1-pro-preview",
-  "google/gemini-3-flash-preview",
-  "google/gemini-2.5-flash",
   "openai/gpt-5.4",
   "openai/gpt-5.4-pro",
   "openai/gpt-5.5",
