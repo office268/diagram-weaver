@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MermaidPreview } from "@/components/mermaid-preview";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
-import { getDiagram } from "@/lib/diagrams.functions";
+import { getDiagram, updateDiagram } from "@/lib/diagrams.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 
 export const Route = createFileRoute("/_authenticated/diagram/$id")({
@@ -25,13 +26,20 @@ export const Route = createFileRoute("/_authenticated/diagram/$id")({
 
 function DiagramPage() {
   const { id } = Route.useParams();
-  const getDiagramFn = useServerFn(getDiagram);
+  const getDiagramFn   = useServerFn(getDiagram);
+  const updateDiagramFn = useServerFn(updateDiagram);
+  const queryClient    = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["diagram", id],
-    queryFn: () => getDiagramFn({ data: { id } }),
+    queryFn:  () => getDiagramFn({ data: { id } }),
     retry: false,
   });
+
+  const handleSave = useCallback(async (newCode: string) => {
+    await updateDiagramFn({ data: { id, mermaid_code: newCode } });
+    await queryClient.invalidateQueries({ queryKey: ["diagram", id] });
+  }, [id, updateDiagramFn, queryClient]);
 
   if (isLoading) {
     return (
@@ -63,7 +71,7 @@ function DiagramPage() {
     created_at: string;
   };
 
-  const typeDef = OUTPUT_TYPES[d.kind as OutputKey];
+  const typeDef  = OUTPUT_TYPES[d.kind as OutputKey];
   const typeLabel = typeDef?.label ?? d.kind;
 
   return (
@@ -91,7 +99,10 @@ function DiagramPage() {
 
       <div className="h-[70vh] overflow-hidden rounded-xl border border-border bg-card">
         {d.kind === "diagram_activity" ? (
-          <ActivitySwimlaneRenderer code={d.mermaid_code ?? ""} />
+          <ActivitySwimlaneRenderer
+            code={d.mermaid_code ?? ""}
+            onSave={handleSave}
+          />
         ) : (
           <MermaidPreview code={d.mermaid_code ?? ""} />
         )}
