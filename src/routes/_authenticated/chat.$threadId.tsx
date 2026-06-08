@@ -114,12 +114,28 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [phaseIdx, setPhaseIdx] = useState(0);
-  const phases = ["חושב", "מתכנן", "בונה", "בודק"] as const;
+  const phases = [
+    "מנתח את הבקשה",
+    "מאחזר הקשר רלוונטי",
+    "מזקק דרישות מרכזיות",
+    "בונה מודל סמנטי",
+    "מתכנן ארכיטקטורת פתרון",
+    "מסיק קשרים בין ישויות",
+    "מייצר טיוטה ראשונית",
+    "מאמת עקביות לוגית",
+    "מבצע ביקורת עצמית",
+    "משכלל ניסוחים",
+    "מאחד תובנות",
+    "מלטש את התוצר הסופי",
+  ] as const;
   useEffect(() => {
     if (!sending) { setPhaseIdx(0); return; }
-    const id = setInterval(() => setPhaseIdx((i) => (i < 3 ? i + 1 : 3)), 2500);
+    const id = setInterval(
+      () => setPhaseIdx((i) => (i + 1) % phases.length),
+      1800,
+    );
     return () => clearInterval(id);
-  }, [sending]);
+  }, [sending, phases.length]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -869,50 +885,20 @@ function GenerationProgress({
   phaseIdx: number;
   phases: readonly string[];
 }) {
-  const pct = ((phaseIdx + 1) / phases.length) * 100;
+  const label = phases[phaseIdx % phases.length];
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
-        {phases.map((p, i) => {
-          const done = i < phaseIdx;
-          const active = i === phaseIdx;
-          return (
-            <div key={p} className="flex items-center gap-1.5">
-              <span
-                className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                  done
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : active
-                      ? "border-primary text-primary"
-                      : "border-border text-muted-foreground"
-                }`}
-              >
-                {done ? (
-                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                ) : active ? (
-                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                ) : null}
-              </span>
-              <span
-                className={
-                  active
-                    ? "font-medium text-foreground"
-                    : done
-                      ? "text-foreground"
-                      : "text-muted-foreground"
-                }
-              >
-                {p}
-              </span>
-            </div>
-          );
-        })}
+      <div className="flex items-center justify-center gap-2 text-sm">
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+        <span
+          key={label}
+          className="font-medium text-foreground animate-in fade-in slide-in-from-bottom-1 duration-300"
+        >
+          {label}…
+        </span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className="absolute inset-y-0 w-1/3 rounded-full bg-primary animate-[progress-indeterminate_1.6s_ease-in-out_infinite]" />
       </div>
     </div>
   );
