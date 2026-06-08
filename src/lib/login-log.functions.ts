@@ -23,6 +23,19 @@ export const recordLoginEvent = createServerFn({ method: "POST" })
     }
     const userAgent = getRequestHeader("user-agent") ?? null;
 
+    // Throttle: skip if the same user logged the same event in the last 30 minutes
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: recent } = await supabaseAdmin
+      .from("login_events")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("event", data.event)
+      .gte("created_at", since)
+      .limit(1);
+    if (recent && recent.length > 0) {
+      return { ok: true as const, skipped: true as const };
+    }
+
     const { error } = await supabase.from("login_events").insert({
       user_id: userId,
       event: data.event,
@@ -71,13 +84,21 @@ export const getLoginLog = createServerFn({ method: "GET" })
 
     const { data: appRows, error: appErr } = await supabaseAdmin
       .from("login_events")
-      .select("id, created_at, email, provider, event, ip, user_agent")
+      .select("id, created_at, email, provider, event, ip, user_agent, user_id")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(2000);
     if (appErr) {
       console.error("login_events query failed:", appErr.message);
     } else if (appRows) {
+      // Cap per-user rows to keep the log fair across users (avoid one
+      // user's repeated sign-ins pushing out everyone else).
+      const perUserCap = 30;
+      const perUserCount = new Map<string, number>();
       for (const r of appRows) {
+        const key = (r.user_id as string | null) ?? (r.email as string | null) ?? "unknown";
+        const seen = perUserCount.get(key) ?? 0;
+        if (seen >= perUserCap) continue;
+        perUserCount.set(key, seen + 1);
         rows.push({
           id: `app:${r.id}`,
           source: "app",
