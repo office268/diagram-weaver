@@ -117,7 +117,7 @@ function ChatPage() {
   const phases = ["חושב", "מתכנן", "בונה", "בודק"] as const;
   useEffect(() => {
     if (!sending) { setPhaseIdx(0); return; }
-    const id = setInterval(() => setPhaseIdx((i) => (i + 1) % 4), 1500);
+    const id = setInterval(() => setPhaseIdx((i) => (i < 3 ? i + 1 : 3)), 2500);
     return () => clearInterval(id);
   }, [sending]);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -424,9 +424,13 @@ function ChatPage() {
                 )}
                 <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לניתוח מערכות מידע</h2>
                 <p className="mt-1 text-base font-medium text-foreground">{def?.label}</p>
-                <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">
-                  {sending ? `${phases[phaseIdx]}...` : "ממתין להוראות"}
-                </p>
+                {sending ? (
+                  <div className="mt-3">
+                    <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">ממתין להוראות</p>
+                )}
               </div>
             </div>
           )}
@@ -435,9 +439,8 @@ function ChatPage() {
               <MessageBubble key={m.id} message={m} />
             ))}
             {sending && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {phases[phaseIdx]}...
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
               </div>
             )}
           </div>
@@ -802,6 +805,62 @@ function DiagramBlock({ code }: { code: string }) {
         ) : (
           <MermaidPreview code={code} />
         )}
+      </div>
+    </div>
+  );
+}
+
+function GenerationProgress({
+  phaseIdx,
+  phases,
+}: {
+  phaseIdx: number;
+  phases: readonly string[];
+}) {
+  const pct = ((phaseIdx + 1) / phases.length) * 100;
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+        {phases.map((p, i) => {
+          const done = i < phaseIdx;
+          const active = i === phaseIdx;
+          return (
+            <div key={p} className="flex items-center gap-1.5">
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                  done
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : active
+                      ? "border-primary text-primary"
+                      : "border-border text-muted-foreground"
+                }`}
+              >
+                {done ? (
+                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                ) : active ? (
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                ) : null}
+              </span>
+              <span
+                className={
+                  active
+                    ? "font-medium text-foreground"
+                    : done
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                }
+              >
+                {p}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
