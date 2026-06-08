@@ -667,9 +667,7 @@ function ChatPage() {
                 className="min-h-[72px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
-                {(promptBoxSettings.allowedUploads.file ||
-                  promptBoxSettings.allowedUploads.image ||
-                  promptBoxSettings.allowedUploads.link) ? (
+                {true ? (
                   <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
                     <PopoverTrigger asChild>
                       <Button
