@@ -77,6 +77,16 @@ export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user
           <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {modules.map((m) => (
+          <DropdownMenuItem key={m.to} asChild>
+            <Link to={m.to} className={m.active ? "bg-accent font-semibold text-foreground" : ""}>
+              <m.Icon className="ml-2 h-4 w-4" />
+              {m.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem asChild>
           <Link to="/billing">
             <Zap className="ml-2 h-4 w-4 text-amber-500" />
