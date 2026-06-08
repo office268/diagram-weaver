@@ -183,7 +183,7 @@ function ActiveModuleTitle() {
       <div className="relative flex items-center gap-2 mx-auto">
         <Icon className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
         <span className="text-sm font-semibold text-foreground sm:text-base">{title}</span>
-        <span className="absolute -bottom-2 left-1/2 h-0.5 w-12 -translate-x-1/2 rounded-full bg-primary" />
+        
       </div>
       <div className="hidden md:flex items-center gap-1.5">
         <Link
