@@ -208,11 +208,11 @@ export function GlobalSearchBar({ onNavigate }: { onNavigate?: () => void }) {
           <SheetTrigger asChild>
             <Button
               variant="outline"
-              size="icon"
-              className="relative h-10 w-10 shrink-0"
+              className="relative h-11 gap-2 px-4 shrink-0 text-sm font-medium"
               aria-label="סינון"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-5 w-5" />
+              סינון
               {activeFilterCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
                   {activeFilterCount}
