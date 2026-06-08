@@ -64,9 +64,10 @@ function centerToTopLeft(
   switch (nodeType) {
     case "task":     return { x: cx - 75, y: cy - 25 };
     case "decision": return { x: cx - 48, y: cy - 48 };
-    case "start":    return { x: cx - 20, y: cy - 35 };
+    case "start":    return { x: cx - 20, y: cy - 20 };
     case "end":      return { x: cx - 25, y: cy - 25 };
     case "joinBar":  return { x: cx - barWidth / 2, y: cy - 5.5 };
+    case "actor":    return { x: cx - 20, y: cy - 35 };
     default:         return { x: cx, y: cy };
   }
 }
