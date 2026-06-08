@@ -413,7 +413,7 @@ function ChatPage() {
                     <def.icon className="h-6 w-6" />
                   </div>
                 )}
-                <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לתרשימי</h2>
+                <h2 className="text-lg font-medium text-foreground">אני מסייע AI מומחה לניתוח מערכות מידע</h2>
                 <p className="mt-1 text-base font-medium text-foreground">{def?.label}</p>
                 <p className="mt-2 text-sm text-muted-foreground min-h-[1.25rem]">
                   {sending ? `${phases[phaseIdx]}...` : "ממתין להוראות"}
