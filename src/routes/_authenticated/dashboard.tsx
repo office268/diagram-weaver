@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Sparkles, MoreHorizontal } from "lucide-react";
+import { Loader2, Sparkles, MoreHorizontal, Shapes, FileText, Wrench } from "lucide-react";
 import {
   getDashboardTileOrder,
   setDashboardTileOrder,
