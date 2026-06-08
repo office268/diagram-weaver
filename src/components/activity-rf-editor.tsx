@@ -101,10 +101,12 @@ function DecisionNode({ data, selected }: NodeProps<Node<ActivityNodeData>>) {
           justifyContent: "center",
           width: "100%",
           height: "100%",
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 500,
           textAlign: "center",
-          padding: "0 8px",
+          padding: "0 6px",
+          whiteSpace: "pre-line",
+          lineHeight: 1.2,
         }}
       >
         {data.label as string}
@@ -115,16 +117,33 @@ function DecisionNode({ data, selected }: NodeProps<Node<ActivityNodeData>>) {
 
 function StartNode(_props: NodeProps<Node<ActivityNodeData>>) {
   return (
+    <div style={{ position: "relative", width: 40, height: 40 }}>
+      <Handle type="source" position={Position.Right}  style={handleStyle} />
+      <Handle type="source" position={Position.Bottom} style={handleStyle} />
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="14" fill="#222" stroke="#222" strokeWidth="1.6" />
+      </svg>
+    </div>
+  );
+}
+
+function ActorNode({ data }: NodeProps<Node<ActivityNodeData>>) {
+  return (
     <div style={{ position: "relative", width: 40, height: 70 }}>
       <Handle type="source" position={Position.Right}  style={handleStyle} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
       <svg width="40" height="70" viewBox="0 0 40 70">
-        <circle cx="20" cy="13" r="10" fill="none" stroke="#222" strokeWidth="1.6" />
-        <line x1="20" y1="23" x2="20" y2="44" stroke="#222" strokeWidth="1.6" />
-        <line x1="5"  y1="33" x2="35" y2="33" stroke="#222" strokeWidth="1.6" />
-        <line x1="20" y1="44" x2="8"  y2="62" stroke="#222" strokeWidth="1.6" />
-        <line x1="20" y1="44" x2="32" y2="62" stroke="#222" strokeWidth="1.6" />
+        <circle cx="20" cy="10" r="8"  fill="none" stroke="#222" strokeWidth="1.6" />
+        <line x1="20" y1="18" x2="20" y2="40" stroke="#222" strokeWidth="1.6" />
+        <line x1="6"  y1="28" x2="34" y2="28" stroke="#222" strokeWidth="1.6" />
+        <line x1="20" y1="40" x2="8"  y2="60" stroke="#222" strokeWidth="1.6" />
+        <line x1="20" y1="40" x2="32" y2="60" stroke="#222" strokeWidth="1.6" />
       </svg>
+      {data.label ? (
+        <div style={{ position: "absolute", top: 70, left: -10, width: 60, textAlign: "center", fontSize: 10 }}>
+          {data.label as string}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -161,6 +180,7 @@ const nodeTypes = {
   start:    StartNode,
   end:      EndNode,
   joinBar:  JoinBarNode,
+  actor:    ActorNode,
 };
 
 // ── Main editor ─────────────────────────────────────────────────────────────

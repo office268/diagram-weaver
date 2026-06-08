@@ -189,7 +189,8 @@ export function ActivitySwimlaneRenderer({
     }
     if (isSvg && safeSvg) {
       const parsed = parseSvgToRF(safeSvg);
-      if (!parsed || parsed.nodes.length === 0) {
+      const nonLane = parsed?.nodes.filter(n => n.data.nodeType !== "lane").length ?? 0;
+      if (!parsed || nonLane < 3) {
         toast.error("לא ניתן להמיר את התרשים לפורמט ניתן לעריכה");
         return;
       }
