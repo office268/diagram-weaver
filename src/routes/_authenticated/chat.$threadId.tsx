@@ -523,6 +523,16 @@ function ChatPage() {
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
 
+        {messages.length > 0 && (
+          <div className="flex shrink-0 items-center justify-end border-b border-border px-3 py-2">
+            <ThreadModelSelector
+              threadId={threadId}
+              currentOverride={thread.model_override ?? null}
+              variant="compact"
+            />
+          </div>
+        )}
+
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
           {messages.length === 0 && (
