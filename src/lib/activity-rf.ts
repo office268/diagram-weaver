@@ -2,19 +2,22 @@ import type { Node, Edge } from "@xyflow/react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface LaneDef {
-  label: string;
-  x: number;      // left edge in SVG coords
-  width: number;
-}
-
-export type ActivityNodeType = "task" | "decision" | "start" | "end" | "joinBar";
+export type ActivityNodeType =
+  | "task" | "decision" | "start" | "end" | "joinBar" | "lane";
 
 export interface ActivityNodeData extends Record<string, unknown> {
   label: string;
   laneIndex: number;
   nodeType: ActivityNodeType;
-  barWidth?: number; // joinBar only
+  barWidth?: number;   // joinBar only
+  laneWidth?: number;  // lane only
+  laneHeight?: number; // lane only
+}
+
+export interface LaneDef {
+  label: string;
+  x: number;
+  width: number;
 }
 
 export interface ActivityRFData {
@@ -37,7 +40,7 @@ export function isActivityRF(code: string): boolean {
   }
 }
 
-// ── SVG → RF parser ───────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseFloat2(s: string | null | undefined, fallback = 0) {
   const n = parseFloat(s ?? "");
@@ -51,18 +54,36 @@ function getLaneIndex(cx: number, laneX: number[]): number {
   return 0;
 }
 
-/** Axis-aligned bounding box of a node (in SVG coordinate space). */
+/** Convert SVG center coords → React Flow top-left position. */
+function centerToTopLeft(
+  nodeType: string,
+  cx: number,
+  cy: number,
+  barWidth = 100,
+): { x: number; y: number } {
+  switch (nodeType) {
+    case "task":     return { x: cx - 75, y: cy - 25 };
+    case "decision": return { x: cx - 48, y: cy - 48 };
+    case "start":    return { x: cx - 20, y: cy - 35 };
+    case "end":      return { x: cx - 25, y: cy - 25 };
+    case "joinBar":  return { x: cx - barWidth / 2, y: cy - 5.5 };
+    default:         return { x: cx, y: cy };
+  }
+}
+
+/** Bounding box of a node (origin = top-left). */
 function nodeBounds(n: Node<ActivityNodeData>): {
   x: number; y: number; w: number; h: number;
 } {
   const { x, y } = n.position;
+  const bw = (n.data.barWidth as number) ?? 100;
   switch (n.data.nodeType) {
-    case "task":    return { x: x - 75, y: y - 25, w: 150, h: 50 };
-    case "decision":return { x: x - 55, y: y - 50, w: 110, h: 100 };
-    case "start":   return { x: x - 30, y: y - 40, w: 60,  h: 80  };
-    case "end":     return { x: x - 25, y: y - 25, w: 50,  h: 50  };
-    case "joinBar": return { x: x - (n.data.barWidth ?? 100) / 2, y: y - 6, w: n.data.barWidth ?? 100, h: 12 };
-    default:        return { x: x - 40, y: y - 20, w: 80,  h: 40  };
+    case "task":     return { x, y, w: 150, h: 50 };
+    case "decision": return { x, y, w: 96,  h: 96 };
+    case "start":    return { x, y, w: 40,  h: 70 };
+    case "end":      return { x, y, w: 50,  h: 50 };
+    case "joinBar":  return { x, y, w: bw,  h: 12 };
+    default:         return { x, y, w: 80,  h: 40 };
   }
 }
 
@@ -79,16 +100,19 @@ function closestNode(
   nodes: Node<ActivityNodeData>[],
   px: number,
   py: number,
-  threshold = 40,
+  threshold = 60,
 ): string | null {
   let best: string | null = null;
   let bestD = threshold;
   for (const n of nodes) {
+    if (n.data.nodeType === "lane") continue;
     const d = distToNode(n, px, py);
     if (d < bestD) { bestD = d; best = n.id; }
   }
   return best;
 }
+
+// ── SVG → RF parser ───────────────────────────────────────────────────────────
 
 export function parseSvgToRF(svgString: string): ActivityRFData | null {
   if (typeof window === "undefined") return null;
@@ -100,12 +124,11 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
   const vb = svg.getAttribute("viewBox")?.split(/\s+/).map(Number);
   const svgWidth  = vb?.[2] ?? 1200;
   const svgHeight = vb?.[3] ?? 800;
+  const headerH   = 44;
 
-  // ── 1. Lane boundaries from vertical dashed lines ──────────────────────────
-  const laneXSet = new Set<number>([90]); // MARGIN_LEFT always present
-  const headerH = 44;
+  // 1. Lane boundaries — vertical dashed blue lines
+  const laneXSet = new Set<number>([90]);
   const allLines = Array.from(svg.querySelectorAll("line"));
-
   for (const line of allLines) {
     const stroke = line.getAttribute("stroke") ?? "";
     const dash   = line.getAttribute("stroke-dasharray");
@@ -116,10 +139,9 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
       laneXSet.add(Math.round(x1));
     }
   }
-
   const laneXArr = Array.from(laneXSet).sort((a, b) => a - b);
 
-  // ── 2. Header labels ────────────────────────────────────────────────────────
+  // 2. Lane header labels
   const allTexts = Array.from(svg.querySelectorAll("text"));
   const headerTexts = allTexts.filter(t => {
     const y  = parseFloat2(t.getAttribute("y"));
@@ -128,7 +150,7 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
   });
 
   const lanes: LaneDef[] = laneXArr.map((x, i) => {
-    const nextX = laneXArr[i + 1] ?? (svgWidth - 10);
+    const nextX  = laneXArr[i + 1] ?? (svgWidth - 10);
     const width  = nextX - x;
     const cx     = x + width / 2;
     const label  = headerTexts.find(t => {
@@ -138,11 +160,11 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
     return { label, x, width };
   });
 
-  // ── 3. Build node list ──────────────────────────────────────────────────────
+  // 3. Nodes
   const rfNodes: Node<ActivityNodeData>[] = [];
   let idx = 0;
 
-  // 3a. JOIN BARs — <rect fill="#111">
+  // 3a. JOIN BARs — fill="#111"
   for (const rect of svg.querySelectorAll("rect")) {
     if (rect.getAttribute("fill") !== "#111") continue;
     const rx = parseFloat2(rect.getAttribute("x"));
@@ -154,25 +176,26 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
     rfNodes.push({
       id: `join-${idx++}`,
       type: "joinBar",
-      position: { x: cx, y: cy },
+      position: centerToTopLeft("joinBar", cx, cy, rw),
       data: { label: "", laneIndex: getLaneIndex(cx, laneXArr), nodeType: "joinBar", barWidth: rw },
     });
   }
 
-  // 3b. TASK nodes — <rect> not black, not in header area
+  // 3b. TASK nodes — white/unset fill, below header, bounded size
   for (const rect of svg.querySelectorAll("rect")) {
-    const fill = rect.getAttribute("fill") ?? "white";
-    if (fill === "#111") continue;
+    const fill = rect.getAttribute("fill") ?? "";
+    if (fill === "#111" || fill === "none") continue;
+    if (fill !== "" && fill.toLowerCase() !== "white") continue;
     const rx = parseFloat2(rect.getAttribute("x"));
     const ry = parseFloat2(rect.getAttribute("y"));
     const rw = parseFloat2(rect.getAttribute("width"));
     const rh = parseFloat2(rect.getAttribute("height"));
-    if (ry < headerH) continue;   // header area
-    if (rw < 50 || rh < 20) continue; // too small
+    if (ry < headerH) continue;
+    if (rw < 50 || rh < 20) continue;
+    if (rw > 400 || rh > 150) continue; // skip large background rects
     const cx = rx + rw / 2;
     const cy = ry + rh / 2;
-    // Collect text lines inside this rect
-    const lines = allTexts
+    const labelLines = allTexts
       .filter(t => {
         const ty = parseFloat2(t.getAttribute("y"));
         const tx = parseFloat2(t.getAttribute("x"));
@@ -180,22 +203,20 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
       })
       .map(t => t.textContent?.trim() ?? "")
       .filter(Boolean);
-    const label = lines.join("\n");
     rfNodes.push({
       id: `task-${idx++}`,
       type: "task",
-      position: { x: cx, y: cy },
-      data: { label, laneIndex: getLaneIndex(cx, laneXArr), nodeType: "task" },
+      position: centerToTopLeft("task", cx, cy),
+      data: { label: labelLines.join("\n"), laneIndex: getLaneIndex(cx, laneXArr), nodeType: "task" },
     });
   }
 
-  // 3c. DECISION diamonds — <polygon>
+  // 3c. DECISION diamonds
   for (const poly of svg.querySelectorAll("polygon")) {
     const pts = (poly.getAttribute("points") ?? "")
       .trim().split(/\s+/)
       .map(p => p.split(",").map(Number) as [number, number]);
     if (pts.length < 3) continue;
-    // top point = pts[0], bottom = pts[2]
     const cx = pts[0][0];
     const cy = (pts[0][1] + pts[2][1]) / 2;
     const nearby = allTexts
@@ -209,23 +230,23 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
     rfNodes.push({
       id: `decision-${idx++}`,
       type: "decision",
-      position: { x: cx, y: cy },
+      position: centerToTopLeft("decision", cx, cy),
       data: { label: nearby[0] ?? "", laneIndex: getLaneIndex(cx, laneXArr), nodeType: "decision" },
     });
   }
 
-  // 3d. START and END circles
+  // 3d. START and END circles (always at x≈45)
   let startAdded = false;
   for (const circle of svg.querySelectorAll("circle")) {
     const cx = parseFloat2(circle.getAttribute("cx"));
     const cy = parseFloat2(circle.getAttribute("cy"));
     const r  = parseFloat2(circle.getAttribute("r"));
-    if (Math.abs(cx - 45) > 10) continue; // only x≈45 = outside margin
+    if (Math.abs(cx - 45) > 15) continue;
     if (r < 20 && !startAdded) {
       rfNodes.push({
         id: "start",
         type: "start",
-        position: { x: cx, y: cy },
+        position: centerToTopLeft("start", cx, cy),
         data: { label: "", laneIndex: 0, nodeType: "start" },
       });
       startAdded = true;
@@ -233,26 +254,24 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
       rfNodes.push({
         id: "end",
         type: "end",
-        position: { x: cx, y: cy },
+        position: centerToTopLeft("end", cx, cy),
         data: { label: "סיום", laneIndex: 0, nodeType: "end" },
       });
     }
   }
 
-  // ── 4. Edges — lines with marker-end ───────────────────────────────────────
+  // 4. Edges — arrows only
   const rfEdges: Edge[] = [];
   let eidx = 0;
   const seen = new Set<string>();
-
   for (const line of allLines) {
     if (line.getAttribute("marker-end") !== "url(#arr)") continue;
     const x1 = parseFloat2(line.getAttribute("x1"));
     const y1 = parseFloat2(line.getAttribute("y1"));
     const x2 = parseFloat2(line.getAttribute("x2"));
     const y2 = parseFloat2(line.getAttribute("y2"));
-
-    const src = closestNode(rfNodes, x1, y1, 50);
-    const tgt = closestNode(rfNodes, x2, y2, 50);
+    const src = closestNode(rfNodes, x1, y1, 60);
+    const tgt = closestNode(rfNodes, x2, y2, 60);
     if (!src || !tgt || src === tgt) continue;
     const key = `${src}->${tgt}`;
     if (seen.has(key)) continue;
@@ -260,10 +279,29 @@ export function parseSvgToRF(svgString: string): ActivityRFData | null {
     rfEdges.push({ id: `e-${eidx++}`, source: src, target: tgt });
   }
 
+  // 5. Lane nodes (rendered as swimlane columns behind everything)
+  const laneNodes: Node<ActivityNodeData>[] = lanes.map((lane, i) => ({
+    id: `lane-${i}`,
+    type: "lane",
+    position: { x: lane.x, y: 0 },
+    style: { width: lane.width, height: svgHeight, zIndex: -1 },
+    data: {
+      label: lane.label,
+      laneIndex: i,
+      nodeType: "lane" as ActivityNodeType,
+      laneWidth: lane.width,
+      laneHeight: svgHeight,
+    },
+    selectable: false,
+    draggable: false,
+    focusable: false,
+    zIndex: -1,
+  }));
+
   return {
     rfVersion: 1,
     lanes,
-    nodes: rfNodes,
+    nodes: [...laneNodes, ...rfNodes],
     edges: rfEdges,
     svgWidth,
     svgHeight,
