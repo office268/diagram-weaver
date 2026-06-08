@@ -157,6 +157,14 @@ function HomePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
+  const activateTile = (key: OutputKey) => {
+    if (key === "meeting_summary") {
+      navigate({ to: "/meeting-transcribe" });
+      return;
+    }
+    createMut.mutate(key);
+  };
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
