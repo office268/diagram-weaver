@@ -114,12 +114,28 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [phaseIdx, setPhaseIdx] = useState(0);
-  const phases = ["חושב", "מתכנן", "בונה", "בודק"] as const;
+  const phases = [
+    "מנתח את הבקשה",
+    "מאחזר הקשר רלוונטי",
+    "מזקק דרישות מרכזיות",
+    "בונה מודל סמנטי",
+    "מתכנן ארכיטקטורת פתרון",
+    "מסיק קשרים בין ישויות",
+    "מייצר טיוטה ראשונית",
+    "מאמת עקביות לוגית",
+    "מבצע ביקורת עצמית",
+    "משכלל ניסוחים",
+    "מאחד תובנות",
+    "מלטש את התוצר הסופי",
+  ] as const;
   useEffect(() => {
     if (!sending) { setPhaseIdx(0); return; }
-    const id = setInterval(() => setPhaseIdx((i) => (i < 3 ? i + 1 : 3)), 2500);
+    const id = setInterval(
+      () => setPhaseIdx((i) => (i + 1) % phases.length),
+      1800,
+    );
     return () => clearInterval(id);
-  }, [sending]);
+  }, [sending, phases.length]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
