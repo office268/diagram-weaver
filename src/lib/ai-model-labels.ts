@@ -5,6 +5,8 @@ export const MODEL_LABELS: Record<string, string> = {
   "openai/gpt-5.4-pro": "GPT-5.4 Pro — Reasoning מתקדם",
   "openai/gpt-5.5": "GPT-5.5 — Reasoning מתקדם",
   "openai/gpt-5.5-pro": "GPT-5.5 Pro — Reasoning הכי איכותי",
+  "anthropic/claude-opus-4-5": "Claude Opus 4.5 — Reasoning לארכיטקטורה (Anthropic)",
+  "anthropic/claude-sonnet-4-5": "Claude Sonnet 4.5 — Reasoning מאוזן (Anthropic)",
 };
 
 export const MODEL_SHORT_LABELS: Record<string, string> = {
@@ -14,6 +16,8 @@ export const MODEL_SHORT_LABELS: Record<string, string> = {
   "openai/gpt-5.4-pro": "GPT-5.4 Pro",
   "openai/gpt-5.5": "GPT-5.5",
   "openai/gpt-5.5-pro": "GPT-5.5 Pro",
+  "anthropic/claude-opus-4-5": "Claude Opus 4.5",
+  "anthropic/claude-sonnet-4-5": "Claude Sonnet 4.5",
 };
 
 export function modelLabel(model: string | null | undefined): string {
