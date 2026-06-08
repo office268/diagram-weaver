@@ -111,6 +111,11 @@ export function AiUsageCard() {
                           </span>
                         ) : null}
                       </TableCell>
+                      {isAdmin ? (
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          {r.user_email ?? "—"}
+                        </TableCell>
+                      ) : null}
                       <TableCell className="text-xs text-muted-foreground">
                         {r.doc_type ?? "—"}
                       </TableCell>
