@@ -16,6 +16,7 @@ import {
   Mic,
   Workflow,
   List,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,7 +29,8 @@ export type DocumentOutputKey =
   | "spec_detailed"
   | "user_guide"
   | "meeting_summary"
-  | "user_story";
+  | "user_story"
+  | "dashboard";
 
 
 
@@ -197,6 +199,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: List,
     colorClass: "text-fuchsia-500",
   },
+  dashboard: {
+    key: "dashboard",
+    category: "document",
+    label: "dashboard",
+    description: "",
+    icon: LayoutDashboard,
+    colorClass: "text-cyan-500",
+  },
 };
 
 // Display order on the home page tiles (primary, most-used).
@@ -212,7 +222,9 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "diagram_activity",
   "meeting_summary",
   "user_story",
+  "dashboard",
 ];
+
 
 // Less common types — shown inside the "More…" tile.
 export const OUTPUT_TYPE_EXTRAS: OutputKey[] = [
