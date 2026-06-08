@@ -267,6 +267,35 @@ export function postProcessActivityMermaid(code: string): string {
     : `${elkDirective}\n${transformed}`;
 }
 
+export function normalizeActivityMermaidForValidation(code: string): string {
+  return postProcessActivityMermaid(code)
+    .replace(/\{\{\{([^{}]+)\}\}\}/g, "{{$1}}")
+    .trim();
+}
+
+export function getActivityMermaidValidationError(code: string): string | null {
+  const normalized = normalizeActivityMermaidForValidation(code);
+  const violations = validateActivityDiagram(normalized);
+  if (violations.length > 0) return violations[0];
+
+  const lines = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const subgraphStarts = lines.filter((line) => /^subgraph\b/.test(line)).length;
+  const subgraphEnds = lines.filter((line) => line === "end").length;
+  if (subgraphStarts !== subgraphEnds) {
+    return "מספר פקודות subgraph/end אינו מאוזן.";
+  }
+
+  if (lines.some((line) => /fill:[^,\s]+,[a-z]/i.test(line))) {
+    return "נמצאה פקודת style פגומה עם פסיק/טקסט צמודים.";
+  }
+
+  return null;
+}
+
 
 export function validateActivityDiagram(code: string): string[] {
   const violations: string[] = [];
