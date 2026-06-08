@@ -1,22 +1,32 @@
-## מטרה
-להציג בכותרת רק את שם המודול הפעיל (כותרת בודדת), במקום שלוש הלשוניות. המעבר בין המודולים יתבצע מתפריט ההמבורגר.
+# מטרה
+לתקן את כשל יצירת ה‑activity diagram כך שהשרת יחזיר תרשים תקין ולא יקטע את התגובה.
 
-## שינויים
+# מה הבעיה
+מצאתי בלוג השרת שהבקשה עדיין נופלת על ולידציית Mermaid ישנה:
+- `ActivityDiagramGenerationError: ... חסר flowchart RL`
+- מקור השגיאה: `src/routes/api/chat-message.ts` סביב שורה 349
 
-### `src/routes/_authenticated.tsx`
-- להחליף את שורת שלוש הלשוניות בכותרת בודדת מרכזית של המודול הפעיל: אייקון + שם המודול.
-- מיפוי מודולים:
-  - `/dashboard` (וגם `/chat/*`, `/diagram/*`, `/editor/*`, `/documents/*`) → "ניתוח מערכות" (אייקון `Workflow`).
-  - `/projects-management` (וגם `/projects/*`) → "ניהול פרויקטים" (אייקון `KanbanSquare`).
-  - `/product` → "ניהול מוצר" (אייקון `Rocket`).
-  - מסלולים אחרים (settings, organization, billing וכו') → לא תוצג כותרת מודול.
-- העיצוב: שורה ממורכזת, אייקון קטן + טקסט bold עם קו תחתון `bg-primary` קצר תחתיה (כמו האינדיקטור הקיים), במקום ה-`divide-x` של שלוש הלשוניות.
-- ה-`Link to="/documents"` ו-`CommandTriggerButton` (md+) — נשמרים בצד שמאל של אותה שורה.
+בפועל ה‑activity pipeline כבר מחזיר `SVG`, לא Mermaid, ולכן נשארה במסלול הזה בדיקה לא נכונה שממשיכה לצפות ל־`flowchart RL`.
 
-### `src/components/user-menu.tsx`
-- להוסיף בראש ה-`DropdownMenuContent` שלושה פריטי ניווט למודולים (`Workflow`, `KanbanSquare`, `Rocket`) — לכל אחד `Link` למסלול שלו. המודול הפעיל יסומן ב-`bg-accent` ובטקסט מודגש לפי `useLocation().pathname`.
-- מתחתיהם `DropdownMenuSeparator`. שאר התפריט נשאר כפי שהוא.
+# תוכנית עבודה
+1. לעדכן את מסלול `diagram_activity` ב־`src/routes/api/chat-message.ts`
+   - להסיר לחלוטין את ולידציית Mermaid מהמסלול של activity.
+   - לוודא שלא נשארים import/branches ישנים של `getActivityMermaidValidationError` עבור activity.
 
-## הערות
-- אין שינוי בלוגיקה של המודולים עצמם או במסלולים.
-- אם המשתמש נמצא בעמוד שאינו שייך לאחד משלושת המודולים, הכותרת לא תופיע — והכותרת תכלול רק לוגו/חיפוש/המבורגר.
+2. ליישר את הייצוג של פלט activity מול ה־UI והאחסון
+   - לוודא שה־SVG נשמר ומועבר הלאה בלי עטיפת Mermaid שמבלבלת את הצרכן downstream.
+   - לבדוק שה־assistant message/renderer מתייחסים ל־activity כ־SVG ולא כקוד Mermaid רגיל.
+
+3. לאמת את הזרימה מקצה לקצה
+   - לשחזר בקשה עם prompt דומה לזה שנכשל.
+   - לבדוק שאין יותר `תגובת השרת נקטעה` ושנוצר artifact תקין.
+   - אם יישאר כשל, להשתמש בלוגי שרת כדי לאתר את הנקודה הבאה בשרשרת.
+
+# פרטים טכניים
+- קבצים מרכזיים:
+  - `src/routes/api/chat-message.ts`
+  - `src/agents/diagrams/activity-swimlane.server.ts`
+  - `src/lib/activity-diagram-pipeline.server.ts`
+  - `src/routes/_authenticated/diagram.$id.tsx`
+- הסיבה הסבירה ביותר: קוד ישן של Mermaid validation עדיין מופעל במסלול activity למרות שהפלט הוחלף ל־SVG.
+- לא אגע באיכות התוצרים האפיוניים או בפרומפטים מעבר למה שחייב כדי להסיר את הכשל.

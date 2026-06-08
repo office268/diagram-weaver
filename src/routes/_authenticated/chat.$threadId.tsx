@@ -64,6 +64,7 @@ import {
   deleteChatThread,
 } from "@/lib/chat.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
+import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/mermaid-preview";
 import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
@@ -717,14 +718,14 @@ function MessageBubble({ message }: { message: MessageRow }) {
 }
 
 function AssistantContent({ content }: { content: string }) {
-  // Split into segments — mermaid blocks vs text
-  const segments: Array<{ kind: "text" | "mermaid"; value: string }> = [];
-  const re = /```mermaid\s*\n([\s\S]*?)```/gi;
+  // Split into segments — diagram blocks (Mermaid/SVG) vs text
+  const segments: Array<{ kind: "text" | "diagram"; value: string }> = [];
+  const re = /```(?:mermaid|svg)\s*\n([\s\S]*?)```/gi;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(content)) !== null) {
     if (m.index > last) segments.push({ kind: "text", value: content.slice(last, m.index) });
-    segments.push({ kind: "mermaid", value: m[1].trim() });
+    segments.push({ kind: "diagram", value: m[1].trim() });
     last = m.index + m[0].length;
   }
   if (last < content.length) segments.push({ kind: "text", value: content.slice(last) });
@@ -747,12 +748,14 @@ function AssistantContent({ content }: { content: string }) {
 }
 
 function DiagramBlock({ code }: { code: string }) {
+  const isSvg = code.trimStart().toLowerCase().startsWith("<svg");
+
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-1.5">
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <GitBranch className="h-3 w-3" />
-          Mermaid
+          {isSvg ? "Activity SVG" : "Mermaid"}
         </div>
         <Button
           variant="ghost"
@@ -768,7 +771,7 @@ function DiagramBlock({ code }: { code: string }) {
         </Button>
       </div>
       <div className="h-[360px]">
-        <MermaidPreview code={code} />
+        {isSvg ? <ActivitySwimlaneRenderer code={code} /> : <MermaidPreview code={code} />}
       </div>
     </div>
   );

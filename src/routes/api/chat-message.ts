@@ -5,7 +5,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import {
   ActivityDiagramGenerationError,
-  getActivityMermaidValidationError,
 } from "@/lib/activity-diagram-pipeline.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
@@ -341,16 +340,8 @@ export const Route = createFileRoute("/api/chat-message")({
                   mermaid = raw;
                 }
 
-                mermaid = sanitizeMermaidLabels(mermaid);
-
-                if (outputType === "diagram_activity") {
-                  const validationError = getActivityMermaidValidationError(mermaid);
-                  if (validationError) {
-                    throw new ActivityDiagramGenerationError(
-                      "builder_invalid_mermaid",
-                      `יצירת תרשים ה-Activity נכשלה בשלב בדיקת Mermaid: ${validationError}`,
-                    );
-                  }
+                if (outputType !== "diagram_activity") {
+                  mermaid = sanitizeMermaidLabels(mermaid);
                 }
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
@@ -370,7 +361,9 @@ export const Route = createFileRoute("/api/chat-message")({
                 if (diagErr) throw new Error(diagErr.message);
 
                 const assistantContent =
-                  `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+                  outputType === "diagram_activity"
+                    ? `הנה ${def.label}:\n\n\`\`\`svg\n${mermaid}\n\`\`\``
+                    : `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
 
                 await supabaseAdmin.from("chat_messages").insert({
                   thread_id: body.threadId,
