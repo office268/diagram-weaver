@@ -157,13 +157,35 @@ function HomePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
+  const combinedMut = useMutation({
+    mutationFn: async () => {
+      const brd = await createFn({
+        data: { outputType: "business_requirements", title: OUTPUT_TYPES.business_requirements.label },
+      });
+      const trd = await createFn({
+        data: { outputType: "technical_requirements", title: OUTPUT_TYPES.technical_requirements.label },
+      });
+      return { brd, trd };
+    },
+    onSuccess: ({ brd }) => {
+      toast.success("נוצרו שני מסמכים: דרישות עסקי ודרישות טכני");
+      navigate({ to: "/chat/$threadId", params: { threadId: brd.thread.id } });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
+  });
+
   const activateTile = (key: OutputKey) => {
     if (key === "meeting_summary") {
       navigate({ to: "/meeting-transcribe" });
       return;
     }
+    if (key === "requirements_combined") {
+      combinedMut.mutate();
+      return;
+    }
     createMut.mutate(key);
   };
+
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
