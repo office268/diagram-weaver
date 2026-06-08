@@ -180,7 +180,7 @@ function HomePage() {
       navigate({ to: "/meeting-transcribe" });
       return;
     }
-    if (key === "requirements_combined") {
+    if ((key as string) === "requirements_combined") {
       combinedMut.mutate();
       return;
     }
@@ -241,7 +241,7 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                       disabled={createMut.isPending || combinedMut.isPending}
                       draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                       onActivate={() => activateTile(key)}
@@ -267,7 +267,7 @@ function HomePage() {
                     key={key}
                     outputKey={key}
                     index={i}
-                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                     disabled={createMut.isPending || combinedMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                     onActivate={() => activateTile(key)}
@@ -293,7 +293,7 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                       disabled={createMut.isPending || combinedMut.isPending}
                       draggable={false}
                       onActivate={() => activateTile(key)}
@@ -329,7 +329,7 @@ function HomePage() {
               <ExtrasTile
                 key={key}
                 outputKey={key}
-                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && key === "requirements_combined"))}
+                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
                 disabled={createMut.isPending || combinedMut.isPending}
                 onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
