@@ -380,18 +380,23 @@ function ChatPage() {
           while (true) {
             await new Promise((r) => setTimeout(r, 2000));
             if (Date.now() - startedAt > MAX_MS) {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error("חרגנו מזמן ההמתנה ליצירת התרשים. אפשר לנסות שוב.");
             }
             const { data: job, error: jobErr } = await supabase
               .from("diagram_jobs")
-              .select("status,error_message")
+              .select("status,error_message,completed_at")
               .eq("id", jobId)
               .maybeSingle();
             if (jobErr) throw new Error(jobErr.message);
             if (!job) continue;
             if (job.status === "done") break;
             if (job.status === "failed") {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error(job.error_message || "יצירת התרשים נכשלה");
+            }
+            if (job.completed_at) {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
             }
             // pending/processing — keep polling, refresh chat so progress is visible
             await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
