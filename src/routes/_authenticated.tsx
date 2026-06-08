@@ -93,11 +93,11 @@ function AuthenticatedLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="ms-auto h-8 w-8"
+              className="ms-auto h-10 w-10"
               aria-label={searchOpen ? "סגור חיפוש" : "פתח חיפוש"}
               onClick={() => setSearchOpen((v) => !v)}
             >
-              {searchOpen ? <X className="h-4 w-4" /> : <Search className="h-4 w-4" />}
+              {searchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
             <HamburgerMenu />
 
@@ -137,13 +137,13 @@ function UserMenuWithOrgLogo() {
   return (
     <Link
       to="/organization"
-      className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
       aria-label="דף הארגון"
     >
       {avatarUrl ? (
         <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
       ) : (
-        <Workflow className="h-5 w-5 text-muted-foreground" />
+        <Workflow className="h-6 w-6 text-muted-foreground" />
       )}
     </Link>
   );
@@ -168,7 +168,7 @@ function OrgNameLabel() {
   return (
     <Link
       to="/organization"
-      className="text-sm font-medium text-foreground truncate min-w-0 hover:underline"
+      className="text-base font-medium text-foreground truncate min-w-0 hover:underline"
       title={data.name}
     >
       {data.name}
