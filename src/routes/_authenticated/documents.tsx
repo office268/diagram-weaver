@@ -223,22 +223,40 @@ function DocumentsPage() {
         it.prompt.toLowerCase().includes(q)
       );
     });
+    const dir = sortDir === "asc" ? 1 : -1;
     out.sort((a, b) => {
-      switch (sortBy) {
-        case "date_asc":
-          return a.createdAt < b.createdAt ? -1 : 1;
+      let cmp = 0;
+      switch (sortCol) {
         case "name":
-          return a.title.localeCompare(b.title, "he");
+          cmp = a.title.localeCompare(b.title, "he");
+          break;
         case "type":
-          return a.category.localeCompare(b.category) ||
+          cmp =
+            a.category.localeCompare(b.category) ||
             String(a.type).localeCompare(String(b.type));
-        case "date_desc":
+          break;
+        case "size": {
+          // uploads expose a size string in meta; others = 0
+          const parse = (s?: string) => {
+            if (!s) return 0;
+            const m = s.match(/([\d.]+)\s*(B|KB|MB)/i);
+            if (!m) return 0;
+            const n = parseFloat(m[1]);
+            const u = m[2].toUpperCase();
+            return u === "MB" ? n * 1024 * 1024 : u === "KB" ? n * 1024 : n;
+          };
+          cmp = parse(a.meta) - parse(b.meta);
+          break;
+        }
+        case "date":
         default:
-          return a.createdAt < b.createdAt ? 1 : -1;
+          cmp = a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
       }
+      return cmp * dir;
     });
     return out;
-  }, [items, query, group, typeFilter, sortBy]);
+  }, [items, query, group, typeFilter, sortCol, sortDir]);
+
 
   const deleteMut = useMutation({
     mutationFn: async (item: Item) => {
