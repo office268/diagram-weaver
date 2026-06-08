@@ -108,6 +108,9 @@ function DocumentsPage() {
   const deleteSpecFn = useServerFn(deleteSpec);
   const deleteDiagramFn = useServerFn(deleteDiagram);
   const deleteDocumentFn = useServerFn(deleteDocument);
+  const updateSpecFn = useServerFn(updateSpec);
+  const updateDiagramFn = useServerFn(updateDiagram);
+  const renameDocumentFn = useServerFn(renameDocument);
 
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<GroupFilter>("all");
@@ -115,6 +118,55 @@ function DocumentsPage() {
   const [sortBy, setSortBy] = useState<SortKey>("date_desc");
   const [filterOpen, setFilterOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Item | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  // Column widths (Windows Explorer-like resizable columns).
+  // `name` is the flex column (1fr); others are pixel widths.
+  const COL_STORAGE_KEY = "documents-col-widths-v1";
+  const DEFAULT_COLS = { type: 140, date: 120, size: 90, actions: 80 };
+  type ColKey = keyof typeof DEFAULT_COLS;
+  const [cols, setCols] = useState<typeof DEFAULT_COLS>(() => {
+    if (typeof window === "undefined") return DEFAULT_COLS;
+    try {
+      const raw = localStorage.getItem(COL_STORAGE_KEY);
+      if (raw) return { ...DEFAULT_COLS, ...JSON.parse(raw) };
+    } catch { /* ignore */ }
+    return DEFAULT_COLS;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(cols)); } catch { /* ignore */ }
+  }, [cols]);
+
+  const gridTemplate = `minmax(160px,1fr) ${cols.type}px ${cols.date}px ${cols.size}px ${cols.actions}px`;
+
+  const dragRef = useRef<{ key: ColKey; startX: number; startW: number } | null>(null);
+  const startResize = useCallback((key: ColKey) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current = { key, startX: e.clientX, startW: cols[key] };
+    const onMove = (ev: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      // RTL layout: handles sit on each column's start edge (right side visually).
+      // Dragging mouse leftwards (lower clientX) increases the column width.
+      const delta = d.startX - ev.clientX;
+      const next = Math.max(60, Math.min(600, d.startW + delta));
+      setCols((c) => ({ ...c, [d.key]: next }));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, [cols]);
+
 
   const { data: specsData, isLoading: specsLoading } = useQuery({
     queryKey: ["specs-all"],
