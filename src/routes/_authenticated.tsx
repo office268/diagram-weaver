@@ -1,7 +1,7 @@
-import { createFileRoute, Link, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search, X, Workflow } from "lucide-react";
+import { Loader2, Search, Workflow } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -16,7 +16,6 @@ import {
   GlobalCommandPalette,
   CommandTriggerButton,
 } from "@/components/global-command-palette";
-import { GlobalSearchBar } from "@/components/global-search-bar";
 
 import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";
@@ -28,17 +27,11 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    setSearchOpen(false);
-  }, [location.pathname]);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
+
 
   // Approval gate
   const { data: approvalData, isLoading: approvalLoading } = useQuery({
