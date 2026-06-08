@@ -521,7 +521,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("type")}
-                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
               סוג
@@ -529,7 +529,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("date")}
-                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
               תאריך
@@ -537,7 +537,7 @@ function DocumentsPage() {
             <div className="relative truncate">
               <span
                 onMouseDown={startResize("size")}
-                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
               גודל
@@ -545,7 +545,7 @@ function DocumentsPage() {
             <div className="relative truncate text-left">
               <span
                 onMouseDown={startResize("actions")}
-                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-transparent hover:bg-primary/30"
+                className="absolute -left-2 top-0 z-10 h-full w-3 cursor-col-resize select-none bg-border/60 hover:bg-primary"
                 aria-hidden
               />
               פעולות
