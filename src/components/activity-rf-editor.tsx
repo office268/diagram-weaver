@@ -201,7 +201,7 @@ export function ActivityRFEditor({ rfData, onSave, saving, readOnly }: Props) {
       setNodes(rfData.nodes);
       setEdges(rfData.edges);
     }
-  }, [rfData.nodes, rfData.edges, setNodes, setEdges]);
+  }, [readOnly, rfData.nodes, rfData.edges, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges(eds => addEdge(params, eds)),
