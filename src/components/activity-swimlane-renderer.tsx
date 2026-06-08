@@ -281,6 +281,10 @@ export function ActivitySwimlaneRenderer({
     );
   }
 
-  // ── Legacy Mermaid fallback ───────────────────────────────────────────────
-  return <MermaidPreview code={code} hideFullscreen={hideFullscreen} />;
+  // ── Unsupported format fallback ───────────────────────────────────────────
+  return (
+    <div className="flex h-full w-full items-center justify-center p-6 text-sm text-muted-foreground">
+      פורמט התרשים אינו נתמך.
+    </div>
+  );
 }
