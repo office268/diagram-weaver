@@ -48,6 +48,7 @@ import { Route as AuthenticatedDiagramIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
 import { Route as AuthenticatedAgentConversationsIdRouteImport } from './routes/_authenticated/agent-conversations.$id'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksProcessDiagramJobsRouteImport } from './routes/api/public/hooks/process-diagram-jobs'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -253,6 +254,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProcessDiagramJobsRoute =
+  ApiPublicHooksProcessDiagramJobsRouteImport.update({
+    id: '/api/public/hooks/process-diagram-jobs',
+    path: '/api/public/hooks/process-diagram-jobs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -332,6 +340,7 @@ export interface FileRoutesByTo {
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
@@ -374,6 +383,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId'
     | '/agent-conversations/'
     | '/projects/'
+    | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId'
     | '/agent-conversations'
     | '/projects'
+    | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
@@ -497,6 +509,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/agent-conversations/'
     | '/_authenticated/projects/'
+    | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -522,6 +535,7 @@ export interface RootRouteChildren {
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
   ApiTranscribeAudioRoute: typeof ApiTranscribeAudioRoute
   ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
+  ApiPublicHooksProcessDiagramJobsRoute: typeof ApiPublicHooksProcessDiagramJobsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -800,6 +814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-diagram-jobs': {
+      id: '/api/public/hooks/process-diagram-jobs'
+      path: '/api/public/hooks/process-diagram-jobs'
+      fullPath: '/api/public/hooks/process-diagram-jobs'
+      preLoaderRoute: typeof ApiPublicHooksProcessDiagramJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -871,6 +892,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiReviewSpecRoute: ApiReviewSpecRoute,
   ApiTranscribeAudioRoute: ApiTranscribeAudioRoute,
   ApiUploadDocumentRoute: ApiUploadDocumentRoute,
+  ApiPublicHooksProcessDiagramJobsRoute: ApiPublicHooksProcessDiagramJobsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
