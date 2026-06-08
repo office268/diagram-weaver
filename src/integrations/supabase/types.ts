@@ -462,6 +462,72 @@ export type Database = {
         }
         Relationships: []
       }
+      diagram_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          diagram_id: string | null
+          error_message: string | null
+          id: string
+          iterations: number | null
+          kind: string
+          model_override: string | null
+          prompt: string
+          started_at: string | null
+          status: string
+          thread_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          diagram_id?: string | null
+          error_message?: string | null
+          id?: string
+          iterations?: number | null
+          kind: string
+          model_override?: string | null
+          prompt: string
+          started_at?: string | null
+          status?: string
+          thread_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          diagram_id?: string | null
+          error_message?: string | null
+          id?: string
+          iterations?: number | null
+          kind?: string
+          model_override?: string | null
+          prompt?: string
+          started_at?: string | null
+          status?: string
+          thread_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagram_jobs_diagram_id_fkey"
+            columns: ["diagram_id"]
+            isOneToOne: false
+            referencedRelation: "diagrams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "diagram_jobs_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagrams: {
         Row: {
           created_at: string
