@@ -66,6 +66,7 @@ import {
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/mermaid-preview";
+import { DiagramRenderer } from "@/components/diagram-renderer";
 import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
@@ -718,9 +719,9 @@ function MessageBubble({ message }: { message: MessageRow }) {
 }
 
 function AssistantContent({ content }: { content: string }) {
-  // Split into segments — diagram blocks (Mermaid/SVG) vs text
+  // Split into segments — diagram blocks (Mermaid / SVG / RF JSON) vs text
   const segments: Array<{ kind: "text" | "diagram"; value: string }> = [];
-  const re = /```(?:mermaid|svg)\s*\n([\s\S]*?)```/gi;
+  const re = /```(?:mermaid|svg|rf-json)\s*\n([\s\S]*?)```/gi;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(content)) !== null) {
@@ -749,13 +750,15 @@ function AssistantContent({ content }: { content: string }) {
 
 function DiagramBlock({ code }: { code: string }) {
   const isSvg = code.trimStart().toLowerCase().startsWith("<svg");
+  const isRfJson = code.trimStart().startsWith("{");
+  const label = isRfJson ? "Diagram" : isSvg ? "Activity SVG" : "Mermaid";
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex items-center justify-between border-b border-border bg-muted/40 px-3 py-1.5">
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <GitBranch className="h-3 w-3" />
-          {isSvg ? "Activity SVG" : "Mermaid"}
+          {label}
         </div>
         <Button
           variant="ghost"
@@ -771,7 +774,13 @@ function DiagramBlock({ code }: { code: string }) {
         </Button>
       </div>
       <div className="h-[360px]">
-        {isSvg ? <ActivitySwimlaneRenderer code={code} /> : <MermaidPreview code={code} />}
+        {isRfJson ? (
+          <DiagramRenderer code={code} />
+        ) : isSvg ? (
+          <ActivitySwimlaneRenderer code={code} />
+        ) : (
+          <MermaidPreview code={code} />
+        )}
       </div>
     </div>
   );

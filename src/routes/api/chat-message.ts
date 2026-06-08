@@ -33,34 +33,6 @@ function sanitize(s: string): string {
     .trim();
 }
 
-function extractMermaid(text: string): string {
-  const fence = text.match(/```(?:mermaid)?\s*\n([\s\S]*?)```/i);
-  if (fence) return fence[1].trim();
-  return text.trim();
-}
-
-function looksLikePlantUml(code: string): boolean {
-  const t = code.trimStart();
-  return (
-    /^activityDiagram\b/i.test(t) ||
-    /^@startuml\b/i.test(t) ||
-    /^start\b/im.test(t.split("\n").slice(0, 3).join("\n")) ||
-    /^\s*:[^;\n]+;/m.test(t)
-  );
-}
-
-// Mermaid breaks when a quoted label like ["מהעו"ד"] contains an unescaped " —
-// the inner quote closes the label early and the parser fails. Replace inner
-// quotes inside bracket-quoted labels with #quot; (Mermaid renders it as ").
-function sanitizeMermaidLabels(code: string): string {
-  return code.replace(
-    /(\[\[?"|\(\(?"|\{"|>")([\s\S]*?)("\]\]?|"\)\)?|"\}|"\])/g,
-    (_m, open: string, inner: string, close: string) => {
-      const safe = inner.replace(/"/g, "#quot;");
-      return open + safe + close;
-    },
-  );
-}
 
 export const Route = createFileRoute("/api/chat-message")({
   server: {
@@ -294,7 +266,8 @@ export const Route = createFileRoute("/api/chat-message")({
                 const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
                 const modelOverride = await loadAgentModelOverride();
 
-                let mermaid: string;
+                let diagramCode: string;
+                let assistantFence: "svg" | "rf-json";
 
                 if (outputType === "diagram_activity") {
                   const { runActivitySwimlaneOrchestrator } = await import("@/agents/diagrams/activity-swimlane.server");
@@ -303,111 +276,25 @@ export const Route = createFileRoute("/api/chat-message")({
                     lovableApiKey: apiKey,
                     modelOverride,
                   });
-                  mermaid = raw;
+                  diagramCode = raw;
+                  assistantFence = "svg";
                 } else {
-                  const provider = createLovableAiGatewayProvider(apiKey);
-                  const model = provider(modelOverride);
-                  const hint = (def as { mermaidHint?: string }).mermaidHint ?? "";
-                  const useCaseRules = outputType === "diagram_usecase"
-                    ? (
-                        `\n\n=== כללי תרשים Use Case (UML) — חובה מוחלטת ===\n` +
-                        `תרשים Use Case הוא סטטי, לא דינמי! הוא מתאר מי משתמש במערכת ואילו פעולות הוא יכול לבצע — לא תהליך, לא זרימה, לא שלבים, לא החלטות.\n\n` +
-                        `גם אם המשתמש מתאר תהליך/זרימה/שלבים — אתה חייב להפשיט אותם ל-use cases (פעולות מנקודת מבט המשתמש) ולזהות actors. אסור בשום אופן להפיק תרשים activity / swimlane.\n\n` +
-                        `מבנה מחייב:\n` +
-                        `1. שורה ראשונה: \`flowchart LR\`\n` +
-                        `2. Actors כצמתי stadium: \`A1(["שם"])\` — מחוץ ל-subgraph של המערכת.\n` +
-                        `3. Use cases כצמתי אליפסה: \`UC1(("שם פעולה"))\` — כל ה-use cases חייבים להיות בתוך \`subgraph SYS["שם המערכת"] ... end\`.\n` +
-                        `4. Association בין actor ל-use case: \`A1 --- UC1\` (קו רגיל ללא חץ, ללא תווית).\n` +
-                        `5. «include»: \`UCa -.->|"«include»"| UCb\` — חץ מקווקו מהבסיסי לנכלל.\n` +
-                        `6. «extend»: \`UCa -.->|"«extend»"| UCb\` — חץ מקווקו מהמרחיב לבסיסי.\n` +
-                        `7. מינימום: 2 actors, 4 use cases, ולפחות include או extend אחד אם הגיוני.\n\n` +
-                        `איסורים מוחלטים (כל אחד מהם פוסל את הפלט):\n` +
-                        `- אסור \`subgraph\` עבור actor או lane (subgraph רק עבור System Boundary אחד SYS).\n` +
-                        `- אסור צמתי \`{...}\` או \`{{...}}\` (decision diamonds) — אין החלטות ב-use case.\n` +
-                        `- אסור \`-->\` (חיצים מוצקים) בין actor ל-use case או בין use cases רגילים.\n` +
-                        `- אסור צמתי \`[...]\` (מלבנים) — פעולות הן אליפסות \`(("..."))\` בלבד.\n` +
-                        `- אסור צמתי start/end/"התחלה"/"סיום"/\`((...))\` עיגול מלא.\n` +
-                        `- אסור תוויות בסגנון פעלים-בהווה-מתמשך של תהליך ("בודק...", "מעדכן..."). השתמש בשם פעולה מופשט ("ביצוע הזמנה", "ניהול משתמשים").\n` +
-                        `- אסור classDef עם צבעים קשיחים, אימוג'ים, או direction בתוך subgraph.\n\n` +
-                        `דוגמה מלאה ותקינה (העתק את המבנה הזה):\n` +
-                        "```mermaid\n" +
-                        `flowchart LR\n` +
-                        `  A1(["לקוח"])\n` +
-                        `  A2(["מנהל מערכת"])\n` +
-                        `  EXT1(["מערכת תשלום"])\n` +
-                        `  subgraph SYS["מערכת הזמנות"]\n` +
-                        `    UC1(("חיפוש מוצרים"))\n` +
-                        `    UC2(("ביצוע הזמנה"))\n` +
-                        `    UC3(("תשלום"))\n` +
-                        `    UC4(("אימות משתמש"))\n` +
-                        `    UC5(("ניהול קטלוג"))\n` +
-                        `  end\n` +
-                        `  A1 --- UC1\n` +
-                        `  A1 --- UC2\n` +
-                        `  A2 --- UC5\n` +
-                        `  UC3 --- EXT1\n` +
-                        `  UC2 -.->|"«include»"| UC3\n` +
-                        `  UC2 -.->|"«include»"| UC4\n` +
-                        "```\n"
-                      )
-                    : "";
-                  const system =
-                    `אתה מומחה לבניית תרשימי Mermaid עבור אנליסטים. ` +
-                    `סוג התרשים המבוקש: ${def.label}. ` +
-                    `החזר אך ורק קוד Mermaid תקני בתוך בלוק \`\`\`mermaid ... \`\`\`. ללא הסברים נוספים. ` +
-                    (hint ? `השורה הראשונה של הקוד חייבת להיות בדיוק: ${hint}. ` : "") +
-                    `חשוב מאוד: ב-Mermaid אין \`activityDiagram\`. ` +
-                    `אסור להתחיל ב-\`activityDiagram\`, \`@startuml\`, \`start\`, או \`:label;\` — זה תחביר PlantUML ולא תקף ב-Mermaid. ` +
-                    (outputType === "diagram_usecase"
-                      ? ""
-                      : `עבור תרשים Activity / זרימת תהליך — השתמש ב-\`${hint || "flowchart TD"}\` עם החלטות \`{תנאי?}\` ופעולות \`[פעולה]\`. `) +
-                    `שמור על שמות באנגלית למזהי צמתים, אך תוויות בעברית מותרות בתוך גרשיים: ["טקסט"]. ` +
-                    `חשוב: אל תשתמש בגרש כפול (") בתוך תווית — זה שובר את הפרסר. במקום \`עו"ד\` כתוב \`עוה״ד\` (עם גרשיים עבריים ״) או \`עורך דין\` במלואו.` +
-                    useCaseRules;
+                  const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
                   const history: { role: "user" | "assistant"; content: string }[] = prior.map(
                     (m) => ({
                       role: m.role === "assistant" ? "assistant" : "user",
                       content: m.content,
                     }),
                   );
-                  history.push({ role: "user", content: cleanUserMsg });
-                  const { text } = await generateText({ model, system, messages: history, temperature: 0.3 });
-                  let raw = extractMermaid(text);
-                  if (looksLikePlantUml(raw)) {
-                    const { text: text2 } = await generateText({
-                      model,
-                      system: system + `\n\nהפלט הקודם השתמש בתחביר PlantUML פסול. החזר שוב, הפעם אך ורק Mermaid תקני המתחיל ב-${hint || "flowchart TD"}.`,
-                      messages: history,
-                      temperature: 0,
-                    });
-                    const retry = extractMermaid(text2);
-                    if (!looksLikePlantUml(retry)) raw = retry;
-                  }
-                  if (outputType === "diagram_usecase") {
-                    const violations: string[] = [];
-                    if (!/\(\("[^"]+"\)\)/.test(raw)) violations.push("חסרים use cases כאליפסות `UC#((\"...\"))`.");
-                    if (!/subgraph\s+SYS\b/.test(raw)) violations.push("חסר `subgraph SYS[\"...\"]` עבור System Boundary.");
-                    if (/\{[^{}\n]+\}/.test(raw)) violations.push("נמצאו צמתי decision `{...}` — אסור בתרשים use case.");
-                    const subgraphCount = (raw.match(/^\s*subgraph\b/gm) ?? []).length;
-                    if (subgraphCount > 1) violations.push("יותר מ-subgraph אחד — מותר רק SYS יחיד (אסור lanes/actors כ-subgraph).");
-                    if (violations.length > 0) {
-                      const { text: text3 } = await generateText({
-                        model,
-                        system: system + `\n\nהפלט הקודם פסול כתרשים Use Case. הפרות:\n- ${violations.join("\n- ")}\n\nצור מחדש לפי הדוגמה המלאה בכללים. הפק תרשים use case סטטי בלבד — actors מחוץ ל-SYS, use cases כאליפסות בתוך SYS, association \`---\`, ו-«include»/«extend» כחיצים מקווקווים.`,
-                        messages: history,
-                        temperature: 0,
-                      });
-                      const retry = extractMermaid(text3);
-                      if (retry && /\(\("[^"]+"\)\)/.test(retry) && /subgraph\s+SYS\b/.test(retry)) {
-                        raw = retry;
-                      }
-                    }
-                  }
-                  mermaid = raw;
-                }
-
-                if (outputType !== "diagram_activity") {
-                  mermaid = sanitizeMermaidLabels(mermaid);
+                  const { json } = await runRfJsonDiagramAgent({
+                    kind: outputType as Exclude<DiagramOutputKey, "diagram_activity">,
+                    userPrompt: cleanUserMsg,
+                    history,
+                    lovableApiKey: apiKey,
+                    modelOverride,
+                  });
+                  diagramCode = json;
+                  assistantFence = "rf-json";
                 }
 
                 const title = cleanUserMsg.slice(0, 80) || def.label;
@@ -420,16 +307,14 @@ export const Route = createFileRoute("/api/chat-message")({
                     kind: outputType,
                     title,
                     prompt: cleanUserMsg,
-                    mermaid_code: mermaid,
+                    mermaid_code: diagramCode,
                   })
                   .select()
                   .single();
                 if (diagErr) throw new Error(diagErr.message);
 
                 const assistantContent =
-                  outputType === "diagram_activity"
-                    ? `הנה ${def.label}:\n\n\`\`\`svg\n${mermaid}\n\`\`\``
-                    : `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+                  `הנה ${def.label}:\n\n\`\`\`${assistantFence}\n${diagramCode}\n\`\`\``;
 
                 await supabaseAdmin.from("chat_messages").insert({
                   thread_id: body.threadId,
@@ -454,7 +339,7 @@ export const Route = createFileRoute("/api/chat-message")({
 
                 enqueue("\n__RESULT__\n" + JSON.stringify({
                   ok: true,
-                  artifact: { kind: "diagram", id: diagRow.id, mermaid, title },
+                  artifact: { kind: "diagram", id: diagRow.id, mermaid: diagramCode, title },
                 }));
               }
             } catch (err) {
