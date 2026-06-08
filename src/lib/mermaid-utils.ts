@@ -39,7 +39,7 @@ export function setMermaidTheme(dark: boolean) {
  * inside labels — so the remaining risk surface is: <script> tags, event-handler
  * attributes (onclick, onload, …), and javascript:/data: URLs in href/xlink:href.
  */
-function sanitizeMermaidSvg(svg: string): string {
+export function sanitizeMermaidSvg(svg: string): string {
   if (typeof window === "undefined") return svg;
 
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");

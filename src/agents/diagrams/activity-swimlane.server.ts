@@ -4,21 +4,15 @@ import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 import {
   ActivityDiagramGenerationError,
   STAGE1_SYSTEM,
-  STAGE2_SYSTEM,
+  STAGE2_HTML_SYSTEM,
   parseProcessMapResponse,
-  postProcessActivityMermaid,
-  validateActivityDiagram,
-  reviewActivityDiagram,
+  extractSvg,
+  validateActivitySvg,
+  reviewActivitySvg,
   type ProcessMap,
 } from "@/lib/activity-diagram-pipeline.server";
 
 type Model = Parameters<typeof generateText>[0]["model"];
-
-function extractMermaid(text: string): string {
-  const fence = text.match(/```(?:mermaid)?\s*\n([\s\S]*?)```/i);
-  if (fence) return fence[1].trim();
-  return text.trim();
-}
 
 export async function runExtractorAgent(
   model: Model,
@@ -77,7 +71,7 @@ export async function runExtractorAgent(
   throw new Error("שלב חילוץ מבנה התהליך נכשל — לא התקבל פלט מובנה תקין.");
 }
 
-/** Agent 2 — generate Mermaid swimlane from ProcessMap + original prompt */
+/** Agent 2 — generate SVG swimlane from ProcessMap + original prompt */
 export async function runBuilderAgent(
   model: Model,
   processMap: ProcessMap,
@@ -89,58 +83,66 @@ export async function runBuilderAgent(
     "```json\n" +
     JSON.stringify(processMap, null, 2) +
     "\n```\n\n" +
-    `צור תרשים Mermaid swimlane לפי המבנה.`;
+    `צור תרשים activity swimlane כ-SVG לפי המבנה.`;
 
   const { text } = await generateText({
     model,
-    system: STAGE2_SYSTEM,
+    system: STAGE2_HTML_SYSTEM,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.1,
   });
-  return extractMermaid(text);
+  const svg = extractSvg(text);
+  if (!svg) {
+    throw new ActivityDiagramGenerationError(
+      "builder_invalid_mermaid",
+      "שלב בניית תרשים ה-Activity נכשל — המודל לא החזיר SVG תקין.",
+    );
+  }
+  return svg;
 }
 
-/** Agent 3 — validate Mermaid: regex structural checks + LLM semantic review */
+/** Agent 3 — validate SVG: structural checks + LLM semantic review */
 export async function runValidatorAgent(
   model: Model,
-  mermaid: string,
+  svg: string,
   userPrompt: string,
 ): Promise<{ violations: string[] }> {
-  const regexViolations = validateActivityDiagram(mermaid);
-  const review = await reviewActivityDiagram(model, mermaid, userPrompt);
+  const structuralViolations = validateActivitySvg(svg);
+  const review = await reviewActivitySvg(model, svg, userPrompt);
   const llmViolations =
     !review.ok && Array.isArray(review.violations) ? review.violations : [];
-  // Merge, skipping LLM duplicates already caught by regex
   const merged = [
-    ...regexViolations,
+    ...structuralViolations,
     ...llmViolations.filter(
-      (v) => !regexViolations.some((r) => r.slice(0, 25) === v.slice(0, 25)),
+      (v) => !structuralViolations.some((r) => r.slice(0, 25) === v.slice(0, 25)),
     ),
   ];
   return { violations: merged };
 }
 
-/** Agent 4 — fix violations: return corrected Mermaid */
+/** Agent 4 — fix violations: return corrected SVG */
 export async function runFixerAgent(
   model: Model,
-  mermaid: string,
+  svg: string,
   violations: string[],
   userPrompt: string,
 ): Promise<string> {
   const violationsList = violations.map((v) => `• ${v}`).join("\n");
   const prompt =
     `תיאור התהליך המקורי: ${userPrompt}\n\n` +
-    `קוד Mermaid הנוכחי:\n\`\`\`mermaid\n${mermaid}\n\`\`\`\n\n` +
+    `קוד SVG הנוכחי:\n${svg}\n\n` +
     `הפרות שנמצאו:\n${violationsList}\n\n` +
-    `תקן את כל ההפרות והחזר את קוד ה-Mermaid המלא המתוקן.`;
+    `תקן את כל ההפרות והחזר את קוד ה-SVG המלא המתוקן.`;
 
   const { text } = await generateText({
     model,
-    system: STAGE2_SYSTEM,
+    system: STAGE2_HTML_SYSTEM,
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
   });
-  return extractMermaid(text);
+  const fixed = extractSvg(text);
+  if (!fixed) return svg;
+  return fixed;
 }
 
 /**
@@ -159,29 +161,27 @@ export async function runActivitySwimlaneOrchestrator(params: {
 
   const processMap = await runExtractorAgent(model, userPrompt);
 
-  let mermaid = await runBuilderAgent(model, processMap, userPrompt);
+  let svg = await runBuilderAgent(model, processMap, userPrompt);
   let iterations = 1;
 
   for (let i = 0; i < maxFixIterations; i++) {
-    const { violations } = await runValidatorAgent(model, mermaid, userPrompt);
+    const { violations } = await runValidatorAgent(model, svg, userPrompt);
     if (violations.length === 0) break;
 
-    const fixed = await runFixerAgent(model, mermaid, violations, userPrompt);
-    // Accept the fix only if it doesn't regress on structural rules
-    if (validateActivityDiagram(fixed).length <= validateActivityDiagram(mermaid).length) {
-      mermaid = fixed;
+    const fixed = await runFixerAgent(model, svg, violations, userPrompt);
+    if (validateActivitySvg(fixed).length <= validateActivitySvg(svg).length) {
+      svg = fixed;
     }
     iterations++;
   }
 
-  const finalMermaid = postProcessActivityMermaid(mermaid);
-  const finalViolations = validateActivityDiagram(finalMermaid);
+  const finalViolations = validateActivitySvg(svg);
   if (finalViolations.length > 0) {
     throw new ActivityDiagramGenerationError(
       "builder_invalid_mermaid",
-      `שלב בניית תרשים ה-Activity נכשל — קוד Mermaid שנוצר עדיין אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
+      `שלב בניית תרשים ה-Activity נכשל — SVG שנוצר אינו תקין: ${finalViolations.slice(0, 3).join(" | ")}`,
     );
   }
 
-  return { mermaid: finalMermaid, iterations };
+  return { mermaid: svg, iterations };
 }
