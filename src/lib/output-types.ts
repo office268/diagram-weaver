@@ -100,7 +100,7 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     key: "requirements_combined",
     category: "document",
     label: "מסמך דרישות (עסקי + טכני)",
-    description: "יצירה של שני המסמכים — דרישות עסקי (BRD) ודרישות טכני (TRD) — בלחיצה אחת.",
+    description: "",
     icon: Briefcase,
     colorClass: "text-amber-500",
   },
