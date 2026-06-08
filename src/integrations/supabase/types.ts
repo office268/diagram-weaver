@@ -361,6 +361,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          model_override: string | null
           output_type: string
           title: string
           updated_at: string
@@ -369,6 +370,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          model_override?: string | null
           output_type: string
           title?: string
           updated_at?: string
@@ -377,6 +379,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          model_override?: string | null
           output_type?: string
           title?: string
           updated_at?: string
