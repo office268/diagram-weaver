@@ -41,7 +41,9 @@ export const Route = createFileRoute("/api/public/hooks/process-diagram-jobs")({
           console.error("[process-diagram-jobs] claim failed:", claimErr);
           return new Response(claimErr.message, { status: 500 });
         }
-        if (!claimed) {
+        if (!claimed || typeof claimed !== "object" || !(claimed as { id?: string }).id) {
+          // claim_diagram_job() returns an all-NULL row (not null) when there
+          // is no pending work, so we must guard on the actual id field.
           return Response.json({ processed: false });
         }
 
@@ -53,6 +55,7 @@ export const Route = createFileRoute("/api/public/hooks/process-diagram-jobs")({
           prompt: string;
           model_override: string | null;
         };
+
 
         // Load prior chat history for RF-JSON kinds.
         const { data: priorMsgs } = await supabaseAdmin
