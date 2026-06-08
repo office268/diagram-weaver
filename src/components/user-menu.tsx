@@ -1,5 +1,6 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot } from "lucide-react";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot, Workflow, KanbanSquare, Rocket } from "lucide-react";
+
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +26,14 @@ function initialsFromEmail(email: string | null | undefined): string {
 
 export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user: User; overrideAvatarUrl?: string | null; trigger?: "avatar" | "hamburger" }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname;
+  const modules = [
+    { to: "/dashboard", label: "ניתוח מערכות", Icon: Workflow, active: path.startsWith("/dashboard") || path.startsWith("/chat") || path.startsWith("/diagram") || path.startsWith("/editor") || path.startsWith("/documents") },
+    { to: "/projects-management", label: "ניהול פרויקטים", Icon: KanbanSquare, active: path.startsWith("/projects-management") || path.startsWith("/projects") },
+    { to: "/product", label: "ניהול מוצר", Icon: Rocket, active: path.startsWith("/product") },
+  ] as const;
+
   const { balance } = useCredits();
   const { theme, toggle } = useTheme();
   const { isAdmin } = useSiteTexts();
@@ -68,6 +77,16 @@ export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user
           <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {modules.map((m) => (
+          <DropdownMenuItem key={m.to} asChild>
+            <Link to={m.to} className={m.active ? "bg-accent font-semibold text-foreground" : ""}>
+              <m.Icon className="ml-2 h-4 w-4" />
+              {m.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+
         <DropdownMenuItem asChild>
           <Link to="/billing">
             <Zap className="ml-2 h-4 w-4 text-amber-500" />

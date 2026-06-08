@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Workflow, KanbanSquare, Rocket, Search, X, Menu } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
 
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
@@ -29,7 +29,7 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -106,58 +106,8 @@ function AuthenticatedLayout() {
             <GlobalSearchBar onNavigate={() => setSearchOpen(false)} />
           )}
           <div className="mx-4 mt-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
-          <div className="flex w-full items-stretch justify-between gap-0 px-4 py-5 sm:py-6 divide-x divide-border [direction:ltr]">
+          <ActiveModuleTitle />
 
-
-
-            <Link
-              to="/product"
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
-            >
-              <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>מוצר</span></span>
-              {location.pathname.startsWith("/product") && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-            <Link
-              to="/projects-management"
-              className="relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]"
-            >
-              <KanbanSquare className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניהול</span><span>פרויקטים</span></span>
-              {location.pathname.startsWith("/projects-management") && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className={cn(
-                "relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-semibold text-foreground transition-opacity hover:opacity-80 sm:text-sm [direction:rtl]",
-              )}
-            >
-              <Workflow className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="flex flex-col items-center leading-tight"><span>ניתוח</span><span>מערכות</span></span>
-              {isDashboard && (
-                <span className="absolute -bottom-3 left-1/2 h-0.5 w-10 -translate-x-1/2 rounded-full bg-primary sm:-bottom-4" />
-              )}
-            </Link>
-
-
-            <div className="hidden md:flex flex-1 items-center justify-center gap-1.5">
-              <Link
-                to="/documents"
-                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                המסמכים שלי
-              </Link>
-              <div data-tour="header-search">
-                <CommandTriggerButton />
-              </div>
-            </div>
-          </div>
         </header>
 
         <main className="flex-1">
@@ -205,6 +155,52 @@ function HamburgerMenu() {
   if (!user) return null;
   return <UserMenu user={user} trigger="hamburger" />;
 }
+
+function ActiveModuleTitle() {
+  const location = useLocation();
+  const path = location.pathname;
+  let title: string | null = null;
+  let Icon: typeof Workflow | null = null;
+  if (
+    path.startsWith("/dashboard") ||
+    path.startsWith("/chat") ||
+    path.startsWith("/diagram") ||
+    path.startsWith("/editor") ||
+    path.startsWith("/documents")
+  ) {
+    title = "ניתוח מערכות";
+    Icon = Workflow;
+  } else if (path.startsWith("/projects-management") || path.startsWith("/projects")) {
+    title = "ניהול פרויקטים";
+    Icon = KanbanSquare;
+  } else if (path.startsWith("/product")) {
+    title = "ניהול מוצר";
+    Icon = Rocket;
+  }
+  if (!title || !Icon) return <div className="py-3" aria-hidden />;
+  return (
+    <div className="flex w-full items-center justify-between gap-3 px-4 py-4 sm:py-5 [direction:rtl]">
+      <div className="relative flex items-center gap-2 mx-auto">
+        <Icon className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
+        <span className="text-sm font-semibold text-foreground sm:text-base">{title}</span>
+        <span className="absolute -bottom-2 left-1/2 h-0.5 w-12 -translate-x-1/2 rounded-full bg-primary" />
+      </div>
+      <div className="hidden md:flex items-center gap-1.5">
+        <Link
+          to="/documents"
+          className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          המסמכים שלי
+        </Link>
+        <div data-tour="header-search">
+          <CommandTriggerButton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 
 function OrgNameLabel() {
