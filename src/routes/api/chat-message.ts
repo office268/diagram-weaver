@@ -95,8 +95,8 @@ export const Route = createFileRoute("/api/chat-message")({
         if (body.mode === "plan") {
           try {
             const provider = createLovableAiGatewayProvider(apiKey);
-            const { loadAgentModelOverride: loadPlanModel } = await import("@/lib/ai-model-setting.server");
-            const model = provider(await loadPlanModel());
+            const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+            const model = provider(await loadEffectiveModelForThread(body.threadId));
             const planSystem =
               `אתה אנליסט מערכות מנוסה שעוזר ללקוח לחדד את הבקשה לפני יצירת ${def.label}. ` +
               `אל תייצר את המסמך/תרשים עצמו. במקום זה: ` +
