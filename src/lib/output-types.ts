@@ -16,6 +16,7 @@ import {
   Mic,
   Workflow,
   List,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 
