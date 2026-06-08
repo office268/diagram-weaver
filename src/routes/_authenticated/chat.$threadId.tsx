@@ -570,7 +570,7 @@ function ChatPage() {
 
       {/* Composer */}
       <div
-        className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3"
+        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-2 md:pt-3 md:pb-3"
         style={isDesktop ? { width: sidebarWidth } : undefined}
       >
           <input
