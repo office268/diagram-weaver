@@ -131,6 +131,15 @@ function ChatPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [mode, setMode] = useState<"auto" | "plan" | "build">("auto");
   const [modeReady, setModeReady] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -358,9 +367,9 @@ function ChatPage() {
   const messages = data.messages;
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl gap-4 px-2 py-3 md:px-4">
+    <div className="mx-auto flex h-[calc(100vh-8rem)] w-full max-w-7xl flex-col gap-4 px-2 py-3 md:grid md:grid-cols-[16rem_1fr] md:grid-rows-[1fr_auto] md:px-4">
       {/* Sidebar — threads */}
-      <aside className="hidden w-64 shrink-0 flex-col gap-2 md:flex">
+      <aside className="hidden w-64 min-h-0 shrink-0 flex-col gap-2 md:col-start-1 md:row-start-1 md:flex">
         <Button
           variant="outline"
           size="sm"
@@ -401,7 +410,7 @@ function ChatPage() {
       </aside>
 
       {/* Chat column */}
-      <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-card">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-2 md:row-span-2">
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
@@ -434,9 +443,10 @@ function ChatPage() {
           </div>
         </div>
 
+      </div>
 
-        {/* Composer */}
-        <div className="px-3 pt-3 pb-16 md:pb-3">
+      {/* Composer */}
+      <div className="px-3 pt-3 pb-16 md:col-start-1 md:row-start-2 md:pb-3">
           <input
             ref={fileInputRef}
             type="file"
@@ -666,7 +676,6 @@ function ChatPage() {
             </div>
           </div>
 
-        </div>
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
