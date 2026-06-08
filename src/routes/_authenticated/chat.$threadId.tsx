@@ -140,6 +140,41 @@ function ChatPage() {
     mq.addEventListener("change", update);
     return () => mq.removeEventListener("change", update);
   }, []);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(256);
+  const sidebarWidthRef = useRef(256);
+  useEffect(() => { sidebarWidthRef.current = sidebarWidth; }, [sidebarWidth]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("chat-sidebar-width");
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (!Number.isNaN(n)) setSidebarWidth(Math.max(180, Math.min(560, n)));
+    }
+  }, []);
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidthRef.current;
+    const isRtl = typeof document !== "undefined" && document.documentElement.dir === "rtl";
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - startX;
+      const next = Math.max(180, Math.min(560, startW + (isRtl ? -delta : delta)));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      try {
+        window.localStorage.setItem("chat-sidebar-width", String(sidebarWidthRef.current));
+      } catch {}
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
