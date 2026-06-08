@@ -5,7 +5,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import {
   ActivityDiagramGenerationError,
-  getActivityMermaidValidationError,
 } from "@/lib/activity-diagram-pipeline.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
@@ -345,11 +344,6 @@ export const Route = createFileRoute("/api/chat-message")({
                   mermaid = sanitizeMermaidLabels(mermaid);
                 }
 
-                if (outputType === "diagram_activity") {
-                  // ה-orchestrator כבר מפעיל ולידציה פנימית על ה-SVG.
-                  // לא להפעיל כאן ולידציה של Mermaid — הפלט הוא <svg>.
-                }
-
                 const title = cleanUserMsg.slice(0, 80) || def.label;
 
                 const { data: diagRow, error: diagErr } = await supabaseAdmin
@@ -367,7 +361,9 @@ export const Route = createFileRoute("/api/chat-message")({
                 if (diagErr) throw new Error(diagErr.message);
 
                 const assistantContent =
-                  `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
+                  outputType === "diagram_activity"
+                    ? `הנה ${def.label}:\n\n\`\`\`svg\n${mermaid}\n\`\`\``
+                    : `הנה ${def.label}:\n\n\`\`\`mermaid\n${mermaid}\n\`\`\``;
 
                 await supabaseAdmin.from("chat_messages").insert({
                   thread_id: body.threadId,
