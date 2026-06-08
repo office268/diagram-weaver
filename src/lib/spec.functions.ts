@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildSearchMaps, enrichRow } from "@/lib/search-enrich.server";
 
 const idSchema = z.object({ id: z.string().uuid() });
 
@@ -11,12 +12,15 @@ export const listSpecs = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("spec_documents")
       .select(
-        "id, title, updated_at, created_at, prompt, group_id, model, variant, review_score",
+        "id, title, updated_at, created_at, prompt, group_id, model, variant, review_score, project_id, user_id",
       )
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { specs: data ?? [] };
+    const rows = data ?? [];
+    const maps = await buildSearchMaps(supabase, rows);
+    const specs = rows.map((r) => ({ ...r, ...enrichRow(r, maps) }));
+    return { specs };
   });
 
 export const getSpec = createServerFn({ method: "GET" })

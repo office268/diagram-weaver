@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildSearchMaps, enrichRow } from "@/lib/search-enrich.server";
 
 export const listDiagrams = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -8,11 +9,14 @@ export const listDiagrams = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("diagrams")
-      .select("id, kind, title, prompt, created_at, updated_at")
+      .select("id, kind, title, prompt, created_at, updated_at, user_id")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    return { diagrams: data ?? [] };
+    const rows = (data ?? []).map((r) => ({ ...r, project_id: null }));
+    const maps = await buildSearchMaps(supabase, rows);
+    const diagrams = rows.map((r) => ({ ...r, ...enrichRow(r, maps) }));
+    return { diagrams };
   });
 
 export const getDiagram = createServerFn({ method: "POST" })

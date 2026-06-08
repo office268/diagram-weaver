@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildSearchMaps, enrichRow } from "@/lib/search-enrich.server";
 
 export const listDocuments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -14,14 +15,17 @@ export const listDocuments = createServerFn({ method: "GET" })
     let q = supabase
       .from("uploaded_documents")
       .select(
-        "id, file_name, file_size, mime_type, char_count, chunk_count, status, error_message, created_at, project_id",
+        "id, file_name, file_size, mime_type, char_count, chunk_count, status, error_message, created_at, project_id, user_id",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (data.projectId) q = q.eq("project_id", data.projectId);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return { documents: rows ?? [] };
+    const list = rows ?? [];
+    const maps = await buildSearchMaps(supabase, list);
+    const documents = list.map((r) => ({ ...r, ...enrichRow(r, maps) }));
+    return { documents };
   });
 
 export const deleteDocument = createServerFn({ method: "POST" })

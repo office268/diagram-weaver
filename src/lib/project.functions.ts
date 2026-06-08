@@ -10,7 +10,7 @@ export const listProjects = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data: projects, error } = await supabase
       .from("projects")
-      .select("id, name, description, created_at, updated_at, pinned_at")
+      .select("id, name, description, created_at, updated_at, pinned_at, product_id, user_id")
       .eq("user_id", userId)
       .order("pinned_at", { ascending: false, nullsFirst: false })
       .order("updated_at", { ascending: false });
@@ -34,14 +34,45 @@ export const listProjects = createServerFn({ method: "GET" })
       if (gid) c.groups.add(gid);
     }
 
+    // Lookup author + product name for path display in global search.
+    const list = projects ?? [];
+    const userIds = Array.from(
+      new Set(list.map((p) => (p as { user_id: string | null }).user_id).filter((v): v is string => !!v)),
+    );
+    const productIds = Array.from(
+      new Set(list.map((p) => (p as { product_id: string | null }).product_id).filter((v): v is string => !!v)),
+    );
+    const profilesMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", userIds);
+      for (const p of profs ?? []) {
+        const dn = (p as { display_name: string | null }).display_name;
+        if (dn) profilesMap.set((p as { id: string }).id, dn);
+      }
+    }
+    const productsMap = new Map<string, string>();
+    if (productIds.length) {
+      const { data: prods } = await supabase.from("products").select("id, name").in("id", productIds);
+      for (const p of prods ?? []) {
+        productsMap.set((p as { id: string }).id, (p as { name: string }).name);
+      }
+    }
+
     return {
-      projects: (projects ?? []).map((p) => {
+      projects: list.map((p) => {
         const c = counts.get(p.id);
+        const uid = (p as { user_id: string | null }).user_id;
+        const pid = (p as { product_id: string | null }).product_id;
         return {
           ...p,
           pinned_at: (p as { pinned_at: string | null }).pinned_at ?? null,
           doc_count: c?.docs ?? 0,
           group_count: c?.groups.size ?? 0,
+          author_name: uid ? profilesMap.get(uid) ?? null : null,
+          product_name: pid ? productsMap.get(pid) ?? null : null,
         };
       }),
     };
