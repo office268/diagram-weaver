@@ -27,7 +27,7 @@ export function TaskNode({ data, selected }: N) {
       style={{
         width: 160,
         minHeight: 56,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -47,9 +47,9 @@ export function DecisionNode({ data, selected }: N) {
         width: 110,
         height: 110,
         transform: "rotate(45deg)",
-        border: "1.6px solid hsl(var(--foreground))",
-        background: "hsl(var(--card))",
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        border: "1.6px solid var(--foreground)",
+        background: "var(--card)",
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -85,7 +85,7 @@ export function StartNode() {
       <Handle type="source" position={Position.Right} style={handleStyle} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
       <svg width="40" height="40" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="14" fill="hsl(var(--foreground))" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
+        <circle cx="20" cy="20" r="14" fill="var(--foreground)" stroke="var(--foreground)" strokeWidth="1.6" />
       </svg>
     </div>
   );
@@ -97,8 +97,8 @@ export function EndNode() {
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <Handle type="target" position={Position.Left} style={handleStyle} />
       <svg width="50" height="50" viewBox="0 0 50 50">
-        <circle cx="25" cy="25" r="22" fill="hsl(var(--card))" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <circle cx="25" cy="25" r="14" fill="hsl(var(--foreground))" />
+        <circle cx="25" cy="25" r="22" fill="var(--card)" stroke="var(--foreground)" strokeWidth="1.6" />
+        <circle cx="25" cy="25" r="14" fill="var(--foreground)" />
       </svg>
     </div>
   );
@@ -111,7 +111,7 @@ export function JoinBarNode({ data }: N) {
       <Handle type="target" position={Position.Top} id="t1" style={{ ...handleStyle, left: "30%" }} />
       <Handle type="target" position={Position.Top} id="t2" style={{ ...handleStyle, left: "70%" }} />
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
-      <div style={{ width: "100%", height: 12, background: "hsl(var(--foreground))" }} />
+      <div style={{ width: "100%", height: 12, background: "var(--foreground)" }} />
     </div>
   );
 }
@@ -125,9 +125,9 @@ export function LaneNode({ data }: N) {
         height: "100%",
         background:
           ((data.laneIndex as number) ?? 0) % 2 === 0
-            ? "color-mix(in oklab, hsl(var(--primary)) 6%, transparent)"
+            ? "color-mix(in oklab, var(--primary) 6%, transparent)"
             : "transparent",
-        borderRight: "1px dashed color-mix(in oklab, hsl(var(--primary)) 50%, transparent)",
+        borderRight: "1px dashed color-mix(in oklab, var(--primary) 50%, transparent)",
       }}
     >
       <div
@@ -150,11 +150,11 @@ export function ActorNode({ data }: N) {
       <Handle type="source" position={Position.Right} style={handleStyle} />
       <Handle type="target" position={Position.Right} style={handleStyle} />
       <svg width="60" height="70" viewBox="0 0 60 70">
-        <circle cx="30" cy="12" r="9" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <line x1="30" y1="21" x2="30" y2="45" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <line x1="12" y1="32" x2="48" y2="32" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <line x1="30" y1="45" x2="14" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <line x1="30" y1="45" x2="46" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
+        <circle cx="30" cy="12" r="9" fill="none" stroke="var(--foreground)" strokeWidth="1.6" />
+        <line x1="30" y1="21" x2="30" y2="45" stroke="var(--foreground)" strokeWidth="1.6" />
+        <line x1="12" y1="32" x2="48" y2="32" stroke="var(--foreground)" strokeWidth="1.6" />
+        <line x1="30" y1="45" x2="14" y2="65" stroke="var(--foreground)" strokeWidth="1.6" />
+        <line x1="30" y1="45" x2="46" y2="65" stroke="var(--foreground)" strokeWidth="1.6" />
       </svg>
       <div className="text-center text-xs font-medium text-foreground">{data.label}</div>
     </div>
@@ -170,8 +170,8 @@ export function UseCaseNode({ data, selected }: N) {
         width: 150,
         height: 80,
         borderRadius: "50%",
-        border: "1.6px solid hsl(var(--foreground))",
-        background: "hsl(var(--card))",
+        border: "1.6px solid var(--foreground)",
+        background: "var(--card)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -179,7 +179,7 @@ export function UseCaseNode({ data, selected }: N) {
         padding: "0 12px",
         fontSize: 12,
         fontWeight: 500,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -199,9 +199,9 @@ export function SystemBoundaryNode({ data }: N) {
       style={{
         width: "100%",
         height: "100%",
-        border: "2px dashed hsl(var(--primary))",
+        border: "2px dashed var(--primary)",
         borderRadius: 12,
-        background: "color-mix(in oklab, hsl(var(--primary)) 4%, transparent)",
+        background: "color-mix(in oklab, var(--primary) 4%, transparent)",
       }}
     >
       <div className="px-3 py-1 text-xs font-bold text-primary">{data.label}</div>
@@ -216,7 +216,7 @@ export function LifelineNode({ data, selected }: N) {
     <div
       style={{
         width: 130,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -233,7 +233,7 @@ export function LifelineNode({ data, selected }: N) {
           width: 2,
           height: 180,
           margin: "0 auto",
-          background: "color-mix(in oklab, hsl(var(--foreground)) 40%, transparent)",
+          background: "color-mix(in oklab, var(--foreground) 40%, transparent)",
         }}
       />
     </div>
@@ -249,7 +249,7 @@ export function StateNode({ data, selected }: N) {
       style={{
         width: 140,
         minHeight: 60,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -267,7 +267,7 @@ export function StateInitialNode() {
     <div style={{ width: 30, height: 30 }}>
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
       <svg width="30" height="30" viewBox="0 0 30 30">
-        <circle cx="15" cy="15" r="12" fill="hsl(var(--foreground))" />
+        <circle cx="15" cy="15" r="12" fill="var(--foreground)" />
       </svg>
     </div>
   );
@@ -278,8 +278,8 @@ export function StateFinalNode() {
     <div style={{ width: 36, height: 36 }}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <svg width="36" height="36" viewBox="0 0 36 36">
-        <circle cx="18" cy="18" r="16" fill="hsl(var(--card))" stroke="hsl(var(--foreground))" strokeWidth="1.6" />
-        <circle cx="18" cy="18" r="10" fill="hsl(var(--foreground))" />
+        <circle cx="18" cy="18" r="16" fill="var(--card)" stroke="var(--foreground)" strokeWidth="1.6" />
+        <circle cx="18" cy="18" r="10" fill="var(--foreground)" />
       </svg>
     </div>
   );
@@ -292,8 +292,8 @@ export function ChoiceNode({ data }: N) {
         width: 60,
         height: 60,
         transform: "rotate(45deg)",
-        border: "1.6px solid hsl(var(--foreground))",
-        background: "hsl(var(--card))",
+        border: "1.6px solid var(--foreground)",
+        background: "var(--card)",
       }}
     >
       <Handle type="target" position={Position.Top} style={{ ...handleStyle, transform: "rotate(-45deg)" }} />
@@ -316,7 +316,7 @@ export function EntityNode({ data, selected }: N) {
       className="overflow-hidden rounded-md border border-foreground/70 bg-card shadow-sm"
       style={{
         width: 220,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -351,7 +351,7 @@ export function DeploymentNodeNode({ data, selected }: N) {
       style={{
         width: 200,
         minHeight: 140,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
@@ -375,7 +375,7 @@ export function ComponentNode({ data, selected }: N) {
       style={{
         width: 180,
         minHeight: 60,
-        outline: selected ? "2px solid hsl(var(--primary))" : undefined,
+        outline: selected ? "2px solid var(--primary)" : undefined,
         outlineOffset: 2,
       }}
     >
