@@ -3,7 +3,7 @@ import type { Node, Edge } from "@xyflow/react";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ActivityNodeType =
-  | "task" | "decision" | "start" | "end" | "joinBar" | "lane";
+  | "task" | "decision" | "start" | "end" | "joinBar" | "lane" | "actor";
 
 export interface ActivityNodeData extends Record<string, unknown> {
   label: string;
