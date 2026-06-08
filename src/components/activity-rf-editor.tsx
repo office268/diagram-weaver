@@ -180,6 +180,7 @@ const nodeTypes = {
   start:    StartNode,
   end:      EndNode,
   joinBar:  JoinBarNode,
+  actor:    ActorNode,
 };
 
 // ── Main editor ─────────────────────────────────────────────────────────────
