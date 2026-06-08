@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MermaidPreview } from "@/components/mermaid-preview";
+import { DiagramRenderer } from "@/components/diagram-renderer";
+import { isDiagramRF } from "@/lib/diagram-rf";
 import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
 import { getDiagram, updateDiagram } from "@/lib/diagrams.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
@@ -103,6 +105,8 @@ function DiagramPage() {
             code={d.mermaid_code ?? ""}
             onSave={handleSave}
           />
+        ) : isDiagramRF(d.mermaid_code ?? "") ? (
+          <DiagramRenderer code={d.mermaid_code ?? ""} onSave={handleSave} />
         ) : (
           <MermaidPreview code={d.mermaid_code ?? ""} />
         )}
