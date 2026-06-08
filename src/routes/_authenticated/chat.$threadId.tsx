@@ -450,8 +450,16 @@ function ChatPage() {
         </div>
       </aside>
 
+      {/* Resize handle (desktop only) */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        onMouseDown={startResize}
+        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:mx-1 md:rounded-full md:bg-border md:hover:bg-primary/40 md:transition-colors"
+      />
+
       {/* Chat column */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-2 md:row-span-2">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
