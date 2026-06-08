@@ -148,9 +148,9 @@ function DocumentsPage() {
     const onMove = (ev: MouseEvent) => {
       const d = dragRef.current;
       if (!d) return;
-      // RTL layout: handles sit on each column's start edge (right side visually).
-      // Dragging mouse leftwards (lower clientX) increases the column width.
-      const delta = d.startX - ev.clientX;
+      // Even in RTL, resizing should follow the pointer direction:
+      // dragging right increases width, dragging left decreases it.
+      const delta = ev.clientX - d.startX;
       const next = Math.max(60, Math.min(600, d.startW + delta));
       setCols((c) => ({ ...c, [d.key]: next }));
     };
