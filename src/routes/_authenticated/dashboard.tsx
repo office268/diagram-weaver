@@ -206,7 +206,7 @@ function HomePage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-4 min-h-[calc(100dvh-9rem)]">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="space-y-5">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 items-start">
           {diagramTiles.length > 0 && (
             <section>
               <h2 className="mb-2 text-center text-sm font-semibold text-muted-foreground">UML</h2>
