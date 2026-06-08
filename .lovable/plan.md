@@ -1,25 +1,32 @@
-## הבעיה
-ה-pipeline של activity diagram עבר ל-SVG (`runActivitySwimlaneOrchestrator` מחזיר `<svg>...</svg>`), אבל ב-`src/routes/api/chat-message.ts` הקוד שלאחר היצירה עדיין מתייחס לפלט כאל Mermaid:
+# מטרה
+לתקן את כשל יצירת ה‑activity diagram כך שהשרת יחזיר תרשים תקין ולא יקטע את התגובה.
 
-1. `sanitizeMermaidLabels(mermaid)` מופעל על SVG ועלול לעוות אותו.
-2. `getActivityMermaidValidationError(mermaid)` מחפש `flowchart RL` ב-SVG — תמיד נכשל עם השגיאה שראינו בלוגים:
-   `יצירת תרשים ה-Activity נכשלה בשלב בדיקת Mermaid: חסר flowchart RL`.
+# מה הבעיה
+מצאתי בלוג השרת שהבקשה עדיין נופלת על ולידציית Mermaid ישנה:
+- `ActivityDiagramGenerationError: ... חסר flowchart RL`
+- מקור השגיאה: `src/routes/api/chat-message.ts` סביב שורה 349
 
-לכן כל ניסיון ליצור activity diagram מסתיים בשגיאה.
+בפועל ה‑activity pipeline כבר מחזיר `SVG`, לא Mermaid, ולכן נשארה במסלול הזה בדיקה לא נכונה שממשיכה לצפות ל־`flowchart RL`.
 
-## התיקון
-ב-`src/routes/api/chat-message.ts` (סביב שורות 300–354), כאשר `outputType === "diagram_activity"`:
+# תוכנית עבודה
+1. לעדכן את מסלול `diagram_activity` ב־`src/routes/api/chat-message.ts`
+   - להסיר לחלוטין את ולידציית Mermaid מהמסלול של activity.
+   - לוודא שלא נשארים import/branches ישנים של `getActivityMermaidValidationError` עבור activity.
 
-- לא להפעיל `sanitizeMermaidLabels` על הפלט (זה SVG).
-- לא להפעיל `getActivityMermaidValidationError` על הפלט.
-- במקום זאת להשתמש ב-`validateActivitySvg` (כבר קיים ב-`activity-diagram-pipeline.server.ts`) — אם יש violations, לזרוק `ActivityDiagramGenerationError("builder_invalid_mermaid", ...)` עם תיאור ההפרות. למעשה ה-orchestrator כבר מריץ ולידציה פנימית ב-`runValidatorAgent` + בדיקה סופית, כך שכפילות הוולידציה כאן מיותרת — מספיק להסיר את שתי הקריאות הללו עבור הענף של SVG.
+2. ליישר את הייצוג של פלט activity מול ה־UI והאחסון
+   - לוודא שה־SVG נשמר ומועבר הלאה בלי עטיפת Mermaid שמבלבלת את הצרכן downstream.
+   - לבדוק שה־assistant message/renderer מתייחסים ל־activity כ־SVG ולא כקוד Mermaid רגיל.
 
-ה-renderer (`ActivitySwimlaneRenderer`) כבר מזהה SVG לעומת Mermaid, אז שמירת ה-SVG בעמודה `mermaid_code` תמשיך לעבוד.
+3. לאמת את הזרימה מקצה לקצה
+   - לשחזר בקשה עם prompt דומה לזה שנכשל.
+   - לבדוק שאין יותר `תגובת השרת נקטעה` ושנוצר artifact תקין.
+   - אם יישאר כשל, להשתמש בלוגי שרת כדי לאתר את הנקודה הבאה בשרשרת.
 
-## פרטים טכניים
-- שינוי הקוד בלבד בקובץ `src/routes/api/chat-message.ts`: לעטוף את שתי הקריאות הקיימות בתנאי `if (outputType !== "diagram_activity")` (או להסירן עבור הענף הזה).
-- אין שינוי ב-prompts, system prompts, סכמות, ולידציה של ה-pipeline, או רף האיכות — להפך, מסירים שלב ולידציה שגוי שחוסם פלט תקין.
-- אין שינוי במסד הנתונים או ב-renderer.
-
-## בדיקה
-לאחר התיקון: לנסות שוב ליצור activity diagram מתיאור של תהליך אישור בקשת חופשה — הפלט אמור להישמר ולהיות מוצג ב-`ActivitySwimlaneRenderer` כ-SVG.
+# פרטים טכניים
+- קבצים מרכזיים:
+  - `src/routes/api/chat-message.ts`
+  - `src/agents/diagrams/activity-swimlane.server.ts`
+  - `src/lib/activity-diagram-pipeline.server.ts`
+  - `src/routes/_authenticated/diagram.$id.tsx`
+- הסיבה הסבירה ביותר: קוד ישן של Mermaid validation עדיין מופעל במסלול activity למרות שהפלט הוחלף ל־SVG.
+- לא אגע באיכות התוצרים האפיוניים או בפרומפטים מעבר למה שחייב כדי להסיר את הכשל.
