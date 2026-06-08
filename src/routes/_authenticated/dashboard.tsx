@@ -192,6 +192,9 @@ function HomePage() {
       combinedMut.mutate();
       return;
     }
+    if (key === "user_story") {
+      return;
+    }
     createMut.mutate(key);
   };
 
@@ -225,11 +228,11 @@ function HomePage() {
 
   const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
   const documentTiles = useMemo(
-    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary"),
+    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary" && k !== "user_story"),
     [mainTiles],
   );
   const toolTiles = useMemo(
-    () => mainTiles.filter((k) => k === "meeting_summary"),
+    () => mainTiles.filter((k) => k === "meeting_summary" || k === "user_story"),
     [mainTiles],
   );
 

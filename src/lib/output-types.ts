@@ -15,6 +15,7 @@ import {
   BookOpen,
   Mic,
   Workflow,
+  List,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,7 +27,8 @@ export type DocumentOutputKey =
   | "spec_overview"
   | "spec_detailed"
   | "user_guide"
-  | "meeting_summary";
+  | "meeting_summary"
+  | "user_story";
 
 
 
@@ -187,6 +189,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: Mic,
     colorClass: "text-rose-500",
   },
+  user_story: {
+    key: "user_story",
+    category: "document",
+    label: "user story",
+    description: "(azure/jira)",
+    icon: List,
+    colorClass: "text-fuchsia-500",
+  },
 };
 
 // Display order on the home page tiles (primary, most-used).
@@ -201,6 +211,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "spec_detailed",
   "diagram_activity",
   "meeting_summary",
+  "user_story",
 ];
 
 // Less common types — shown inside the "More…" tile.
