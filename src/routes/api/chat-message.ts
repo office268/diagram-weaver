@@ -367,7 +367,7 @@ export const Route = createFileRoute("/api/chat-message")({
 
                 enqueue("\n__RESULT__\n" + JSON.stringify({
                   ok: true,
-                  artifact: { kind: "diagram", id: diagRow.id, mermaid, title },
+                  artifact: { kind: "diagram", id: diagRow.id, mermaid: diagramCode, title },
                 }));
               }
             } catch (err) {
