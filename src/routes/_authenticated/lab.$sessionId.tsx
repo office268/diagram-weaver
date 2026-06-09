@@ -294,25 +294,21 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <div
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "relative h-7 gap-1 overflow-hidden text-xs",
-            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
-          )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 text-xs"
+          disabled={uploading}
+          onClick={openFilePicker}
         >
-          <input
-            aria-label="העלה מסמכים"
-            className="absolute inset-0 z-10 cursor-pointer opacity-0"
-            {...fileInputProps}
-          />
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Paperclip className="h-3.5 w-3.5" />
           )}
           העלה
-        </div>
+        </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
@@ -404,21 +400,16 @@ function LabPage() {
   const PromptBar = (
     <Card className="p-3">
       <div className="flex items-end gap-2">
-        <div
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
           aria-label="צרף קבצים"
-          className={cn(
-            buttonVariants({ variant: "outline", size: "icon" }),
-            "relative overflow-hidden",
-            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
-          )}
+          disabled={uploading}
+          onClick={openFilePicker}
         >
-          <input
-            aria-label="צרף קבצים"
-            className="absolute inset-0 z-10 cursor-pointer opacity-0"
-            {...fileInputProps}
-          />
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </div>
+        </Button>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
