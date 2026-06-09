@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   threadId: string;
   currentOverride: string | null;
-  variant?: "default" | "compact";
+  variant?: "default" | "compact" | "icon";
 }
 
 export function ThreadModelSelector({ threadId, currentOverride, variant = "default" }: Props) {
