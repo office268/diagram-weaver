@@ -1,40 +1,43 @@
-# תוכנית תיקון להעלאת קבצים בצ'אט
 
-## מה הבעיה
-הכשל קורה כבר בשלב העלאת הקובץ ל‑Storage, לפני חילוץ הטקסט.
-ה‑key שנשלח ל‑Storage כולל את שם הקובץ המקורי בעברית, ולכן מתקבלת שגיאת `InvalidKey`.
+# מעבר לפלט Markdown חופשי לסוכני האפיון
 
-## מה אבנה
-1. **הפרדה בין שם תצוגה לשם אחסון**
-   - אשמור למשתמש את `file.name` המקורי לתצוגה בלבד.
-   - אבנה `storagePath` בטוח ל‑Storage עם שם קובץ מסונן ל‑ASCII בלבד.
-   - אשמור גם סיומת מקורית תקינה (`.pdf`, `.docx`, וכו') כדי לא לפגוע בזיהוי סוג הקובץ.
+## מטרה
+- להסיר את האילוץ להחזיר JSON מהסוכנים שמייצרים תוכן (Requirements, Architecture, Data Model, Use Cases).
+- לתת ל-Gemini להחזיר Markdown טבעי לפי ברירת המחדל שלו — בלי `JSON_ONLY_INSTRUCTION`, בלי "סכמת JSON לפלט", בלי `extractJson`/`JSON.parse` על תוכן.
+- להשאיר JSON רק היכן שהוא חיוני: התרשימים (RF-JSON) ושלב הביקורת (score+notes).
+- במסמכים שיש בהם תרשים — לשריין מקום בטקסט שאליו ייכנס התרשים אחרי שייוצר.
 
-2. **פונקציית סינון יציבה לשמות קבצים**
-   - נרמול שם הקובץ.
-   - הסרת תווים לא‑ASCII/מיוחדים שגורמים ל‑`InvalidKey`.
-   - החלפה למבנה בטוח כמו `attachment.pdf` או slug אנגלי כשאפשר.
-   - שמירה על path קיים לפי משתמש/שיחה/attachment id, כדי לא לשבור את ה‑RLS הקיים.
+לא יורדים תקני איכות: כל ה-system prompts, כללי החשיבה (THINKING), ה-self-critique, המינימומים (FRs ≥ 5 וכו') וההוראות לשפה עברית — נשמרים. רק פורמט הפלט משתנה מ-JSON ל-Markdown.
 
-3. **שיפור UX של שגיאות העלאה**
-   - אם העלאה נכשלת, אציג הודעת שגיאה ברורה על ה‑attachment עצמו בלי לשבש את כל ההודעה.
-   - אשאיר את שם הקובץ המקורי בעברית ב‑UI כדי שהמשתמש יראה בדיוק מה ניסה להעלות.
+## מבנה האחסון של ה-Spec (החלטה)
 
-4. **בדיקת זרימה מלאה מול ההתנהגות שביקשת**
-   - העלאה ל‑Storage קודם.
-   - סימון שהקובץ הועלה.
-   - חילוץ טקסט אחר כך.
-   - כפתור השליחה נשאר מושבת עד שכל הקבצים מוכנים או נכשלו.
+`SpecOutput` יעבור ממבנה של מערכים מובְנים למבנה של **קטעי Markdown לפי סעיף**, עם תרשימים בשדות נפרדים שמפנים אליהם placeholders בתוך ה-Markdown:
 
-## קבצים שאעדכן
-- `src/routes/_authenticated/chat.$threadId.tsx`
+```ts
+type SpecOutput = {
+  title: string;
+  sections: {
+    overview: string;            // Markdown
+    goals: string;               // Markdown (רשימה)
+    functional_requirements: string;     // Markdown
+    non_functional_requirements: string; // Markdown
+    assumptions: string;         // Markdown
+    use_cases: string;           // Markdown — כולל placeholders לכל תרשים תרחיש
+    architecture: string;        // Markdown — כולל {{diagram:architecture}}
+    data_model: string;          // Markdown — כולל {{diagram:data_model}}
+    risks: string;               // Markdown
+  };
+  diagrams: {
+    architecture?: string;       // RF-JSON
+    data_model?: string;         // RF-JSON
+    use_cases: Array<{ key: string; title: string; diagram: string }>;
+  };
+};
+```
 
-## פרטים טכניים
-- לא אשנה את ה‑bucket או את מדיניות ה‑RLS, כי הן לא נראות כגורם התקלה.
-- לא אשנה את לוגיקת חילוץ הטקסט עצמה, אלא רק את שלב בניית מפתח האחסון והטיפול בשגיאה.
-- אם אזהה שהסיומת חסרה/לא תקינה אחרי הסינון, אשתמש בשם ברירת מחדל בטוח עם סיומת מתאימה.
+תחביר ה-Placeholder בתוך ה-Markdown:
+- `{{diagram:architecture}}`
+- `{{diagram:data_model}}`
+- `{{diagram:use_case:<key>}}` — `key` הוא slug יציב שנגזר מכותרת התרחיש (או אינדקס).
 
-## תוצאה צפויה
-- קבצים עם שמות בעברית יעלו בהצלחה.
-- המשתמש עדיין יראה את השם המקורי בעברית בצ'אט.
-- הזרימה הדו‑שלבית שכבר ביקשת תישאר: upload → uploaded → extracting → ready.
+הסוכן שכותב סעיף עם תרשים מתבקש להכניס את ה-placeholder במקום המתאים. אם הוא לא הכניס — המערכת תוסיף אותו בסוף הסעיף כבר
