@@ -285,18 +285,19 @@ function LabPage() {
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
         <Button
+          asChild
           size="sm"
           variant="outline"
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-          className="h-7 gap-1 text-xs"
+          className={`h-7 gap-1 text-xs ${uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
         >
-          {uploading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Paperclip className="h-3.5 w-3.5" />
-          )}
-          העלה
+          <label htmlFor="lab-file-upload">
+            {uploading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Paperclip className="h-3.5 w-3.5" />
+            )}
+            העלה
+          </label>
         </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
@@ -390,21 +391,26 @@ function LabPage() {
     <Card className="p-3">
       <div className="flex items-end gap-2">
         <input
+          id="lab-file-upload"
           ref={fileInputRef}
           type="file"
           multiple
           accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
-          className="hidden"
+          className="sr-only"
+          onClick={(e) => {
+            e.currentTarget.value = "";
+          }}
           onChange={(e) => handleFiles(e.target.files)}
         />
         <Button
+          asChild
           variant="outline"
           size="icon"
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-          aria-label="צרף קבצים"
+          className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          <label htmlFor="lab-file-upload" aria-label="צרף קבצים">
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          </label>
         </Button>
         <Textarea
           value={prompt}
