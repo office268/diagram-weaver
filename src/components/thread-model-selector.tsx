@@ -55,31 +55,49 @@ export function ThreadModelSelector({ threadId, currentOverride, variant = "defa
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={isLoading || mutation.isPending}
-          className={cn(
-            "h-8 gap-2 rounded-full border-dashed text-xs font-normal",
-            variant === "compact" && "h-7 px-2.5",
-          )}
-          title="המודל שיופעל ביצירת התוצר. ניתן להחליף בכל עת."
-          aria-label={`מודל נוכחי: ${triggerLabel}`}
-        >
-          {mutation.isPending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-          ) : (
-            <Cpu className="h-3.5 w-3.5 text-primary" />
-          )}
-          <span className="text-muted-foreground">מודל:</span>
-          <span className="font-medium text-foreground">{triggerLabel}</span>
-          {currentOverride && (
-            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              שיחה
-            </span>
-          )}
-        </Button>
+        {variant === "icon" ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={isLoading || mutation.isPending}
+            className="h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+            title={`מודל: ${triggerLabel}`}
+            aria-label={`מודל נוכחי: ${triggerLabel}`}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Cpu className="h-4 w-4 text-primary" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isLoading || mutation.isPending}
+            className={cn(
+              "h-8 gap-2 rounded-full border-dashed text-xs font-normal",
+              variant === "compact" && "h-7 px-2.5",
+            )}
+            title="המודל שיופעל ביצירת התוצר. ניתן להחליף בכל עת."
+            aria-label={`מודל נוכחי: ${triggerLabel}`}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            ) : (
+              <Cpu className="h-3.5 w-3.5 text-primary" />
+            )}
+            <span className="text-muted-foreground">מודל:</span>
+            <span className="font-medium text-foreground">{triggerLabel}</span>
+            {currentOverride && (
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                שיחה
+              </span>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent side="bottom" align="start" className="w-80 p-1.5">
 
