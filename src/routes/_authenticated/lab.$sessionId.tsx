@@ -63,6 +63,10 @@ async function authedFetch(url: string, body: unknown) {
   });
 }
 
+function isPdfFile(file: File) {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
 function LabPage() {
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
@@ -147,20 +151,33 @@ function LabPage() {
     try {
       for (const file of Array.from(files)) {
         try {
-          const { text } = await extractTextFromFile(file);
-          if (!text.trim()) {
-            toast.warning(`לא חולץ טקסט מ-${file.name}`);
-            continue;
+          let extractedText: string | null = null;
+          let uploadedWithoutText = false;
+
+          try {
+            const { text } = await extractTextFromFile(file);
+            extractedText = text.trim() || null;
+          } catch (e) {
+            if (!isPdfFile(file)) throw e;
+            uploadedWithoutText = true;
           }
+
+          if (!extractedText && isPdfFile(file)) {
+            uploadedWithoutText = true;
+          }
+
           const res = await authedFetch("/api/lab-upload", {
             sessionId,
             fileName: file.name,
             mimeType: describeMime(file),
             fileSize: file.size,
-            text: text.slice(0, 400_000),
+            text: extractedText ? extractedText.slice(0, 400_000) : null,
           });
           if (!res.ok) throw new Error(await res.text());
           okCount += 1;
+          if (uploadedWithoutText) {
+            toast.warning(`${file.name}: הועלה ללא טקסט. אם זה PDF סרוק או מוגן, הוא לא ישמש כהקשר כרגע.`);
+          }
         } catch (e) {
           console.error("[lab-upload]", file.name, e);
           toast.error(`${file.name}: ${e instanceof Error ? e.message : "כשל בהעלאה"}`);

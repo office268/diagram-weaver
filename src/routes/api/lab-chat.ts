@@ -82,6 +82,7 @@ export const Route = createFileRoute("/api/lab-chat")({
         const docs = docsRes.data ?? [];
         const qas = qsRes.data ?? [];
         const history = msgsRes.data ?? [];
+        const docsWithText = docs.filter((d) => (d.extracted_text ?? "").trim());
 
         // Save user message
         await supabaseAdmin.from("lab_messages").insert({
@@ -93,10 +94,10 @@ export const Route = createFileRoute("/api/lab-chat")({
 
         // Build context blocks
         const contextParts: string[] = [];
-        if (docs.length > 0) {
+        if (docsWithText.length > 0) {
           contextParts.push(
             "## מסמכים שהועלו\n\n" +
-              docs
+              docsWithText
                 .map(
                   (d, i) =>
                     `### [${i + 1}] ${d.file_name}\n\n${(d.extracted_text ?? "").slice(0, 30000)}`,
