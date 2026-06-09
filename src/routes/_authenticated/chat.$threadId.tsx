@@ -90,9 +90,12 @@ interface Attachment {
   id: string;
   name: string;
   size: number;
-  status: "uploading" | "ready";
+  status: "uploading" | "uploaded" | "extracting" | "ready" | "failed";
   text?: string;
   truncated?: boolean;
+  storagePath?: string;
+  mimeType?: string;
+  errorMessage?: string;
 }
 
 interface ActiveDiagramJob {
