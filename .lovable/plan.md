@@ -1,60 +1,40 @@
+# תוכנית תיקון להעלאת קבצים בצ'אט
 
-## המטרה
-בהעלאת קובץ בצ׳אט, סדר הפעולות יהיה:
-1. הקובץ המקורי נשמר באחסון (Storage).
-2. הקובץ מופיע מיד ברצועת ה־attachments עם סטטוס "הועלה".
-3. רק אז מתחיל חילוץ הטקסט בדפדפן, עם סטטוס "מחלץ טקסט…".
-4. כפתור השליחה של תיבת הפרומפט יהיה מושבת (disabled) כל עוד יש קובץ ב־`uploading` או `extracting` — וייפתח רק כשכל הקבצים במצב `ready`.
+## מה הבעיה
+הכשל קורה כבר בשלב העלאת הקובץ ל‑Storage, לפני חילוץ הטקסט.
+ה‑key שנשלח ל‑Storage כולל את שם הקובץ המקורי בעברית, ולכן מתקבלת שגיאת `InvalidKey`.
 
-## שלב 1 — Storage: bucket חדש לקבצי צ׳אט
-- ניצור bucket פרטי חדש `chat-attachments` (לא ניתן לפרסום ציבורי; הקבצים שייכים למשתמש).
-- ניצור policies על `storage.objects` שמרשים ל־authenticated לקרוא/לכתוב/למחוק רק קבצים תחת prefix של ה־user id שלו (`auth.uid()::text = (storage.foldername(name))[1]`).
-- מבנה נתיב: `{userId}/{threadId}/{attachmentId}/{filename}`.
+## מה אבנה
+1. **הפרדה בין שם תצוגה לשם אחסון**
+   - אשמור למשתמש את `file.name` המקורי לתצוגה בלבד.
+   - אבנה `storagePath` בטוח ל‑Storage עם שם קובץ מסונן ל‑ASCII בלבד.
+   - אשמור גם סיומת מקורית תקינה (`.pdf`, `.docx`, וכו') כדי לא לפגוע בזיהוי סוג הקובץ.
 
-## שלב 2 — מודל ה־Attachment בלקוח
-ב־`src/routes/_authenticated/chat.$threadId.tsx`:
+2. **פונקציית סינון יציבה לשמות קבצים**
+   - נרמול שם הקובץ.
+   - הסרת תווים לא‑ASCII/מיוחדים שגורמים ל‑`InvalidKey`.
+   - החלפה למבנה בטוח כמו `attachment.pdf` או slug אנגלי כשאפשר.
+   - שמירה על path קיים לפי משתמש/שיחה/attachment id, כדי לא לשבור את ה‑RLS הקיים.
 
-- להרחיב את `Attachment`:
-  - `status: "uploading" | "uploaded" | "extracting" | "ready" | "failed"`
-  - `storagePath?: string`
-  - `mimeType?: string`
-  - `errorMessage?: string`
-- לעדכן את ה־UI ברצועת ה־attachments כך שתציג:
-  - `uploading` — ספינר + "מעלה…"
-  - `uploaded` — צ׳ק קטן + שם הקובץ + "הועלה"
-  - `extracting` — ספינר עדין + "מחלץ טקסט…"
-  - `ready` — אייקון paperclip רגיל (כמו היום)
-  - `failed` — אייקון שגיאה + טקסט שגיאה קצר; X להסרה.
+3. **שיפור UX של שגיאות העלאה**
+   - אם העלאה נכשלת, אציג הודעת שגיאה ברורה על ה‑attachment עצמו בלי לשבש את כל ההודעה.
+   - אשאיר את שם הקובץ המקורי בעברית ב‑UI כדי שהמשתמש יראה בדיוק מה ניסה להעלות.
 
-## שלב 3 — זרימת ההעלאה ב־`uploadFiles`
-לכל קובץ במקביל:
-1. יצירת `id` ו־`storagePath = {userId}/{threadId}/{id}/{fileName}` והוספה ל־state כ־`uploading`.
-2. בדיקות גודל/סוג (כמו היום: עד 10MB; סוגים נתמכים בלבד).
-3. `supabase.storage.from("chat-attachments").upload(storagePath, file, { contentType, upsert: false })`.
-   - בכישלון: סטטוס `failed` + הודעת שגיאה ב־toast, הקובץ נשאר ברצועה עם כפתור X.
-4. עדכון סטטוס ל־`uploaded` (כאן המשתמש כבר רואה "הקובץ עלה").
-5. מעבר ל־`extracting` ואז קריאה ל־`extractTextFromFile(file)` כפי שנעשה כיום (חילוץ בדפדפן בלבד).
-6. חיתוך ל־`MAX_CHARS = 60_000`, ועדכון ל־`ready` עם `text` ו־`truncated`.
-7. בכישלון של החילוץ: סטטוס `failed`; הקובץ נשאר באחסון (כדי לאפשר התייחסות עתידית/הורדה) אבל לא ייכלל בשליחה.
+4. **בדיקת זרימה מלאה מול ההתנהגות שביקשת**
+   - העלאה ל‑Storage קודם.
+   - סימון שהקובץ הועלה.
+   - חילוץ טקסט אחר כך.
+   - כפתור השליחה נשאר מושבת עד שכל הקבצים מוכנים או נכשלו.
 
-הערה: אנחנו לא משנים את `/api/chat-attach`, את `text-extractor.server.ts`, או את לוגיקת ה־RAG — החילוץ ממשיך להיות בלקוח כפי שתוקן.
+## קבצים שאעדכן
+- `src/routes/_authenticated/chat.$threadId.tsx`
 
-## שלב 4 — כפתור השליחה ולוגיקת שליחה
-ב־`handleSend` וב־`disabled` של כפתור השליחה:
-- "ממתין" יחושב כ־`attachments.some(a => a.status === "uploading" || a.status === "extracting")`.
-- כפתור השליחה יהיה `disabled` אם:
-  - `sending`, או
-  - יש קובץ "ממתין" כלשהו, או
-  - אין טקסט וגם אין אף קובץ ב־`ready`.
-- מסירים את ה־toast "ממתין לסיום העלאת קבצים..." — הכפתור פשוט מושבת, ללא לחיצות סרק.
-- ה־payload להודעה ישתמש רק ב־attachments במצב `ready` (כמו היום).
+## פרטים טכניים
+- לא אשנה את ה‑bucket או את מדיניות ה‑RLS, כי הן לא נראות כגורם התקלה.
+- לא אשנה את לוגיקת חילוץ הטקסט עצמה, אלא רק את שלב בניית מפתח האחסון והטיפול בשגיאה.
+- אם אזהה שהסיומת חסרה/לא תקינה אחרי הסינון, אשתמש בשם ברירת מחדל בטוח עם סיומת מתאימה.
 
-## שלב 5 — ניקוי במחיקת attachment
-- `removeAttachment`: אם יש `storagePath`, גם להריץ `supabase.storage.from("chat-attachments").remove([storagePath])` ברקע (best effort, לא חוסם UI).
-
-## קבצים שיתעדכנו
-- מיגרציה חדשה: bucket `chat-attachments` + policies על `storage.objects`.
-- `src/routes/_authenticated/chat.$threadId.tsx`: מודל Attachment, `uploadFiles`, רינדור הרצועה, `handleSend`, ה־`disabled` של הכפתור, `removeAttachment`.
-
-## מה לא משתנה (שמירה על איכות תוצרים)
-- ה־system prompts, סכמות הוולידציה, ה־RAG ingest, ה־`text-extractor.client.ts`, וכל ה־thinking/self-critique של הסוכנים — לא נוגעים.
+## תוצאה צפויה
+- קבצים עם שמות בעברית יעלו בהצלחה.
+- המשתמש עדיין יראה את השם המקורי בעברית בצ'אט.
+- הזרימה הדו‑שלבית שכבר ביקשת תישאר: upload → uploaded → extracting → ready.

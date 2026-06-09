@@ -434,7 +434,18 @@ function ChatPage() {
     await Promise.all(
       list.map(async (file) => {
         const id = crypto.randomUUID();
-        const safeName = file.name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_");
+        // Build an ASCII-only storage key. Supabase Storage rejects non-ASCII
+        // characters (e.g. Hebrew) in object keys with InvalidKey. The original
+        // filename is preserved separately for display only.
+        const dotIdx = file.name.lastIndexOf(".");
+        const rawExt = dotIdx > -1 ? file.name.slice(dotIdx + 1) : "";
+        const safeExt = rawExt.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toLowerCase();
+        const rawBase = dotIdx > -1 ? file.name.slice(0, dotIdx) : file.name;
+        const asciiBase = rawBase
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(0, 60);
+        const safeName = `${asciiBase || "file"}${safeExt ? "." + safeExt : ""}`;
         const storagePath = `${userId}/${threadId}/${id}/${safeName}`;
         const mimeType = file.type || "application/octet-stream";
 
