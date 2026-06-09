@@ -22,6 +22,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiUploadDocumentRouteImport } from './routes/api/upload-document'
 import { Route as ApiTranscribeAudioRouteImport } from './routes/api/transcribe-audio'
 import { Route as ApiReviewSpecRouteImport } from './routes/api/review-spec'
+import { Route as ApiLabUploadRouteImport } from './routes/api/lab-upload'
+import { Route as ApiLabDeleteRouteImport } from './routes/api/lab-delete'
+import { Route as ApiLabChatRouteImport } from './routes/api/lab-chat'
+import { Route as ApiLabAnswerRouteImport } from './routes/api/lab-answer'
 import { Route as ApiIngestDocumentRouteImport } from './routes/api/ingest-document'
 import { Route as ApiImproveSectionRouteImport } from './routes/api/improve-section'
 import { Route as ApiGenerateSpecV2RouteImport } from './routes/api/generate-spec-v2'
@@ -41,6 +45,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAgentsRouteImport } from './routes/_authenticated/agents'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedLabIndexRouteImport } from './routes/_authenticated/lab.index'
 import { Route as AuthenticatedAgentConversationsIndexRouteImport } from './routes/_authenticated/agent-conversations.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
@@ -112,6 +117,26 @@ const ApiTranscribeAudioRoute = ApiTranscribeAudioRouteImport.update({
 const ApiReviewSpecRoute = ApiReviewSpecRouteImport.update({
   id: '/api/review-spec',
   path: '/api/review-spec',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLabUploadRoute = ApiLabUploadRouteImport.update({
+  id: '/api/lab-upload',
+  path: '/api/lab-upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLabDeleteRoute = ApiLabDeleteRouteImport.update({
+  id: '/api/lab-delete',
+  path: '/api/lab-delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLabChatRoute = ApiLabChatRouteImport.update({
+  id: '/api/lab-chat',
+  path: '/api/lab-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLabAnswerRoute = ApiLabAnswerRouteImport.update({
+  id: '/api/lab-answer',
+  path: '/api/lab-answer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiIngestDocumentRoute = ApiIngestDocumentRouteImport.update({
@@ -214,6 +239,11 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedLabIndexRoute = AuthenticatedLabIndexRouteImport.update({
+  id: '/lab/',
+  path: '/lab/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAgentConversationsIndexRoute =
   AuthenticatedAgentConversationsIndexRouteImport.update({
     id: '/agent-conversations/',
@@ -289,6 +319,10 @@ export interface FileRoutesByFullPath {
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
+  '/api/lab-answer': typeof ApiLabAnswerRoute
+  '/api/lab-chat': typeof ApiLabChatRoute
+  '/api/lab-delete': typeof ApiLabDeleteRoute
+  '/api/lab-upload': typeof ApiLabUploadRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
@@ -298,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
+  '/lab/': typeof AuthenticatedLabIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -330,6 +365,10 @@ export interface FileRoutesByTo {
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
+  '/api/lab-answer': typeof ApiLabAnswerRoute
+  '/api/lab-chat': typeof ApiLabChatRoute
+  '/api/lab-delete': typeof ApiLabDeleteRoute
+  '/api/lab-upload': typeof ApiLabUploadRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
@@ -339,6 +378,7 @@ export interface FileRoutesByTo {
   '/editor/$id': typeof AuthenticatedEditorIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
+  '/lab': typeof AuthenticatedLabIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -373,6 +413,10 @@ export interface FileRoutesById {
   '/api/generate-spec-v2': typeof ApiGenerateSpecV2Route
   '/api/improve-section': typeof ApiImproveSectionRoute
   '/api/ingest-document': typeof ApiIngestDocumentRoute
+  '/api/lab-answer': typeof ApiLabAnswerRoute
+  '/api/lab-chat': typeof ApiLabChatRoute
+  '/api/lab-delete': typeof ApiLabDeleteRoute
+  '/api/lab-upload': typeof ApiLabUploadRoute
   '/api/review-spec': typeof ApiReviewSpecRoute
   '/api/transcribe-audio': typeof ApiTranscribeAudioRoute
   '/api/upload-document': typeof ApiUploadDocumentRoute
@@ -382,6 +426,7 @@ export interface FileRoutesById {
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
+  '/_authenticated/lab/': typeof AuthenticatedLabIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/api/public/hooks/process-diagram-jobs': typeof ApiPublicHooksProcessDiagramJobsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -416,6 +461,10 @@ export interface FileRouteTypes {
     | '/api/generate-spec-v2'
     | '/api/improve-section'
     | '/api/ingest-document'
+    | '/api/lab-answer'
+    | '/api/lab-chat'
+    | '/api/lab-delete'
+    | '/api/lab-upload'
     | '/api/review-spec'
     | '/api/transcribe-audio'
     | '/api/upload-document'
@@ -425,6 +474,7 @@ export interface FileRouteTypes {
     | '/editor/$id'
     | '/projects/$projectId'
     | '/agent-conversations/'
+    | '/lab/'
     | '/projects/'
     | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
@@ -457,6 +507,10 @@ export interface FileRouteTypes {
     | '/api/generate-spec-v2'
     | '/api/improve-section'
     | '/api/ingest-document'
+    | '/api/lab-answer'
+    | '/api/lab-chat'
+    | '/api/lab-delete'
+    | '/api/lab-upload'
     | '/api/review-spec'
     | '/api/transcribe-audio'
     | '/api/upload-document'
@@ -466,6 +520,7 @@ export interface FileRouteTypes {
     | '/editor/$id'
     | '/projects/$projectId'
     | '/agent-conversations'
+    | '/lab'
     | '/projects'
     | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
@@ -499,6 +554,10 @@ export interface FileRouteTypes {
     | '/api/generate-spec-v2'
     | '/api/improve-section'
     | '/api/ingest-document'
+    | '/api/lab-answer'
+    | '/api/lab-chat'
+    | '/api/lab-delete'
+    | '/api/lab-upload'
     | '/api/review-spec'
     | '/api/transcribe-audio'
     | '/api/upload-document'
@@ -508,6 +567,7 @@ export interface FileRouteTypes {
     | '/_authenticated/editor/$id'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/agent-conversations/'
+    | '/_authenticated/lab/'
     | '/_authenticated/projects/'
     | '/api/public/hooks/process-diagram-jobs'
     | '/api/public/payments/webhook'
@@ -532,6 +592,10 @@ export interface RootRouteChildren {
   ApiGenerateSpecV2Route: typeof ApiGenerateSpecV2Route
   ApiImproveSectionRoute: typeof ApiImproveSectionRoute
   ApiIngestDocumentRoute: typeof ApiIngestDocumentRoute
+  ApiLabAnswerRoute: typeof ApiLabAnswerRoute
+  ApiLabChatRoute: typeof ApiLabChatRoute
+  ApiLabDeleteRoute: typeof ApiLabDeleteRoute
+  ApiLabUploadRoute: typeof ApiLabUploadRoute
   ApiReviewSpecRoute: typeof ApiReviewSpecRoute
   ApiTranscribeAudioRoute: typeof ApiTranscribeAudioRoute
   ApiUploadDocumentRoute: typeof ApiUploadDocumentRoute
@@ -630,6 +694,34 @@ declare module '@tanstack/react-router' {
       path: '/api/review-spec'
       fullPath: '/api/review-spec'
       preLoaderRoute: typeof ApiReviewSpecRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lab-upload': {
+      id: '/api/lab-upload'
+      path: '/api/lab-upload'
+      fullPath: '/api/lab-upload'
+      preLoaderRoute: typeof ApiLabUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lab-delete': {
+      id: '/api/lab-delete'
+      path: '/api/lab-delete'
+      fullPath: '/api/lab-delete'
+      preLoaderRoute: typeof ApiLabDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lab-chat': {
+      id: '/api/lab-chat'
+      path: '/api/lab-chat'
+      fullPath: '/api/lab-chat'
+      preLoaderRoute: typeof ApiLabChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/lab-answer': {
+      id: '/api/lab-answer'
+      path: '/api/lab-answer'
+      fullPath: '/api/lab-answer'
+      preLoaderRoute: typeof ApiLabAnswerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ingest-document': {
@@ -765,6 +857,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/lab/': {
+      id: '/_authenticated/lab/'
+      path: '/lab'
+      fullPath: '/lab/'
+      preLoaderRoute: typeof AuthenticatedLabIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/agent-conversations/': {
       id: '/_authenticated/agent-conversations/'
       path: '/agent-conversations'
@@ -841,6 +940,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedAgentConversationsIndexRoute: typeof AuthenticatedAgentConversationsIndexRoute
+  AuthenticatedLabIndexRoute: typeof AuthenticatedLabIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
 }
 
@@ -863,6 +963,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedAgentConversationsIndexRoute:
     AuthenticatedAgentConversationsIndexRoute,
+  AuthenticatedLabIndexRoute: AuthenticatedLabIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
 }
 
@@ -889,6 +990,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateSpecV2Route: ApiGenerateSpecV2Route,
   ApiImproveSectionRoute: ApiImproveSectionRoute,
   ApiIngestDocumentRoute: ApiIngestDocumentRoute,
+  ApiLabAnswerRoute: ApiLabAnswerRoute,
+  ApiLabChatRoute: ApiLabChatRoute,
+  ApiLabDeleteRoute: ApiLabDeleteRoute,
+  ApiLabUploadRoute: ApiLabUploadRoute,
   ApiReviewSpecRoute: ApiReviewSpecRoute,
   ApiTranscribeAudioRoute: ApiTranscribeAudioRoute,
   ApiUploadDocumentRoute: ApiUploadDocumentRoute,
