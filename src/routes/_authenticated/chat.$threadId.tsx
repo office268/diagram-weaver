@@ -661,13 +661,6 @@ function ChatPage() {
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-start-1 md:row-span-3">
 
-        <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
-          <ThreadModelSelector
-            threadId={threadId}
-            currentOverride={thread.model_override ?? null}
-            variant="compact"
-          />
-        </div>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
@@ -842,6 +835,7 @@ function ChatPage() {
                 className="min-h-[72px] max-h-[260px] w-full resize-none overflow-y-auto border-0 bg-transparent px-3 py-2 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
               />
               <div className="flex items-center justify-between gap-1 px-1.5 pb-1.5">
+                <div className="flex items-center gap-1">
                 {true ? (
                   <Popover open={attachMenuOpen} onOpenChange={setAttachMenuOpen}>
                     <PopoverTrigger asChild>
@@ -933,6 +927,12 @@ function ChatPage() {
                 ) : (
                   <div />
                 )}
+                <ThreadModelSelector
+                  threadId={threadId}
+                  currentOverride={thread.model_override ?? null}
+                  variant="icon"
+                />
+                </div>
                 <div className="flex items-center gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
