@@ -17,12 +17,13 @@ import {
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { extractTextFromFile, describeMime } from "@/lib/rag/text-extractor.client";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/lab/$sessionId")({
   component: LabPage,
@@ -284,21 +285,21 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className={`h-7 gap-1 text-xs ${uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+        <label
+          htmlFor="lab-file-upload"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "h-7 gap-1 text-xs",
+            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
+          )}
         >
-          <label htmlFor="lab-file-upload">
-            {uploading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Paperclip className="h-3.5 w-3.5" />
-            )}
-            העלה
-          </label>
-        </Button>
+          {uploading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Paperclip className="h-3.5 w-3.5" />
+          )}
+          העלה
+        </label>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
@@ -397,21 +398,18 @@ function LabPage() {
           multiple
           accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
           className="sr-only"
-          onClick={(e) => {
-            e.currentTarget.value = "";
-          }}
           onChange={(e) => handleFiles(e.target.files)}
         />
-        <Button
-          asChild
-          variant="outline"
-          size="icon"
-          className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}
+        <label
+          htmlFor="lab-file-upload"
+          aria-label="צרף קבצים"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "icon" }),
+            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
+          )}
         >
-          <label htmlFor="lab-file-upload" aria-label="צרף קבצים">
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-          </label>
-        </Button>
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+        </label>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
