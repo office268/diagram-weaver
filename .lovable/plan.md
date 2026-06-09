@@ -1,36 +1,28 @@
-## הבעיה האמיתית
+## הבעיה
 
-האבחנה של קלוד שגויה — `LOVABLE_API_KEY` קיים בפרויקט וטעון בקוד. הבעיה במקום אחר לגמרי.
-
-תשובות ה־HTTP של pg_net מראות בדיוק מה קורה:
+זו **לא** אותה בעיה כמו הקודמת. ה-pg_net timeout (120s) כבר תוקן. הפעם זה timeout פנימי בקוד:
 
 ```
-06:33:31 → Timeout of 5000 ms reached (pg_net ניתק)
-06:34:01 → {"processed":false} (ג'וב נעול, claim לא תופס)
-06:34:31 → {"processed":false}
-... וכך עד ש־reset_stuck_diagram_jobs מסמן "stuck timeout" אחרי 5 דקות
+src/lib/diagram-job.server.ts:31
+const STEP_TIMEOUT_MS = 90 * 1000;
 ```
 
-`pg_net.http_post` ברירת המחדל היא **timeout של 5 שניות**. ה־worker שלנו (`/api/public/hooks/process-diagram-jobs`) מבצע קריאה ל־Gemini 2.5 Pro עם פרומפט עברי ארוך — זה לוקח 30-90 שניות. ה־cron מתנתק אחרי 5 שניות, הג'וב נשאר תקוע ב־`status='processing'`, ולא יש שום worker שיגמור אותו עד שה־reset יזרוק אותו ל־failed.
+שלב ה-Extractor של activity swimlane (`runExtractorAgent` → Gemini 2.5 Pro + פרומפט עברי + JSON מובנה של עד 16k tokens) חורג לעיתים מ-90 שניות, ו-`withTimeout` זורק `"extractor step timed out after 90s"` עוד לפני שהמודל מסיים. זו השגיאה שהתקבלה.
 
-## התיקון
+## התיקון המוצע
 
-1. **לעדכן את ה־cron schedule** כך שיקרא ל־`net.http_post` עם `timeout_milliseconds := 120000` (2 דקות), במקום 5000 ברירת המחדל. זה הצעד היחיד שפותר את הבעיה לאמת.
+1. **להעלות `STEP_TIMEOUT_MS` מ-90s ל-180s** ב-`src/lib/diagram-job.server.ts`.
+   - עדיין בטוח: ה-pg_net timeout הוא 120s לכל קריאה, וה-job pipeline מבוצע step-by-step עם lease — כל step שלא נגמר ב-pg_net call אחד פשוט יורם ב-call הבא. הגבול האמיתי הוא ה-Worker CPU/wall-clock של Cloudflare, שמאפשר subrequests ארוכים בהרבה.
+   - 180s נותן מרווח נוח גם ל-Extractor של פרומפטים ארוכים וגם ל-Builder ול-Fixer.
 
-2. **לקצר את חלון ה־reset_stuck_diagram_jobs מ־5 דקות ל־2.5 דקות** — אחרי שה־timeout הוא 2 דקות, אין סיבה לחכות 5 דקות לאישור תקיעה. זה ייתן fail מהיר יותר במקרה אמת של תקיעה.
+2. **עדכון `RF_JSON_LEASE_MS`** מ-2 דק' ל-3.5 דק' כדי שיתאים ל-step timeout החדש (אחרת lease יפוג לפני שה-step יספיק להיכשל ב-timeout שלו עצמו).
 
-3. **הוספת logging מינימלי** ב־`runSingleShotJob` בנקודות הקריטיות (לפני/אחרי קריאת ה־LLM, לפני/אחרי insert של diagram) כדי שאם זה ייתקע שוב נראה איפה בדיוק.
+3. **לא נוגעים** בפרומפטים, ב-system prompts, ב-schema, ב-validation, ב-self-critique או ב-MAX_FIX_ITERATIONS — בהתאם ל-memory של הפרויקט.
 
-## הבהרה חשובה
+## קבצים שישתנו
 
-**לא נוגעים בפרומפטים, ב־system prompts, ב־schema, בולידציה, ב־thinking steps או ב־self-critique** — זה בהתאם ל־memory של הפרויקט. כל השינוי הוא תשתיתי (cron + reset + log).
-
-## קבצים שצפויים להשתנות
-
-- migration חדשה: `unschedule` + `schedule` מחדש של ה־cron עם `timeout_milliseconds`.
-- migration חדשה (או באותה): עדכון פרמטר `_stale_minutes` בקריאה ל־`reset_stuck_diagram_jobs` (או הקריאה ב־`process-diagram-jobs.ts`).
-- `src/lib/diagram-job.server.ts` או `src/routes/api/public/hooks/process-diagram-jobs.ts`: 3–4 שורות `console.log`.
+- `src/lib/diagram-job.server.ts` — שתי קונסטנטות בלבד (שורות 31-32).
 
 ## אימות
 
-לאחר הפריסה: שולחים פרומפט useCase קצר, מוודאים בלוגי `net._http_response` שאין `timed_out=t`, ובוחנים ב־`diagram_jobs` שהסטטוס הופך ל־`done` עם `diagram_id` ו־`completed_at` מלאים.
+לאחר הפריסה — לשלוח בקשת activity swimlane (אותה הודעה שנכשלה) ולוודא שה-Extractor מסיים, שה-stage עובר ל-`building`, ובסוף נשמר SVG עם `diagram_id`.

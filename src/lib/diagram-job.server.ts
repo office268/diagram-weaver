@@ -28,8 +28,8 @@ import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/output-types";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 
 /** Single-step timeout — must stay well under the Worker request budget. */
-const STEP_TIMEOUT_MS = 90 * 1000;
-const RF_JSON_LEASE_MS = 2 * 60 * 1000;
+const STEP_TIMEOUT_MS = 180 * 1000;
+const RF_JSON_LEASE_MS = 3.5 * 60 * 1000;
 const MAX_FIX_ITERATIONS = 2;
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
