@@ -88,6 +88,16 @@ interface Attachment {
   truncated?: boolean;
 }
 
+interface ActiveDiagramJob {
+  id: string;
+  status: string;
+  stage: string | null;
+  current_message_id: string | null;
+  diagram_id: string | null;
+  error_message: string | null;
+  updated_at: string;
+}
+
 
 
 const MODE_META = {
@@ -245,6 +255,8 @@ function ChatPage() {
     queryFn: () => listThreadsFn(),
   });
 
+  const [activeDiagramJob, setActiveDiagramJob] = useState<ActiveDiagramJob | null>(null);
+
   const deleteMut = useMutation({
     mutationFn: () => deleteThreadFn({ data: { threadId } }),
     onSuccess: () => {
@@ -262,17 +274,24 @@ function ChatPage() {
     const tick = async () => {
       const { data: jobs } = await supabase
         .from("diagram_jobs")
-        .select("id,status")
+        .select("id,status,stage,current_message_id,diagram_id,error_message,updated_at")
         .eq("thread_id", threadId)
         .in("status", ["pending", "processing"])
+        .order("updated_at", { ascending: false })
         .limit(1);
       if (cancelled) return;
-      if (jobs && jobs.length > 0) {
+      const nextJob = jobs?.[0] ?? null;
+      setActiveDiagramJob(nextJob as ActiveDiagramJob | null);
+      if (nextJob) {
         qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       }
     };
+    void tick();
     const id = setInterval(() => { void tick(); }, 3000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [threadId, qc]);
 
   // Auto-scroll on new messages
