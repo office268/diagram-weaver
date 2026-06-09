@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -111,13 +111,26 @@ function LabPage() {
   const [uploading, setUploading] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const session = sessionQ.data;
   const docs = docsQ.data ?? [];
   const questions = questionsQ.data ?? [];
   const unanswered = useMemo(() => questions.filter((q) => !q.answer), [questions]);
   const answered = useMemo(() => questions.filter((q) => q.answer), [questions]);
+
+  const fileInputProps = {
+    type: "file" as const,
+    multiple: true,
+    accept:
+      ".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv",
+    disabled: uploading,
+    onClick: (e: React.MouseEvent<HTMLInputElement>) => {
+      e.currentTarget.value = "";
+    },
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      void handleFiles(e.target.files);
+      e.currentTarget.value = "";
+    },
+  };
 
   const refreshAll = () =>
     Promise.all([
@@ -196,7 +209,6 @@ function LabPage() {
       if (okCount > 0) toast.success(`הועלו ${okCount} מסמכים`);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -285,21 +297,25 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <label
-          htmlFor="lab-file-upload"
+        <div
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "h-7 gap-1 text-xs",
+            "relative h-7 gap-1 overflow-hidden text-xs",
             uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
           )}
         >
+          <input
+            aria-label="העלה מסמכים"
+            className="absolute inset-0 z-10 cursor-pointer opacity-0"
+            {...fileInputProps}
+          />
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Paperclip className="h-3.5 w-3.5" />
           )}
           העלה
-        </label>
+        </div>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
@@ -391,25 +407,21 @@ function LabPage() {
   const PromptBar = (
     <Card className="p-3">
       <div className="flex items-end gap-2">
-        <input
-          id="lab-file-upload"
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
-          className="sr-only"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-        <label
-          htmlFor="lab-file-upload"
+        <div
           aria-label="צרף קבצים"
           className={cn(
             buttonVariants({ variant: "outline", size: "icon" }),
+            "relative overflow-hidden",
             uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
           )}
         >
+          <input
+            aria-label="צרף קבצים"
+            className="absolute inset-0 z-10 cursor-pointer opacity-0"
+            {...fileInputProps}
+          />
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </label>
+        </div>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
