@@ -46,6 +46,23 @@ export const DOC_TEMPLATES: Record<DocTypeKey, DocTemplate[]> = {
         "מערכת זמן-אמת לעיבוד אירועי [X] בהיקף גבוה. תארו את ה-ingestion, pipeline (Kafka/Flink), אחסון (TSDB/OLAP), זמני תגובה, throughput נדרש ו-fault tolerance.",
     },
   ],
+  requirements_combined: [
+    {
+      label: "אפליקציית B2C",
+      prompt:
+        "אפליקציית מובייל לצרכנים בתחום ה[X]. כללו צד עסקי (קהל יעד, מודל הכנסות, KPIs כמו DAU/Retention/LTV, בעלי עניין) וצד טכני (ארכיטקטורה, אינטגרציות צד שלישי, אימות, NFRs של ביצועים/אבטחה/נגישות, מודל נתונים).",
+    },
+    {
+      label: "פלטפורמת SaaS B2B",
+      prompt:
+        "פלטפורמת SaaS לארגונים בתחום ה[X]. כללו בעיית לקוח, ICP, Pricing tiers, KPIs (MRR/Churn/NRR), בעלי עניין — וגם דרישות מערכת, אינטגרציות (CRM/ERP), Multi-tenancy, SSO/OAuth, NFRs ומודל נתונים.",
+    },
+    {
+      label: "מערכת פנים-ארגונית",
+      prompt:
+        "מערכת פנים-ארגונית לייעול תהליך [X]. כללו תהליך קיים, נקודות כאב, יעדים מדידים, ROI ובעלי עניין — וגם ארכיטקטורת המערכת, אינטגרציות למערכות הליבה, הרשאות, NFRs ומודל נתונים מלא.",
+    },
+  ],
   initiation: [
     {
       label: "MVP בסטארטאפ",
