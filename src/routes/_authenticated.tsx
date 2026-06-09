@@ -126,22 +126,17 @@ function UserMenuWithOrgLogo() {
   if (!user) return null;
   const avatarUrl = data?.logo_url ?? null;
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <Link
-        to="/organization"
-        className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label="דף הארגון"
-      >
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
-        ) : (
-          <Workflow className="h-6 w-6 text-muted-foreground" />
-        )}
-      </Link>
-      <span className="text-xs text-muted-foreground leading-tight whitespace-nowrap" dir="ltr">
-        {user.email}
-      </span>
-    </div>
+    <Link
+      to="/organization"
+      className="inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label="דף הארגון"
+    >
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
+      ) : (
+        <Workflow className="h-8 w-8 text-muted-foreground" />
+      )}
+    </Link>
   );
 }
 
@@ -151,24 +146,28 @@ function HamburgerMenu() {
   return <UserMenu user={user} trigger="hamburger" />;
 }
 
-
-
-
-
 function OrgNameLabel() {
+  const { user } = useAuth();
   const { data, isLoading } = useCurrentOrganization();
-  if (isLoading) {
-    return <span className="h-3 w-20 animate-pulse rounded bg-muted" aria-hidden />;
-  }
-  if (!data) return null;
   return (
-    <Link
-      to="/organization"
-      className="text-base font-medium text-foreground truncate min-w-0 hover:underline"
-      title={data.name}
-    >
-      {data.name}
-    </Link>
+    <div className="flex min-w-0 flex-col items-start gap-0.5">
+      {isLoading ? (
+        <span className="h-3 w-20 animate-pulse rounded bg-muted" aria-hidden />
+      ) : data ? (
+        <Link
+          to="/organization"
+          className="min-w-0 truncate text-base font-medium text-foreground hover:underline"
+          title={data.name}
+        >
+          {data.name}
+        </Link>
+      ) : null}
+      {user?.email ? (
+        <span className="whitespace-nowrap text-xs leading-tight text-muted-foreground" dir="ltr">
+          {user.email}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
