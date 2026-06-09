@@ -27,9 +27,7 @@ export const ALLOWED_AGENT_MODELS = [
   "google/gemini-2.5-pro",
   "google/gemini-3.1-pro-preview",
   "openai/gpt-5.4",
-  "openai/gpt-5.4-pro",
   "openai/gpt-5.5",
-  "openai/gpt-5.5-pro",
   "anthropic/claude-opus-4-5",
   "anthropic/claude-sonnet-4-5",
 ] as const;
