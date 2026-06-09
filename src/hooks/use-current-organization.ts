@@ -27,12 +27,13 @@ function writeCache(userId: string, data: CurrentOrganization) {
   }
 }
 
-async function fetchCurrentOrganization(): Promise<CurrentOrganization> {
+async function fetchCurrentOrganization(userId: string): Promise<CurrentOrganization> {
   const { data, error } = await supabase
     .from("organization_members")
     .select(
       "role, org_id, organizations:org_id ( id, name, slug, logo_url, address, website, org_kind, identifier )",
     )
+    .eq("user_id", userId)
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -70,8 +71,9 @@ export function useCurrentOrganization() {
   return useQuery({
     queryKey: ["current-organization", userId],
     queryFn: async () => {
-      const data = await fetchCurrentOrganization();
-      if (userId) writeCache(userId, data);
+      if (!userId) return null;
+      const data = await fetchCurrentOrganization(userId);
+      writeCache(userId, data);
       return data;
     },
     enabled: !!userId,
