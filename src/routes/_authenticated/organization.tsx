@@ -25,13 +25,25 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function OrganizationHomePage() {
-  const { data: org, isLoading } = useCurrentOrganization();
+  const { data: org, isLoading, isFetching, isError, error } = useCurrentOrganization();
   const [editing, setEditing] = useState(false);
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12 text-center [direction:rtl]">
+        <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h1 className="mt-4 text-xl font-semibold">לא ניתן לטעון את הארגון</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "אירעה שגיאה בטעינת פרטי הארגון."}
+        </p>
       </div>
     );
   }
