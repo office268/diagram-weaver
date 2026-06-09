@@ -147,12 +147,7 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
       await runSingleShotJob(job as JobRow, params);
     }
   } catch (err) {
-    const msg =
-      err instanceof ActivityDiagramGenerationError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : String(err);
+    const msg = getErrorMessage(err);
     console.error("[diagram-job] step failed:", err);
     await finalizeFailure(params, job as JobRow, msg);
   }
@@ -565,23 +560,40 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
       status: "processing",
       stage: "generating",
       current_message_id: currentMessageId,
+      next_run_at: leaseUntil(RF_JSON_LEASE_MS),
       updated_at: new Date().toISOString(),
     })
     .eq("id", jobId);
 
-  const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
-  const { json } = await withTimeout(
-    runRfJsonDiagramAgent({
-      kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
-      userPrompt: prompt,
-      history: priorHistory,
-      lovableApiKey,
-      modelOverride,
-      tracker,
-    }),
-    STEP_TIMEOUT_MS,
-    "diagram generation",
-  );
+  let json: string;
+  try {
+    const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
+    const result = await withTimeout(
+      runRfJsonDiagramAgent({
+        kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
+        userPrompt: prompt,
+        history: priorHistory,
+        lovableApiKey,
+        modelOverride,
+        tracker,
+      }),
+      STEP_TIMEOUT_MS,
+      "diagram generation",
+    );
+    json = result.json;
+  } catch (err) {
+    const msg = getErrorMessage(err);
+    await finalizeFailure(
+      params,
+      {
+        ...job,
+        current_message_id: currentMessageId,
+        stage: "generating",
+      },
+      msg,
+    );
+    return;
+  }
 
   const title = prompt.slice(0, 80) || def.label;
   const { data: diagRow, error: diagErr } = await supabaseAdmin
