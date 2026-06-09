@@ -213,6 +213,46 @@ function ChatPage() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
+
+  const [composerHeight, setComposerHeight] = useState<number>(180);
+  const composerHeightRef = useRef(180);
+  useEffect(() => { composerHeightRef.current = composerHeight; }, [composerHeight]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("chat-composer-height");
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (!Number.isNaN(n)) {
+        const max = Math.max(200, window.innerHeight * 0.6);
+        setComposerHeight(Math.max(120, Math.min(max, n)));
+      }
+    }
+  }, []);
+  const startResizeComposer = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = composerHeightRef.current;
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY;
+      const max = Math.max(200, window.innerHeight * 0.6);
+      // dragging up (negative delta) grows composer
+      const next = Math.max(120, Math.min(max, startH - delta));
+      setComposerHeight(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      try {
+        window.localStorage.setItem("chat-composer-height", String(composerHeightRef.current));
+      } catch {}
+    };
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -551,8 +591,8 @@ function ChatPage() {
 
   return (
     <div
-      className="mx-auto flex h-[calc(100vh-8rem)] w-full flex-col gap-4 px-2 py-3 md:grid md:grid-rows-[1fr_auto] md:gap-0 md:px-6"
-      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 18px 1fr` } : undefined}
+      className="mx-auto flex h-[calc(100vh-8rem)] w-full flex-col gap-4 px-2 py-3 md:grid md:gap-0 md:px-6"
+      style={isDesktop ? { gridTemplateColumns: `${sidebarWidth}px 18px 1fr`, gridTemplateRows: `1fr 8px ${composerHeight}px` } : undefined}
     >
       {/* Sidebar — threads */}
       <aside
@@ -609,7 +649,7 @@ function ChatPage() {
           try { window.localStorage.setItem("chat-sidebar-width", "256"); } catch {}
         }}
         title="גרור כדי לשנות גודל. לחיצה כפולה לאיפוס."
-        className="group hidden md:col-start-2 md:row-span-2 md:flex md:cursor-col-resize md:items-center md:justify-center md:self-stretch"
+        className="group hidden md:col-start-2 md:row-start-1 md:row-span-3 md:flex md:cursor-col-resize md:items-center md:justify-center md:self-stretch"
       >
         <div className="flex h-24 w-[6px] flex-col items-center justify-center gap-1 rounded-full border border-border bg-muted shadow-sm transition-colors group-hover:border-primary group-hover:bg-primary/30 group-active:bg-primary">
           <span className="h-1 w-1 rounded-full bg-foreground/50" />
@@ -619,7 +659,7 @@ function ChatPage() {
       </div>
 
       {/* Chat column */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-start-1 md:row-span-3">
 
         <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
           <ThreadModelSelector
@@ -672,9 +712,29 @@ function ChatPage() {
 
       </div>
 
+      {/* Horizontal resize handle (desktop only) — drag to resize threads list vs composer */}
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="גרור כדי לשנות את גובה תיבת הצ'אט"
+        onMouseDown={startResizeComposer}
+        onDoubleClick={() => {
+          setComposerHeight(180);
+          try { window.localStorage.setItem("chat-composer-height", "180"); } catch {}
+        }}
+        title="גרור כדי לשנות גובה. לחיצה כפולה לאיפוס."
+        className="group hidden md:col-start-1 md:row-start-2 md:flex md:cursor-row-resize md:items-center md:justify-center md:self-stretch"
+      >
+        <div className="flex h-[6px] w-24 flex-row items-center justify-center gap-1 rounded-full border border-border bg-muted shadow-sm transition-colors group-hover:border-primary group-hover:bg-primary/30 group-active:bg-primary">
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+        </div>
+      </div>
+
       {/* Composer */}
       <div
-        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-2 md:pt-3 md:pb-3"
+        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-3 md:overflow-y-auto md:pt-3 md:pb-3"
         style={isDesktop ? { width: sidebarWidth } : undefined}
       >
           <input

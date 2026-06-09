@@ -1,28 +1,31 @@
-## הבעיה
 
-זו **לא** אותה בעיה כמו הקודמת. ה-pg_net timeout (120s) כבר תוקן. הפעם זה timeout פנימי בקוד:
+## הבנת הבקשה
+הקו האדום בתמונה מסמן את הגבול **האופקי** בין רשימת "שיחות אחרונות" (למעלה) לבין תיבת הצ'אט/הקלדה (למטה) — באותה עמודה. רוצים לגרור את הגבול הזה למעלה/למטה כדי להגדיל את אחד על חשבון השני.
 
-```
-src/lib/diagram-job.server.ts:31
-const STEP_TIMEOUT_MS = 90 * 1000;
-```
+(המחיצה האנכית שהוספתי קודם, בין העמודה הזו לאזור ההודעות, אינה רלוונטית לבקשה הזו ותישאר כפי שהיא — אלא אם תרצה להסיר.)
 
-שלב ה-Extractor של activity swimlane (`runExtractorAgent` → Gemini 2.5 Pro + פרומפט עברי + JSON מובנה של עד 16k tokens) חורג לעיתים מ-90 שניות, ו-`withTimeout` זורק `"extractor step timed out after 90s"` עוד לפני שהמודל מסיים. זו השגיאה שהתקבלה.
+## מה ייבנה
+ב־`src/routes/_authenticated/chat.$threadId.tsx`:
 
-## התיקון המוצע
+1. **State חדש**: `composerHeight` (px, ברירת מחדל ~180, מינ' 120, מקס' 60% מגובה החלון), נשמר ב־`localStorage` תחת `chat-composer-height`.
+2. **Grid של העמודה השמאלית** (sidebar + composer) ישתנה מ־`grid-rows-[1fr_auto]` ל־`grid-rows-[1fr_8px_${composerHeight}px]`, כך ש:
+   - שורה 1 = רשימת שיחות (גמיש).
+   - שורה 2 = פס גרירה אופקי (8px).
+   - שורה 3 = ה־composer בגובה קבוע נשלט.
+3. **רכיב המחיצה החדש**:
+   - `role="separator" aria-orientation="horizontal"`
+   - אייקון אחיזה עם 3 נקודות אופקיות, מתחלף בצבע ב־hover/active (אותו סגנון כמו האנכי).
+   - `cursor-row-resize`.
+   - לחיצה כפולה → איפוס ל־180px.
+4. **פונקציית `startResizeComposer`** — אנלוגית ל־`startResize` הקיימת, אך על ציר Y. גרירה כלפי מעלה מגדילה את ה־composer (מקטינה את רשימת השיחות), וההיפך.
+5. **עמודת הצ'אט הראשית** (`col-start-3`) נשארת `row-span-2`-כמו־היום (תופסת את כל הגובה), כך שהשינוי האופקי לא משפיע עליה.
 
-1. **להעלות `STEP_TIMEOUT_MS` מ-90s ל-180s** ב-`src/lib/diagram-job.server.ts`.
-   - עדיין בטוח: ה-pg_net timeout הוא 120s לכל קריאה, וה-job pipeline מבוצע step-by-step עם lease — כל step שלא נגמר ב-pg_net call אחד פשוט יורם ב-call הבא. הגבול האמיתי הוא ה-Worker CPU/wall-clock של Cloudflare, שמאפשר subrequests ארוכים בהרבה.
-   - 180s נותן מרווח נוח גם ל-Extractor של פרומפטים ארוכים וגם ל-Builder ול-Fixer.
+## פרטים טכניים
+- המחיצה תופיע רק ב־desktop (`md:` + `isDesktop`), כמו האנכית.
+- ב־RTL ציר ה־Y לא מושפע, אז `delta = ev.clientY - startY` ישירות.
+- ה־`composer` יקבל `overflow-y: auto` אם יקטינו אותו מתחת לגובה התוכן, כדי שכפתורי הקלט לא ייחתכו.
+- מגבלות גובה: `Math.max(120, Math.min(window.innerHeight * 0.6, next))`.
+- שמירה ב־`localStorage`, וטעינה ב־`useEffect` ראשוני.
 
-2. **עדכון `RF_JSON_LEASE_MS`** מ-2 דק' ל-3.5 דק' כדי שיתאים ל-step timeout החדש (אחרת lease יפוג לפני שה-step יספיק להיכשל ב-timeout שלו עצמו).
-
-3. **לא נוגעים** בפרומפטים, ב-system prompts, ב-schema, ב-validation, ב-self-critique או ב-MAX_FIX_ITERATIONS — בהתאם ל-memory של הפרויקט.
-
-## קבצים שישתנו
-
-- `src/lib/diagram-job.server.ts` — שתי קונסטנטות בלבד (שורות 31-32).
-
-## אימות
-
-לאחר הפריסה — לשלוח בקשת activity swimlane (אותה הודעה שנכשלה) ולוודא שה-Extractor מסיים, שה-stage עובר ל-`building`, ובסוף נשמר SVG עם `diagram_id`.
+## מה לא ישתנה
+- אזור ההודעות (col 3), הכותרת, ה־composer עצמו, כפתור Send/Stop, המחיצה האנכית הקיימת — ללא שינוי תפקודי.
