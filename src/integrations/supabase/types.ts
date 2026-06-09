@@ -468,6 +468,7 @@ export type Database = {
       diagram_jobs: {
         Row: {
           attempts: number
+          cancel_requested: boolean
           completed_at: string | null
           created_at: string
           current_message_id: string | null
@@ -494,6 +495,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          cancel_requested?: boolean
           completed_at?: string | null
           created_at?: string
           current_message_id?: string | null
@@ -520,6 +522,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          cancel_requested?: boolean
           completed_at?: string | null
           created_at?: string
           current_message_id?: string | null
@@ -1182,6 +1185,7 @@ export type Database = {
         Args: never
         Returns: {
           attempts: number
+          cancel_requested: boolean
           completed_at: string | null
           created_at: string
           current_message_id: string | null

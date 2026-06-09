@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Loader2,
   Send,
+  Square,
   FileText,
   GitBranch,
   Copy,
@@ -66,6 +67,7 @@ import {
   listChatThreads,
   deleteChatThread,
 } from "@/lib/chat.functions";
+import { cancelDiagramJob } from "@/lib/diagrams.functions";
 import { ThreadModelSelector } from "@/components/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
@@ -125,9 +127,12 @@ function ChatPage() {
   const getThreadFn = useServerFn(getChatThread);
   const listThreadsFn = useServerFn(listChatThreads);
   const deleteThreadFn = useServerFn(deleteChatThread);
+  const cancelDiagramJobFn = useServerFn(cancelDiagramJob);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const canceledRef = useRef(false);
   const [phaseIdx, setPhaseIdx] = useState(0);
   const phases = [
     "מנתח את הבקשה",
@@ -374,6 +379,8 @@ function ChatPage() {
       return;
     }
     if ((!msg && readyAtts.length === 0) || sending) return;
+    canceledRef.current = false;
+    setCanceling(false);
     setSending(true);
     setInput("");
     const sentAtts = readyAtts;
@@ -425,13 +432,17 @@ function ChatPage() {
           // eslint-disable-next-line no-constant-condition
           while (true) {
             await new Promise((r) => setTimeout(r, 2000));
+            if (canceledRef.current) {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+              break;
+            }
             if (Date.now() - startedAt > MAX_MS) {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error("חרגנו מזמן ההמתנה ליצירת התרשים. אפשר לנסות שוב.");
             }
             const { data: job, error: jobErr } = await supabase
               .from("diagram_jobs")
-              .select("status,error_message,completed_at,diagram_id,current_message_id")
+              .select("status,error_message,completed_at,diagram_id,current_message_id,cancel_requested")
               .eq("id", jobId)
               .maybeSingle();
             if (jobErr) throw new Error(jobErr.message);
@@ -445,7 +456,12 @@ function ChatPage() {
             }
             if (job.status === "failed") {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
-              throw new Error(job.error_message || "יצירת התרשים נכשלה");
+              const errMsg = job.error_message || "יצירת התרשים נכשלה";
+              if (canceledRef.current || /בוטל/.test(errMsg)) {
+                // User-requested cancellation — exit quietly, no error toast.
+                break;
+              }
+              throw new Error(errMsg);
             }
             if (job.completed_at) {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
@@ -479,11 +495,33 @@ function ChatPage() {
       await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       await qc.invalidateQueries({ queryKey: ["chat-threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
-      setInput(msg);
-      setAttachments(sentAtts);
+      if (!canceledRef.current) {
+        toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
+        setInput(msg);
+        setAttachments(sentAtts);
+      }
     } finally {
       setSending(false);
+      setCanceling(false);
+    }
+  }
+
+  async function handleStop() {
+    if (canceling) return;
+    canceledRef.current = true;
+    setCanceling(true);
+    try {
+      const jobId = activeDiagramJob?.id;
+      if (jobId) {
+        await cancelDiagramJobFn({ data: { jobId } });
+      }
+      toast.info("התהליך בוטל");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ביטול נכשל");
+    } finally {
+      // Restore the composer immediately; the polling loop will exit on its own.
+      setSending(false);
+      setCanceling(false);
     }
   }
 
@@ -867,18 +905,29 @@ function ChatPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
-                    onClick={() => void handleSend()}
+                    onClick={() => {
+                      if (sending) void handleStop();
+                      else void handleSend();
+                    }}
                     disabled={
-                      sending ||
-                      (input.trim().length === 0 &&
+                      canceling ||
+                      (!sending &&
+                        input.trim().length === 0 &&
                         attachments.filter((a) => a.status === "ready").length === 0)
                     }
                     size="icon"
-                    aria-label="שלח"
-                    title="שלח"
+                    aria-label={sending ? "עצור" : "שלח"}
+                    title={sending ? "עצור את התהליך" : "שלח"}
+                    variant={sending ? "outline" : "default"}
                     className="h-8 w-8 shrink-0 rounded-full"
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {canceling ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : sending ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>

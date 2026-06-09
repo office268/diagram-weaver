@@ -84,6 +84,18 @@ interface JobRow {
   iteration: number;
   current_message_id: string | null;
   diagram_id: string | null;
+  cancel_requested?: boolean | null;
+}
+
+const CANCELED_MESSAGE = "התהליך בוטל על ידי המשתמש";
+
+async function isJobCanceled(jobId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("diagram_jobs")
+    .select("cancel_requested")
+    .eq("id", jobId)
+    .maybeSingle();
+  return Boolean((data as { cancel_requested?: boolean } | null)?.cancel_requested);
 }
 
 function footer(stage: string, iteration: number): string {
@@ -129,12 +141,19 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
   const { data: job, error: loadErr } = await supabaseAdmin
     .from("diagram_jobs")
     .select(
-      "id,user_id,thread_id,kind,prompt,model_override,stage,process_map_json,current_svg,current_violations,iteration,current_message_id,diagram_id",
+      "id,user_id,thread_id,kind,prompt,model_override,stage,process_map_json,current_svg,current_violations,iteration,current_message_id,diagram_id,cancel_requested",
     )
     .eq("id", jobId)
     .single();
   if (loadErr || !job) {
     console.error("[diagram-job] failed to load job:", loadErr);
+    return;
+  }
+
+  // Honor cancel requests from the UI before doing any model work.
+  if ((job as JobRow).cancel_requested) {
+    console.info("[diagram-job] cancel requested, finalizing", { jobId });
+    await finalizeFailure(params, job as JobRow, CANCELED_MESSAGE);
     return;
   }
 
@@ -149,7 +168,10 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
   } catch (err) {
     const msg = getErrorMessage(err);
     console.error("[diagram-job] step failed:", err);
-    await finalizeFailure(params, job as JobRow, msg);
+    // If the user requested cancellation while the step was running, prefer
+    // the friendly cancel message over the underlying timeout/abort error.
+    const finalMsg = (await isJobCanceled(jobId)) ? CANCELED_MESSAGE : msg;
+    await finalizeFailure(params, job as JobRow, finalMsg);
   }
 }
 
@@ -414,6 +436,10 @@ async function finalizeFailure(
   errMsg: string,
 ): Promise<void> {
   const def = OUTPUT_TYPES[params.kind];
+  const isCanceled = errMsg === CANCELED_MESSAGE;
+  const placeholderMsg = isCanceled
+    ? `יצירת ${def.label} בוטלה.`
+    : `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`;
 
   // If we have a partial SVG already in chat, keep it visible (just strip footer) instead of
   // appending a generic error message that overwrites the user's only artifact.
@@ -429,7 +455,9 @@ async function finalizeFailure(
         thread_id: params.threadId,
         user_id: params.userId,
         role: "assistant",
-        content: `שלב שיפור התרשים נכשל ולכן השארתי את הגרסה האחרונה. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+        content: isCanceled
+          ? `שיפור התרשים הופסק לבקשתך. השארתי את הגרסה האחרונה.`
+          : `שלב שיפור התרשים נכשל ולכן השארתי את הגרסה האחרונה. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
       });
     } catch (e) {
       console.error("[diagram-job] failure follow-up insert failed:", e);
@@ -438,7 +466,7 @@ async function finalizeFailure(
     try {
       await supabaseAdmin
         .from("chat_messages")
-        .update({ content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}` })
+        .update({ content: placeholderMsg })
         .eq("id", job.current_message_id);
     } catch (e) {
       console.error("[diagram-job] failure placeholder update failed:", e);
@@ -449,7 +477,7 @@ async function finalizeFailure(
         thread_id: params.threadId,
         user_id: params.userId,
         role: "assistant",
-        content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+        content: placeholderMsg,
       });
     } catch (e) {
       console.error("[diagram-job] failure assistant message insert failed:", e);
@@ -602,6 +630,7 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
       kind,
       message: msg,
     });
+    const finalMsg = (await isJobCanceled(jobId)) ? CANCELED_MESSAGE : msg;
     await finalizeFailure(
       params,
       {
@@ -609,7 +638,19 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
         current_message_id: currentMessageId,
         stage: "generating",
       },
-      msg,
+      finalMsg,
+    );
+    return;
+  }
+
+  // User may have requested cancellation while the LLM was running. Do not
+  // persist a diagram in that case; finalize as canceled and bail out.
+  if (await isJobCanceled(jobId)) {
+    console.info("[diagram-job] RF-JSON canceled after generation", { jobId });
+    await finalizeFailure(
+      params,
+      { ...job, current_message_id: currentMessageId, stage: "generating" },
+      CANCELED_MESSAGE,
     );
     return;
   }
