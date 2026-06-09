@@ -177,6 +177,20 @@ function ChatPage() {
     if (!currentOrg?.id) return;
     assignMutation.mutate({ productName, projectName });
   };
+  // Auto-create defaults the first time the thread has no project assigned.
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+    if (!assignmentQuery.data) return;
+    if (assignmentQuery.data.projectId) return;
+    if (assignMutation.isPending) return;
+    assignMutation.mutate({
+      productName: assignmentQuery.data.productName,
+      projectName: assignmentQuery.data.projectName,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id, assignmentQuery.data?.projectId]);
+
+
 
 
   const [input, setInput] = useState("");
