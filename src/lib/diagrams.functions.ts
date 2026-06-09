@@ -69,3 +69,37 @@ export const deleteDiagram = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Mark a running diagram job for cancellation. The worker checks this flag
+ * between pipeline steps and finalizes the job as failed with a friendly
+ * "canceled by user" message. An in-flight LLM call cannot be aborted, but
+ * no further steps will run.
+ */
+export const cancelDiagramJob = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { jobId: string }) =>
+    z.object({ jobId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    // Verify ownership and that the job is still active before flagging it.
+    const { data: job, error: loadErr } = await supabaseAdmin
+      .from("diagram_jobs")
+      .select("id, user_id, status")
+      .eq("id", data.jobId)
+      .maybeSingle();
+    if (loadErr) throw new Error(loadErr.message);
+    if (!job || job.user_id !== userId) {
+      throw new Error("המשימה לא נמצאה");
+    }
+    if (job.status !== "pending" && job.status !== "processing") {
+      return { ok: true, alreadyDone: true };
+    }
+    const { error: updErr } = await supabaseAdmin
+      .from("diagram_jobs")
+      .update({ cancel_requested: true, updated_at: new Date().toISOString() } as never)
+      .eq("id", data.jobId);
+    if (updErr) throw new Error(updErr.message);
+    return { ok: true };
+  });
