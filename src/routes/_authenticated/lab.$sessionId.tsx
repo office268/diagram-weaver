@@ -481,6 +481,20 @@ function LabPage() {
 
       {/* Prompt bar (sticky bottom) */}
       <div className="shrink-0">{PromptBar}</div>
+
+      {/* Single shared hidden file input — triggered by openFilePicker() */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) void handleFiles(files);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
