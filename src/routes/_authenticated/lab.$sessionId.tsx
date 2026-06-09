@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -54,7 +54,16 @@ interface LabSession {
 async function authedFetch(url: string, body: unknown) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  return fetch(url, {
+  const mode =
+    body && typeof body === "object" && "mode" in body && typeof body.mode === "string"
+      ? body.mode
+      : "insert";
+  console.info("[lab-upload][client] authedFetch:start", {
+    url,
+    mode,
+    hasToken: Boolean(token),
+  });
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,6 +71,13 @@ async function authedFetch(url: string, body: unknown) {
     },
     body: JSON.stringify(body),
   });
+  console.info("[lab-upload][client] authedFetch:done", {
+    url,
+    mode,
+    status: res.status,
+    ok: res.ok,
+  });
+  return res;
 }
 
 
@@ -118,15 +134,30 @@ function LabPage() {
   const unanswered = useMemo(() => questions.filter((q) => !q.answer), [questions]);
   const answered = useMemo(() => questions.filter((q) => q.answer), [questions]);
 
+  useEffect(() => {
+    console.info("[lab-upload][client] page-mounted", {
+      sessionId,
+      hasFileInput: Boolean(fileInputRef.current),
+    });
+  }, [sessionId]);
+
   const openFilePicker = () => {
     if (uploading) return;
     const el = fileInputRef.current;
+    console.info("[lab-upload][client] picker-open:attempt", {
+      sessionId,
+      uploading,
+      hasInput: Boolean(el),
+    });
     if (!el) {
       toast.error("שדה ההעלאה לא נטען. נסה לרענן את הדף.");
       return;
     }
     el.value = "";
     el.click();
+    console.info("[lab-upload][client] picker-open:click-dispatched", {
+      sessionId,
+    });
   };
 
   const refreshAll = () =>
@@ -153,11 +184,22 @@ function LabPage() {
   }
 
   async function handleFiles(files: FileList | null) {
+    console.info("[lab-upload][client] handleFiles:start", {
+      sessionId,
+      count: files?.length ?? 0,
+      names: files ? Array.from(files).map((file) => file.name) : [],
+    });
     if (!files || files.length === 0) return;
     setUploading(true);
     let okCount = 0;
     try {
       for (const file of Array.from(files)) {
+        console.info("[lab-upload][client] file:begin", {
+          sessionId,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        });
         // Step 1: upload metadata first (no text)
         let documentId: string | null = null;
         try {
@@ -171,6 +213,11 @@ function LabPage() {
           if (!res.ok) throw new Error(await res.text());
           const json = (await res.json()) as { document?: { id: string } };
           documentId = json.document?.id ?? null;
+          console.info("[lab-upload][client] file:metadata-uploaded", {
+            sessionId,
+            name: file.name,
+            documentId,
+          });
           okCount += 1;
         } catch (e) {
           console.error("[lab-upload]", file.name, e);
@@ -182,8 +229,19 @@ function LabPage() {
         if (documentId) {
           void (async () => {
             try {
+              console.info("[lab-upload][client] file:extract-start", {
+                sessionId,
+                name: file.name,
+                documentId,
+              });
               const { text } = await extractTextFromFile(file);
               const trimmed = text.trim();
+              console.info("[lab-upload][client] file:extract-done", {
+                sessionId,
+                name: file.name,
+                documentId,
+                extractedChars: trimmed.length,
+              });
               if (!trimmed) {
                 toast.warning(`${file.name}: לא חולץ טקסט (ייתכן PDF סרוק/מוגן)`);
                 return;
@@ -194,6 +252,12 @@ function LabPage() {
                 text: trimmed.slice(0, 400_000),
               });
               if (!res.ok) throw new Error(await res.text());
+              console.info("[lab-upload][client] file:text-uploaded", {
+                sessionId,
+                name: file.name,
+                documentId,
+                uploadedChars: Math.min(trimmed.length, 400_000),
+              });
               toast.success(`${file.name}: חולץ טקסט (${trimmed.length.toLocaleString()} תווים)`);
             } catch (e) {
               console.error("[lab-extract]", file.name, e);
@@ -203,6 +267,10 @@ function LabPage() {
         }
       }
       await qc.invalidateQueries({ queryKey: ["lab-docs", sessionId] });
+      console.info("[lab-upload][client] handleFiles:done", {
+        sessionId,
+        okCount,
+      });
       if (okCount > 0) toast.success(`הועלו ${okCount} מסמכים`);
     } finally {
       setUploading(false);
@@ -489,8 +557,16 @@ function LabPage() {
         multiple
         accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
         className="hidden"
+        onClick={() => {
+          console.info("[lab-upload][client] input:click", { sessionId });
+        }}
         onChange={(e) => {
           const files = e.target.files;
+          console.info("[lab-upload][client] input:change", {
+            sessionId,
+            count: files?.length ?? 0,
+            names: files ? Array.from(files).map((file) => file.name) : [],
+          });
           if (files && files.length > 0) void handleFiles(files);
           e.target.value = "";
         }}
