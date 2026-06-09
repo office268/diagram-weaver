@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,13 +17,13 @@ import {
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { extractTextFromFile, describeMime } from "@/lib/rag/text-extractor.client";
-import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/lab/$sessionId")({
   component: LabPage,
@@ -111,25 +111,22 @@ function LabPage() {
   const [uploading, setUploading] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const session = sessionQ.data;
   const docs = docsQ.data ?? [];
   const questions = questionsQ.data ?? [];
   const unanswered = useMemo(() => questions.filter((q) => !q.answer), [questions]);
   const answered = useMemo(() => questions.filter((q) => q.answer), [questions]);
 
-  const fileInputProps = {
-    type: "file" as const,
-    multiple: true,
-    accept:
-      ".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv",
-    disabled: uploading,
-    onClick: (e: React.MouseEvent<HTMLInputElement>) => {
-      e.currentTarget.value = "";
-    },
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      void handleFiles(e.target.files);
-      e.currentTarget.value = "";
-    },
+  const openFilePicker = () => {
+    if (uploading) return;
+    const el = fileInputRef.current;
+    if (!el) {
+      toast.error("שדה ההעלאה לא נטען. נסה לרענן את הדף.");
+      return;
+    }
+    el.value = "";
+    el.click();
   };
 
   const refreshAll = () =>
