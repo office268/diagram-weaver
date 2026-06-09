@@ -141,12 +141,19 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
   const { data: job, error: loadErr } = await supabaseAdmin
     .from("diagram_jobs")
     .select(
-      "id,user_id,thread_id,kind,prompt,model_override,stage,process_map_json,current_svg,current_violations,iteration,current_message_id,diagram_id",
+      "id,user_id,thread_id,kind,prompt,model_override,stage,process_map_json,current_svg,current_violations,iteration,current_message_id,diagram_id,cancel_requested",
     )
     .eq("id", jobId)
     .single();
   if (loadErr || !job) {
     console.error("[diagram-job] failed to load job:", loadErr);
+    return;
+  }
+
+  // Honor cancel requests from the UI before doing any model work.
+  if ((job as JobRow).cancel_requested) {
+    console.info("[diagram-job] cancel requested, finalizing", { jobId });
+    await finalizeFailure(params, job as JobRow, CANCELED_MESSAGE);
     return;
   }
 
@@ -161,7 +168,10 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
   } catch (err) {
     const msg = getErrorMessage(err);
     console.error("[diagram-job] step failed:", err);
-    await finalizeFailure(params, job as JobRow, msg);
+    // If the user requested cancellation while the step was running, prefer
+    // the friendly cancel message over the underlying timeout/abort error.
+    const finalMsg = (await isJobCanceled(jobId)) ? CANCELED_MESSAGE : msg;
+    await finalizeFailure(params, job as JobRow, finalMsg);
   }
 }
 
