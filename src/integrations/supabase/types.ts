@@ -470,15 +470,22 @@ export type Database = {
           attempts: number
           completed_at: string | null
           created_at: string
+          current_message_id: string | null
+          current_svg: string | null
+          current_violations: Json | null
           diagram_id: string | null
           error_message: string | null
           id: string
+          iteration: number
           iterations: number | null
           kind: string
           locked_at: string | null
           max_attempts: number
           model_override: string | null
+          next_run_at: string | null
+          process_map_json: Json | null
           prompt: string
+          stage: string | null
           started_at: string | null
           status: string
           thread_id: string
@@ -489,15 +496,22 @@ export type Database = {
           attempts?: number
           completed_at?: string | null
           created_at?: string
+          current_message_id?: string | null
+          current_svg?: string | null
+          current_violations?: Json | null
           diagram_id?: string | null
           error_message?: string | null
           id?: string
+          iteration?: number
           iterations?: number | null
           kind: string
           locked_at?: string | null
           max_attempts?: number
           model_override?: string | null
+          next_run_at?: string | null
+          process_map_json?: Json | null
           prompt: string
+          stage?: string | null
           started_at?: string | null
           status?: string
           thread_id: string
@@ -508,15 +522,22 @@ export type Database = {
           attempts?: number
           completed_at?: string | null
           created_at?: string
+          current_message_id?: string | null
+          current_svg?: string | null
+          current_violations?: Json | null
           diagram_id?: string | null
           error_message?: string | null
           id?: string
+          iteration?: number
           iterations?: number | null
           kind?: string
           locked_at?: string | null
           max_attempts?: number
           model_override?: string | null
+          next_run_at?: string | null
+          process_map_json?: Json | null
           prompt?: string
+          stage?: string | null
           started_at?: string | null
           status?: string
           thread_id?: string
@@ -1163,15 +1184,22 @@ export type Database = {
           attempts: number
           completed_at: string | null
           created_at: string
+          current_message_id: string | null
+          current_svg: string | null
+          current_violations: Json | null
           diagram_id: string | null
           error_message: string | null
           id: string
+          iteration: number
           iterations: number | null
           kind: string
           locked_at: string | null
           max_attempts: number
           model_override: string | null
+          next_run_at: string | null
+          process_map_json: Json | null
           prompt: string
+          stage: string | null
           started_at: string | null
           status: string
           thread_id: string
