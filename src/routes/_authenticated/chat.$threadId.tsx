@@ -1041,7 +1041,7 @@ function GenerationProgress({
     <div className="flex items-center justify-center gap-2 text-base">
       <Loader2 className="h-4 w-4 animate-spin text-primary" />
       <span className="font-medium text-foreground">
-        המשימה בעבודה — התוצר יוצג כאן ברגע שיסתיים
+        המשימה בטיפול, בסיום תישלח התראה
       </span>
     </div>
   );
