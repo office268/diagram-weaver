@@ -84,6 +84,18 @@ interface JobRow {
   iteration: number;
   current_message_id: string | null;
   diagram_id: string | null;
+  cancel_requested?: boolean | null;
+}
+
+const CANCELED_MESSAGE = "התהליך בוטל על ידי המשתמש";
+
+async function isJobCanceled(jobId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from("diagram_jobs")
+    .select("cancel_requested")
+    .eq("id", jobId)
+    .maybeSingle();
+  return Boolean((data as { cancel_requested?: boolean } | null)?.cancel_requested);
 }
 
 function footer(stage: string, iteration: number): string {
