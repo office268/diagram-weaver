@@ -126,17 +126,22 @@ function UserMenuWithOrgLogo() {
   if (!user) return null;
   const avatarUrl = data?.logo_url ?? null;
   return (
-    <Link
-      to="/organization"
-      className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label="דף הארגון"
-    >
-      {avatarUrl ? (
-        <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
-      ) : (
-        <Workflow className="h-6 w-6 text-muted-foreground" />
-      )}
-    </Link>
+    <div className="flex flex-col items-center gap-0.5">
+      <Link
+        to="/organization"
+        className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label="דף הארגון"
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={data?.name ?? ""} className="h-full w-full object-cover" />
+        ) : (
+          <Workflow className="h-6 w-6 text-muted-foreground" />
+        )}
+      </Link>
+      <span className="text-[10px] text-muted-foreground leading-none max-w-[4.5rem] truncate">
+        {user.email}
+      </span>
+    </div>
   );
 }
 
