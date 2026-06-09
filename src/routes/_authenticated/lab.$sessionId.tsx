@@ -464,16 +464,13 @@ function LabPage() {
   const PromptBar = (
     <Card className="p-3">
       <div className="flex items-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
+        <label
+          htmlFor="lab-file-input"
           aria-label="צרף קבצים"
-          disabled={uploading}
-          onClick={openFilePicker}
+          className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </Button>
+        </label>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
