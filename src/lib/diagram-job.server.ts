@@ -158,7 +158,7 @@ async function runActivityStep(job: JobRow, params: RunDiagramJobParams): Promis
       .update({
         status: "processing",
         stage: "building",
-        process_map_json: processMap as unknown as Record<string, unknown>,
+        process_map_json: processMap as never,
         next_run_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
