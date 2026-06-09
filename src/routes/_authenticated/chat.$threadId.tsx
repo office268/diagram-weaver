@@ -66,7 +66,11 @@ import {
   getChatThread,
   listChatThreads,
   deleteChatThread,
+  getChatThreadAssignment,
+  assignChatThreadProductProject,
 } from "@/lib/chat.functions";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
+
 import { cancelDiagramJob } from "@/lib/diagrams.functions";
 import { ThreadModelSelector } from "@/components/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
