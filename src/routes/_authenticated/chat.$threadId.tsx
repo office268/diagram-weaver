@@ -67,6 +67,7 @@ import {
   listChatThreads,
   deleteChatThread,
 } from "@/lib/chat.functions";
+import { cancelDiagramJob } from "@/lib/diagrams.functions";
 import { ThreadModelSelector } from "@/components/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
