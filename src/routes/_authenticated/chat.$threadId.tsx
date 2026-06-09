@@ -659,7 +659,7 @@ function ChatPage() {
       </div>
 
       {/* Chat column */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-start-1 md:row-span-3">
 
         <div className="flex shrink-0 items-center justify-center border-b border-border px-3 py-2">
           <ThreadModelSelector
