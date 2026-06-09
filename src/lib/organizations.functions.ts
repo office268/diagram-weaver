@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type OrgKind = "public" | "nonprofit" | "government" | "private";
 
@@ -72,6 +71,7 @@ export const updateOrganizationDetails = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => UpdateDetailsSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member } = await supabaseAdmin
       .from("organization_members")
       .select("role")
@@ -109,6 +109,7 @@ export const uploadOrganizationLogo = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => UploadSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Verify the user is owner/admin of the org
     const { data: member, error: memErr } = await supabaseAdmin
@@ -149,6 +150,7 @@ export const removeOrganizationLogo = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => RemoveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: member } = await supabaseAdmin
       .from("organization_members")
       .select("role")
