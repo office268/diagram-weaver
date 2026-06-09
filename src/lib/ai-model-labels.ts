@@ -11,9 +11,7 @@ export const MODEL_SHORT_LABELS: Record<string, string> = {
   "google/gemini-2.5-pro": "Gemini 2.5 Pro",
   "google/gemini-3.1-pro-preview": "Gemini 3.1 Pro",
   "openai/gpt-5.4": "GPT-5.4",
-  "openai/gpt-5.4-pro": "GPT-5.4 Pro",
   "openai/gpt-5.5": "GPT-5.5",
-  "openai/gpt-5.5-pro": "GPT-5.5 Pro",
   "anthropic/claude-opus-4-5": "Claude Opus 4.5",
   "anthropic/claude-sonnet-4-5": "Claude Sonnet 4.5",
 };
