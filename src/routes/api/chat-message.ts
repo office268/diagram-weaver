@@ -169,6 +169,26 @@ export const Route = createFileRoute("/api/chat-message")({
             .single();
           if (jobErr) return new Response(jobErr.message, { status: 500 });
 
+          if (diagramKind !== "diagram_activity") {
+            const { data: pendingMsg, error: pendingErr } = await supabaseAdmin
+              .from("chat_messages")
+              .insert({
+                thread_id: body.threadId,
+                user_id: userId,
+                role: "assistant",
+                content: `מכין ${def.label}...\n\n_⏳ עדיין בעבודה..._`,
+              })
+              .select("id")
+              .single();
+
+            if (!pendingErr && pendingMsg?.id) {
+              await supabaseAdmin
+                .from("diagram_jobs")
+                .update({ current_message_id: pendingMsg.id })
+                .eq("id", jobRow.id);
+            }
+          }
+
           return Response.json({ ok: true, async: true, jobId: jobRow.id });
         }
 
