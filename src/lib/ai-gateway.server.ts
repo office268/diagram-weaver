@@ -18,20 +18,25 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
       "X-Lovable-AIG-SDK": "vercel-ai-sdk",
     },
     fetch: async (input, init) => {
-      // OpenAI GPT-5.x reasoning models reject `max_tokens` and require
-      // `max_completion_tokens` instead. The AI SDK's openai-compatible
-      // provider always sends `max_tokens`, so rewrite it on the wire.
+      // OpenAI GPT-5.x reasoning models have stricter request constraints:
+      // - require `max_completion_tokens` instead of `max_tokens`
+      // - only accept the default `temperature` (1)
+      // - reject `top_p`, `frequency_penalty`, `presence_penalty`
+      // Normalize the body on the wire since the AI SDK's openai-compatible
+      // provider doesn't know about these restrictions.
       try {
         if (init?.body && typeof init.body === "string") {
           const parsed = JSON.parse(init.body) as Record<string, unknown>;
           const model = typeof parsed.model === "string" ? parsed.model : "";
-          if (
-            model.startsWith("openai/gpt-5") &&
-            "max_tokens" in parsed &&
-            !("max_completion_tokens" in parsed)
-          ) {
-            parsed.max_completion_tokens = parsed.max_tokens;
+          if (model.startsWith("openai/gpt-5")) {
+            if ("max_tokens" in parsed && !("max_completion_tokens" in parsed)) {
+              parsed.max_completion_tokens = parsed.max_tokens;
+            }
             delete parsed.max_tokens;
+            delete parsed.temperature;
+            delete parsed.top_p;
+            delete parsed.frequency_penalty;
+            delete parsed.presence_penalty;
             init = { ...init, body: JSON.stringify(parsed) };
           }
         }
