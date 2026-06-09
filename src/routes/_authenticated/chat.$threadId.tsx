@@ -431,12 +431,18 @@ function ChatPage() {
             }
             const { data: job, error: jobErr } = await supabase
               .from("diagram_jobs")
-              .select("status,error_message,completed_at")
+              .select("status,error_message,completed_at,diagram_id,current_message_id")
               .eq("id", jobId)
               .maybeSingle();
             if (jobErr) throw new Error(jobErr.message);
             if (!job) continue;
-            if (job.status === "done") break;
+            if (job.status === "done") {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+              if (!job.diagram_id) {
+                throw new Error("התרשים סומן כהושלם אבל לא נשמר תוצר. אפשר לנסות שוב.");
+              }
+              break;
+            }
             if (job.status === "failed") {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error(job.error_message || "יצירת התרשים נכשלה");
