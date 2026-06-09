@@ -362,13 +362,9 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1 text-xs"
-          disabled={uploading}
-          onClick={openFilePicker}
+        <label
+          htmlFor="lab-file-input"
+          className={`inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -376,7 +372,7 @@ function LabPage() {
             <Paperclip className="h-3.5 w-3.5" />
           )}
           העלה
-        </Button>
+        </label>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
@@ -468,16 +464,13 @@ function LabPage() {
   const PromptBar = (
     <Card className="p-3">
       <div className="flex items-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
+        <label
+          htmlFor="lab-file-input"
           aria-label="צרף קבצים"
-          disabled={uploading}
-          onClick={openFilePicker}
+          className={`inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </Button>
+        </label>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -553,10 +546,11 @@ function LabPage() {
       {/* Single shared hidden file input — triggered by openFilePicker() */}
       <input
         ref={fileInputRef}
+        id="lab-file-input"
         type="file"
         multiple
         accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
-        className="hidden"
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
         onClick={() => {
           console.info("[lab-upload][client] input:click", { sessionId });
         }}
