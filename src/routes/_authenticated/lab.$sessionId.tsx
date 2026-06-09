@@ -362,13 +362,9 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1 text-xs"
-          disabled={uploading}
-          onClick={openFilePicker}
+        <label
+          htmlFor="lab-file-input"
+          className={`inline-flex h-7 cursor-pointer items-center gap-1 rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-accent hover:text-accent-foreground ${uploading ? "pointer-events-none opacity-50" : ""}`}
         >
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -376,7 +372,7 @@ function LabPage() {
             <Paperclip className="h-3.5 w-3.5" />
           )}
           העלה
-        </Button>
+        </label>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
