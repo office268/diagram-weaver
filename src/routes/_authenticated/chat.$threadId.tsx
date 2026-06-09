@@ -132,6 +132,52 @@ function ChatPage() {
   const listThreadsFn = useServerFn(listChatThreads);
   const deleteThreadFn = useServerFn(deleteChatThread);
   const cancelDiagramJobFn = useServerFn(cancelDiagramJob);
+  const getAssignmentFn = useServerFn(getChatThreadAssignment);
+  const assignFn = useServerFn(assignChatThreadProductProject);
+  const { data: currentOrg } = useCurrentOrganization();
+
+  const assignmentQuery = useQuery({
+    queryKey: ["chat-thread-assignment", threadId],
+    queryFn: () => getAssignmentFn({ data: { threadId } }),
+  });
+  const [productName, setProductName] = useState("Product-00001");
+  const [projectName, setProjectName] = useState("Project-00001");
+  const [productDirty, setProductDirty] = useState(false);
+  const [projectDirty, setProjectDirty] = useState(false);
+  useEffect(() => {
+    if (assignmentQuery.data) {
+      if (!productDirty) setProductName(assignmentQuery.data.productName);
+      if (!projectDirty) setProjectName(assignmentQuery.data.projectName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentQuery.data]);
+  const assignMutation = useMutation({
+    mutationFn: (vars: { productName: string; projectName: string }) => {
+      if (!currentOrg?.id) throw new Error("אין ארגון משויך");
+      return assignFn({
+        data: {
+          threadId,
+          orgId: currentOrg.id,
+          productName: vars.productName.trim() || "Product-00001",
+          projectName: vars.projectName.trim() || "Project-00001",
+        },
+      });
+    },
+    onSuccess: () => {
+      setProductDirty(false);
+      setProjectDirty(false);
+      qc.invalidateQueries({ queryKey: ["chat-thread-assignment", threadId] });
+    },
+    onError: (e: unknown) => {
+      toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
+    },
+  });
+  const commitAssignment = () => {
+    if (!productDirty && !projectDirty) return;
+    if (!currentOrg?.id) return;
+    assignMutation.mutate({ productName, projectName });
+  };
+
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
