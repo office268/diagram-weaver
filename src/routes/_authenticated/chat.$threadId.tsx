@@ -88,6 +88,16 @@ interface Attachment {
   truncated?: boolean;
 }
 
+interface ActiveDiagramJob {
+  id: string;
+  status: string;
+  stage: string | null;
+  current_message_id: string | null;
+  diagram_id: string | null;
+  error_message: string | null;
+  updated_at: string;
+}
+
 
 
 const MODE_META = {
@@ -245,6 +255,8 @@ function ChatPage() {
     queryFn: () => listThreadsFn(),
   });
 
+  const [activeDiagramJob, setActiveDiagramJob] = useState<ActiveDiagramJob | null>(null);
+
   const deleteMut = useMutation({
     mutationFn: () => deleteThreadFn({ data: { threadId } }),
     onSuccess: () => {
@@ -262,17 +274,24 @@ function ChatPage() {
     const tick = async () => {
       const { data: jobs } = await supabase
         .from("diagram_jobs")
-        .select("id,status")
+        .select("id,status,stage,current_message_id,diagram_id,error_message,updated_at")
         .eq("thread_id", threadId)
         .in("status", ["pending", "processing"])
+        .order("updated_at", { ascending: false })
         .limit(1);
       if (cancelled) return;
-      if (jobs && jobs.length > 0) {
+      const nextJob = jobs?.[0] ?? null;
+      setActiveDiagramJob(nextJob as ActiveDiagramJob | null);
+      if (nextJob) {
         qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       }
     };
+    void tick();
     const id = setInterval(() => { void tick(); }, 3000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [threadId, qc]);
 
   // Auto-scroll on new messages
@@ -412,12 +431,18 @@ function ChatPage() {
             }
             const { data: job, error: jobErr } = await supabase
               .from("diagram_jobs")
-              .select("status,error_message,completed_at")
+              .select("status,error_message,completed_at,diagram_id,current_message_id")
               .eq("id", jobId)
               .maybeSingle();
             if (jobErr) throw new Error(jobErr.message);
             if (!job) continue;
-            if (job.status === "done") break;
+            if (job.status === "done") {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+              if (!job.diagram_id) {
+                throw new Error("התרשים סומן כהושלם אבל לא נשמר תוצר. אפשר לנסות שוב.");
+              }
+              break;
+            }
             if (job.status === "failed") {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error(job.error_message || "יצירת התרשים נכשלה");
@@ -578,6 +603,15 @@ function ChatPage() {
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}
+            {activeDiagramJob && !messages.some((m) => m.id === activeDiagramJob.current_message_id) && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <GenerationProgress
+                  phaseIdx={phaseIdx}
+                  phases={phases}
+                  job={activeDiagramJob}
+                />
+              </div>
+            )}
             {sending && messages.length > 0 && (
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
@@ -1053,16 +1087,27 @@ function DiagramBlock({ code }: { code: string }) {
 function GenerationProgress({
   phaseIdx: _phaseIdx,
   phases: _phases,
+  job,
 }: {
   phaseIdx: number;
   phases: readonly string[];
+  job?: ActiveDiagramJob | null;
 }) {
+  const statusLine = job?.error_message
+    ? job.error_message
+    : job?.stage === "generating"
+      ? "התרשים עדיין נבנה. אם התהליך ייעצר, תופיע כאן שגיאה במקום מצב תקוע."
+      : "המשימה עדיין בטיפול.";
+
   return (
-    <div className="flex items-center justify-center gap-2 text-base">
-      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-      <span className="font-medium text-foreground">
-        המשימה בטיפול, בסיום תישלח התראה
-      </span>
+    <div className="flex items-start justify-center gap-2 text-base">
+      <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-primary" />
+      <div className="space-y-1 text-center">
+        <div className="font-medium text-foreground">
+          {job?.stage === "generating" ? "מייצר תרשים" : "המשימה בטיפול"}
+        </div>
+        <div className="text-sm text-muted-foreground">{statusLine}</div>
+      </div>
     </div>
   );
 }
