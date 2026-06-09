@@ -50,6 +50,7 @@ import { getDocTypeVisual, getDocType } from "@/lib/doc-types";
 const DOC_TYPE_EN: Record<string, string> = {
   business_requirements: "Business Requirements Document (BRD)",
   technical_requirements: "Technical Requirements Document (TRD)",
+  requirements_combined: "Business + Technical Requirements Document",
   initiation: "Project Initiation Document",
   spec_overview: "High-Level Design (HLD)",
   spec_detailed: "Low-Level Design (LLD)",

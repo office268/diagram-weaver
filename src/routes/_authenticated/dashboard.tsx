@@ -166,30 +166,9 @@ function HomePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
   });
 
-  const combinedMut = useMutation({
-    mutationFn: async () => {
-      const brd = await createFn({
-        data: { outputType: "business_requirements", title: OUTPUT_TYPES.business_requirements.label },
-      });
-      const trd = await createFn({
-        data: { outputType: "technical_requirements", title: OUTPUT_TYPES.technical_requirements.label },
-      });
-      return { brd, trd };
-    },
-    onSuccess: ({ brd }) => {
-      toast.success("נוצרו שני מסמכים: דרישות עסקי ודרישות טכני");
-      navigate({ to: "/chat/$threadId", params: { threadId: brd.thread.id } });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "יצירה נכשלה"),
-  });
-
   const activateTile = (key: OutputKey) => {
     if (key === "meeting_summary") {
       navigate({ to: "/meeting-transcribe" });
-      return;
-    }
-    if ((key as string) === "requirements_combined") {
-      combinedMut.mutate();
       return;
     }
     if (key === "user_story" || key === "dashboard") {
@@ -197,6 +176,7 @@ function HomePage() {
     }
     createMut.mutate(key);
   };
+
 
 
   const sensors = useSensors(
@@ -252,8 +232,8 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
-                      disabled={createMut.isPending || combinedMut.isPending}
+                      pending={(createMut.isPending && createMut.variables === key)}
+                      disabled={createMut.isPending}
                       draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                       onActivate={() => activateTile(key)}
                       onMoveToExtras={() => moveToExtras(key)}
@@ -261,7 +241,7 @@ function HomePage() {
                   ))}
                   <MoreTile
                     index={diagramTiles.length}
-                    disabled={createMut.isPending || combinedMut.isPending}
+                    disabled={createMut.isPending}
                     onActivate={() => setMoreGroup("diagram")}
                   />
                 </div>
@@ -278,8 +258,8 @@ function HomePage() {
                     key={key}
                     outputKey={key}
                     index={i}
-                    pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
-                    disabled={createMut.isPending || combinedMut.isPending}
+                    pending={(createMut.isPending && createMut.variables === key)}
+                    disabled={createMut.isPending}
                     draggable={isAdmin && (OUTPUT_TYPE_ORDER as readonly string[]).includes(key)}
                     onActivate={() => activateTile(key)}
                     onMoveToExtras={() => moveToExtras(key)}
@@ -287,7 +267,7 @@ function HomePage() {
                 ))}
                 <MoreTile
                   index={documentTiles.length}
-                  disabled={createMut.isPending || combinedMut.isPending}
+                  disabled={createMut.isPending}
                   onActivate={() => setMoreGroup("document")}
                 />
               </div>
@@ -304,8 +284,8 @@ function HomePage() {
                       key={key}
                       outputKey={key}
                       index={i}
-                      pending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
-                      disabled={createMut.isPending || combinedMut.isPending}
+                      pending={(createMut.isPending && createMut.variables === key)}
+                      disabled={createMut.isPending}
                       draggable={false}
                       onActivate={() => activateTile(key)}
                       onMoveToExtras={() => moveToExtras(key)}
@@ -340,8 +320,8 @@ function HomePage() {
               <ExtrasTile
                 key={key}
                 outputKey={key}
-                isPending={((createMut.isPending && createMut.variables === key) || (combinedMut.isPending && (key as string) === "requirements_combined"))}
-                disabled={createMut.isPending || combinedMut.isPending}
+                isPending={(createMut.isPending && createMut.variables === key)}
+                disabled={createMut.isPending}
                 onActivate={() => { setMoreGroup(null); activateTile(key); }}
                 onMoveToMain={() => { setMoreGroup(null); moveToMain(key); }}
               />
