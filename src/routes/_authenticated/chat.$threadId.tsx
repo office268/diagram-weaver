@@ -379,6 +379,8 @@ function ChatPage() {
       return;
     }
     if ((!msg && readyAtts.length === 0) || sending) return;
+    canceledRef.current = false;
+    setCanceling(false);
     setSending(true);
     setInput("");
     const sentAtts = readyAtts;
