@@ -40,6 +40,7 @@ export const DEFAULT_SECTION_TITLES: Record<string, string> = {
 export const DOC_TYPE_KEYS = [
   "business_requirements",
   "technical_requirements",
+  "requirements_combined",
   "initiation",
   "spec_overview",
   "spec_detailed",
