@@ -1,91 +1,30 @@
-# הבעיה המדויקת
-מצאתי את הבעיה.
+מצאתי את נקודת הכשל המדויקת.
 
-זו לא בעיית cron, וזו גם לא בעיית polling בצד הלקוח.
+**האבחון**
+- ה־job האחרון של התרשים נמצא ב־`status='processing'`, `stage='generating'`, עם `current_message_id` של הודעת "מכין useCase diagram... עדיין בעבודה...".
+- אין לו `diagram_id`, אין `artifact_id`, ואין `completed_at`.
+- בלוגים רואים שבדיוק כשה־worker לקח את ה־job, הקריאה ל־`/api/public/hooks/process-diagram-jobs` הסתיימה ב־`0` ולא ב־`200`.
+- כלומר: ה־worker נפל/נקטע באמצע `runSingleShotJob` אחרי שכבר סימן את ה־job כ־`processing`, אבל לפני ששמר את התרשים הסופי ועדכן את הודעת הצ׳אט.
+- בגלל שהמסלול הזה הוא עדיין **single-shot**, אין לו חידוש lease / `next_run_at` / שלב התאוששות, ולכן ה־cron הבא לא ממשיך אותו. התוצאה: המשתמש רואה רק placeholder של "עדיין בעבודה" ולא מקבל תוצר.
 
-הכשל האמיתי הוא זה:
+**מה איישם**
+1. **תיקון מסלול ה־RF-JSON כך שיהיה בר־התאוששות**
+   - כש־job נכנס ל־`generating`, יישמר גם `next_run_at`/lease ברור.
+   - jobs שנקטעו באמצע generation יוכלו להיתפס שוב ע"י ה־worker במקום להישאר orphan ב־`processing`.
 
-1. תרשימי `diagram_usecase` / `diagram_sequence` / `diagram_erd` / `diagram_flow` עדיין רצים במסלול `runSingleShotJob` כקריאה אחת ארוכה.
-2. במסלול הזה לא נוצרת שום הודעת ביניים בצ׳אט לפני שה־AI מסיים, כי ההודעה ל־`chat_messages` נכתבת רק אחרי שה־AI מחזיר JSON סופי.
-3. אם הקריאה הזאת נתקעת או נהרגת בזמן ריצה, ה־job נשאר ב־`processing`, בלי תוצר חלקי, בלי הודעת ביניים, ובסוף פונקציית `reset_stuck_diagram_jobs` מסמנת אותו כ־`failed` עם `stuck timeout`.
+2. **כלל הצלחה קשיח**
+   - job לא ייחשב "הסתיים" בלי `diagram_id` תקף ועדכון הודעת assistant עם `artifact_id`.
+   - אם generation נקטע לפני זה, ההודעה הזמנית תוחלף לשגיאה ברורה במקום להישאר "עדיין בעבודה".
 
-לכן המשתמש רואה בדיוק את מה שאתה מתאר:
-- הרבה זמן "בטיפול"
-- אין תשובת ביניים
-- ובסוף רק timeout / תקיעה
+3. **יישור ה־UI למצב האמיתי**
+   - הפולינג בצ׳אט יתבסס לא רק על `status`, אלא גם על קיום artifact בפועל.
+   - אם יש `processing` בלי התקדמות אמיתית, יוצג סטטוס מדויק או שגיאה, ולא תחושת "סיים אבל אין כלום".
 
-# ההוכחה מתוך המערכת
-בדקתי את ה־job של השיחה הבעייתית שלך:
-- `thread_id = f14653c3-d690-4c3f-a61a-bf5035657576`
-- `kind = diagram_usecase`
-- הוא הסתיים כ־`failed`
-- עם `error_message = stuck timeout`
+4. **ולידציה מקצה לקצה**
+   - אריץ שוב תרחיש של use case diagram.
+   - אאשר שרואים: placeholder מיידי → עדכון/סיום אמיתי עם artifact, או fallback לשגיאה ברורה.
 
-ובאותה שיחה יש רק:
-- הודעת משתמש
-- אחר כך הודעת כשל כללית
-- אין שום הודעת assistant ביניים עם תרשים או סטטוס מפורט
-
-# איפה בדיוק זה נשבר בקוד
-## 1. המסלול הבעייתי
-`src/lib/diagram-job.server.ts`
-
-בפונקציה:
-```ts
-runSingleShotJob(...)
-```
-הזרימה היא:
-```text
-קריאת AI ארוכה אחת
--> רק אם הצליחה: insert ל-diagrams
--> רק אז: insert ל-chat_messages
--> רק אז: status=done
-```
-
-כלומר, לפני שהקריאה מסתיימת אין בכלל מה להציג למשתמש.
-
-## 2. לכן אין תשובת ביניים
-באותו קובץ, במסלול של non-activity diagrams, אין:
-- יצירת הודעת "עדיין בעבודה..." בתחילת העיבוד
-- עדכון progress תוך כדי
-- שמירת תוצר חלקי
-- שלבים (`stage`) אמיתיים כמו שעשינו ל־`diagram_activity`
-
-## 3. למה זה נראה תקוע
-`src/routes/_authenticated/chat.$threadId.tsx`
-
-ה־UI רק עושה polling על `diagram_jobs.status`.
-אבל עבור `diagram_usecase` אין שום artifact חלקי ואין הודעת chat ביניים להציג, אז בפועל יש רק spinner.
-
-# המסקנה
-הבעיה היא לא "איפה הוא נתקע" ברמת שורה בודדת בתוך ה־AI call.
-
-הבעיה הארכיטקטונית המדויקת היא:
-
-```text
-כל תרשימי RF-JSON עדיין ממומשים כ-single shot job,
-ולכן אין יכולת אמיתית להציג intermediate result או progress,
-וכשהקריאה הארוכה נתקעת/נהרגת - נשאר רק stuck timeout.
-```
-
-# מה צריך לשנות כדי לפתור באמת
-לא עוד ניסוי קטן, אלא תיקון ממוקד אחד:
-
-1. לפרק גם את מסלול `runSingleShotJob` לשלבים קצרים, או לפחות
-2. לכתוב הודעת assistant ביניים מייד כש־job נלקח לעיבוד,
-3. ולעדכן אותה תוך כדי / או לסמן כשל ברור אם לא נוצר תוצר בזמן.
-
-בלי זה, ל־`diagram_usecase` לא תהיה אף פעם תשובת ביניים אמיתית.
-
-# קבצים המעורבים ישירות
-- `src/lib/diagram-job.server.ts`
-- `src/routes/_authenticated/chat.$threadId.tsx`
-- `src/routes/api/public/hooks/process-diagram-jobs.ts`
-
-# מה אני מציע לבצע עכשיו
-תיקון ממוקד למסלול RF-JSON בלבד:
-- הודעת ביניים מיידית בצ׳אט לכל job
-- fail-fast ברור אם job נשאר `processing` בלי artifact
-- ובמידת הצורך פיצול גם של RF-JSON לשלבי עבודה קצרים
-
-זה התיקון שיסגור את הבעיה האמיתית, לא עוד ניסיונות סביב timeout.
+**פרטים טכניים**
+- קבצים צפויים: `src/lib/diagram-job.server.ts`, `src/routes/api/public/hooks/process-diagram-jobs.ts`, `src/routes/_authenticated/chat.$threadId.tsx`
+- ייתכן גם תיקון migration / פונקציית SQL של claim/reset jobs כדי לאסוף jobs תקועים ב־`processing` ולא רק `pending`.
+- לא אשנה שום דבר שמוריד מאיכות התוצרים האפיוניים; התיקון יהיה רק בזרימת הריצה, ההתאוששות, וההצגה למשתמש.
