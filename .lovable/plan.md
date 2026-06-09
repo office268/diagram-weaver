@@ -1,93 +1,62 @@
-# דף ניסיוני חדש — אפיון מול Gemini 2.5 Pro
+# מה מצאתי
 
-## מטרה
-דף עצמאי באפליקציה, מנותק מהזרימה הקיימת (אין orchestrator, אין סוכנים מרובים, אין JSON forced, אין self-critique loop). כל פעולה = קריאה בודדת ל-`google/gemini-2.5-pro` בפורמט ברירת המחדל של המודל (טקסט/Markdown חופשי).
+יש כרגע ממצא חזק מאוד שמסביר למה ההעלאה לא מתחילה בכלל במובייל:
 
-לא נוגעים בקוד קיים — הכל חדש לחלוטין במקביל לזרימה הראשית.
+1. **מסך ה‑onboarding חוסם אינטראקציות במסך המעבדה**  
+   - `src/components/onboarding/onboarding-provider.tsx` מפעיל את הסיור אוטומטית בכל ביקור ראשון באזור המאומת.
+   - `src/components/onboarding/onboarding-overlay.tsx` מציג שכבת `fixed inset-0 z-[100]` על כל המסך.
+   - בצילום ובבדיקת ה‑preview רואים בפועל את ה‑modal של הסיור מעל `/lab/...`.
+   - זה תואם גם לממצא הקודם ש**אין בכלל POST ל־`/api/lab-upload`** — כלומר הלחיצה לא מגיעה לזרימת ההעלאה.
 
-## מסלול
-- ראוט חדש: `src/routes/_authenticated/lab.$sessionId.tsx` (`/lab/:sessionId`)
-- ראוט אינדקס: `src/routes/_authenticated/lab.index.tsx` (`/lab`) — יוצר session חדש ומפנה אליו.
+2. **הסיור עצמו לא מותאם למסך המעבדה ולכמה מהצעדים שלו אין יעד קיים**  
+   - ב־`src/components/onboarding/tour-steps.ts` יש צעדים כמו `mobile-nav`, `header-search`, `new-project` שמסתמכים על `data-tour` מסוימים.
+   - לפחות חלק מהיעדים האלה לא קיימים במסך המעבדה, וחלקם כנראה לא קיימים בכלל במבנה הנוכחי.
+   - כשהיעד לא נמצא, ה‑overlay נופל למצב מרכזי וחוסם את המסך במקום רק להדריך.
 
-## פריסה (UI/UX)
+3. **מימוש ה‑upload ב‑lab כבר שונה כמה פעמים ועדיין נשען על טריגר מותאם אישית**  
+   - ב־`src/routes/_authenticated/lab.$sessionId.tsx` יש כרגע input שקוף מעל כפתור/אייקון.
+   - גם אם הוא תקין, כל עוד ה‑onboarding חוסם את המסך לא נראה שום toast ולא תישלח שום בקשה.
 
-### Desktop (≥ lg) — 12 עמודות
-```text
-┌──────────────────────────────────┬─────────────────────────┐
-│ אזור 4 — תוצרי אפיון (Markdown)  │ אזור 2 — מסמכים שעלו   │
-│   col-span-8, גובה מלא           │   col-span-4            │
-│                                  ├─────────────────────────┤
-│                                  │ אזור 3 — שאלות לבירור  │
-│                                  │   col-span-4            │
-├──────────────────────────────────┴─────────────────────────┤
-│ אזור 1 — פרומפט חופשי + העלאת קבצים (sticky bottom)       │
-└────────────────────────────────────────────────────────────┘
-```
+4. **צד השרת כנראה לא הבעיה הראשית כרגע**  
+   - `src/routes/api/lab-upload.ts` כן יודע להכניס רשומה ל־`lab_documents` אם הבקשה מגיעה.
+   - מאחר שלא נראית בקשת POST בכלל, צריך קודם לפתור את שכבת החסימה ואת טריגר ה‑client.
 
-### Mobile (< lg) — טאבים
-טאבים עליונים: **תוצרים | מסמכים | שאלות**. אזור 1 (פרומפט) sticky בתחתית מעל ה-mobile bottom nav הקיים, נגיש תמיד מכל טאב.
+# תוכנית התיקון
 
-## פונקציונליות לפי אזור
+## 1) להסיר את החסימה של ה‑onboarding ממסך המעבדה
+- למנוע auto-start של הסיור במסלול `/lab`.
+- בנוסף, להקשיח את מנגנון הסיור כך שלא יופעל אם הצעד הבא מצביע על אלמנט שלא קיים במסך הנוכחי.
+- אם צריך, אסנן צעדים לפי route נוכחי/אלמנטים זמינים במקום להציג modal מרכזי שחוסם את כל המסך.
 
-**אזור 1 — פרומפט חופשי**
-- `Textarea` + כפתור שליחה + כפתור צירוף קבצים (multi).
-- בשליחה: שולח לשרת את הפרומפט + ה-session id. השרת בונה את הקונטקסט מה-DB (מסמכים + שאלות-תשובות + תוצר אחרון) ומבצע קריאה בודדת ל-Gemini 2.5 Pro.
+## 2) לייצב את טריגר העלאת הקבצים במעבדה
+- להחליף את טריגר ה‑upload ב־lab למימוש פשוט ומוכח, בדומה לדפוס שעובד ב־`src/components/document-uploader.tsx`.
+- להשתמש ב־`inputRef` יחיד וזרימת `onChange` אחת ברורה, בלי שכבות שקופות כפולות.
+- להשאיר את ההעלאה זמינה גם מה‑Documents tab וגם מה‑prompt bar, אבל דרך אותו handler ואותו input pattern.
 
-**אזור 2 — מסמכים**
-- כרטיסים: שם קובץ, גודל, סטטוס, כפתור מחיקה.
-- העלאה דרך `/api/lab-upload` (חדש). הקובץ נשמר ב-bucket `chat-attachments` תחת `lab/<userId>/<sessionId>/`.
-- חילוץ טקסט בצד הלקוח (`text-extractor.client.ts` הקיים תומך ב-PDF/DOCX/TXT) — נשלח לשרת כטקסט גולמי ונשמר ב-DB יחד עם metadata של הקובץ.
+## 3) להוסיף חיווי ודיאגנוסטיקה ברורה בלקוח
+- אם אין session/token — להציג הודעת שגיאה מיידית.
+- אם `fetch` נכשל — להציג toast עם סטטוס/טקסט תשובה ברור.
+- אם insert הצליח — לעדכן מיד את רשימת המסמכים ולתת feedback חד-משמעי.
+- אם חילוץ הטקסט נכשל — לא להפיל את עצם ההעלאה, רק להציג אזהרה נפרדת.
 
-**אזור 3 — שאלות פתוחות**
-- אם המודל מסיים תשובה ברשימת שאלות בפורמט `?? <שאלה>` בשורות נפרדות, הלקוח יפרסר אותן ויציג כשדות תשובה inline.
-- בלחיצה על "שלח תשובות" — התשובות נשמרות ב-DB, וקריאה הבאה למודל מצרפת אותן לקונטקסט.
+## 4) לאמת את כל השרשרת מקצה לקצה במובייל
+אחרי התיקון אבדוק בפועל ב‑preview מובייל:
+- שה‑onboarding לא חוסם את המסך ב‑`/lab`
+- שלחיצה על העלאה פותחת בורר קבצים
+- שנשלחת בקשת `POST /api/lab-upload`
+- שהמסמך מופיע מיידית ברשימת המסמכים
+- ושיש toast ברור על הצלחה/כשל
 
-**אזור 4 — תוצרים**
-- חלון Markdown גדול (`react-markdown` + plugins הקיימים). מציג את הפלט האחרון של המודל.
-- כפתורים: "נקה תוצר", "העתק", "פתח session חדש".
+## 5) בדיקת יציבות משלימה
+- אם שגיאת ה‑runtime של טעינת המודול (`tanstack-start-client-entry`) תחזור, אבדוק שהיא לא שוברת את ה‑client באותו מסך ואטפל גם בזה, אבל רק כבדיקה משלימה ולא במקום תיקון ההעלאה.
 
-## קריאת ה-LLM — סטנדרטית לחלוטין
-- Server route: `POST /api/lab-chat`.
-- מודל: `google/gemini-2.5-pro` קבוע.
-- `generateText` בלבד — בלי `Output.object`, בלי schema, בלי tools, בלי `JSON_ONLY_INSTRUCTION`, בלי thinking budget, בלי בקרות מותאמות.
-- System prompt מינימלי בעברית: "אתה אנליסט מערכות. כתוב בעברית, ב-Markdown טבעי. אם חסר לך מידע, סיים את התשובה ברשימת שאלות שכל שורה מתחילה ב-`?? `."
-- הקונטקסט שנשלח: תוכן כל המסמכים שעלו (concatenated, עם הפרדה ברורה) + רשימת שאלות-תשובות קודמות + הפרומפט הנוכחי. בלי ניקיון/דחיסה נוסף.
-- חיוב קרדיטים: 1 קרדיט לקריאה (להתאמה עם המנגנון הקיים).
+# פרטים טכניים
+- קבצים עיקריים לטיפול:
+  - `src/components/onboarding/onboarding-provider.tsx`
+  - `src/components/onboarding/onboarding-overlay.tsx`
+  - `src/components/onboarding/tour-steps.ts`
+  - `src/routes/_authenticated/lab.$sessionId.tsx`
+- לא אגע כרגע באיכות הזרימה האפיונית/מודל/פרומפטים — רק בנתיב ההעלאה ובחסימת ה‑UI.
 
-## אחסון ב-DB (חדש, מבודד)
-
-מיגרציה אחת יוצרת 4 טבלאות חדשות (אין שינוי בטבלאות קיימות):
-
-| טבלה | מטרה | שדות עיקריים |
-|------|------|-------------|
-| `lab_sessions` | סשן עבודה של משתמש | `id`, `user_id`, `title`, `latest_output_md`, `created_at`, `updated_at` |
-| `lab_documents` | מסמכים שעלו לסשן | `id`, `session_id`, `user_id`, `file_name`, `mime_type`, `file_size`, `storage_path`, `extracted_text`, `created_at` |
-| `lab_messages` | היסטוריית פרומפטים ותגובות מהמודל | `id`, `session_id`, `user_id`, `role` (`user`/`assistant`), `content`, `created_at` |
-| `lab_questions` | שאלות שהמודל ביקש + תשובות המשתמש | `id`, `session_id`, `user_id`, `question`, `answer`, `answered_at`, `created_at` |
-
-כל הטבלאות:
-- RLS פעיל, מדיניות `auth.uid() = user_id` ל-SELECT/INSERT/UPDATE/DELETE.
-- GRANTs ל-`authenticated` ו-`service_role`.
-- `service_role` בלבד דרך `supabaseAdmin` ב-server routes.
-
-## ניווט
-- פריט תפריט חדש "מעבדה" (Lab) ב-sidebar הקיים, גלוי רק למשתמשים מאומתים.
-
-## מה לא משתנה
-שום קובץ קיים תחת `src/agents/`, `src/lib/spec-*`, `src/routes/_authenticated/editor.*`, `src/routes/api/chat-message.ts`, `src/routes/api/generate-spec*.ts` — אפס שינוי. הדף הזה חי במקביל.
-
-## פרטים טכניים (קבצים חדשים)
-- `supabase/migrations/<timestamp>_lab_tables.sql` — 4 הטבלאות + RLS + GRANTs.
-- `src/routes/_authenticated/lab.index.tsx` — יצירת session + redirect.
-- `src/routes/_authenticated/lab.$sessionId.tsx` — הדף עצמו (UI מלא, desktop + mobile).
-- `src/routes/api/lab-chat.ts` — POST: בונה קונטקסט מה-DB, קריאה ל-Gemini 2.5 Pro, שומר message, מעדכן `latest_output_md`, מפרסר ושומר שאלות חדשות.
-- `src/routes/api/lab-upload.ts` — POST: שומר ב-Storage + insert ל-`lab_documents` עם הטקסט המחולץ.
-- `src/routes/api/lab-answer.ts` — POST: עדכון תשובה לשאלה.
-- `src/routes/api/lab-delete.ts` — POST: מחיקת מסמך / סשן / שאלה.
-- עדכון קל ל-sidebar להוסיף פריט "מעבדה".
-
-## מה לא בתוכנית הזו (לעתיד אם תרצה)
-- ייצוא ל-PDF/Word
-- שיתוף סשן עם משתמש אחר
-- לולאות סוכנים / ביקורת / שיפור אוטומטי
-- בחירת מודל (קבוע על Gemini 2.5 Pro)
+# תוצאה צפויה
+בסיום, המשתמש יוכל **לפחות להעלות ולראות מסמך במסך המעבדה באופן אמין**, ורק אחר כך נמשיך לשלב חילוץ הטקסט.

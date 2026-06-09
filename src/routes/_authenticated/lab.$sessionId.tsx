@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,13 +17,13 @@ import {
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { extractTextFromFile, describeMime } from "@/lib/rag/text-extractor.client";
-import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/_authenticated/lab/$sessionId")({
   component: LabPage,
@@ -111,25 +111,22 @@ function LabPage() {
   const [uploading, setUploading] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submittingAnswers, setSubmittingAnswers] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const session = sessionQ.data;
   const docs = docsQ.data ?? [];
   const questions = questionsQ.data ?? [];
   const unanswered = useMemo(() => questions.filter((q) => !q.answer), [questions]);
   const answered = useMemo(() => questions.filter((q) => q.answer), [questions]);
 
-  const fileInputProps = {
-    type: "file" as const,
-    multiple: true,
-    accept:
-      ".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv",
-    disabled: uploading,
-    onClick: (e: React.MouseEvent<HTMLInputElement>) => {
-      e.currentTarget.value = "";
-    },
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
-      void handleFiles(e.target.files);
-      e.currentTarget.value = "";
-    },
+  const openFilePicker = () => {
+    if (uploading) return;
+    const el = fileInputRef.current;
+    if (!el) {
+      toast.error("שדה ההעלאה לא נטען. נסה לרענן את הדף.");
+      return;
+    }
+    el.value = "";
+    el.click();
   };
 
   const refreshAll = () =>
@@ -297,25 +294,21 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
-        <div
-          className={cn(
-            buttonVariants({ variant: "outline", size: "sm" }),
-            "relative h-7 gap-1 overflow-hidden text-xs",
-            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
-          )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 gap-1 text-xs"
+          disabled={uploading}
+          onClick={openFilePicker}
         >
-          <input
-            aria-label="העלה מסמכים"
-            className="absolute inset-0 z-10 cursor-pointer opacity-0"
-            {...fileInputProps}
-          />
           {uploading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Paperclip className="h-3.5 w-3.5" />
           )}
           העלה
-        </div>
+        </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
@@ -407,21 +400,16 @@ function LabPage() {
   const PromptBar = (
     <Card className="p-3">
       <div className="flex items-end gap-2">
-        <div
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
           aria-label="צרף קבצים"
-          className={cn(
-            buttonVariants({ variant: "outline", size: "icon" }),
-            "relative overflow-hidden",
-            uploading ? "pointer-events-none opacity-50" : "cursor-pointer",
-          )}
+          disabled={uploading}
+          onClick={openFilePicker}
         >
-          <input
-            aria-label="צרף קבצים"
-            className="absolute inset-0 z-10 cursor-pointer opacity-0"
-            {...fileInputProps}
-          />
           {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-        </div>
+        </Button>
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -493,6 +481,20 @@ function LabPage() {
 
       {/* Prompt bar (sticky bottom) */}
       <div className="shrink-0">{PromptBar}</div>
+
+      {/* Single shared hidden file input — triggered by openFilePicker() */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
+        className="hidden"
+        onChange={(e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) void handleFiles(files);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
