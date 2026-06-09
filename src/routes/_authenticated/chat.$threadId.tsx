@@ -598,13 +598,21 @@ function ChatPage() {
         </div>
       </aside>
 
-      {/* Resize handle (desktop only) */}
+      {/* Resize handle (desktop only) — drag to resize threads list vs chat */}
       <div
         role="separator"
         aria-orientation="vertical"
+        aria-label="גרור כדי לשנות את רוחב רשימת השיחות"
         onMouseDown={startResize}
-        className="hidden md:col-start-2 md:row-span-2 md:block md:cursor-col-resize md:self-stretch md:w-1.5 md:rounded-full md:bg-muted-foreground/30 md:hover:bg-primary/60 md:transition-colors"
-      />
+        onDoubleClick={() => {
+          setSidebarWidth(256);
+          try { window.localStorage.setItem("chat-sidebar-width", "256"); } catch {}
+        }}
+        title="גרור כדי לשנות גודל. לחיצה כפולה לאיפוס."
+        className="group hidden md:col-start-2 md:row-span-2 md:flex md:cursor-col-resize md:items-center md:justify-center md:self-stretch md:px-1"
+      >
+        <div className="h-16 w-1 rounded-full bg-border transition-colors group-hover:bg-primary/70 group-active:bg-primary" />
+      </div>
 
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-span-2">
