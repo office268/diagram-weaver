@@ -1,50 +1,61 @@
-## מטרה
-באזור שמסומן בצילום (מעל הכרטיס "אני מסייע AI מומחה...") להציג את המודל ש-ייעשה בו שימוש לחילול התוצר, ולאפשר למשתמש להחליף ל-מודל reasoning אחר עבור השיחה הספציפית הזו.
 
-## אופן הפעולה
-- **ברירת המחדל** ממשיכה להישלט על ידי האדמין דרך `ai_model_setting` (singleton).
-- **לכל שיחה (thread)** ניתן להגדיר `model_override` שגובר על ברירת המחדל הגלובלית. אם השדה ריק — נופלים חזרה להגדרת האדמין.
-- ההגדרה רלוונטית הן לחילול דיאגרמות (דרך `diagram_jobs.model_override`) והן לחילול מסמכים (דרך הזרימה הקיימת).
-- כל מודל שניתן לבחור חייב להיות ברשימה הלבנה `ALLOWED_AGENT_MODELS` (אותה רשימה שבהגדרות האדמין), כדי לשמור על איכות התוצרים.
+## המטרה
+לפצל את הפייפליין של `activity_swimlane` על פני קריאות cron מרובות, כך שכל שלב רץ בקריאת cron נפרדת (תחת מגבלת ה-Worker), והמשתמש רואה את התוצר החלקי מיד כשהוא מוכן — עם הודעה "עדיין בעבודה, משפר תרשים..." עד שהפייפליין מסיים.
 
-## שינויים
+## חוויית המשתמש
+1. המשתמש שולח פרומפט → הודעת assistant נוצרת מיד עם סטטוס "בטיפול".
+2. תוך 30-90 שנ' (אחרי Builder) — ההודעה מתעדכנת עם **התרשים הראשוני (SVG)** + כיתוב "תרשים ראשוני מוכן, ממשיך לשפר..."
+3. כל איטרציית Validator+Fixer שמסתיימת מחליפה את ה-SVG בהודעה בגרסה משופרת + עדכון הכיתוב ("שיפור 1/2 הושלם...").
+4. בסיום — הכיתוב נעלם, הודעת toast/notification "התרשים מוכן".
+5. אם שלב נכשל — מוצג ה-SVG הטוב ביותר עד כה + הסבר.
 
-### 1. בסיס נתונים
-- מיגרציה: הוספת עמודה `model_override TEXT NULL` ל-`chat_threads`. ללא ברירת מחדל. ללא שינוי במדיניות RLS — בעלות על השיחה כבר חוסמת קריאה/כתיבה לזרים.
+## שלבים טכניים (תקציר)
 
-### 2. שרת
-- `src/lib/chat.functions.ts`: פונקציה חדשה `updateChatThreadModel({ threadId, model })` (server fn) שמוודאת בעלות, מאמתת ש-`model` שייך ל-`ALLOWED_AGENT_MODELS` או `null`, ומעדכנת את השיחה.
-- `src/lib/ai-model-setting.functions.ts`: פונקציה חדשה `listAvailableAgentModels()` שמחזירה את `ALLOWED_AGENT_MODELS`, ה-default של האדמין, ותוויות (אותה מפה שכבר קיימת בקומפוננטת ההגדרות — תועבר לקובץ משותף `src/lib/ai-model-labels.ts`).
-- `src/lib/ai-model-setting.server.ts`: חתימה חדשה `loadEffectiveModelForThread(threadId)` שמחזירה את `thread.model_override` אם תקין, אחרת `loadAgentModelOverride()`.
-- `src/routes/api/chat-message.ts`: במקום `loadAgentModelOverride()` להשתמש ב-`loadEffectiveModelForThread(threadId)` בשני המקומות (נתיב מסמך + נתיב דיאגרמה). שינוי לוגי בלבד, ללא פגיעה בפרומפטים, סכמות, ולידציה, מינימומים או self-critique של הסוכנים.
+### א. סכמת `diagram_jobs` — הוספת עמודות שלב
+- `stage` (`extracting`/`building`/`validating_1`/`fixing_1`/`validating_2`/`fixing_2`/`done`)
+- `process_map_json` — תוצר Extractor
+- `current_svg` — ה-SVG הטוב ביותר עד כה
+- `current_violations` — מערך הפרות מהוולידציה האחרונה
+- `iteration` (0..maxFixIterations)
+- `next_run_at` — מתי ה-cron יוכל לתפוס שוב
 
-### 3. UI
-- קומפוננטה חדשה: `src/components/thread-model-selector.tsx` — צ'יפ קטן עם אייקון Cpu/Sparkles + שם תצוגה קצר של המודל הנוכחי + חץ. בלחיצה נפתח Popover עם רשימת המודלים המותרים (אותן תוויות כמו במסך האדמין), מסומן הנבחר. אופציה ראשונה: "ברירת מחדל של המערכת (X)" — כותב `null` ל-DB.
-- `src/routes/_authenticated/chat.$threadId.tsx`:
-  - באזור ה-empty state (הכרטיס המרכזי עם האייקון והכיתוב "אני מסייע AI מומחה..."), מעל הכותרת, להוסיף את ה-`ThreadModelSelector` עם תווית קטנה "מודל:". זה המקום שסומן בצילום.
-  - גם בראש השיחה (אחרי שיש הודעות) להציג גרסה מינימליסטית של אותו צ'יפ כך שניתן יהיה להחליף מודל גם תוך כדי שיחה.
-  - אחרי שמירה — invalidation של ה-thread query כך שהמחולל הבא ישתמש במודל החדש.
+### ב. פיצול `runDiagramJob` ל-`runDiagramJobStep`
+כל קריאה מבצעת **שלב יחיד** (קריאת LLM אחת), מעדכנת את `diagram_jobs` עם התוצר החלקי, ומחזירה. אם נשארו שלבים — `status='processing'`, `next_run_at=now()`. cron הבא יתפוס אותה.
 
-### 4. תוויות מודלים
-- `src/lib/ai-model-labels.ts` (חדש): export של `MODEL_LABELS` שעבר מ-`ai-model-setting-card.tsx`. שתי הקומפוננטות (האדמין והשיחה) ישתמשו באותו מקור אמת.
-
-## הגנות איכות
-- אין כל שינוי בפרומפטים, system prompts, סכמות JSON, מינימומים, self-critique או thinking steps של הסוכנים — רק החלפת מחרוזת ה-model שמועברת ל-gateway.
-- ולידציית whitelist גם בצד שרת (zod enum) וגם בצד DB (לא נדרשת constraint נוספת כי השרת חוסם).
-- אם המודל השמור בשיחה הוסר אי-פעם מה-whitelist, ה-server יחזור אוטומטית לברירת המחדל של האדמין.
-
-## טכני
-```text
-DB:
-  ALTER TABLE chat_threads ADD COLUMN model_override TEXT NULL;
-
-Server fn flow:
-  chat-message POST
-    → loadEffectiveModelForThread(threadId)
-        → thread.model_override (if ALLOWED) || loadAgentModelOverride()
-    → orchestrator / diagram_jobs.insert(model_override = effective)
-
-UI flow:
-  empty-state → <ThreadModelSelector threadId currentOverride/>
-              → mutation updateChatThreadModel → invalidate ["chat-thread", id]
+טבלת מעברים:
 ```
+pending     → extracting   (Extractor)
+extracting  → building     (Builder) — כותב current_svg ראשון
+building    → validating_1 (Validator)
+validating_1→ done (אם 0 הפרות) או fixing_1 (Fixer) — מעדכן current_svg
+fixing_1    → validating_2
+validating_2→ done או fixing_2
+fixing_2    → done
+```
+
+### ג. עדכון `claim_diagram_job` במסד
+לתפוס גם jobs עם `status='processing'` ו-`next_run_at <= now()` (לא רק `pending`), כך שאיטרציות ממשיכות.
+
+### ד. תצוגה בצ׳אט
+- כשנוצר `current_svg` ראשון — להוסיף `chat_messages` עם `artifact_kind='diagram'` ו-`artifact_id` (או placeholder). השלבים הבאים **לא** מוסיפים הודעה חדשה — הם מעדכנים את ה-`diagrams` row באותו `id` (`mermaid_code = svg_חדש`).
+- ההודעה תקבל שדה חדש `pending_stage` (טקסט קצר) שיוצג מתחת לתרשים. כשהשלב האחרון מסתיים — מאופס ל-NULL.
+- ב-`chat.$threadId.tsx` הפולינג הקיים על `diagram_jobs` כבר ירענן את ה-diagram + הודעה, צריך רק להציג את הכיתוב.
+
+### ה. שלב Extractor + Builder
+אם Extractor או Builder נכשלים → אין מה להציג, הודעת שגיאה כרגיל.
+אחרי Builder יש תרשים — מכאן והלאה כשל ב-Validator/Fixer **לא** מוחק את התוצר; שומרים את הטוב ביותר.
+
+### ו. הגנות
+- timeout לכל שלב יחיד: 90 שנ' (נמוך מ-Worker limit).
+- `reset_stuck_diagram_jobs` ימשיך לזהות jobs שתקועים בשלב אחד יותר מ-3 דק'.
+- מגבלת איטרציות נשארת 2 (כמו היום).
+
+## קבצים שיושפעו
+- `supabase/migrations/...` — עמודות חדשות + עדכון `claim_diagram_job` + `reset_stuck_diagram_jobs`.
+- `src/lib/diagram-job.server.ts` — פיצול ל-`runDiagramJobStep` per-stage.
+- `src/routes/api/public/hooks/process-diagram-jobs.ts` — קריאה ל-step במקום לפייפליין שלם.
+- `src/agents/diagrams/activity-swimlane.server.ts` — לחשוף כל סוכן בנפרד (כבר מיוצא).
+- `src/routes/_authenticated/chat.$threadId.tsx` — תצוגת `pending_stage` מתחת לתרשים חי.
+
+## אישור
+נדרש אישורך לפני התחלת הביצוע, כי זה משנה את ה-job runner מהותית (לא מוריד איכות — אותן קריאות LLM, אותם פרומפטים, אותן 2 איטרציות validator/fixer).
