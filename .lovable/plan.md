@@ -1,30 +1,36 @@
-מצאתי את נקודת הכשל המדויקת.
+## הבעיה האמיתית
 
-**האבחון**
-- ה־job האחרון של התרשים נמצא ב־`status='processing'`, `stage='generating'`, עם `current_message_id` של הודעת "מכין useCase diagram... עדיין בעבודה...".
-- אין לו `diagram_id`, אין `artifact_id`, ואין `completed_at`.
-- בלוגים רואים שבדיוק כשה־worker לקח את ה־job, הקריאה ל־`/api/public/hooks/process-diagram-jobs` הסתיימה ב־`0` ולא ב־`200`.
-- כלומר: ה־worker נפל/נקטע באמצע `runSingleShotJob` אחרי שכבר סימן את ה־job כ־`processing`, אבל לפני ששמר את התרשים הסופי ועדכן את הודעת הצ׳אט.
-- בגלל שהמסלול הזה הוא עדיין **single-shot**, אין לו חידוש lease / `next_run_at` / שלב התאוששות, ולכן ה־cron הבא לא ממשיך אותו. התוצאה: המשתמש רואה רק placeholder של "עדיין בעבודה" ולא מקבל תוצר.
+האבחנה של קלוד שגויה — `LOVABLE_API_KEY` קיים בפרויקט וטעון בקוד. הבעיה במקום אחר לגמרי.
 
-**מה איישם**
-1. **תיקון מסלול ה־RF-JSON כך שיהיה בר־התאוששות**
-   - כש־job נכנס ל־`generating`, יישמר גם `next_run_at`/lease ברור.
-   - jobs שנקטעו באמצע generation יוכלו להיתפס שוב ע"י ה־worker במקום להישאר orphan ב־`processing`.
+תשובות ה־HTTP של pg_net מראות בדיוק מה קורה:
 
-2. **כלל הצלחה קשיח**
-   - job לא ייחשב "הסתיים" בלי `diagram_id` תקף ועדכון הודעת assistant עם `artifact_id`.
-   - אם generation נקטע לפני זה, ההודעה הזמנית תוחלף לשגיאה ברורה במקום להישאר "עדיין בעבודה".
+```
+06:33:31 → Timeout of 5000 ms reached (pg_net ניתק)
+06:34:01 → {"processed":false} (ג'וב נעול, claim לא תופס)
+06:34:31 → {"processed":false}
+... וכך עד ש־reset_stuck_diagram_jobs מסמן "stuck timeout" אחרי 5 דקות
+```
 
-3. **יישור ה־UI למצב האמיתי**
-   - הפולינג בצ׳אט יתבסס לא רק על `status`, אלא גם על קיום artifact בפועל.
-   - אם יש `processing` בלי התקדמות אמיתית, יוצג סטטוס מדויק או שגיאה, ולא תחושת "סיים אבל אין כלום".
+`pg_net.http_post` ברירת המחדל היא **timeout של 5 שניות**. ה־worker שלנו (`/api/public/hooks/process-diagram-jobs`) מבצע קריאה ל־Gemini 2.5 Pro עם פרומפט עברי ארוך — זה לוקח 30-90 שניות. ה־cron מתנתק אחרי 5 שניות, הג'וב נשאר תקוע ב־`status='processing'`, ולא יש שום worker שיגמור אותו עד שה־reset יזרוק אותו ל־failed.
 
-4. **ולידציה מקצה לקצה**
-   - אריץ שוב תרחיש של use case diagram.
-   - אאשר שרואים: placeholder מיידי → עדכון/סיום אמיתי עם artifact, או fallback לשגיאה ברורה.
+## התיקון
 
-**פרטים טכניים**
-- קבצים צפויים: `src/lib/diagram-job.server.ts`, `src/routes/api/public/hooks/process-diagram-jobs.ts`, `src/routes/_authenticated/chat.$threadId.tsx`
-- ייתכן גם תיקון migration / פונקציית SQL של claim/reset jobs כדי לאסוף jobs תקועים ב־`processing` ולא רק `pending`.
-- לא אשנה שום דבר שמוריד מאיכות התוצרים האפיוניים; התיקון יהיה רק בזרימת הריצה, ההתאוששות, וההצגה למשתמש.
+1. **לעדכן את ה־cron schedule** כך שיקרא ל־`net.http_post` עם `timeout_milliseconds := 120000` (2 דקות), במקום 5000 ברירת המחדל. זה הצעד היחיד שפותר את הבעיה לאמת.
+
+2. **לקצר את חלון ה־reset_stuck_diagram_jobs מ־5 דקות ל־2.5 דקות** — אחרי שה־timeout הוא 2 דקות, אין סיבה לחכות 5 דקות לאישור תקיעה. זה ייתן fail מהיר יותר במקרה אמת של תקיעה.
+
+3. **הוספת logging מינימלי** ב־`runSingleShotJob` בנקודות הקריטיות (לפני/אחרי קריאת ה־LLM, לפני/אחרי insert של diagram) כדי שאם זה ייתקע שוב נראה איפה בדיוק.
+
+## הבהרה חשובה
+
+**לא נוגעים בפרומפטים, ב־system prompts, ב־schema, בולידציה, ב־thinking steps או ב־self-critique** — זה בהתאם ל־memory של הפרויקט. כל השינוי הוא תשתיתי (cron + reset + log).
+
+## קבצים שצפויים להשתנות
+
+- migration חדשה: `unschedule` + `schedule` מחדש של ה־cron עם `timeout_milliseconds`.
+- migration חדשה (או באותה): עדכון פרמטר `_stale_minutes` בקריאה ל־`reset_stuck_diagram_jobs` (או הקריאה ב־`process-diagram-jobs.ts`).
+- `src/lib/diagram-job.server.ts` או `src/routes/api/public/hooks/process-diagram-jobs.ts`: 3–4 שורות `console.log`.
+
+## אימות
+
+לאחר הפריסה: שולחים פרומפט useCase קצר, מוודאים בלוגי `net._http_response` שאין `timed_out=t`, ובוחנים ב־`diagram_jobs` שהסטטוס הופך ל־`done` עם `diagram_id` ו־`completed_at` מלאים.
