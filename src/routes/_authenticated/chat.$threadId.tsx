@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Loader2,
   Send,
+  Square,
   FileText,
   GitBranch,
   Copy,
