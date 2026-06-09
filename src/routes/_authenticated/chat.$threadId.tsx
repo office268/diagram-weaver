@@ -62,6 +62,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { extractTextFromFile } from "@/lib/rag/text-extractor.client";
 import {
   getChatThread,
   listChatThreads,
@@ -417,12 +418,8 @@ function ChatPage() {
 
   async function uploadFiles(files: FileList | File[]) {
     const list = Array.from(files);
-    const { data: sess } = await supabase.auth.getSession();
-    const token = sess.session?.access_token;
-    if (!token) {
-      toast.error("נדרשת התחברות מחדש");
-      return;
-    }
+    const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+    const MAX_CHARS = 60_000;
     for (const file of list) {
       const id = crypto.randomUUID();
       setAttachments((prev) => [
@@ -430,33 +427,20 @@ function ChatPage() {
         { id, name: file.name, size: file.size, status: "uploading" },
       ]);
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/chat-attach", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (!res.ok) {
-          const t = await res.text().catch(() => "");
-          throw new Error(t || `שגיאה ${res.status}`);
+        if (file.size > MAX_BYTES) {
+          throw new Error("הקובץ גדול מדי (מקסימום 10MB)");
         }
-        const json = (await res.json()) as {
-          fileName: string;
-          size: number;
-          text: string;
-          truncated: boolean;
-        };
+        const { text: rawText } = await extractTextFromFile(file);
+        const truncated = rawText.length > MAX_CHARS;
+        const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
         setAttachments((prev) =>
           prev.map((a) =>
-            a.id === id
-              ? { ...a, status: "ready", text: json.text, truncated: json.truncated }
-              : a,
+            a.id === id ? { ...a, status: "ready", text, truncated } : a,
           ),
         );
       } catch (e) {
         toast.error(
-          `${file.name}: ${e instanceof Error ? e.message : "העלאה נכשלה"}`,
+          `${file.name}: ${e instanceof Error ? e.message : "חילוץ טקסט נכשל"}`,
         );
         setAttachments((prev) => prev.filter((a) => a.id !== id));
       }
