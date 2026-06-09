@@ -597,6 +597,15 @@ function ChatPage() {
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}
+            {activeDiagramJob && !messages.some((m) => m.id === activeDiagramJob.current_message_id) && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <GenerationProgress
+                  phaseIdx={phaseIdx}
+                  phases={phases}
+                  job={activeDiagramJob}
+                />
+              </div>
+            )}
             {sending && messages.length > 0 && (
               <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <GenerationProgress phaseIdx={phaseIdx} phases={phases} />
@@ -1072,16 +1081,27 @@ function DiagramBlock({ code }: { code: string }) {
 function GenerationProgress({
   phaseIdx: _phaseIdx,
   phases: _phases,
+  job,
 }: {
   phaseIdx: number;
   phases: readonly string[];
+  job?: ActiveDiagramJob | null;
 }) {
+  const statusLine = job?.error_message
+    ? job.error_message
+    : job?.stage === "generating"
+      ? "התרשים עדיין נבנה. אם התהליך ייעצר, תופיע כאן שגיאה במקום מצב תקוע."
+      : "המשימה עדיין בטיפול.";
+
   return (
-    <div className="flex items-center justify-center gap-2 text-base">
-      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-      <span className="font-medium text-foreground">
-        המשימה בטיפול, בסיום תישלח התראה
-      </span>
+    <div className="flex items-start justify-center gap-2 text-base">
+      <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-primary" />
+      <div className="space-y-1 text-center">
+        <div className="font-medium text-foreground">
+          {job?.stage === "generating" ? "מייצר תרשים" : "המשימה בטיפול"}
+        </div>
+        <div className="text-sm text-muted-foreground">{statusLine}</div>
+      </div>
     </div>
   );
 }
