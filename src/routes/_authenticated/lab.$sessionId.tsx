@@ -284,10 +284,26 @@ function LabPage() {
           <FileText className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">מסמכים ({docs.length})</h2>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="h-7 gap-1 text-xs"
+        >
+          {uploading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Paperclip className="h-3.5 w-3.5" />
+          )}
+          העלה
+        </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-auto p-3">
         {docs.length === 0 ? (
-          <div className="py-6 text-center text-xs text-muted-foreground">לא הועלו מסמכים</div>
+          <div className="py-6 text-center text-xs text-muted-foreground">
+            לא הועלו מסמכים. לחצ/י על "העלה" למעלה.
+          </div>
         ) : (
           docs.map((d) => (
             <div
