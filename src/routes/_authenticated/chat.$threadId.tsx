@@ -432,13 +432,17 @@ function ChatPage() {
           // eslint-disable-next-line no-constant-condition
           while (true) {
             await new Promise((r) => setTimeout(r, 2000));
+            if (canceledRef.current) {
+              await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+              break;
+            }
             if (Date.now() - startedAt > MAX_MS) {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
               throw new Error("חרגנו מזמן ההמתנה ליצירת התרשים. אפשר לנסות שוב.");
             }
             const { data: job, error: jobErr } = await supabase
               .from("diagram_jobs")
-              .select("status,error_message,completed_at,diagram_id,current_message_id")
+              .select("status,error_message,completed_at,diagram_id,current_message_id,cancel_requested")
               .eq("id", jobId)
               .maybeSingle();
             if (jobErr) throw new Error(jobErr.message);
@@ -452,7 +456,12 @@ function ChatPage() {
             }
             if (job.status === "failed") {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
-              throw new Error(job.error_message || "יצירת התרשים נכשלה");
+              const errMsg = job.error_message || "יצירת התרשים נכשלה";
+              if (canceledRef.current || /בוטל/.test(errMsg)) {
+                // User-requested cancellation — exit quietly, no error toast.
+                break;
+              }
+              throw new Error(errMsg);
             }
             if (job.completed_at) {
               await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
