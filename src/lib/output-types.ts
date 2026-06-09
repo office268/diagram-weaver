@@ -15,6 +15,7 @@ import {
   BookOpen,
   Mic,
   Workflow,
+  List,
   LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +29,7 @@ export type DocumentOutputKey =
   | "spec_detailed"
   | "user_guide"
   | "meeting_summary"
+  | "user_story"
   | "dashboard";
 
 
@@ -189,6 +191,14 @@ export const OUTPUT_TYPES: Record<OutputKey, OutputTypeDef> = {
     icon: Mic,
     colorClass: "text-rose-500",
   },
+  user_story: {
+    key: "user_story",
+    category: "document",
+    label: "User Story",
+    description: "(azure/jira)",
+    icon: List,
+    colorClass: "text-fuchsia-500",
+  },
   dashboard: {
     key: "dashboard",
     category: "document",
@@ -211,6 +221,7 @@ export const OUTPUT_TYPE_ORDER: OutputKey[] = [
   "spec_detailed",
   "diagram_activity",
   "meeting_summary",
+  "user_story",
   "dashboard",
 ];
 
