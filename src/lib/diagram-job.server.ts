@@ -90,6 +90,19 @@ function buildMessageContent(label: string, svg: string, footerLine: string | nu
   return footerLine ? `${base}\n\n${footerLine}` : base;
 }
 
+function buildRfJsonPendingContent(label: string): string {
+  return `מכין ${label}...\n\n_⏳ עדיין בעבודה..._`;
+}
+
+function buildRfJsonMessageContent(
+  label: string,
+  json: string,
+  footerLine: string | null = null,
+): string {
+  const base = `הנה ${label}:\n\n\`\`\`rf-json\n${json}\n\`\`\``;
+  return footerLine ? `${base}\n\n${footerLine}` : base;
+}
+
 /** Compatibility wrapper: full-pipeline entrypoint used to be `runDiagramJob`.
  *  Now it just runs ONE step. Kept for the existing process-diagram-jobs caller. */
 export async function runDiagramJob(params: RunDiagramJobParams): Promise<void> {
@@ -116,8 +129,9 @@ export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<vo
     if (kind === "diagram_activity") {
       await runActivityStep(job as JobRow, params);
     } else {
-      // RF-JSON & friends — single LLM call, run as one shot.
-      await runSingleShotJob(params);
+      // RF-JSON & friends — still a single LLM call, but with an immediate
+      // progress message persisted before generation starts.
+      await runSingleShotJob(job as JobRow, params);
     }
   } catch (err) {
     const msg =
@@ -412,6 +426,15 @@ async function finalizeFailure(
     } catch (e) {
       console.error("[diagram-job] failure follow-up insert failed:", e);
     }
+  } else if (job.current_message_id) {
+    try {
+      await supabaseAdmin
+        .from("chat_messages")
+        .update({ content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}` })
+        .eq("id", job.current_message_id);
+    } catch (e) {
+      console.error("[diagram-job] failure placeholder update failed:", e);
+    }
   } else {
     try {
       await supabaseAdmin.from("chat_messages").insert({
@@ -492,7 +515,7 @@ async function trackUsage(
 
 // ── Non-activity (RF-JSON) single-shot path ────────────────────────────────
 
-async function runSingleShotJob(params: RunDiagramJobParams): Promise<void> {
+async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promise<void> {
   const {
     jobId,
     threadId,
@@ -506,6 +529,32 @@ async function runSingleShotJob(params: RunDiagramJobParams): Promise<void> {
   } = params;
   const def = OUTPUT_TYPES[kind];
   const tracker = createUsageTracker();
+  let currentMessageId = job.current_message_id;
+
+  if (!currentMessageId) {
+    const { data: msgRow, error: msgErr } = await supabaseAdmin
+      .from("chat_messages")
+      .insert({
+        thread_id: threadId,
+        user_id: userId,
+        role: "assistant",
+        content: buildRfJsonPendingContent(def.label),
+      })
+      .select("id")
+      .single();
+    if (msgErr) throw new Error(msgErr.message);
+    currentMessageId = msgRow.id;
+  }
+
+  await supabaseAdmin
+    .from("diagram_jobs")
+    .update({
+      status: "processing",
+      stage: "generating",
+      current_message_id: currentMessageId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", jobId);
 
   const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
   const { json } = await withTimeout(
@@ -536,15 +585,18 @@ async function runSingleShotJob(params: RunDiagramJobParams): Promise<void> {
     .single();
   if (diagErr) throw new Error(diagErr.message);
 
-  const content = `הנה ${def.label}:\n\n\`\`\`rf-json\n${json}\n\`\`\``;
-  await supabaseAdmin.from("chat_messages").insert({
-    thread_id: threadId,
-    user_id: userId,
-    role: "assistant",
-    content,
-    artifact_kind: "diagram",
-    artifact_id: diagRow.id,
-  });
+  const content = buildRfJsonMessageContent(def.label, json);
+  if (currentMessageId) {
+    const { error: msgUpdateErr } = await supabaseAdmin
+      .from("chat_messages")
+      .update({
+        content,
+        artifact_kind: "diagram",
+        artifact_id: diagRow.id,
+      })
+      .eq("id", currentMessageId);
+    if (msgUpdateErr) throw new Error(msgUpdateErr.message);
+  }
 
   if (isFirstMessage) {
     await supabaseAdmin.from("chat_threads").update({ title: title.slice(0, 100) }).eq("id", threadId);
@@ -581,6 +633,7 @@ async function runSingleShotJob(params: RunDiagramJobParams): Promise<void> {
     .update({
       status: "done",
       stage: "done",
+      current_message_id: currentMessageId,
       diagram_id: diagRow.id,
       next_run_at: null,
       completed_at: new Date().toISOString(),
