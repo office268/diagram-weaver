@@ -1,85 +1,35 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
-import type { CurrentOrganization, OrgKind } from "@/lib/organizations.functions";
+import { getCurrentOrganization } from "@/lib/organizations.functions";
 
-const CACHE_KEY = "current-organization-cache-v1";
-
-function readCache(userId: string): CurrentOrganization | undefined {
-  if (typeof window === "undefined") return undefined;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as { userId: string; data: CurrentOrganization };
-    if (parsed.userId !== userId) return undefined;
-    return parsed.data;
-  } catch {
-    return undefined;
-  }
-}
-
-function writeCache(userId: string, data: CurrentOrganization) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, data }));
-  } catch {
-    // ignore
-  }
-}
-
-async function fetchCurrentOrganization(userId: string): Promise<CurrentOrganization> {
-  const { data, error } = await supabase
-    .from("organization_members")
-    .select(
-      "role, org_id, organizations:org_id ( id, name, slug, logo_url, address, website, org_kind, identifier )",
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  if (!data || !data.organizations) return null;
-
-  const org = data.organizations as unknown as {
-    id: string;
-    name: string;
-    slug: string;
-    logo_url: string | null;
-    address: string | null;
-    website: string | null;
-    org_kind: OrgKind | null;
-    identifier: string | null;
-  };
-  return {
-    id: org.id,
-    name: org.name,
-    slug: org.slug,
-    logo_url: org.logo_url ?? null,
-    address: org.address ?? null,
-    website: org.website ?? null,
-    org_kind: org.org_kind ?? null,
-    identifier: org.identifier ?? null,
-    role: data.role as "owner" | "admin" | "member",
-  };
-}
+const LEGACY_CACHE_KEY = "current-organization-cache-v1";
 
 export function useCurrentOrganization() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
+  const fetchCurrentOrganization = useServerFn(getCurrentOrganization);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.removeItem(LEGACY_CACHE_KEY);
+    } catch {
+      // ignore legacy cache cleanup failures
+    }
+  }, []);
 
   return useQuery({
     queryKey: ["current-organization", userId],
     queryFn: async () => {
       if (!userId) return null;
-      const data = await fetchCurrentOrganization(userId);
-      writeCache(userId, data);
-      return data;
+      return fetchCurrentOrganization();
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    initialData: userId ? readCache(userId) : undefined,
-    initialDataUpdatedAt: 0,
+    refetchOnMount: true,
+    retry: 1,
   });
 }
