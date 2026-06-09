@@ -138,7 +138,7 @@ function UserMenuWithOrgLogo() {
           <Workflow className="h-6 w-6 text-muted-foreground" />
         )}
       </Link>
-      <span className="text-[10px] text-muted-foreground leading-none max-w-[4.5rem] truncate">
+      <span className="text-xs text-muted-foreground leading-tight whitespace-nowrap" dir="ltr">
         {user.email}
       </span>
     </div>
