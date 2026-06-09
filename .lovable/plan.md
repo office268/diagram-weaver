@@ -1,61 +1,91 @@
+# הבעיה המדויקת
+מצאתי את הבעיה.
 
-## המטרה
-לפצל את הפייפליין של `activity_swimlane` על פני קריאות cron מרובות, כך שכל שלב רץ בקריאת cron נפרדת (תחת מגבלת ה-Worker), והמשתמש רואה את התוצר החלקי מיד כשהוא מוכן — עם הודעה "עדיין בעבודה, משפר תרשים..." עד שהפייפליין מסיים.
+זו לא בעיית cron, וזו גם לא בעיית polling בצד הלקוח.
 
-## חוויית המשתמש
-1. המשתמש שולח פרומפט → הודעת assistant נוצרת מיד עם סטטוס "בטיפול".
-2. תוך 30-90 שנ' (אחרי Builder) — ההודעה מתעדכנת עם **התרשים הראשוני (SVG)** + כיתוב "תרשים ראשוני מוכן, ממשיך לשפר..."
-3. כל איטרציית Validator+Fixer שמסתיימת מחליפה את ה-SVG בהודעה בגרסה משופרת + עדכון הכיתוב ("שיפור 1/2 הושלם...").
-4. בסיום — הכיתוב נעלם, הודעת toast/notification "התרשים מוכן".
-5. אם שלב נכשל — מוצג ה-SVG הטוב ביותר עד כה + הסבר.
+הכשל האמיתי הוא זה:
 
-## שלבים טכניים (תקציר)
+1. תרשימי `diagram_usecase` / `diagram_sequence` / `diagram_erd` / `diagram_flow` עדיין רצים במסלול `runSingleShotJob` כקריאה אחת ארוכה.
+2. במסלול הזה לא נוצרת שום הודעת ביניים בצ׳אט לפני שה־AI מסיים, כי ההודעה ל־`chat_messages` נכתבת רק אחרי שה־AI מחזיר JSON סופי.
+3. אם הקריאה הזאת נתקעת או נהרגת בזמן ריצה, ה־job נשאר ב־`processing`, בלי תוצר חלקי, בלי הודעת ביניים, ובסוף פונקציית `reset_stuck_diagram_jobs` מסמנת אותו כ־`failed` עם `stuck timeout`.
 
-### א. סכמת `diagram_jobs` — הוספת עמודות שלב
-- `stage` (`extracting`/`building`/`validating_1`/`fixing_1`/`validating_2`/`fixing_2`/`done`)
-- `process_map_json` — תוצר Extractor
-- `current_svg` — ה-SVG הטוב ביותר עד כה
-- `current_violations` — מערך הפרות מהוולידציה האחרונה
-- `iteration` (0..maxFixIterations)
-- `next_run_at` — מתי ה-cron יוכל לתפוס שוב
+לכן המשתמש רואה בדיוק את מה שאתה מתאר:
+- הרבה זמן "בטיפול"
+- אין תשובת ביניים
+- ובסוף רק timeout / תקיעה
 
-### ב. פיצול `runDiagramJob` ל-`runDiagramJobStep`
-כל קריאה מבצעת **שלב יחיד** (קריאת LLM אחת), מעדכנת את `diagram_jobs` עם התוצר החלקי, ומחזירה. אם נשארו שלבים — `status='processing'`, `next_run_at=now()`. cron הבא יתפוס אותה.
+# ההוכחה מתוך המערכת
+בדקתי את ה־job של השיחה הבעייתית שלך:
+- `thread_id = f14653c3-d690-4c3f-a61a-bf5035657576`
+- `kind = diagram_usecase`
+- הוא הסתיים כ־`failed`
+- עם `error_message = stuck timeout`
 
-טבלת מעברים:
+ובאותה שיחה יש רק:
+- הודעת משתמש
+- אחר כך הודעת כשל כללית
+- אין שום הודעת assistant ביניים עם תרשים או סטטוס מפורט
+
+# איפה בדיוק זה נשבר בקוד
+## 1. המסלול הבעייתי
+`src/lib/diagram-job.server.ts`
+
+בפונקציה:
+```ts
+runSingleShotJob(...)
 ```
-pending     → extracting   (Extractor)
-extracting  → building     (Builder) — כותב current_svg ראשון
-building    → validating_1 (Validator)
-validating_1→ done (אם 0 הפרות) או fixing_1 (Fixer) — מעדכן current_svg
-fixing_1    → validating_2
-validating_2→ done או fixing_2
-fixing_2    → done
+הזרימה היא:
+```text
+קריאת AI ארוכה אחת
+-> רק אם הצליחה: insert ל-diagrams
+-> רק אז: insert ל-chat_messages
+-> רק אז: status=done
 ```
 
-### ג. עדכון `claim_diagram_job` במסד
-לתפוס גם jobs עם `status='processing'` ו-`next_run_at <= now()` (לא רק `pending`), כך שאיטרציות ממשיכות.
+כלומר, לפני שהקריאה מסתיימת אין בכלל מה להציג למשתמש.
 
-### ד. תצוגה בצ׳אט
-- כשנוצר `current_svg` ראשון — להוסיף `chat_messages` עם `artifact_kind='diagram'` ו-`artifact_id` (או placeholder). השלבים הבאים **לא** מוסיפים הודעה חדשה — הם מעדכנים את ה-`diagrams` row באותו `id` (`mermaid_code = svg_חדש`).
-- ההודעה תקבל שדה חדש `pending_stage` (טקסט קצר) שיוצג מתחת לתרשים. כשהשלב האחרון מסתיים — מאופס ל-NULL.
-- ב-`chat.$threadId.tsx` הפולינג הקיים על `diagram_jobs` כבר ירענן את ה-diagram + הודעה, צריך רק להציג את הכיתוב.
+## 2. לכן אין תשובת ביניים
+באותו קובץ, במסלול של non-activity diagrams, אין:
+- יצירת הודעת "עדיין בעבודה..." בתחילת העיבוד
+- עדכון progress תוך כדי
+- שמירת תוצר חלקי
+- שלבים (`stage`) אמיתיים כמו שעשינו ל־`diagram_activity`
 
-### ה. שלב Extractor + Builder
-אם Extractor או Builder נכשלים → אין מה להציג, הודעת שגיאה כרגיל.
-אחרי Builder יש תרשים — מכאן והלאה כשל ב-Validator/Fixer **לא** מוחק את התוצר; שומרים את הטוב ביותר.
+## 3. למה זה נראה תקוע
+`src/routes/_authenticated/chat.$threadId.tsx`
 
-### ו. הגנות
-- timeout לכל שלב יחיד: 90 שנ' (נמוך מ-Worker limit).
-- `reset_stuck_diagram_jobs` ימשיך לזהות jobs שתקועים בשלב אחד יותר מ-3 דק'.
-- מגבלת איטרציות נשארת 2 (כמו היום).
+ה־UI רק עושה polling על `diagram_jobs.status`.
+אבל עבור `diagram_usecase` אין שום artifact חלקי ואין הודעת chat ביניים להציג, אז בפועל יש רק spinner.
 
-## קבצים שיושפעו
-- `supabase/migrations/...` — עמודות חדשות + עדכון `claim_diagram_job` + `reset_stuck_diagram_jobs`.
-- `src/lib/diagram-job.server.ts` — פיצול ל-`runDiagramJobStep` per-stage.
-- `src/routes/api/public/hooks/process-diagram-jobs.ts` — קריאה ל-step במקום לפייפליין שלם.
-- `src/agents/diagrams/activity-swimlane.server.ts` — לחשוף כל סוכן בנפרד (כבר מיוצא).
-- `src/routes/_authenticated/chat.$threadId.tsx` — תצוגת `pending_stage` מתחת לתרשים חי.
+# המסקנה
+הבעיה היא לא "איפה הוא נתקע" ברמת שורה בודדת בתוך ה־AI call.
 
-## אישור
-נדרש אישורך לפני התחלת הביצוע, כי זה משנה את ה-job runner מהותית (לא מוריד איכות — אותן קריאות LLM, אותם פרומפטים, אותן 2 איטרציות validator/fixer).
+הבעיה הארכיטקטונית המדויקת היא:
+
+```text
+כל תרשימי RF-JSON עדיין ממומשים כ-single shot job,
+ולכן אין יכולת אמיתית להציג intermediate result או progress,
+וכשהקריאה הארוכה נתקעת/נהרגת - נשאר רק stuck timeout.
+```
+
+# מה צריך לשנות כדי לפתור באמת
+לא עוד ניסוי קטן, אלא תיקון ממוקד אחד:
+
+1. לפרק גם את מסלול `runSingleShotJob` לשלבים קצרים, או לפחות
+2. לכתוב הודעת assistant ביניים מייד כש־job נלקח לעיבוד,
+3. ולעדכן אותה תוך כדי / או לסמן כשל ברור אם לא נוצר תוצר בזמן.
+
+בלי זה, ל־`diagram_usecase` לא תהיה אף פעם תשובת ביניים אמיתית.
+
+# קבצים המעורבים ישירות
+- `src/lib/diagram-job.server.ts`
+- `src/routes/_authenticated/chat.$threadId.tsx`
+- `src/routes/api/public/hooks/process-diagram-jobs.ts`
+
+# מה אני מציע לבצע עכשיו
+תיקון ממוקד למסלול RF-JSON בלבד:
+- הודעת ביניים מיידית בצ׳אט לכל job
+- fail-fast ברור אם job נשאר `processing` בלי artifact
+- ובמידת הצורך פיצול גם של RF-JSON לשלבי עבודה קצרים
+
+זה התיקון שיסגור את הבעיה האמיתית, לא עוד ניסיונות סביב timeout.
