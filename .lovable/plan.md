@@ -1,44 +1,51 @@
-## מטרה
-להחליף את אזור המודל הריק בראש כרטיס הצ'אט בשני שדות טקסט חופשיים — **שם מוצר** ו**שם פרויקט** — שיוצרים/מאתרים את הרשומות בפועל ב-DB ומשייכים אליהן את ה-thread ואת כל התוצרים האפיוניים שנוצרים בשיחה.
 
-## UI (`src/routes/_authenticated/chat.$threadId.tsx`)
-- בראש כרטיס הצ'אט (במקום שסומן באדום), שורת flex עם שני `Input` קטנים:
-  - שדה ימני — "שם מוצר", ברירת מחדל `Product-00001`
-  - שדה שמאלי — "שם פרויקט", ברירת מחדל `Project-00001`
-- שני השדות פתוחים לעריכה חופשית. שמירה ב-blur או ב-Enter (debounce).
-- ה-defaults נטענים מ-thread קיים אם כבר משויך (נשלף עם `getChatThread`); אחרת `Product-00001` / `Project-00001`.
-- אינדיקציה דיסקרטית בזמן שמירה (spinner קטן ליד השדה הרלוונטי).
+# איחוד מסמך דרישות (עסקי + טכני) למסמך אחד
 
-## Backend — סכמת DB
-מיגרציה אחת:
-- `ALTER TABLE public.chat_threads ADD COLUMN project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL;`
-- אינדקס `(user_id, project_id)`.
-- פונקציית `SECURITY DEFINER` חדשה `public.ensure_product_and_project(_org_id uuid, _product_name text, _project_name text)` המחזירה `(product_id uuid, project_id uuid)`:
-  - מוודאת `is_org_member(auth.uid(), _org_id)` — אחרת raise.
-  - אם קיים מוצר ב-org עם השם → משתמשת בו; אחרת `INSERT` (עוקפת את מדיניות ה-RLS שמחייבת admin/owner — זו הסיבה ל-SECURITY DEFINER, ומכאן שהבדיקה הידנית של חברות בארגון חיונית).
-  - אם קיים פרויקט של המשתמש תחת המוצר עם השם → משתמשת בו; אחרת `INSERT` (`user_id = auth.uid()`, `product_id = ...`).
-  - מחזירה את שני ה-IDs.
-- `GRANT EXECUTE ... TO authenticated`.
+כיום הקובייה "מסמך דרישות (עסקי + טכני)" יוצרת שני threads/מסמכים נפרדים (BRD + TRD). המטרה: ליצור מסמך אחד מאוחד שמכיל את שני החלקים.
 
-## Server functions
-- `src/lib/chat.functions.ts` — חדש: `assignChatThreadProductProject({ threadId, productName, projectName })`:
-  1. שולף את `currentOrgId` של המשתמש (כמו `useCurrentOrganization` בשרת — או מקבל אותו כ-input מהקליינט שכבר משתמש בהוק).
-  2. קורא ל-RPC `ensure_product_and_project`.
-  3. מעדכן `chat_threads.project_id` עבור ה-thread של המשתמש.
-  4. מחזיר `{ productId, projectId, productName, projectName }`.
-- `src/routes/api/chat-message.ts` (שורה 243): להחליף את `projectId: null` ב-`project_id` שנשלף מ-`chat_threads` של ה-thread הנוכחי, כך שכל יצירת `spec_documents` דרך הצ'אט תקבל שיוך אוטומטי.
+## גישה
+מוסיפים סוג מסמך חדש `requirements_combined` בצד הסוגים הקיימים. סוגי ה-BRD וה-TRD הנפרדים יישארו זמינים תחת "עוד" (לא נמחקים — שמירה על תאימות לאחור ולמשתמשים שרוצים מסמך נפרד).
 
-## Defaults אוטומטיים
-- בעת יצירת thread חדש (`createChatThread`) — לא משייכים אוטומטית. השיוך נוצר ברגע שהמשתמש שולח הודעה ראשונה או בטעינה ראשונה של הצ'אט (lazy ensure עם השמות `Product-00001` / `Project-00001` אם השדות ריקים).
-- כך אין יצירת מוצרים ריקים בכל פעם שהמשתמש פותח דיאלוג בלי להתחיל שיחה.
+## שינויים
 
-## הערות
-- לא נוגעים בפרומפטים, ב-system prompts או בלוגיקת ה-agents — שינוי UI + שיוך נתונים בלבד.
-- לא מסירים שדה `model_override` הקיים; רק החלפת מיקום ה-UI שנעשתה כבר.
-- שמירת השם המעודכן של מוצר/פרויקט קיים: עריכת הטקסט יוצרת/מאתרת לפי שם חדש (לא משנה את שם המוצר/פרויקט המקורי). זה מונע שינויים גורפים בטעות.
+### 1. `src/lib/doc-types.ts`
+- הוספת `"requirements_combined"` ל-`DOC_TYPE_KEYS`.
+- הוספת רשומה ל-`DOC_TYPES` עם label `"מסמך דרישות (עסקי + טכני)"` ו-`sectionOrder` שמכיל את כל סקציות ה-BRD + ה-TRD (overview, goals, personas, functional_requirements, non_functional_requirements, assumptions, architecture, data_model, risks, user_notes) עם `sectionTitles` מותאמים.
+- הוספת אייקון ל-`DOC_TYPE_VISUALS` (Briefcase, amber) — תואם לקובייה הקיימת.
 
-## קבצים שיתעדכנו
-- מיגרציה חדשה (project_id ב-chat_threads + פונקציית RPC).
-- `src/lib/chat.functions.ts`
-- `src/routes/api/chat-message.ts`
-- `src/routes/_authenticated/chat.$threadId.tsx`
+### 2. `src/lib/doc-types.server.ts` (איכות התוצר — לא מוריד מאומה)
+הוספת `DOC_TYPE_SYSTEM_INSTRUCTIONS.requirements_combined` — system prompt חדש שמורכב מאיחוד מלא של דרישות ה-BRD וה-TRD הקיימות, ללא הורדת מינימומים:
+- title, overview משולב (רקע עסקי + תיאור טכני).
+- goals: מטרות עסקיות + KPIs (לפחות 4, כמו ב-BRD).
+- personas: בעלי עניין **וגם** משתמשי קצה (לפחות 4 סה"כ; שילוב של דרישות BRD ו-spec).
+- functional_requirements: דרישות עסקיות **ופונקציונליות מערכת** במאוחד (לפחות 10 סה"כ — סכום מינימומי BRD+TRD), כל פריט מסומן אם הוא Business/System בתוך ה-description.
+- non_functional_requirements: NFRs מלאים כמו ב-TRD (לפחות 5: ביצועים, אבטחה, זמינות, סקלביליות, נגישות).
+- architecture: description + diagram (graph TD/flowchart TD) — חובה, כמו ב-TRD.
+- data_model: description + diagram (erDiagram) — חובה, כמו ב-TRD.
+- assumptions: עסקיות וטכניות במאוחד — לפחות 4.
+- risks: סיכונים עסקיים **וגם** טכניים — לפחות 4.
+- use_cases: [] (כמו ב-BRD/TRD המקוריים — תרחישים שמורים למסמכי אפיון).
+- שמירה על `MERMAID_RULES` ו-`ID_RULE`.
+
+### 3. `src/lib/doc-templates.ts`
+הוספת `requirements_combined: [...]` עם 3 תבניות (למשל "אפליקציית B2C", "פלטפורמת SaaS B2B", "מערכת פנים-ארגונית") שמשלבות צד עסקי + טכני.
+
+### 4. `src/routes/_authenticated/editor.$id.tsx`
+הוספת `requirements_combined: "Business + Technical Requirements Document"` ל-`TYPE_LABELS`.
+
+### 5. `src/routes/_authenticated/dashboard.tsx`
+- מחיקת `combinedMut` (לוגיקת היצירה הכפולה).
+- ב-`activateTile`: הסרת ה-branch של `requirements_combined` — תיפול לזרימה הרגילה של `createMut.mutate(key)` שתיצור thread יחיד מסוג `requirements_combined`.
+- ניקוי כל ההתייחסויות ל-`combinedMut.isPending` ב-`pending`/`isPending` של ה-tiles.
+
+### 6. `src/lib/output-types.ts`
+- אין שינוי במיקום הקובייה (`requirements_combined` כבר ב-`OUTPUT_TYPE_ORDER`).
+- אופציונלי: לעדכן את ה-`description` הריק של `requirements_combined` למשהו קצר ("מטרות עסקיות, KPIs, NFRs, ארכיטקטורה ומודל נתונים — במסמך אחד").
+
+## אין שינויים בסכמה/DB
+מבנה ה-spec output קיים תומך בכל הסקציות — לא נדרשת מיגרציה.
+
+## בדיקות אחרי implementation
+- לחיצה על הקובייה → נוצר thread יחיד מסוג `requirements_combined`.
+- שליחת prompt → מסמך אחד עם כל הסקציות (עסקי + טכני + ארכיטקטורה + ERD).
+- בעורך מופיעות כל הסקציות עם הכותרות המאוחדות.
