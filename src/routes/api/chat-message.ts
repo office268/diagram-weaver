@@ -240,7 +240,7 @@ export const Route = createFileRoute("/api/chat-message")({
                 userPrompt: combinedPrompt,
                 docType: (outputType as DocumentOutputKey) as DocTypeKey,
                 userId,
-                projectId: null,
+                projectId: (thread as { project_id?: string | null }).project_id ?? null,
                 lovableApiKey: apiKey,
                 previousSpec,
                 reviewerNotes: previousSpec ? [cleanUserMsg] : undefined,
@@ -259,10 +259,12 @@ export const Route = createFileRoute("/api/chat-message")({
                   review_score: result.review.score,
                   review_notes: result.review.notes,
                   variant: previousSpec ? "revised" : "original",
-                })
+                  project_id: (thread as { project_id?: string | null }).project_id ?? null,
+                } as never)
                 .select()
                 .single();
               if (specErr) throw new Error(specErr.message);
+
 
               try {
                 await logAiUsage({

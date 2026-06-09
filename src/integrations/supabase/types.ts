@@ -363,6 +363,7 @@ export type Database = {
           id: string
           model_override: string | null
           output_type: string
+          project_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -372,6 +373,7 @@ export type Database = {
           id?: string
           model_override?: string | null
           output_type: string
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id: string
@@ -381,11 +383,20 @@ export type Database = {
           id?: string
           model_override?: string | null
           output_type?: string
+          project_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       credit_transactions: {
         Row: {
@@ -1229,6 +1240,13 @@ export type Database = {
           _user_id: string
         }
         Returns: number
+      }
+      ensure_product_and_project: {
+        Args: { _org_id: string; _product_name: string; _project_name: string }
+        Returns: {
+          product_id: string
+          project_id: string
+        }[]
       }
       grant_credits: {
         Args: {

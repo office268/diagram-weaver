@@ -66,7 +66,11 @@ import {
   getChatThread,
   listChatThreads,
   deleteChatThread,
+  getChatThreadAssignment,
+  assignChatThreadProductProject,
 } from "@/lib/chat.functions";
+import { useCurrentOrganization } from "@/hooks/use-current-organization";
+
 import { cancelDiagramJob } from "@/lib/diagrams.functions";
 import { ThreadModelSelector } from "@/components/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
@@ -128,6 +132,66 @@ function ChatPage() {
   const listThreadsFn = useServerFn(listChatThreads);
   const deleteThreadFn = useServerFn(deleteChatThread);
   const cancelDiagramJobFn = useServerFn(cancelDiagramJob);
+  const getAssignmentFn = useServerFn(getChatThreadAssignment);
+  const assignFn = useServerFn(assignChatThreadProductProject);
+  const { data: currentOrg } = useCurrentOrganization();
+
+  const assignmentQuery = useQuery({
+    queryKey: ["chat-thread-assignment", threadId],
+    queryFn: () => getAssignmentFn({ data: { threadId } }),
+  });
+  const [productName, setProductName] = useState("Product-00001");
+  const [projectName, setProjectName] = useState("Project-00001");
+  const [productDirty, setProductDirty] = useState(false);
+  const [projectDirty, setProjectDirty] = useState(false);
+  useEffect(() => {
+    if (assignmentQuery.data) {
+      if (!productDirty) setProductName(assignmentQuery.data.productName);
+      if (!projectDirty) setProjectName(assignmentQuery.data.projectName);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assignmentQuery.data]);
+  const assignMutation = useMutation({
+    mutationFn: (vars: { productName: string; projectName: string }) => {
+      if (!currentOrg?.id) throw new Error("אין ארגון משויך");
+      return assignFn({
+        data: {
+          threadId,
+          orgId: currentOrg.id,
+          productName: vars.productName.trim() || "Product-00001",
+          projectName: vars.projectName.trim() || "Project-00001",
+        },
+      });
+    },
+    onSuccess: () => {
+      setProductDirty(false);
+      setProjectDirty(false);
+      qc.invalidateQueries({ queryKey: ["chat-thread-assignment", threadId] });
+    },
+    onError: (e: unknown) => {
+      toast.error(e instanceof Error ? e.message : "שמירה נכשלה");
+    },
+  });
+  const commitAssignment = () => {
+    if (!productDirty && !projectDirty) return;
+    if (!currentOrg?.id) return;
+    assignMutation.mutate({ productName, projectName });
+  };
+  // Auto-create defaults the first time the thread has no project assigned.
+  useEffect(() => {
+    if (!currentOrg?.id) return;
+    if (!assignmentQuery.data) return;
+    if (assignmentQuery.data.projectId) return;
+    if (assignMutation.isPending) return;
+    assignMutation.mutate({
+      productName: assignmentQuery.data.productName,
+      projectName: assignmentQuery.data.projectName,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentOrg?.id, assignmentQuery.data?.projectId]);
+
+
+
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -660,10 +724,40 @@ function ChatPage() {
 
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-start-1 md:row-span-3">
-
+        {/* Product / Project assignment */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+          <label className="flex flex-1 items-center gap-1.5 min-w-[160px]">
+            <span className="shrink-0 text-muted-foreground">מוצר:</span>
+            <Input
+              value={productName}
+              onChange={(e) => { setProductName(e.target.value); setProductDirty(true); }}
+              onBlur={commitAssignment}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+              placeholder="Product-00001"
+              className="h-7 text-xs"
+              disabled={!currentOrg?.id || assignMutation.isPending}
+            />
+          </label>
+          <label className="flex flex-1 items-center gap-1.5 min-w-[160px]">
+            <span className="shrink-0 text-muted-foreground">פרויקט:</span>
+            <Input
+              value={projectName}
+              onChange={(e) => { setProjectName(e.target.value); setProjectDirty(true); }}
+              onBlur={commitAssignment}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+              placeholder="Project-00001"
+              className="h-7 text-xs"
+              disabled={!currentOrg?.id || assignMutation.isPending}
+            />
+          </label>
+          {assignMutation.isPending && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          )}
+        </div>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="mx-auto max-w-md text-center">

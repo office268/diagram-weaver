@@ -117,3 +117,73 @@ export const updateChatThreadModel = createServerFn({ method: "POST" })
     return { ok: true, model: data.model };
   });
 
+
+export const getChatThreadAssignment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { threadId: string }) =>
+    z.object({ threadId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: thread, error } = await supabase
+      .from("chat_threads")
+      .select("project_id")
+      .eq("id", data.threadId)
+      .maybeSingle<{ project_id: string | null }>();
+    if (error) throw new Error(error.message);
+    if (!thread?.project_id) {
+      return { productName: "Product-00001", projectName: "Project-00001", projectId: null as string | null };
+    }
+    const { data: project, error: pErr } = await supabase
+      .from("projects")
+      .select("id, name, product_id, products:product_id ( name )")
+      .eq("id", thread.project_id)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    const productName =
+      ((project as unknown as { products?: { name?: string } | null })?.products?.name) ||
+      "Product-00001";
+    return {
+      productName,
+      projectName: project?.name ?? "Project-00001",
+      projectId: project?.id ?? null,
+    };
+  });
+
+export const assignChatThreadProductProject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { threadId: string; orgId: string; productName: string; projectName: string }) =>
+    z
+      .object({
+        threadId: z.string().uuid(),
+        orgId: z.string().uuid(),
+        productName: z.string().min(1).max(200),
+        projectName: z.string().min(1).max(200),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rpcData, error: rpcErr } = await supabase.rpc(
+      "ensure_product_and_project" as never,
+      {
+        _org_id: data.orgId,
+        _product_name: data.productName,
+        _project_name: data.projectName,
+      } as never,
+    );
+    if (rpcErr) throw new Error(rpcErr.message);
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+    const productId = (row as { product_id: string }).product_id;
+    const projectId = (row as { project_id: string }).project_id;
+
+    const { error: updErr } = await supabase
+      .from("chat_threads")
+      .update({ project_id: projectId } as never)
+      .eq("id", data.threadId)
+      .eq("user_id", userId);
+    if (updErr) throw new Error(updErr.message);
+
+    return { productId, projectId };
+  });
+
