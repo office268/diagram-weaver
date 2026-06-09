@@ -1,24 +1,35 @@
 /**
- * Async diagram-job runner.
+ * Async diagram-job runner — step-based.
  *
- * Executes the full diagram generation pipeline (Extractor → Builder →
- * Validator → Fixer for activity, or RF-JSON for others) OUT OF BAND of
- * the original HTTP request. The orchestrating handler creates a
- * `diagram_jobs` row, returns a quick response with the job id, and calls
- * `waitUntil(runDiagramJob({...}))` so the Worker keeps the pipeline
- * alive even after the client connection closes.
+ * The runner executes ONE pipeline step per invocation and persists the
+ * partial result back to `diagram_jobs`. If more work remains, it sets
+ * `status='processing'` with `next_run_at=now()` so the cron worker
+ * (`/api/public/hooks/process-diagram-jobs`) picks the same job up
+ * within ~30s for the next step. This keeps every Worker request well
+ * under the runtime budget even when the full pipeline takes minutes.
  *
- * The runner is fully self-contained: it logs AI usage, saves the
- * resulting `diagrams` row, appends the assistant chat message, and
- * updates the `diagram_jobs` status row in every outcome path. The
- * caller is NOT responsible for any of those side effects.
+ * Activity-swimlane pipeline stages:
+ *   null         → extract  (Extractor)         → stage='building'
+ *   'building'   → build    (Builder)           → stage='validating', writes first SVG + chat msg
+ *   'validating' → validate (Validator)         → 'fixing' OR finalize
+ *   'fixing'     → fix      (Fixer)             → stage='validating'
+ *
+ * RF-JSON kinds run as a single step (one LLM call, no iteration).
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { createUsageTracker, logAiUsage } from "@/lib/ai-usage.server";
-import { ActivityDiagramGenerationError } from "@/lib/activity-diagram-pipeline.server";
+import {
+  ActivityDiagramGenerationError,
+  validateActivitySvg,
+  type ProcessMap,
+} from "@/lib/activity-diagram-pipeline.server";
 import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/output-types";
+import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 
-const DIAGRAM_JOB_TIMEOUT_MS = 4 * 60 * 1000;
+/** Single-step timeout — must stay well under the Worker request budget. */
+const STEP_TIMEOUT_MS = 90 * 1000;
+const MAX_FIX_ITERATIONS = 2;
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -27,7 +38,6 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
       reject(new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`));
     }, timeoutMs);
   });
-
   try {
     return await Promise.race([promise, timeoutPromise]);
   } finally {
@@ -43,13 +53,446 @@ export interface RunDiagramJobParams {
   prompt: string;
   lovableApiKey: string;
   modelOverride?: string;
-  /** Prior chat messages (chronological) — used as history for RF-JSON diagrams. */
   priorHistory: Array<{ role: "user" | "assistant"; content: string }>;
-  /** Whether this is the first message in the thread (drives title update). */
   isFirstMessage: boolean;
 }
 
+interface JobRow {
+  id: string;
+  user_id: string;
+  thread_id: string;
+  kind: string;
+  prompt: string;
+  model_override: string | null;
+  stage: string | null;
+  process_map_json: ProcessMap | null;
+  current_svg: string | null;
+  current_violations: string[] | null;
+  iteration: number;
+  current_message_id: string | null;
+  diagram_id: string | null;
+}
+
+function footer(stage: string, iteration: number): string {
+  if (stage === "building" || stage === "validating") {
+    return iteration === 0
+      ? "_⏳ תרשים ראשוני מוכן, בודק..._"
+      : `_⏳ בודק שיפור ${iteration}/${MAX_FIX_ITERATIONS}..._`;
+  }
+  if (stage === "fixing") {
+    return `_⏳ משפר תרשים (שיפור ${iteration + 1}/${MAX_FIX_ITERATIONS})..._`;
+  }
+  return "_⏳ עדיין בעבודה..._";
+}
+
+function buildMessageContent(label: string, svg: string, footerLine: string | null): string {
+  const base = `הנה ${label}:\n\n\`\`\`svg\n${svg}\n\`\`\``;
+  return footerLine ? `${base}\n\n${footerLine}` : base;
+}
+
+/** Compatibility wrapper: full-pipeline entrypoint used to be `runDiagramJob`.
+ *  Now it just runs ONE step. Kept for the existing process-diagram-jobs caller. */
 export async function runDiagramJob(params: RunDiagramJobParams): Promise<void> {
+  await runDiagramJobStep(params);
+}
+
+export async function runDiagramJobStep(params: RunDiagramJobParams): Promise<void> {
+  const { jobId, kind } = params;
+
+  // Load the latest job row (cron already locked it via claim_diagram_job).
+  const { data: job, error: loadErr } = await supabaseAdmin
+    .from("diagram_jobs")
+    .select(
+      "id,user_id,thread_id,kind,prompt,model_override,stage,process_map_json,current_svg,current_violations,iteration,current_message_id,diagram_id",
+    )
+    .eq("id", jobId)
+    .single();
+  if (loadErr || !job) {
+    console.error("[diagram-job] failed to load job:", loadErr);
+    return;
+  }
+
+  try {
+    if (kind === "diagram_activity") {
+      await runActivityStep(job as JobRow, params);
+    } else {
+      // RF-JSON & friends — single LLM call, run as one shot.
+      await runSingleShotJob(params);
+    }
+  } catch (err) {
+    const msg =
+      err instanceof ActivityDiagramGenerationError
+        ? err.message
+        : err instanceof Error
+          ? err.message
+          : String(err);
+    console.error("[diagram-job] step failed:", err);
+    await finalizeFailure(params, job as JobRow, msg);
+  }
+}
+
+// ── Activity-swimlane: per-stage execution ─────────────────────────────────
+
+async function runActivityStep(job: JobRow, params: RunDiagramJobParams): Promise<void> {
+  const { lovableApiKey, modelOverride } = params;
+  const modelName = modelOverride ?? DEFAULT_AGENT_MODEL;
+  const gateway = createLovableAiGatewayProvider(lovableApiKey);
+  const model = gateway(modelName);
+  const tracker = createUsageTracker();
+  const def = OUTPUT_TYPES[params.kind];
+
+  const stage = job.stage ?? "extracting";
+
+  // EXTRACTOR ───────────────────────────────────────────────────────────────
+  if (stage === "extracting") {
+    const { runExtractorAgent } = await import(
+      "@/agents/diagrams/activity-swimlane.server"
+    );
+    const processMap = await withTimeout(
+      runExtractorAgent(model, params.prompt, tracker, modelName),
+      STEP_TIMEOUT_MS,
+      "extractor step",
+    );
+    await supabaseAdmin
+      .from("diagram_jobs")
+      .update({
+        status: "processing",
+        stage: "building",
+        process_map_json: processMap as never,
+        next_run_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    await trackUsage(params, job, tracker, "success", "diagram", "extractor");
+    return;
+  }
+
+  // BUILDER ─────────────────────────────────────────────────────────────────
+  if (stage === "building") {
+    if (!job.process_map_json) throw new Error("missing process_map_json before building");
+    const { runBuilderAgent } = await import(
+      "@/agents/diagrams/activity-swimlane.server"
+    );
+    const svg = await withTimeout(
+      runBuilderAgent(model, job.process_map_json, params.prompt, tracker, modelName),
+      STEP_TIMEOUT_MS,
+      "builder step",
+    );
+
+    // Create diagrams row + chat message immediately so the user sees the
+    // first draft right after the builder finishes.
+    const title = params.prompt.slice(0, 80) || def.label;
+    const { data: diagRow, error: diagErr } = await supabaseAdmin
+      .from("diagrams")
+      .insert({
+        user_id: params.userId,
+        thread_id: params.threadId,
+        kind: params.kind,
+        title,
+        prompt: params.prompt,
+        mermaid_code: svg,
+      })
+      .select()
+      .single();
+    if (diagErr) throw new Error(diagErr.message);
+
+    const content = buildMessageContent(def.label, svg, footer("validating", 0));
+    const { data: msgRow, error: msgErr } = await supabaseAdmin
+      .from("chat_messages")
+      .insert({
+        thread_id: params.threadId,
+        user_id: params.userId,
+        role: "assistant",
+        content,
+        artifact_kind: "diagram",
+        artifact_id: diagRow.id,
+      })
+      .select("id")
+      .single();
+    if (msgErr) throw new Error(msgErr.message);
+
+    if (params.isFirstMessage) {
+      await supabaseAdmin
+        .from("chat_threads")
+        .update({ title: title.slice(0, 100) })
+        .eq("id", params.threadId);
+    } else {
+      await supabaseAdmin
+        .from("chat_threads")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", params.threadId);
+    }
+
+    await supabaseAdmin
+      .from("diagram_jobs")
+      .update({
+        status: "processing",
+        stage: "validating",
+        current_svg: svg,
+        iteration: 0,
+        diagram_id: diagRow.id,
+        current_message_id: msgRow.id,
+        next_run_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    await trackUsage(params, { ...job, diagram_id: diagRow.id }, tracker, "success", "diagram", "builder");
+    return;
+  }
+
+  // VALIDATOR ───────────────────────────────────────────────────────────────
+  if (stage === "validating") {
+    if (!job.current_svg) throw new Error("missing current_svg before validating");
+    const { runValidatorAgent } = await import(
+      "@/agents/diagrams/activity-swimlane.server"
+    );
+    const { violations } = await withTimeout(
+      runValidatorAgent(model, job.current_svg, params.prompt, tracker, modelName),
+      STEP_TIMEOUT_MS,
+      "validator step",
+    );
+
+    // Finalize if clean OR we've exhausted fix budget.
+    if (violations.length === 0 || job.iteration >= MAX_FIX_ITERATIONS) {
+      await finalizeSuccess(params, job, job.current_svg, job.iteration);
+      return;
+    }
+
+    // Schedule fix step.
+    if (job.current_message_id) {
+      const content = buildMessageContent(def.label, job.current_svg, footer("fixing", job.iteration));
+      await supabaseAdmin.from("chat_messages").update({ content }).eq("id", job.current_message_id);
+    }
+
+    await supabaseAdmin
+      .from("diagram_jobs")
+      .update({
+        status: "processing",
+        stage: "fixing",
+        current_violations: violations,
+        next_run_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    await trackUsage(params, job, tracker, "success", "diagram", "validator");
+    return;
+  }
+
+  // FIXER ───────────────────────────────────────────────────────────────────
+  if (stage === "fixing") {
+    if (!job.current_svg) throw new Error("missing current_svg before fixing");
+    const violations = job.current_violations ?? [];
+    const { runFixerAgent } = await import(
+      "@/agents/diagrams/activity-swimlane.server"
+    );
+    const fixed = await withTimeout(
+      runFixerAgent(model, job.current_svg, violations, params.prompt, tracker, modelName),
+      STEP_TIMEOUT_MS,
+      "fixer step",
+    );
+
+    // Keep the fix only if it didn't increase structural violations.
+    const nextSvg =
+      validateActivitySvg(fixed).length <= validateActivitySvg(job.current_svg).length
+        ? fixed
+        : job.current_svg;
+    const nextIteration = job.iteration + 1;
+
+    if (job.diagram_id) {
+      await supabaseAdmin
+        .from("diagrams")
+        .update({ mermaid_code: nextSvg })
+        .eq("id", job.diagram_id);
+    }
+    if (job.current_message_id) {
+      const content = buildMessageContent(def.label, nextSvg, footer("validating", nextIteration));
+      await supabaseAdmin.from("chat_messages").update({ content }).eq("id", job.current_message_id);
+    }
+
+    await supabaseAdmin
+      .from("diagram_jobs")
+      .update({
+        status: "processing",
+        stage: "validating",
+        current_svg: nextSvg,
+        iteration: nextIteration,
+        current_violations: null,
+        next_run_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id);
+    // Track this fix step's tokens.
+    await trackUsage(params, job, tracker, "success", "diagram", "in_progress");
+    return;
+  }
+
+  throw new Error(`unknown activity stage: ${stage}`);
+}
+
+async function finalizeSuccess(
+  params: RunDiagramJobParams,
+  job: JobRow,
+  svg: string,
+  iterations: number,
+): Promise<void> {
+  const def = OUTPUT_TYPES[params.kind];
+
+  // Strip "still working" footer from the chat message.
+  if (job.current_message_id) {
+    const content = buildMessageContent(def.label, svg, null);
+    await supabaseAdmin
+      .from("chat_messages")
+      .update({ content })
+      .eq("id", job.current_message_id);
+  }
+  if (job.diagram_id) {
+    await supabaseAdmin
+      .from("diagrams")
+      .update({ mermaid_code: svg })
+      .eq("id", job.diagram_id);
+  }
+
+  await supabaseAdmin
+    .from("diagram_jobs")
+    .update({
+      status: "done",
+      stage: "done",
+      iterations,
+      next_run_at: null,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", job.id);
+
+  try {
+    // Final usage logging (this step's tokens only — earlier steps already logged in-progress).
+    await logAiUsage({
+      userId: params.userId,
+      diagramId: job.diagram_id ?? undefined,
+      artifactKind: params.kind,
+      status: "success",
+      model: params.modelOverride ?? "agent",
+      purpose: "diagram",
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      costUsd: 0,
+      docTitle: params.prompt.slice(0, 120) || def.label,
+      docType: params.kind,
+      wordCount: 0,
+    });
+  } catch (e) {
+    console.error("[diagram-job] final logAiUsage failed:", e);
+  }
+}
+
+async function finalizeFailure(
+  params: RunDiagramJobParams,
+  job: JobRow,
+  errMsg: string,
+): Promise<void> {
+  const def = OUTPUT_TYPES[params.kind];
+
+  // If we have a partial SVG already in chat, keep it visible (just strip footer) instead of
+  // appending a generic error message that overwrites the user's only artifact.
+  if (job.current_svg && job.current_message_id) {
+    const content = buildMessageContent(def.label, job.current_svg, null);
+    await supabaseAdmin
+      .from("chat_messages")
+      .update({ content })
+      .eq("id", job.current_message_id);
+    // Append a small follow-up note so the user knows refinement didn't complete.
+    try {
+      await supabaseAdmin.from("chat_messages").insert({
+        thread_id: params.threadId,
+        user_id: params.userId,
+        role: "assistant",
+        content: `שלב שיפור התרשים נכשל ולכן השארתי את הגרסה האחרונה. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+      });
+    } catch (e) {
+      console.error("[diagram-job] failure follow-up insert failed:", e);
+    }
+  } else {
+    try {
+      await supabaseAdmin.from("chat_messages").insert({
+        thread_id: params.threadId,
+        user_id: params.userId,
+        role: "assistant",
+        content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+      });
+    } catch (e) {
+      console.error("[diagram-job] failure assistant message insert failed:", e);
+    }
+  }
+
+  try {
+    await logAiUsage({
+      userId: params.userId,
+      diagramId: job.diagram_id ?? undefined,
+      artifactKind: params.kind,
+      status: "failed",
+      model: params.modelOverride ?? "agent",
+      purpose: "diagram",
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      costUsd: 0,
+      docTitle: params.prompt.slice(0, 120) || def.label,
+      docType: params.kind,
+      wordCount: 0,
+      errorMessage: errMsg,
+    });
+  } catch (e) {
+    console.error("[diagram-job] failure logAiUsage failed:", e);
+  }
+
+  await supabaseAdmin
+    .from("diagram_jobs")
+    .update({
+      status: "failed",
+      error_message: errMsg,
+      next_run_at: null,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", job.id);
+}
+
+async function trackUsage(
+  params: RunDiagramJobParams,
+  job: JobRow,
+  tracker: ReturnType<typeof createUsageTracker>,
+  status: "success" | "failed",
+  purpose: "diagram",
+  marker: string,
+): Promise<void> {
+  try {
+    const totals = tracker.totals();
+    if (totals.totalTokens === 0) return;
+    const def = OUTPUT_TYPES[params.kind];
+    await logAiUsage({
+      userId: params.userId,
+      diagramId: job.diagram_id ?? undefined,
+      artifactKind: params.kind,
+      status,
+      model: params.modelOverride ?? "agent",
+      purpose,
+      inputTokens: totals.inputTokens,
+      outputTokens: totals.outputTokens,
+      totalTokens: totals.totalTokens,
+      costUsd: totals.costUsd,
+      docTitle: `${params.prompt.slice(0, 100) || def.label} [${marker}]`,
+      docType: params.kind,
+      wordCount: 0,
+    });
+  } catch (e) {
+    console.error("[diagram-job] usage track failed:", e);
+  }
+}
+
+// ── Non-activity (RF-JSON) single-shot path ────────────────────────────────
+
+async function runSingleShotJob(params: RunDiagramJobParams): Promise<void> {
   const {
     jobId,
     threadId,
@@ -61,181 +504,87 @@ export async function runDiagramJob(params: RunDiagramJobParams): Promise<void> 
     priorHistory,
     isFirstMessage,
   } = params;
-
   const def = OUTPUT_TYPES[kind];
   const tracker = createUsageTracker();
-  let usageLogged = false;
 
-  // Mark as processing
-  await supabaseAdmin
-    .from("diagram_jobs")
-    .update({ status: "processing", started_at: new Date().toISOString() })
-    .eq("id", jobId);
+  const { runRfJsonDiagramAgent } = await import("@/agents/diagrams/rf-json.server");
+  const { json } = await withTimeout(
+    runRfJsonDiagramAgent({
+      kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
+      userPrompt: prompt,
+      history: priorHistory,
+      lovableApiKey,
+      modelOverride,
+      tracker,
+    }),
+    STEP_TIMEOUT_MS,
+    "diagram generation",
+  );
 
-  const flushFailure = async (errMsg: string): Promise<void> => {
-    if (!usageLogged) {
-      try {
-        const totals = tracker.totals();
-        await logAiUsage({
-          userId,
-          artifactKind: kind,
-          status: "failed",
-          model: modelOverride ?? "agent",
-          purpose: "diagram",
-          inputTokens: totals.inputTokens,
-          outputTokens: totals.outputTokens,
-          totalTokens: totals.totalTokens,
-          costUsd: totals.costUsd,
-          docTitle: prompt.slice(0, 120) || def.label,
-          docType: kind,
-          wordCount: 0,
-          errorMessage: errMsg,
-        });
-        usageLogged = true;
-      } catch (e) {
-        console.error("[diagram-job] failure logAiUsage failed:", e);
-      }
-    }
-    try {
-      await supabaseAdmin.from("chat_messages").insert({
-        thread_id: threadId,
-        user_id: userId,
-        role: "assistant",
-        content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
-      });
-    } catch (e) {
-      console.error("[diagram-job] failure assistant message insert failed:", e);
-    }
+  const title = prompt.slice(0, 80) || def.label;
+  const { data: diagRow, error: diagErr } = await supabaseAdmin
+    .from("diagrams")
+    .insert({
+      user_id: userId,
+      thread_id: threadId,
+      kind,
+      title,
+      prompt,
+      mermaid_code: json,
+    })
+    .select()
+    .single();
+  if (diagErr) throw new Error(diagErr.message);
+
+  const content = `הנה ${def.label}:\n\n\`\`\`rf-json\n${json}\n\`\`\``;
+  await supabaseAdmin.from("chat_messages").insert({
+    thread_id: threadId,
+    user_id: userId,
+    role: "assistant",
+    content,
+    artifact_kind: "diagram",
+    artifact_id: diagRow.id,
+  });
+
+  if (isFirstMessage) {
+    await supabaseAdmin.from("chat_threads").update({ title: title.slice(0, 100) }).eq("id", threadId);
+  } else {
     await supabaseAdmin
-      .from("diagram_jobs")
-      .update({
-        status: "failed",
-        error_message: errMsg,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", jobId);
-  };
+      .from("chat_threads")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", threadId);
+  }
 
   try {
-    let diagramCode: string;
-    let assistantFence: "svg" | "rf-json";
-    let iterations: number | undefined;
-
-    if (kind === "diagram_activity") {
-      const { runActivitySwimlaneOrchestrator } = await import(
-        "@/agents/diagrams/activity-swimlane.server"
-      );
-      const { svg, iterations: it } = await withTimeout(
-        runActivitySwimlaneOrchestrator({
-          userPrompt: prompt,
-          lovableApiKey,
-          modelOverride,
-          tracker,
-        }),
-        DIAGRAM_JOB_TIMEOUT_MS,
-        "activity diagram generation",
-      );
-      diagramCode = svg;
-      assistantFence = "svg";
-      iterations = it;
-    } else {
-      const { runRfJsonDiagramAgent } = await import(
-        "@/agents/diagrams/rf-json.server"
-      );
-      const { json } = await withTimeout(
-        runRfJsonDiagramAgent({
-          kind: kind as Exclude<DiagramOutputKey, "diagram_activity">,
-          userPrompt: prompt,
-          history: priorHistory,
-          lovableApiKey,
-          modelOverride,
-          tracker,
-        }),
-        DIAGRAM_JOB_TIMEOUT_MS,
-        "diagram generation",
-      );
-      diagramCode = json;
-      assistantFence = "rf-json";
-    }
-
-    const title = prompt.slice(0, 80) || def.label;
-
-    const { data: diagRow, error: diagErr } = await supabaseAdmin
-      .from("diagrams")
-      .insert({
-        user_id: userId,
-        thread_id: threadId,
-        kind,
-        title,
-        prompt,
-        mermaid_code: diagramCode,
-      })
-      .select()
-      .single();
-    if (diagErr) throw new Error(diagErr.message);
-
-    try {
-      const totals = tracker.totals();
-      await logAiUsage({
-        userId,
-        diagramId: diagRow.id,
-        artifactKind: kind,
-        status: "success",
-        model: modelOverride ?? "agent",
-        purpose: "diagram",
-        inputTokens: totals.inputTokens,
-        outputTokens: totals.outputTokens,
-        totalTokens: totals.totalTokens,
-        costUsd: totals.costUsd,
-        docTitle: title,
-        docType: kind,
-        wordCount: 0,
-      });
-      usageLogged = true;
-    } catch (e) {
-      console.error("[diagram-job] success logAiUsage failed:", e);
-    }
-
-    const assistantContent =
-      `הנה ${def.label}:\n\n\`\`\`${assistantFence}\n${diagramCode}\n\`\`\``;
-    await supabaseAdmin.from("chat_messages").insert({
-      thread_id: threadId,
-      user_id: userId,
-      role: "assistant",
-      content: assistantContent,
-      artifact_kind: "diagram",
-      artifact_id: diagRow.id,
+    const totals = tracker.totals();
+    await logAiUsage({
+      userId,
+      diagramId: diagRow.id,
+      artifactKind: kind,
+      status: "success",
+      model: modelOverride ?? "agent",
+      purpose: "diagram",
+      inputTokens: totals.inputTokens,
+      outputTokens: totals.outputTokens,
+      totalTokens: totals.totalTokens,
+      costUsd: totals.costUsd,
+      docTitle: title,
+      docType: kind,
+      wordCount: 0,
     });
-
-    if (isFirstMessage) {
-      await supabaseAdmin
-        .from("chat_threads")
-        .update({ title: title.slice(0, 100) })
-        .eq("id", threadId);
-    } else {
-      await supabaseAdmin
-        .from("chat_threads")
-        .update({ updated_at: new Date().toISOString() })
-        .eq("id", threadId);
-    }
-
-    await supabaseAdmin
-      .from("diagram_jobs")
-      .update({
-        status: "done",
-        diagram_id: diagRow.id,
-        iterations: iterations ?? null,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", jobId);
-  } catch (err) {
-    const msg =
-      err instanceof ActivityDiagramGenerationError
-        ? err.message
-        : err instanceof Error
-          ? err.message
-          : String(err);
-    console.error("[diagram-job] failed:", err);
-    await flushFailure(msg);
+  } catch (e) {
+    console.error("[diagram-job] success logAiUsage failed:", e);
   }
+
+  await supabaseAdmin
+    .from("diagram_jobs")
+    .update({
+      status: "done",
+      stage: "done",
+      diagram_id: diagRow.id,
+      next_run_at: null,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", jobId);
 }
