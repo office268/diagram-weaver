@@ -90,9 +90,12 @@ interface Attachment {
   id: string;
   name: string;
   size: number;
-  status: "uploading" | "ready";
+  status: "uploading" | "uploaded" | "extracting" | "ready" | "failed";
   text?: string;
   truncated?: boolean;
+  storagePath?: string;
+  mimeType?: string;
+  errorMessage?: string;
 }
 
 interface ActiveDiagramJob {
@@ -420,31 +423,94 @@ function ChatPage() {
     const list = Array.from(files);
     const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
     const MAX_CHARS = 60_000;
-    for (const file of list) {
-      const id = crypto.randomUUID();
-      setAttachments((prev) => [
-        ...prev,
-        { id, name: file.name, size: file.size, status: "uploading" },
-      ]);
-      try {
-        if (file.size > MAX_BYTES) {
-          throw new Error("הקובץ גדול מדי (מקסימום 10MB)");
-        }
-        const { text: rawText } = await extractTextFromFile(file);
-        const truncated = rawText.length > MAX_CHARS;
-        const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
-        setAttachments((prev) =>
-          prev.map((a) =>
-            a.id === id ? { ...a, status: "ready", text, truncated } : a,
-          ),
-        );
-      } catch (e) {
-        toast.error(
-          `${file.name}: ${e instanceof Error ? e.message : "חילוץ טקסט נכשל"}`,
-        );
-        setAttachments((prev) => prev.filter((a) => a.id !== id));
-      }
+
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) {
+      toast.error("נדרשת התחברות מחדש");
+      return;
     }
+
+    await Promise.all(
+      list.map(async (file) => {
+        const id = crypto.randomUUID();
+        const safeName = file.name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_");
+        const storagePath = `${userId}/${threadId}/${id}/${safeName}`;
+        const mimeType = file.type || "application/octet-stream";
+
+        setAttachments((prev) => [
+          ...prev,
+          {
+            id,
+            name: file.name,
+            size: file.size,
+            status: "uploading",
+            storagePath,
+            mimeType,
+          },
+        ]);
+
+        if (file.size > MAX_BYTES) {
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id
+                ? { ...a, status: "failed", errorMessage: "הקובץ גדול מ-10MB" }
+                : a,
+            ),
+          );
+          toast.error(`${file.name}: הקובץ גדול מ-10MB`);
+          return;
+        }
+
+        // 1) Upload original file to storage
+        try {
+          const { error: upErr } = await supabase.storage
+            .from("chat-attachments")
+            .upload(storagePath, file, {
+              contentType: mimeType,
+              upsert: false,
+            });
+          if (upErr) throw upErr;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "העלאת הקובץ נכשלה";
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "failed", errorMessage: msg } : a,
+            ),
+          );
+          toast.error(`${file.name}: ${msg}`);
+          return;
+        }
+
+        // 2) Mark uploaded so the user sees it
+        setAttachments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "uploaded" } : a)),
+        );
+
+        // 3) Extract text in the browser
+        setAttachments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "extracting" } : a)),
+        );
+        try {
+          const { text: rawText } = await extractTextFromFile(file);
+          const truncated = rawText.length > MAX_CHARS;
+          const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "ready", text, truncated } : a,
+            ),
+          );
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "חילוץ טקסט נכשל";
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "failed", errorMessage: msg } : a,
+            ),
+          );
+          toast.error(`${file.name}: ${msg}`);
+        }
+      }),
+    );
   }
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -455,17 +521,25 @@ function ChatPage() {
   }
 
   function removeAttachment(id: string) {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    setAttachments((prev) => {
+      const target = prev.find((a) => a.id === id);
+      if (target?.storagePath) {
+        void supabase.storage
+          .from("chat-attachments")
+          .remove([target.storagePath])
+          .catch(() => undefined);
+      }
+      return prev.filter((a) => a.id !== id);
+    });
   }
 
   async function handleSend() {
     const msg = input.trim();
     const readyAtts = attachments.filter((a) => a.status === "ready");
-    const hasUploading = attachments.some((a) => a.status === "uploading");
-    if (hasUploading) {
-      toast.info("ממתין לסיום העלאת קבצים...");
-      return;
-    }
+    const hasPending = attachments.some(
+      (a) => a.status === "uploading" || a.status === "extracting",
+    );
+    if (hasPending) return;
     if ((!msg && readyAtts.length === 0) || sending) return;
     canceledRef.current = false;
     setCanceling(false);
@@ -871,27 +945,59 @@ function ChatPage() {
           </Dialog>
           {attachments.length > 0 && (
             <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
-              {attachments.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
-                >
-                  {a.status === "uploading" ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Paperclip className="h-3 w-3 text-primary" />
-                  )}
-                  <span className="max-w-[140px] truncate">{a.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(a.id)}
-                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    aria-label="הסר"
+              {attachments.map((a) => {
+                const statusLabel =
+                  a.status === "uploading"
+                    ? "מעלה…"
+                    : a.status === "uploaded"
+                      ? "הועלה"
+                      : a.status === "extracting"
+                        ? "מחלץ טקסט…"
+                        : a.status === "failed"
+                          ? a.errorMessage || "שגיאה"
+                          : null;
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+                      a.status === "failed"
+                        ? "border-destructive/40 bg-destructive/5"
+                        : "border-border bg-muted/50"
+                    }`}
+                    title={a.errorMessage || a.name}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    {a.status === "uploading" || a.status === "extracting" ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : a.status === "uploaded" ? (
+                      <Check className="h-3 w-3 text-muted-foreground" />
+                    ) : a.status === "failed" ? (
+                      <X className="h-3 w-3 text-destructive" />
+                    ) : (
+                      <Paperclip className="h-3 w-3 text-primary" />
+                    )}
+                    <span className="max-w-[140px] truncate">{a.name}</span>
+                    {statusLabel && (
+                      <span
+                        className={`text-[10px] ${
+                          a.status === "failed"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {statusLabel}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(a.id)}
+                      className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="הסר"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="mx-auto max-w-3xl">
@@ -1062,8 +1168,14 @@ function ChatPage() {
                     disabled={
                       canceling ||
                       (!sending &&
-                        input.trim().length === 0 &&
-                        attachments.filter((a) => a.status === "ready").length === 0)
+                        (attachments.some(
+                          (a) =>
+                            a.status === "uploading" ||
+                            a.status === "extracting",
+                        ) ||
+                          (input.trim().length === 0 &&
+                            attachments.filter((a) => a.status === "ready")
+                              .length === 0)))
                     }
                     size="icon"
                     aria-label={sending ? "עצור" : "שלח"}
