@@ -495,11 +495,33 @@ function ChatPage() {
       await qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
       await qc.invalidateQueries({ queryKey: ["chat-threads"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
-      setInput(msg);
-      setAttachments(sentAtts);
+      if (!canceledRef.current) {
+        toast.error(e instanceof Error ? e.message : "שליחה נכשלה");
+        setInput(msg);
+        setAttachments(sentAtts);
+      }
     } finally {
       setSending(false);
+      setCanceling(false);
+    }
+  }
+
+  async function handleStop() {
+    if (canceling) return;
+    canceledRef.current = true;
+    setCanceling(true);
+    try {
+      const jobId = activeDiagramJob?.id;
+      if (jobId) {
+        await cancelDiagramJobFn({ data: { jobId } });
+      }
+      toast.info("התהליך בוטל");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "ביטול נכשל");
+    } finally {
+      // Restore the composer immediately; the polling loop will exit on its own.
+      setSending(false);
+      setCanceling(false);
     }
   }
 
