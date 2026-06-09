@@ -48,6 +48,7 @@ import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedLabIndexRouteImport } from './routes/_authenticated/lab.index'
 import { Route as AuthenticatedAgentConversationsIndexRouteImport } from './routes/_authenticated/agent-conversations.index'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
+import { Route as AuthenticatedLabSessionIdRouteImport } from './routes/_authenticated/lab.$sessionId'
 import { Route as AuthenticatedEditorIdRouteImport } from './routes/_authenticated/editor.$id'
 import { Route as AuthenticatedDiagramIdRouteImport } from './routes/_authenticated/diagram.$id'
 import { Route as AuthenticatedChatThreadIdRouteImport } from './routes/_authenticated/chat.$threadId'
@@ -256,6 +257,12 @@ const AuthenticatedProjectsProjectIdRoute =
     path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedLabSessionIdRoute =
+  AuthenticatedLabSessionIdRouteImport.update({
+    id: '/lab/$sessionId',
+    path: '/lab/$sessionId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEditorIdRoute = AuthenticatedEditorIdRouteImport.update({
   id: '/editor/$id',
   path: '/editor/$id',
@@ -330,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
+  '/lab/$sessionId': typeof AuthenticatedLabSessionIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/lab/': typeof AuthenticatedLabIndexRoute
@@ -376,6 +384,7 @@ export interface FileRoutesByTo {
   '/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/editor/$id': typeof AuthenticatedEditorIdRoute
+  '/lab/$sessionId': typeof AuthenticatedLabSessionIdRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/agent-conversations': typeof AuthenticatedAgentConversationsIndexRoute
   '/lab': typeof AuthenticatedLabIndexRoute
@@ -424,6 +433,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$threadId': typeof AuthenticatedChatThreadIdRoute
   '/_authenticated/diagram/$id': typeof AuthenticatedDiagramIdRoute
   '/_authenticated/editor/$id': typeof AuthenticatedEditorIdRoute
+  '/_authenticated/lab/$sessionId': typeof AuthenticatedLabSessionIdRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/agent-conversations/': typeof AuthenticatedAgentConversationsIndexRoute
   '/_authenticated/lab/': typeof AuthenticatedLabIndexRoute
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/chat/$threadId'
     | '/diagram/$id'
     | '/editor/$id'
+    | '/lab/$sessionId'
     | '/projects/$projectId'
     | '/agent-conversations/'
     | '/lab/'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/chat/$threadId'
     | '/diagram/$id'
     | '/editor/$id'
+    | '/lab/$sessionId'
     | '/projects/$projectId'
     | '/agent-conversations'
     | '/lab'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$threadId'
     | '/_authenticated/diagram/$id'
     | '/_authenticated/editor/$id'
+    | '/_authenticated/lab/$sessionId'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/agent-conversations/'
     | '/_authenticated/lab/'
@@ -878,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/lab/$sessionId': {
+      id: '/_authenticated/lab/$sessionId'
+      path: '/lab/$sessionId'
+      fullPath: '/lab/$sessionId'
+      preLoaderRoute: typeof AuthenticatedLabSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/editor/$id': {
       id: '/_authenticated/editor/$id'
       path: '/editor/$id'
@@ -938,6 +958,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChatThreadIdRoute: typeof AuthenticatedChatThreadIdRoute
   AuthenticatedDiagramIdRoute: typeof AuthenticatedDiagramIdRoute
   AuthenticatedEditorIdRoute: typeof AuthenticatedEditorIdRoute
+  AuthenticatedLabSessionIdRoute: typeof AuthenticatedLabSessionIdRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedAgentConversationsIndexRoute: typeof AuthenticatedAgentConversationsIndexRoute
   AuthenticatedLabIndexRoute: typeof AuthenticatedLabIndexRoute
@@ -960,6 +981,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChatThreadIdRoute: AuthenticatedChatThreadIdRoute,
   AuthenticatedDiagramIdRoute: AuthenticatedDiagramIdRoute,
   AuthenticatedEditorIdRoute: AuthenticatedEditorIdRoute,
+  AuthenticatedLabSessionIdRoute: AuthenticatedLabSessionIdRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedAgentConversationsIndexRoute:
     AuthenticatedAgentConversationsIndexRoute,
@@ -1003,13 +1025,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
