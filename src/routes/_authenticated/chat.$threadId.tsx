@@ -1031,22 +1031,19 @@ function DiagramBlock({ code }: { code: string }) {
 }
 
 function GenerationProgress({
-  phaseIdx,
-  phases,
+  phaseIdx: _phaseIdx,
+  phases: _phases,
 }: {
   phaseIdx: number;
   phases: readonly string[];
 }) {
-  const label = phases[phaseIdx % phases.length];
   return (
     <div className="flex items-center justify-center gap-2 text-base">
       <Loader2 className="h-4 w-4 animate-spin text-primary" />
-      <span
-        key={label}
-        className="font-medium text-foreground animate-in fade-in slide-in-from-bottom-1 duration-300"
-      >
-        {label}…
+      <span className="font-medium text-foreground">
+        המשימה בעבודה — התוצר יוצג כאן ברגע שיסתיים
       </span>
     </div>
   );
 }
+
