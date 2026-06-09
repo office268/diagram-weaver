@@ -624,6 +624,7 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
       kind,
       message: msg,
     });
+    const finalMsg = (await isJobCanceled(jobId)) ? CANCELED_MESSAGE : msg;
     await finalizeFailure(
       params,
       {
@@ -631,7 +632,19 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
         current_message_id: currentMessageId,
         stage: "generating",
       },
-      msg,
+      finalMsg,
+    );
+    return;
+  }
+
+  // User may have requested cancellation while the LLM was running. Do not
+  // persist a diagram in that case; finalize as canceled and bail out.
+  if (await isJobCanceled(jobId)) {
+    console.info("[diagram-job] RF-JSON canceled after generation", { jobId });
+    await finalizeFailure(
+      params,
+      { ...job, current_message_id: currentMessageId, stage: "generating" },
+      CANCELED_MESSAGE,
     );
     return;
   }
