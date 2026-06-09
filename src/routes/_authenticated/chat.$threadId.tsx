@@ -710,10 +710,40 @@ function ChatPage() {
 
       {/* Chat column */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-xl border border-border bg-card md:col-start-3 md:row-start-1 md:row-span-3">
-
+        {/* Product / Project assignment */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2 text-xs">
+          <label className="flex flex-1 items-center gap-1.5 min-w-[160px]">
+            <span className="shrink-0 text-muted-foreground">מוצר:</span>
+            <Input
+              value={productName}
+              onChange={(e) => { setProductName(e.target.value); setProductDirty(true); }}
+              onBlur={commitAssignment}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+              placeholder="Product-00001"
+              className="h-7 text-xs"
+              disabled={!currentOrg?.id || assignMutation.isPending}
+            />
+          </label>
+          <label className="flex flex-1 items-center gap-1.5 min-w-[160px]">
+            <span className="shrink-0 text-muted-foreground">פרויקט:</span>
+            <Input
+              value={projectName}
+              onChange={(e) => { setProjectName(e.target.value); setProjectDirty(true); }}
+              onBlur={commitAssignment}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+              placeholder="Project-00001"
+              className="h-7 text-xs"
+              disabled={!currentOrg?.id || assignMutation.isPending}
+            />
+          </label>
+          {assignMutation.isPending && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          )}
+        </div>
 
         {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
+
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="mx-auto max-w-md text-center">
