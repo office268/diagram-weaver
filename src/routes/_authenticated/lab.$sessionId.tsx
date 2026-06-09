@@ -143,6 +143,7 @@ function LabPage() {
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setUploading(true);
+    let okCount = 0;
     try {
       for (const file of Array.from(files)) {
         try {
@@ -159,11 +160,14 @@ function LabPage() {
             text: text.slice(0, 400_000),
           });
           if (!res.ok) throw new Error(await res.text());
+          okCount += 1;
         } catch (e) {
-          toast.error(`${file.name}: ${e instanceof Error ? e.message : "כשל"}`);
+          console.error("[lab-upload]", file.name, e);
+          toast.error(`${file.name}: ${e instanceof Error ? e.message : "כשל בהעלאה"}`);
         }
       }
       await qc.invalidateQueries({ queryKey: ["lab-docs", sessionId] });
+      if (okCount > 0) toast.success(`הועלו ${okCount} מסמכים`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
