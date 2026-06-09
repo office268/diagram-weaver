@@ -423,31 +423,94 @@ function ChatPage() {
     const list = Array.from(files);
     const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
     const MAX_CHARS = 60_000;
-    for (const file of list) {
-      const id = crypto.randomUUID();
-      setAttachments((prev) => [
-        ...prev,
-        { id, name: file.name, size: file.size, status: "uploading" },
-      ]);
-      try {
-        if (file.size > MAX_BYTES) {
-          throw new Error("הקובץ גדול מדי (מקסימום 10MB)");
-        }
-        const { text: rawText } = await extractTextFromFile(file);
-        const truncated = rawText.length > MAX_CHARS;
-        const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
-        setAttachments((prev) =>
-          prev.map((a) =>
-            a.id === id ? { ...a, status: "ready", text, truncated } : a,
-          ),
-        );
-      } catch (e) {
-        toast.error(
-          `${file.name}: ${e instanceof Error ? e.message : "חילוץ טקסט נכשל"}`,
-        );
-        setAttachments((prev) => prev.filter((a) => a.id !== id));
-      }
+
+    const { data: sess } = await supabase.auth.getSession();
+    const userId = sess.session?.user?.id;
+    if (!userId) {
+      toast.error("נדרשת התחברות מחדש");
+      return;
     }
+
+    await Promise.all(
+      list.map(async (file) => {
+        const id = crypto.randomUUID();
+        const safeName = file.name.replace(/[^\w.\-\u0590-\u05FF]+/g, "_");
+        const storagePath = `${userId}/${threadId}/${id}/${safeName}`;
+        const mimeType = file.type || "application/octet-stream";
+
+        setAttachments((prev) => [
+          ...prev,
+          {
+            id,
+            name: file.name,
+            size: file.size,
+            status: "uploading",
+            storagePath,
+            mimeType,
+          },
+        ]);
+
+        if (file.size > MAX_BYTES) {
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id
+                ? { ...a, status: "failed", errorMessage: "הקובץ גדול מ-10MB" }
+                : a,
+            ),
+          );
+          toast.error(`${file.name}: הקובץ גדול מ-10MB`);
+          return;
+        }
+
+        // 1) Upload original file to storage
+        try {
+          const { error: upErr } = await supabase.storage
+            .from("chat-attachments")
+            .upload(storagePath, file, {
+              contentType: mimeType,
+              upsert: false,
+            });
+          if (upErr) throw upErr;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "העלאת הקובץ נכשלה";
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "failed", errorMessage: msg } : a,
+            ),
+          );
+          toast.error(`${file.name}: ${msg}`);
+          return;
+        }
+
+        // 2) Mark uploaded so the user sees it
+        setAttachments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "uploaded" } : a)),
+        );
+
+        // 3) Extract text in the browser
+        setAttachments((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "extracting" } : a)),
+        );
+        try {
+          const { text: rawText } = await extractTextFromFile(file);
+          const truncated = rawText.length > MAX_CHARS;
+          const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "ready", text, truncated } : a,
+            ),
+          );
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "חילוץ טקסט נכשל";
+          setAttachments((prev) =>
+            prev.map((a) =>
+              a.id === id ? { ...a, status: "failed", errorMessage: msg } : a,
+            ),
+          );
+          toast.error(`${file.name}: ${msg}`);
+        }
+      }),
+    );
   }
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -458,7 +521,16 @@ function ChatPage() {
   }
 
   function removeAttachment(id: string) {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
+    setAttachments((prev) => {
+      const target = prev.find((a) => a.id === id);
+      if (target?.storagePath) {
+        void supabase.storage
+          .from("chat-attachments")
+          .remove([target.storagePath])
+          .catch(() => undefined);
+      }
+      return prev.filter((a) => a.id !== id);
+    });
   }
 
   async function handleSend() {
