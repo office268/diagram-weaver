@@ -236,6 +236,7 @@ async function runActivityStep(job: JobRow, params: RunDiagramJobParams): Promis
         updated_at: new Date().toISOString(),
       })
       .eq("id", job.id);
+    await trackUsage(params, { ...job, diagram_id: diagRow.id }, tracker, "success", "diagram", "builder");
     return;
   }
 
