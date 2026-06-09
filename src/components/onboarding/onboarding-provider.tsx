@@ -110,10 +110,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     [steps.length],
   );
 
-  // Auto-start on first visit
+  // Auto-start on first visit — but not on routes where it would block primary actions (e.g. /lab)
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      const path = window.location.pathname;
+      if (path.startsWith("/lab")) return;
       const disabled = localStorage.getItem(ONBOARDING_DISABLED_KEY) === "1";
       if (disabled) return;
       const done = localStorage.getItem(ONBOARDING_STORAGE_KEY);
