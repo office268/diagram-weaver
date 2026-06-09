@@ -536,11 +536,10 @@ function ChatPage() {
   async function handleSend() {
     const msg = input.trim();
     const readyAtts = attachments.filter((a) => a.status === "ready");
-    const hasUploading = attachments.some((a) => a.status === "uploading");
-    if (hasUploading) {
-      toast.info("ממתין לסיום העלאת קבצים...");
-      return;
-    }
+    const hasPending = attachments.some(
+      (a) => a.status === "uploading" || a.status === "extracting",
+    );
+    if (hasPending) return;
     if ((!msg && readyAtts.length === 0) || sending) return;
     canceledRef.current = false;
     setCanceling(false);
