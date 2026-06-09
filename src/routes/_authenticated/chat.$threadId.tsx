@@ -649,7 +649,7 @@ function ChatPage() {
           try { window.localStorage.setItem("chat-sidebar-width", "256"); } catch {}
         }}
         title="גרור כדי לשנות גודל. לחיצה כפולה לאיפוס."
-        className="group hidden md:col-start-2 md:row-span-2 md:flex md:cursor-col-resize md:items-center md:justify-center md:self-stretch"
+        className="group hidden md:col-start-2 md:row-start-1 md:row-span-3 md:flex md:cursor-col-resize md:items-center md:justify-center md:self-stretch"
       >
         <div className="flex h-24 w-[6px] flex-col items-center justify-center gap-1 rounded-full border border-border bg-muted shadow-sm transition-colors group-hover:border-primary group-hover:bg-primary/30 group-active:bg-primary">
           <span className="h-1 w-1 rounded-full bg-foreground/50" />
