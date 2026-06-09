@@ -4,9 +4,11 @@ export async function extractText(buffer: Buffer, mimeType: string): Promise<str
   }
 
   if (mimeType === "application/pdf") {
-    // pdf-parse may export differently depending on bundler; use require as fallback
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse: (b: Buffer) => Promise<{ text: string }> = require("pdf-parse");
+    // Import the inner module directly — pdf-parse's index.js runs debug code
+    // on import that reads a test fixture from disk and crashes in bundlers.
+    // @ts-expect-error - no types for the inner module
+    const mod = await import("pdf-parse/lib/pdf-parse.js");
+    const pdfParse = (mod.default ?? mod) as (b: Buffer) => Promise<{ text: string }>;
     const data = await pdfParse(buffer);
     return data.text;
   }
