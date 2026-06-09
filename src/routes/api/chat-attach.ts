@@ -1,12 +1,11 @@
+// Chat attachment endpoint — TXT only.
+// PDF/DOCX are extracted client-side (see text-extractor.client.ts) and the
+// extracted text is sent directly with the chat message, so this route is
+// only kept as a safety net for plain-text uploads.
+
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { extractText } from "@/lib/rag/text-extractor.server";
 
-const ALLOWED = new Set([
-  "application/pdf",
-  "text/plain",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-]);
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_CHARS = 60_000;
 
@@ -36,32 +35,24 @@ export const Route = createFileRoute("/api/chat-attach")({
         if (!file || typeof file === "string")
           return new Response("No file provided", { status: 400 });
 
-        if (!ALLOWED.has(file.type))
+        if (file.type !== "text/plain" && file.type !== "text/markdown") {
           return new Response(
-            "סוג קובץ לא נתמך. נתמכים: PDF, DOCX, TXT",
+            "סוג קובץ זה חייב להתחלץ בצד הלקוח. PDF/DOCX נשלחים כטקסט חולץ מראש.",
             { status: 400 },
           );
+        }
 
         const ab = await file.arrayBuffer();
         if (ab.byteLength > MAX_BYTES)
           return new Response("הקובץ גדול מדי (מקסימום 10MB)", { status: 400 });
 
-        const buffer = Buffer.from(ab);
-        let text = "";
-        try {
-          text = await extractText(buffer, file.type);
-        } catch (e) {
-          console.error("[chat-attach] extract failed:", e);
-          return new Response("חילוץ טקסט נכשל", { status: 500 });
-        }
-
-        text = text.trim();
+        let text = Buffer.from(ab).toString("utf-8").trim();
         const truncated = text.length > MAX_CHARS;
         if (truncated) text = text.slice(0, MAX_CHARS);
 
         return Response.json({
           fileName: file.name,
-          size: buffer.byteLength,
+          size: ab.byteLength,
           text,
           truncated,
         });
