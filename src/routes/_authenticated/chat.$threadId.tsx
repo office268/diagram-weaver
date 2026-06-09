@@ -712,9 +712,29 @@ function ChatPage() {
 
       </div>
 
+      {/* Horizontal resize handle (desktop only) — drag to resize threads list vs composer */}
+      <div
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="גרור כדי לשנות את גובה תיבת הצ'אט"
+        onMouseDown={startResizeComposer}
+        onDoubleClick={() => {
+          setComposerHeight(180);
+          try { window.localStorage.setItem("chat-composer-height", "180"); } catch {}
+        }}
+        title="גרור כדי לשנות גובה. לחיצה כפולה לאיפוס."
+        className="group hidden md:col-start-1 md:row-start-2 md:flex md:cursor-row-resize md:items-center md:justify-center md:self-stretch"
+      >
+        <div className="flex h-[6px] w-24 flex-row items-center justify-center gap-1 rounded-full border border-border bg-muted shadow-sm transition-colors group-hover:border-primary group-hover:bg-primary/30 group-active:bg-primary">
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+          <span className="h-1 w-1 rounded-full bg-foreground/50" />
+        </div>
+      </div>
+
       {/* Composer */}
       <div
-        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-2 md:pt-3 md:pb-3"
+        className="px-3 pt-8 pb-16 md:col-start-1 md:row-start-3 md:overflow-y-auto md:pt-3 md:pb-3"
         style={isDesktop ? { width: sidebarWidth } : undefined}
       >
           <input
