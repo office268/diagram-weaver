@@ -436,6 +436,10 @@ async function finalizeFailure(
   errMsg: string,
 ): Promise<void> {
   const def = OUTPUT_TYPES[params.kind];
+  const isCanceled = errMsg === CANCELED_MESSAGE;
+  const placeholderMsg = isCanceled
+    ? `יצירת ${def.label} בוטלה.`
+    : `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`;
 
   // If we have a partial SVG already in chat, keep it visible (just strip footer) instead of
   // appending a generic error message that overwrites the user's only artifact.
@@ -451,7 +455,9 @@ async function finalizeFailure(
         thread_id: params.threadId,
         user_id: params.userId,
         role: "assistant",
-        content: `שלב שיפור התרשים נכשל ולכן השארתי את הגרסה האחרונה. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+        content: isCanceled
+          ? `שיפור התרשים הופסק לבקשתך. השארתי את הגרסה האחרונה.`
+          : `שלב שיפור התרשים נכשל ולכן השארתי את הגרסה האחרונה. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
       });
     } catch (e) {
       console.error("[diagram-job] failure follow-up insert failed:", e);
@@ -460,7 +466,7 @@ async function finalizeFailure(
     try {
       await supabaseAdmin
         .from("chat_messages")
-        .update({ content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}` })
+        .update({ content: placeholderMsg })
         .eq("id", job.current_message_id);
     } catch (e) {
       console.error("[diagram-job] failure placeholder update failed:", e);
@@ -471,7 +477,7 @@ async function finalizeFailure(
         thread_id: params.threadId,
         user_id: params.userId,
         role: "assistant",
-        content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${errMsg}`,
+        content: placeholderMsg,
       });
     } catch (e) {
       console.error("[diagram-job] failure assistant message insert failed:", e);
