@@ -192,7 +192,7 @@ function HomePage() {
       combinedMut.mutate();
       return;
     }
-    if (key === "user_story" || key === "dashboard") {
+    if (key === "dashboard") {
       return;
     }
     createMut.mutate(key);
