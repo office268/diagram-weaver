@@ -927,6 +927,12 @@ function ChatPage() {
                 ) : (
                   <div />
                 )}
+                <ThreadModelSelector
+                  threadId={threadId}
+                  currentOverride={thread.model_override ?? null}
+                  variant="icon"
+                />
+                </div>
                 <div className="flex items-center gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
