@@ -546,10 +546,11 @@ function LabPage() {
       {/* Single shared hidden file input — triggered by openFilePicker() */}
       <input
         ref={fileInputRef}
+        id="lab-file-input"
         type="file"
         multiple
         accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
-        className="hidden"
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
         onClick={() => {
           console.info("[lab-upload][client] input:click", { sessionId });
         }}
