@@ -29,6 +29,7 @@ import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 
 /** Single-step timeout — must stay well under the Worker request budget. */
 const STEP_TIMEOUT_MS = 90 * 1000;
+const RF_JSON_LEASE_MS = 2 * 60 * 1000;
 const MAX_FIX_ITERATIONS = 2;
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -43,6 +44,18 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
+}
+
+function leaseUntil(timeoutMs: number): string {
+  return new Date(Date.now() + timeoutMs).toISOString();
+}
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof ActivityDiagramGenerationError
+    ? err.message
+    : err instanceof Error
+      ? err.message
+      : String(err);
 }
 
 export interface RunDiagramJobParams {
