@@ -255,6 +255,26 @@ function ChatPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "מחיקה נכשלה"),
   });
 
+  // Background poll for any in-progress diagram job for this thread, so users
+  // who navigate back to the chat see partial / final diagrams refresh in real-time.
+  useEffect(() => {
+    let cancelled = false;
+    const tick = async () => {
+      const { data: jobs } = await supabase
+        .from("diagram_jobs")
+        .select("id,status")
+        .eq("thread_id", threadId)
+        .in("status", ["pending", "processing"])
+        .limit(1);
+      if (cancelled) return;
+      if (jobs && jobs.length > 0) {
+        qc.invalidateQueries({ queryKey: ["chat-thread", threadId] });
+      }
+    };
+    const id = setInterval(() => { void tick(); }, 3000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [threadId, qc]);
+
   // Auto-scroll on new messages
   useEffect(() => {
     if (scrollRef.current) {
