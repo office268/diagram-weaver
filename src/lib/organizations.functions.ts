@@ -19,31 +19,29 @@ export type CurrentOrganization = {
 export const getCurrentOrganization = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<CurrentOrganization> => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data, error } = await supabase
+    const { data: membership, error: membershipError } = await supabaseAdmin
       .from("organization_members")
-      .select(
-        "role, org_id, organizations:org_id ( id, name, slug, logo_url, address, website, org_kind, identifier )",
-      )
+      .select("role, org_id")
       .eq("user_id", userId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
 
-    if (error) throw new Error(error.message);
-    if (!data || !data.organizations) return null;
+    if (membershipError) throw new Error(membershipError.message);
+    if (!membership?.org_id) return null;
 
-    const org = data.organizations as unknown as {
-      id: string;
-      name: string;
-      slug: string;
-      logo_url: string | null;
-      address: string | null;
-      website: string | null;
-      org_kind: OrgKind | null;
-      identifier: string | null;
-    };
+    const { data: org, error: orgError } = await supabaseAdmin
+      .from("organizations")
+      .select("id, name, slug, logo_url, address, website, org_kind, identifier")
+      .eq("id", membership.org_id)
+      .maybeSingle();
+
+    if (orgError) throw new Error(orgError.message);
+    if (!org) return null;
+
     return {
       id: org.id,
       name: org.name,
@@ -53,7 +51,7 @@ export const getCurrentOrganization = createServerFn({ method: "GET" })
       website: org.website ?? null,
       org_kind: org.org_kind ?? null,
       identifier: org.identifier ?? null,
-      role: data.role as "owner" | "admin" | "member",
+      role: membership.role as "owner" | "admin" | "member",
     };
   });
 
