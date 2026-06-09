@@ -352,7 +352,7 @@ function LabPage() {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.docx,.txt,.md,.csv"
+          accept=".pdf,.docx,.txt,.md,.csv,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,text/csv"
           className="hidden"
           onChange={(e) => handleFiles(e.target.files)}
         />
