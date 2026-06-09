@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
-import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot, Workflow, KanbanSquare, Rocket } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot, Workflow, KanbanSquare, Rocket, FlaskConical } from "lucide-react";
 
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ export function UserMenu({ user, overrideAvatarUrl, trigger = "avatar" }: { user
     { to: "/dashboard", label: "ניתוח מערכות", Icon: Workflow, active: path.startsWith("/dashboard") || path.startsWith("/chat") || path.startsWith("/diagram") || path.startsWith("/editor") || path.startsWith("/documents") },
     { to: "/projects-management", label: "ניהול פרויקטים", Icon: KanbanSquare, active: path.startsWith("/projects-management") || path.startsWith("/projects") },
     { to: "/product", label: "ניהול מוצר", Icon: Rocket, active: path.startsWith("/product") },
+    { to: "/lab", label: "מעבדה (ניסיוני)", Icon: FlaskConical, active: path.startsWith("/lab") },
   ] as const;
 
   const { balance } = useCredits();
