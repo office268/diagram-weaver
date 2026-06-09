@@ -228,11 +228,11 @@ function HomePage() {
 
   const diagramTiles = useMemo(() => mainTiles.filter((k) => isDiagramType(k)), [mainTiles]);
   const documentTiles = useMemo(
-    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary" && k !== "user_story" && k !== "dashboard"),
+    () => mainTiles.filter((k) => !isDiagramType(k) && k !== "meeting_summary" && k !== "dashboard"),
     [mainTiles],
   );
   const toolTiles = useMemo(
-    () => mainTiles.filter((k) => k === "meeting_summary" || k === "user_story" || k === "dashboard"),
+    () => mainTiles.filter((k) => k === "meeting_summary" || k === "dashboard"),
     [mainTiles],
   );
 
