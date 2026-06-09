@@ -1,0 +1,1 @@
+UPDATE public.chat_threads SET model_override = NULL WHERE model_override IN ('openai/gpt-5.5-pro','openai/gpt-5.4-pro');
