@@ -1168,8 +1168,14 @@ function ChatPage() {
                     disabled={
                       canceling ||
                       (!sending &&
-                        input.trim().length === 0 &&
-                        attachments.filter((a) => a.status === "ready").length === 0)
+                        (attachments.some(
+                          (a) =>
+                            a.status === "uploading" ||
+                            a.status === "extracting",
+                        ) ||
+                          (input.trim().length === 0 &&
+                            attachments.filter((a) => a.status === "ready")
+                              .length === 0)))
                     }
                     size="icon"
                     aria-label={sending ? "עצור" : "שלח"}
