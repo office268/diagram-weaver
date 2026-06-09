@@ -22,13 +22,32 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
       // - require `max_completion_tokens` instead of `max_tokens`
       // - only accept the default `temperature` (1)
       // - reject `top_p`, `frequency_penalty`, `presence_penalty`
-      // Normalize the body on the wire since the AI SDK's openai-compatible
-      // provider doesn't know about these restrictions.
+      // Normalize on the wire since the AI SDK's openai-compatible provider
+      // doesn't know about these restrictions. Handle multiple body shapes
+      // (string / Uint8Array / Request input).
       try {
-        if (init?.body && typeof init.body === "string") {
-          const parsed = JSON.parse(init.body) as Record<string, unknown>;
+        let bodyText: string | null = null;
+        if (init?.body) {
+          if (typeof init.body === "string") {
+            bodyText = init.body;
+          } else if (init.body instanceof Uint8Array) {
+            bodyText = new TextDecoder().decode(init.body);
+          } else if (
+            typeof ArrayBuffer !== "undefined" &&
+            init.body instanceof ArrayBuffer
+          ) {
+            bodyText = new TextDecoder().decode(new Uint8Array(init.body));
+          }
+        }
+        if (bodyText === null && input instanceof Request) {
+          try { bodyText = await input.clone().text(); } catch { /* ignore */ }
+        }
+
+        if (bodyText) {
+          const parsed = JSON.parse(bodyText) as Record<string, unknown>;
           const model = typeof parsed.model === "string" ? parsed.model : "";
-          if (model.startsWith("openai/gpt-5")) {
+          // Match openai/gpt-5, openai/gpt-5.4, openai/gpt-5.5, openai/gpt-5-mini, …
+          if (/^openai\/gpt-5(\b|[.\-])/i.test(model)) {
             if ("max_tokens" in parsed && !("max_completion_tokens" in parsed)) {
               parsed.max_completion_tokens = parsed.max_tokens;
             }
@@ -37,7 +56,16 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
             delete parsed.top_p;
             delete parsed.frequency_penalty;
             delete parsed.presence_penalty;
-            init = { ...init, body: JSON.stringify(parsed) };
+            const newBody = JSON.stringify(parsed);
+            if (input instanceof Request) {
+              // Rebuild Request so its internal body doesn't override init.body.
+              input = new Request(input.url, {
+                method: input.method,
+                headers: input.headers,
+                body: newBody,
+              });
+            }
+            init = { ...init, body: newBody };
           }
         }
       } catch {
