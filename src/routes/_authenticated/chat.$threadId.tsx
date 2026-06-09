@@ -905,18 +905,29 @@ function ChatPage() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
-                    onClick={() => void handleSend()}
+                    onClick={() => {
+                      if (sending) void handleStop();
+                      else void handleSend();
+                    }}
                     disabled={
-                      sending ||
-                      (input.trim().length === 0 &&
+                      canceling ||
+                      (!sending &&
+                        input.trim().length === 0 &&
                         attachments.filter((a) => a.status === "ready").length === 0)
                     }
                     size="icon"
-                    aria-label="שלח"
-                    title="שלח"
+                    aria-label={sending ? "עצור" : "שלח"}
+                    title={sending ? "עצור את התהליך" : "שלח"}
+                    variant={sending ? "outline" : "default"}
                     className="h-8 w-8 shrink-0 rounded-full"
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {canceling ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : sending ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
