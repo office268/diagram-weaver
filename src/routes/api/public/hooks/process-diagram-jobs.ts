@@ -3,6 +3,8 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runDiagramJob } from "@/lib/diagram-job.server";
 import type { DiagramOutputKey } from "@/lib/output-types";
 
+const RESET_STUCK_MINUTES = 3;
+
 /**
  * Cron-driven queue worker for diagram jobs.
  *
@@ -29,7 +31,17 @@ export const Route = createFileRoute("/api/public/hooks/process-diagram-jobs")({
 
         // Best-effort: free up jobs that look stuck before claiming the next one.
         try {
-          await supabaseAdmin.rpc("reset_stuck_diagram_jobs", { _stale_minutes: 5 });
+          const { data: resetCount, error: resetErr } = await supabaseAdmin.rpc(
+            "reset_stuck_diagram_jobs",
+            { _stale_minutes: RESET_STUCK_MINUTES },
+          );
+          if (resetErr) throw resetErr;
+          if ((resetCount ?? 0) > 0) {
+            console.warn("[process-diagram-jobs] reset stuck jobs", {
+              resetCount,
+              staleMinutes: RESET_STUCK_MINUTES,
+            });
+          }
         } catch (e) {
           console.error("[process-diagram-jobs] reset_stuck failed:", e);
         }
@@ -55,6 +67,13 @@ export const Route = createFileRoute("/api/public/hooks/process-diagram-jobs")({
           prompt: string;
           model_override: string | null;
         };
+
+        console.info("[process-diagram-jobs] claimed job", {
+          jobId: job.id,
+          threadId: job.thread_id,
+          kind: job.kind,
+          hasModelOverride: Boolean(job.model_override),
+        });
 
 
         // Load prior chat history for RF-JSON kinds.
@@ -85,6 +104,10 @@ export const Route = createFileRoute("/api/public/hooks/process-diagram-jobs")({
             modelOverride: job.model_override ?? undefined,
             priorHistory,
             isFirstMessage,
+          });
+          console.info("[process-diagram-jobs] completed job", {
+            jobId: job.id,
+            kind: job.kind,
           });
           return Response.json({ processed: true, jobId: job.id });
         } catch (err) {

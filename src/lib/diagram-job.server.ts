@@ -539,6 +539,15 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
   const tracker = createUsageTracker();
   let currentMessageId = job.current_message_id;
 
+  console.info("[diagram-job] RF-JSON start", {
+    jobId,
+    threadId,
+    kind,
+    stage: job.stage ?? "generating",
+    hasCurrentMessage: Boolean(currentMessageId),
+    modelOverride: modelOverride ?? null,
+  });
+
   if (!currentMessageId) {
     const { data: msgRow, error: msgErr } = await supabaseAdmin
       .from("chat_messages")
@@ -581,8 +590,18 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
       "diagram generation",
     );
     json = result.json;
+    console.info("[diagram-job] RF-JSON generated", {
+      jobId,
+      kind,
+      chars: json.length,
+    });
   } catch (err) {
     const msg = getErrorMessage(err);
+    console.error("[diagram-job] RF-JSON generation failed", {
+      jobId,
+      kind,
+      message: msg,
+    });
     await finalizeFailure(
       params,
       {
@@ -609,6 +628,12 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
     .select()
     .single();
   if (diagErr) throw new Error(diagErr.message);
+
+  console.info("[diagram-job] RF-JSON diagram saved", {
+    jobId,
+    kind,
+    diagramId: diagRow.id,
+  });
 
   const content = buildRfJsonMessageContent(def.label, json);
   if (currentMessageId) {
@@ -665,4 +690,11 @@ async function runSingleShotJob(job: JobRow, params: RunDiagramJobParams): Promi
       updated_at: new Date().toISOString(),
     })
     .eq("id", jobId);
+
+  console.info("[diagram-job] RF-JSON done", {
+    jobId,
+    kind,
+    diagramId: diagRow.id,
+    currentMessageId,
+  });
 }
