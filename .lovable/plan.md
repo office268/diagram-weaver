@@ -1,42 +1,60 @@
-## מה הבעיה
-הכשל לא אקראי: העלאת קובץ ל־`/api/chat-attach` עדיין מפעילה חילוץ PDF בצד השרת, והלוגים מראים במפורש `ReferenceError: require is not defined`.
 
-בנוסף, הניסיון לעקוף את זה עם `import("pdf-parse/lib/pdf-parse.js")` גם לא יציב בפרויקט הזה, כי חבילת `pdf-parse` לא חושפת את הנתיב הזה דרך `exports`, ולכן גם הבאנדלר נופל עליו.
+## המטרה
+בהעלאת קובץ בצ׳אט, סדר הפעולות יהיה:
+1. הקובץ המקורי נשמר באחסון (Storage).
+2. הקובץ מופיע מיד ברצועת ה־attachments עם סטטוס "הועלה".
+3. רק אז מתחיל חילוץ הטקסט בדפדפן, עם סטטוס "מחלץ טקסט…".
+4. כפתור השליחה של תיבת הפרומפט יהיה מושבת (disabled) כל עוד יש קובץ ב־`uploading` או `extracting` — וייפתח רק כשכל הקבצים במצב `ready`.
 
-## מה אתקן
-1. **אפסיק לחלץ PDF בצד השרת עבור צירופי צ׳אט**
-   - אעביר את חילוץ הטקסט של קבצי הצ׳אט ללקוח, בדיוק כמו שכבר נעשה בהעלאת מסמכי RAG.
-   - כך העלאת PDF/DOCX/TXT בצ׳אט לא תהיה תלויה בחבילת Node בעייתית בסביבת השרת.
+## שלב 1 — Storage: bucket חדש לקבצי צ׳אט
+- ניצור bucket פרטי חדש `chat-attachments` (לא ניתן לפרסום ציבורי; הקבצים שייכים למשתמש).
+- ניצור policies על `storage.objects` שמרשים ל־authenticated לקרוא/לכתוב/למחוק רק קבצים תחת prefix של ה־user id שלו (`auth.uid()::text = (storage.foldername(name))[1]`).
+- מבנה נתיב: `{userId}/{threadId}/{attachmentId}/{filename}`.
 
-2. **אאחד את זרימת החילוץ בצ׳אט עם המימוש הקיים והיציב**
-   - אחבר את מסך הצ׳אט ל־`src/lib/rag/text-extractor.client.ts`.
-   - במקום לשלוח `FormData` ל־`/api/chat-attach`, אחלץ טקסט בדפדפן ואשמור את התוצאה ישירות ל־state של ה־attachments.
+## שלב 2 — מודל ה־Attachment בלקוח
+ב־`src/routes/_authenticated/chat.$threadId.tsx`:
 
-3. **אשאיר ולידציה ברורה לקבצים וגבולות טקסט**
-   - אשמור על בדיקות סוגי קבצים, גודל קובץ, וקיצוץ טקסט ארוך מדי.
-   - אם קובץ לא ניתן לחילוץ, אציג הודעת שגיאה ברורה במקום 500 גנרי.
+- להרחיב את `Attachment`:
+  - `status: "uploading" | "uploaded" | "extracting" | "ready" | "failed"`
+  - `storagePath?: string`
+  - `mimeType?: string`
+  - `errorMessage?: string`
+- לעדכן את ה־UI ברצועת ה־attachments כך שתציג:
+  - `uploading` — ספינר + "מעלה…"
+  - `uploaded` — צ׳ק קטן + שם הקובץ + "הועלה"
+  - `extracting` — ספינר עדין + "מחלץ טקסט…"
+  - `ready` — אייקון paperclip רגיל (כמו היום)
+  - `failed` — אייקון שגיאה + טקסט שגיאה קצר; X להסרה.
 
-4. **אטפל בנתיב השרת כדי שלא ימשיך להטעות**
-   - או שאפשט את `src/routes/api/chat-attach.ts` כך שלא ינסה לפרסר PDF/DOCX בכלל,
-   - או שאשאיר אותו רק למקרים בטוחים/טקסטואליים, כדי שלא יישאר קוד שבור שניתן ליפול אליו שוב.
+## שלב 3 — זרימת ההעלאה ב־`uploadFiles`
+לכל קובץ במקביל:
+1. יצירת `id` ו־`storagePath = {userId}/{threadId}/{id}/{fileName}` והוספה ל־state כ־`uploading`.
+2. בדיקות גודל/סוג (כמו היום: עד 10MB; סוגים נתמכים בלבד).
+3. `supabase.storage.from("chat-attachments").upload(storagePath, file, { contentType, upsert: false })`.
+   - בכישלון: סטטוס `failed` + הודעת שגיאה ב־toast, הקובץ נשאר ברצועה עם כפתור X.
+4. עדכון סטטוס ל־`uploaded` (כאן המשתמש כבר רואה "הקובץ עלה").
+5. מעבר ל־`extracting` ואז קריאה ל־`extractTextFromFile(file)` כפי שנעשה כיום (חילוץ בדפדפן בלבד).
+6. חיתוך ל־`MAX_CHARS = 60_000`, ועדכון ל־`ready` עם `text` ו־`truncated`.
+7. בכישלון של החילוץ: סטטוס `failed`; הקובץ נשאר באחסון (כדי לאפשר התייחסות עתידית/הורדה) אבל לא ייכלל בשליחה.
 
-5. **אאמת את התיקון על הזרימה שנכשלה**
-   - אבדוק שצירוף PDF בצ׳אט לא מחזיר יותר 500.
-   - אבדוק שהקובץ מופיע כ־attachment מוכן, ושהטקסט שלו נכנס לזרימת שליחת ההודעה.
+הערה: אנחנו לא משנים את `/api/chat-attach`, את `text-extractor.server.ts`, או את לוגיקת ה־RAG — החילוץ ממשיך להיות בלקוח כפי שתוקן.
 
-## פרטים טכניים
-- קבצים עיקריים לשינוי:
-  - `src/routes/_authenticated/chat.$threadId.tsx`
-  - `src/lib/rag/text-extractor.server.ts`
-  - `src/routes/api/chat-attach.ts`
-- שורש התקלה:
-  - סביבת השרת כאן לא תומכת בזרימת `pdf-parse` שבה נעשה שימוש כרגע.
-  - הלוגים הראו:
-    - `POST /api/chat-attach -> 500`
-    - `[chat-attach] extract failed: ReferenceError: require is not defined`
-  - וגם הבאנדלר הראה שהנתיב `pdf-parse/lib/pdf-parse.js` לא חוקי עבור החבילה.
-- כיוון התיקון:
-  - שימוש במחלץ לקוח קיים המבוסס על `pdfjs-dist`/`mammoth`, במקום עיבוד שרת לקבצי צ׳אט.
+## שלב 4 — כפתור השליחה ולוגיקת שליחה
+ב־`handleSend` וב־`disabled` של כפתור השליחה:
+- "ממתין" יחושב כ־`attachments.some(a => a.status === "uploading" || a.status === "extracting")`.
+- כפתור השליחה יהיה `disabled` אם:
+  - `sending`, או
+  - יש קובץ "ממתין" כלשהו, או
+  - אין טקסט וגם אין אף קובץ ב־`ready`.
+- מסירים את ה־toast "ממתין לסיום העלאת קבצים..." — הכפתור פשוט מושבת, ללא לחיצות סרק.
+- ה־payload להודעה ישתמש רק ב־attachments במצב `ready` (כמו היום).
 
-## תוצאה צפויה
-צירוף PDF בצ׳אט יעבוד שוב בצורה יציבה, בלי 500, ובלי להישען על חבילת שרת שלא נתמכת היטב בסביבת הריצה הזאת.
+## שלב 5 — ניקוי במחיקת attachment
+- `removeAttachment`: אם יש `storagePath`, גם להריץ `supabase.storage.from("chat-attachments").remove([storagePath])` ברקע (best effort, לא חוסם UI).
+
+## קבצים שיתעדכנו
+- מיגרציה חדשה: bucket `chat-attachments` + policies על `storage.objects`.
+- `src/routes/_authenticated/chat.$threadId.tsx`: מודל Attachment, `uploadFiles`, רינדור הרצועה, `handleSend`, ה־`disabled` של הכפתור, `removeAttachment`.
+
+## מה לא משתנה (שמירה על איכות תוצרים)
+- ה־system prompts, סכמות הוולידציה, ה־RAG ingest, ה־`text-extractor.client.ts`, וכל ה־thinking/self-critique של הסוכנים — לא נוגעים.
