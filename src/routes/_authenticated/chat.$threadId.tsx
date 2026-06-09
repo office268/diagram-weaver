@@ -945,27 +945,59 @@ function ChatPage() {
           </Dialog>
           {attachments.length > 0 && (
             <div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">
-              {attachments.map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs"
-                >
-                  {a.status === "uploading" ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Paperclip className="h-3 w-3 text-primary" />
-                  )}
-                  <span className="max-w-[140px] truncate">{a.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(a.id)}
-                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    aria-label="הסר"
+              {attachments.map((a) => {
+                const statusLabel =
+                  a.status === "uploading"
+                    ? "מעלה…"
+                    : a.status === "uploaded"
+                      ? "הועלה"
+                      : a.status === "extracting"
+                        ? "מחלץ טקסט…"
+                        : a.status === "failed"
+                          ? a.errorMessage || "שגיאה"
+                          : null;
+                return (
+                  <div
+                    key={a.id}
+                    className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+                      a.status === "failed"
+                        ? "border-destructive/40 bg-destructive/5"
+                        : "border-border bg-muted/50"
+                    }`}
+                    title={a.errorMessage || a.name}
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    {a.status === "uploading" || a.status === "extracting" ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : a.status === "uploaded" ? (
+                      <Check className="h-3 w-3 text-muted-foreground" />
+                    ) : a.status === "failed" ? (
+                      <X className="h-3 w-3 text-destructive" />
+                    ) : (
+                      <Paperclip className="h-3 w-3 text-primary" />
+                    )}
+                    <span className="max-w-[140px] truncate">{a.name}</span>
+                    {statusLabel && (
+                      <span
+                        className={`text-[10px] ${
+                          a.status === "failed"
+                            ? "text-destructive"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {statusLabel}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(a.id)}
+                      className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="הסר"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="mx-auto max-w-3xl">
