@@ -63,9 +63,6 @@ async function authedFetch(url: string, body: unknown) {
   });
 }
 
-function isPdfFile(file: File) {
-  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-}
 
 function LabPage() {
   const { sessionId } = Route.useParams();
