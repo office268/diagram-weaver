@@ -7,7 +7,7 @@ const BodySchema = z.object({
   fileName: z.string().min(1).max(300),
   mimeType: z.string().max(200).optional().nullable(),
   fileSize: z.number().int().nonnegative().optional().nullable(),
-  text: z.string().max(500_000),
+  text: z.string().max(500_000).optional().nullable(),
 });
 
 export const Route = createFileRoute("/api/lab-upload")({
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/lab-upload")({
             file_name: body.fileName,
             mime_type: body.mimeType ?? null,
             file_size: body.fileSize ?? null,
-            extracted_text: body.text,
+            extracted_text: body.text?.trim() ? body.text : null,
           })
           .select("id, file_name, mime_type, file_size, created_at")
           .single();
