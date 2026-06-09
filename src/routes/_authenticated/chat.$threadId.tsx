@@ -127,9 +127,12 @@ function ChatPage() {
   const getThreadFn = useServerFn(getChatThread);
   const listThreadsFn = useServerFn(listChatThreads);
   const deleteThreadFn = useServerFn(deleteChatThread);
+  const cancelDiagramJobFn = useServerFn(cancelDiagramJob);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const canceledRef = useRef(false);
   const [phaseIdx, setPhaseIdx] = useState(0);
   const phases = [
     "מנתח את הבקשה",
