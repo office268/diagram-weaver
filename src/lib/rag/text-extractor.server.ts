@@ -6,7 +6,8 @@ export async function extractText(buffer: Buffer, mimeType: string): Promise<str
   if (mimeType === "application/pdf") {
     // Import the inner module directly — pdf-parse's index.js runs debug code
     // on import that reads a test fixture from disk and crashes in bundlers.
-    const mod = await import(/* @vite-ignore */ "pdf-parse/lib/pdf-parse.js" as string);
+    // @ts-expect-error - no types for the inner module
+    const mod = await import("pdf-parse/lib/pdf-parse.js");
     const pdfParse = (mod.default ?? mod) as (b: Buffer) => Promise<{ text: string }>;
     const data = await pdfParse(buffer);
     return data.text;
