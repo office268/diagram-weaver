@@ -225,6 +225,7 @@ export interface DocTypeVisual {
 export const DOC_TYPE_VISUALS: Record<DocTypeKey, DocTypeVisual> = {
   business_requirements: { icon: Briefcase, colorClass: "text-amber-500" },
   technical_requirements: { icon: Cpu, colorClass: "text-sky-500" },
+  requirements_combined: { icon: Briefcase, colorClass: "text-amber-500" },
   initiation: { icon: Rocket, colorClass: "text-violet-500" },
   spec_overview: { icon: LayoutTemplate, colorClass: "text-primary" },
   spec_detailed: { icon: FileCode2, colorClass: "text-emerald-500" },
