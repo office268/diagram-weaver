@@ -213,6 +213,46 @@ function ChatPage() {
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   };
+
+  const [composerHeight, setComposerHeight] = useState<number>(180);
+  const composerHeightRef = useRef(180);
+  useEffect(() => { composerHeightRef.current = composerHeight; }, [composerHeight]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("chat-composer-height");
+    if (saved) {
+      const n = parseInt(saved, 10);
+      if (!Number.isNaN(n)) {
+        const max = Math.max(200, window.innerHeight * 0.6);
+        setComposerHeight(Math.max(120, Math.min(max, n)));
+      }
+    }
+  }, []);
+  const startResizeComposer = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = composerHeightRef.current;
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - startY;
+      const max = Math.max(200, window.innerHeight * 0.6);
+      // dragging up (negative delta) grows composer
+      const next = Math.max(120, Math.min(max, startH - delta));
+      setComposerHeight(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      try {
+        window.localStorage.setItem("chat-composer-height", String(composerHeightRef.current));
+      } catch {}
+    };
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
   const promptBoxSettings = usePromptBoxSettings();
   useEffect(() => {
     if (typeof window === "undefined") return;
