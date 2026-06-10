@@ -1,62 +1,49 @@
-# מה מצאתי
 
-יש כרגע ממצא חזק מאוד שמסביר למה ההעלאה לא מתחילה בכלל במובייל:
+# תוכנית: ייצוא תצורת הסוכנים ל-Google Sheets
 
-1. **מסך ה‑onboarding חוסם אינטראקציות במסך המעבדה**  
-   - `src/components/onboarding/onboarding-provider.tsx` מפעיל את הסיור אוטומטית בכל ביקור ראשון באזור המאומת.
-   - `src/components/onboarding/onboarding-overlay.tsx` מציג שכבת `fixed inset-0 z-[100]` על כל המסך.
-   - בצילום ובבדיקת ה‑preview רואים בפועל את ה‑modal של הסיור מעל `/lab/...`.
-   - זה תואם גם לממצא הקודם ש**אין בכלל POST ל־`/api/lab-upload`** — כלומר הלחיצה לא מגיעה לזרימת ההעלאה.
+## מטרה
+להוסיף בדף `/agents` (אדמין בלבד) כפתור "ייצא ל-Google Sheets" שייצר גיליון חדש המכיל את רשימת ההגדרות של הסוכנים + סיכום של "דינאמי vs קבוע" שכתבתי בתשובה הקודמת.
 
-2. **הסיור עצמו לא מותאם למסך המעבדה ולכמה מהצעדים שלו אין יעד קיים**  
-   - ב־`src/components/onboarding/tour-steps.ts` יש צעדים כמו `mobile-nav`, `header-search`, `new-project` שמסתמכים על `data-tour` מסוימים.
-   - לפחות חלק מהיעדים האלה לא קיימים במסך המעבדה, וחלקם כנראה לא קיימים בכלל במבנה הנוכחי.
-   - כשהיעד לא נמצא, ה‑overlay נופל למצב מרכזי וחוסם את המסך במקום רק להדריך.
+## הבהרה חשובה לפני בנייה
+ה-connector של Google Sheets ב-Lovable מתחבר לחשבון **של בעל הסביבה (אתה)**, לא לחשבון של כל משתמש קצה. כלומר כל הגיליונות שייווצרו יהיו ב-Drive שלך. זה מתאים לפיצ'ר אדמין-בלבד כמו זה. אם תרצה שכל משתמש יוכל לייצא ל-Drive שלו — צריך OAuth-per-user נפרד (פלואו שונה ומורכב יותר, לא חלק מהתוכנית הזו).
 
-3. **מימוש ה‑upload ב‑lab כבר שונה כמה פעמים ועדיין נשען על טריגר מותאם אישית**  
-   - ב־`src/routes/_authenticated/lab.$sessionId.tsx` יש כרגע input שקוף מעל כפתור/אייקון.
-   - גם אם הוא תקין, כל עוד ה‑onboarding חוסם את המסך לא נראה שום toast ולא תישלח שום בקשה.
+## תוכן הגיליון
+הגיליון ייווצר עם 3 worksheets:
 
-4. **צד השרת כנראה לא הבעיה הראשית כרגע**  
-   - `src/routes/api/lab-upload.ts` כן יודע להכניס רשומה ל־`lab_documents` אם הבקשה מגיעה.
-   - מאחר שלא נראית בקשת POST בכלל, צריך קודם לפתור את שכבת החסימה ואת טריגר ה‑client.
+1. **"סוכנים"** — שורה לכל סוכן, עמודות:
+   - שם, תפקיד, מודל, מקור המודל (default/override), טמפרטורה, max tokens, שלב בצנרת, in-loop (כן/לא), מילות מפתח ללולאה, מספר shared blocks, אורך system prompt (תווים), score threshold (ל-review בלבד), max iterations (ל-review בלבד)
 
-# תוכנית התיקון
+2. **"הגדרות דינאמיות vs קבועות"** — טבלת סיכום:
+   - שם הגדרה | סטטוס נוכחי | דינאמי בזמן ריצה? | חייב להיות קבוע מראש? | הערות
+   - (Model, Temperature, Max tokens, In-loop, Loop keywords, System prompt, Shared blocks, Prompt template, Score threshold, Max iterations, Business knowledge, Doc-type instructions, RAG top-K/threshold, Few-shot examples, Reasoning effort)
 
-## 1) להסיר את החסימה של ה‑onboarding ממסך המעבדה
-- למנוע auto-start של הסיור במסלול `/lab`.
-- בנוסף, להקשיח את מנגנון הסיור כך שלא יופעל אם הצעד הבא מצביע על אלמנט שלא קיים במסך הנוכחי.
-- אם צריך, אסנן צעדים לפי route נוכחי/אלמנטים זמינים במקום להציג modal מרכזי שחוסם את כל המסך.
+3. **"המלצות לשיפור"** — 5 ההמלצות שציינתי (per-agent model override, RAG tuning, score threshold גמיש, few-shot per-org, reasoning effort).
 
-## 2) לייצב את טריגר העלאת הקבצים במעבדה
-- להחליף את טריגר ה‑upload ב־lab למימוש פשוט ומוכח, בדומה לדפוס שעובד ב־`src/components/document-uploader.tsx`.
-- להשתמש ב־`inputRef` יחיד וזרימת `onChange` אחת ברורה, בלי שכבות שקופות כפולות.
-- להשאיר את ההעלאה זמינה גם מה‑Documents tab וגם מה‑prompt bar, אבל דרך אותו handler ואותו input pattern.
+## שינויים טכניים
 
-## 3) להוסיף חיווי ודיאגנוסטיקה ברורה בלקוח
-- אם אין session/token — להציג הודעת שגיאה מיידית.
-- אם `fetch` נכשל — להציג toast עם סטטוס/טקסט תשובה ברור.
-- אם insert הצליח — לעדכן מיד את רשימת המסמכים ולתת feedback חד-משמעי.
-- אם חילוץ הטקסט נכשל — לא להפיל את עצם ההעלאה, רק להציג אזהרה נפרדת.
+### 1. חיבור Google Sheets connector
+שימוש בכלי `standard_connectors--connect` עם `connector_id: "google_sheets"` — תתבקש לאשר חיבור פעם אחת.
 
-## 4) לאמת את כל השרשרת מקצה לקצה במובייל
-אחרי התיקון אבדוק בפועל ב‑preview מובייל:
-- שה‑onboarding לא חוסם את המסך ב‑`/lab`
-- שלחיצה על העלאה פותחת בורר קבצים
-- שנשלחת בקשת `POST /api/lab-upload`
-- שהמסמך מופיע מיידית ברשימת המסמכים
-- ושיש toast ברור על הצלחה/כשל
+### 2. server function חדשה
+קובץ חדש: `src/lib/export-agents-config.functions.ts`
+- `createServerFn({ method: "POST" })` עם `requireSupabaseAuth` middleware
+- בדיקת `assertAdmin` (לפי הזיכרון: server fn לפעולות אדמין חייב לבדוק בעצמו)
+- שליפת תצורת הסוכנים (אותו לוגיקה כמו `getAgentsConfig`)
+- קריאה ל-Google Sheets API דרך ה-connector gateway:
+  - `POST https://connector-gateway.lovable.dev/google_sheets/v4/spreadsheets` ליצירת spreadsheet עם 3 sheets
+  - `POST .../values:batchUpdate` למילוי הנתונים
+- שימוש בכותרות `Authorization: Bearer $LOVABLE_API_KEY` + `X-Connection-Api-Key: $GOOGLE_SHEETS_API_KEY`
+- החזרת `{ spreadsheetUrl }` ללקוח
 
-## 5) בדיקת יציבות משלימה
-- אם שגיאת ה‑runtime של טעינת המודול (`tanstack-start-client-entry`) תחזור, אבדוק שהיא לא שוברת את ה‑client באותו מסך ואטפל גם בזה, אבל רק כבדיקה משלימה ולא במקום תיקון ההעלאה.
+### 3. כפתור ב-UI
+ב-`src/routes/_authenticated/agents.tsx`:
+- כפתור "ייצא ל-Google Sheets" ליד כותרת הדף
+- בלחיצה: קריאה ל-server function, הצגת toast עם קישור לפתיחת הגיליון בטאב חדש
+- מצב loading + טיפול בשגיאות
 
-# פרטים טכניים
-- קבצים עיקריים לטיפול:
-  - `src/components/onboarding/onboarding-provider.tsx`
-  - `src/components/onboarding/onboarding-overlay.tsx`
-  - `src/components/onboarding/tour-steps.ts`
-  - `src/routes/_authenticated/lab.$sessionId.tsx`
-- לא אגע כרגע באיכות הזרימה האפיונית/מודל/פרומפטים — רק בנתיב ההעלאה ובחסימת ה‑UI.
+## ללא שינוי
+- אין נגיעה בפרומפטים, סכמות, ולידציה, מינימומים, או איכות התוצרים — רק שכבת ייצוא חדשה.
+- אין שינוי DB.
 
-# תוצאה צפויה
-בסיום, המשתמש יוכל **לפחות להעלות ולראות מסמך במסך המעבדה באופן אמין**, ורק אחר כך נמשיך לשלב חילוץ הטקסט.
+## אישור
+לאשר את התוכנית והאם נכון שהגיליונות ייווצרו ב-Drive שלך (כי החיבור הוא workspace-level).
