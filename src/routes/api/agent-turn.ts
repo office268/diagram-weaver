@@ -10,6 +10,38 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
+// Local types for agent tables (not in Supabase generated schema)
+interface AgentPersona {
+  id: string;
+  name: string;
+  role_title: string | null;
+  role_description: string | null;
+  knowledge: string | null;
+  tools: string[] | null;
+  org_id: string | null;
+  organizations: { name: string } | null;
+}
+
+interface AgentConversation {
+  id: string;
+  title: string;
+  topic: string | null;
+}
+
+interface AgentParticipantRow {
+  agent_personas: { id: string; name: string; role_title: string } | null;
+}
+
+interface AgentMessage {
+  id: string;
+  persona_id: string | null;
+  role: string;
+  content: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const agentDb = supabaseAdmin as any;
+
 const BodySchema = z.object({
   conversationId: z.string().uuid(),
   personaId: z.string().uuid(),
@@ -43,7 +75,7 @@ export const Route = createFileRoute("/api/agent-turn")({
         if (!apiKey) return new Response("LOVABLE_API_KEY missing", { status: 500 });
 
         // Verify persona is a participant in the conversation
-        const { data: participant } = await (supabaseAdmin as any)
+        const { data: participant } = await agentDb
           .from("agent_conversation_participants")
           .select("id")
           .eq("conversation_id", body.conversationId)
@@ -52,37 +84,38 @@ export const Route = createFileRoute("/api/agent-turn")({
         if (!participant) return new Response("Persona is not a participant", { status: 400 });
 
         // Load persona
-        const { data: persona, error: pErr } = await (supabaseAdmin as any)
+        const { data: persona, error: pErr } = (await agentDb
           .from("agent_personas")
           .select("*, organizations:org_id ( name )")
           .eq("id", body.personaId)
-          .maybeSingle();
+          .maybeSingle()) as { data: AgentPersona | null; error: { message: string } | null };
         if (pErr || !persona) return new Response("Persona not found", { status: 404 });
 
-        // Load conversation + all participants for context
-        const { data: conv } = await (supabaseAdmin as any)
+        // Load conversation
+        const { data: conv } = (await agentDb
           .from("agent_conversations")
-          .select("*")
+          .select("id, title, topic")
           .eq("id", body.conversationId)
-          .maybeSingle();
+          .maybeSingle()) as { data: AgentConversation | null; error: unknown };
         if (!conv) return new Response("Conversation not found", { status: 404 });
 
-        const { data: allParts } = await (supabaseAdmin as any)
+        // Load all participants for context
+        const { data: allParts } = (await agentDb
           .from("agent_conversation_participants")
           .select("agent_personas:persona_id ( id, name, role_title )")
-          .eq("conversation_id", body.conversationId);
+          .eq("conversation_id", body.conversationId)) as { data: AgentParticipantRow[] | null; error: unknown };
         const participantsList = (allParts ?? [])
-          .map((p: any) => p.agent_personas)
-          .filter(Boolean) as Array<{ id: string; name: string; role_title: string }>;
+          .map((p: AgentParticipantRow) => p.agent_personas)
+          .filter((p): p is { id: string; name: string; role_title: string } => p !== null);
 
         // Load messages history
-        const { data: history } = await (supabaseAdmin as any)
+        const { data: history } = (await agentDb
           .from("agent_messages")
-          .select("*")
+          .select("id, persona_id, role, content")
           .eq("conversation_id", body.conversationId)
-          .order("created_at", { ascending: true });
+          .order("created_at", { ascending: true })) as { data: AgentMessage[] | null; error: unknown };
 
-        const orgName = (persona.organizations as any)?.name ?? "";
+        const orgName = persona.organizations?.name ?? "";
 
         const systemPrompt = [
           `אתה משחק את הדמות הבאה בשיחה רב־משתתפים:`,
@@ -97,7 +130,7 @@ export const Route = createFileRoute("/api/agent-turn")({
             ? `ידע ורקע שעומדים לרשותך:\n${persona.knowledge}`
             : "",
           ``,
-          persona.tools && Array.isArray(persona.tools) && persona.tools.length
+          persona.tools && persona.tools.length
             ? `כלים שעומדים לרשותך: ${persona.tools.join(", ")}`
             : "",
           ``,
@@ -125,7 +158,6 @@ export const Route = createFileRoute("/api/agent-turn")({
           } else if (m.role === "moderator") {
             messages.push({ role: "user", content: `[מנחה]: ${m.content}` });
           } else {
-            // Other persona — find name
             const speaker = participantsList.find((p) => p.id === m.persona_id);
             const label = speaker ? speaker.name : "משתתף";
             messages.push({ role: "user", content: `[${label}]: ${m.content}` });
@@ -147,7 +179,7 @@ export const Route = createFileRoute("/api/agent-turn")({
 
           const content = text.trim() || "(אין תגובה)";
 
-          const { data: inserted, error: iErr } = await (supabaseAdmin as any)
+          const { data: inserted, error: iErr } = await agentDb
             .from("agent_messages")
             .insert({
               conversation_id: body.conversationId,
@@ -159,7 +191,7 @@ export const Route = createFileRoute("/api/agent-turn")({
             .single();
           if (iErr) throw new Error(iErr.message);
 
-          await (supabaseAdmin as any)
+          await agentDb
             .from("agent_conversations")
             .update({ updated_at: new Date().toISOString() })
             .eq("id", body.conversationId);
