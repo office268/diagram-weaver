@@ -71,7 +71,7 @@ export async function runDataModelAgent(
   tracker?: UsageTracker,
 ): Promise<DataModelOutput> {
   const model = ctx.model ?? AGENT_MODELS.dataModel;
-  return generateWithRetry(
+  return (await generateWithRetry(
     {
       gateway,
       model,
@@ -82,5 +82,5 @@ export async function runDataModelAgent(
     },
     OutputSchema,
     tracker,
-  );
+  )) as DataModelOutput;
 }

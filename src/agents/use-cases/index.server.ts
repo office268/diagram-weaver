@@ -75,7 +75,7 @@ export async function runUseCasesAgent(
   tracker?: UsageTracker,
 ): Promise<UseCasesOutput> {
   const model = ctx.model ?? AGENT_MODELS.useCases;
-  return generateWithRetry(
+  return (await generateWithRetry(
     {
       gateway,
       model,
@@ -86,5 +86,5 @@ export async function runUseCasesAgent(
     },
     OutputSchema,
     tracker,
-  );
+  )) as UseCasesOutput;
 }

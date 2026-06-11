@@ -60,7 +60,7 @@ export async function runArchitectureAgent(
   tracker?: UsageTracker,
 ): Promise<ArchitectureOutput> {
   const model = ctx.model ?? AGENT_MODELS.architecture;
-  return generateWithRetry(
+  return (await generateWithRetry(
     {
       gateway,
       model,
@@ -71,5 +71,5 @@ export async function runArchitectureAgent(
     },
     OutputSchema,
     tracker,
-  );
+  )) as ArchitectureOutput;
 }
