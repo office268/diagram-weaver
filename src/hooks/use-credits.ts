@@ -2,14 +2,13 @@
 // src/hooks/use-credits.ts
 // Hook — use-credits
 // ============================================================
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export function useCredits() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const userId = user?.id;
 
   const query = useQuery({
@@ -25,20 +24,7 @@ export function useCredits() {
     },
   });
 
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`credits-${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "credits", filter: `user_id=eq.${userId}` },
-        () => queryClient.invalidateQueries({ queryKey: ["credits", userId] }),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, queryClient]);
+  useRealtimeInvalidate("credits", "credits", userId, ["credits", userId]);
 
   return { balance: query.data ?? 0, loading: query.isLoading };
 }

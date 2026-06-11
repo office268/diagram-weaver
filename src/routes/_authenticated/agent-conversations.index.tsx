@@ -43,7 +43,7 @@ import {
   createAgentConversation,
   deleteAgentConversation,
   suggestConversationField,
-} from "@/lib/agents.functions";
+} from "@/lib/agents/agents.functions";
 
 export const Route = createFileRoute("/_authenticated/agent-conversations/")({
   head: () => ({ meta: [{ title: "שיחות סוכנים" }] }),

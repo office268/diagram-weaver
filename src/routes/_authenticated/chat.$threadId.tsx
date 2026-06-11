@@ -79,7 +79,7 @@ import { useCurrentOrganization } from "@/hooks/use-current-organization";
 
 import { cancelDiagramJob } from "@/lib/diagrams/diagrams.functions";
 import { ThreadModelSelector } from "@/components/settings/thread-model-selector";
-import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
+import { suggestUserPrompt } from "@/lib/ai/prompt-suggest.functions";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/doc-types/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/diagrams/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/diagrams/mermaid-preview";

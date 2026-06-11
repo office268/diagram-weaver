@@ -2,15 +2,14 @@
 // src/hooks/use-subscription.ts
 // Hook — use-subscription
 // ============================================================
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { getPaddleEnvironment } from "@/lib/payments/paddle";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export function useSubscription() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const userId = user?.id;
   const env = getPaddleEnvironment();
 
@@ -30,20 +29,7 @@ export function useSubscription() {
     },
   });
 
-  useEffect(() => {
-    if (!userId) return;
-    const channel = supabase
-      .channel(`subs-${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
-        () => queryClient.invalidateQueries({ queryKey: ["subscription", userId, env] }),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, env, queryClient]);
+  useRealtimeInvalidate("subs", "subscriptions", userId, ["subscription", userId, env]);
 
   const sub = query.data;
   const isActive =

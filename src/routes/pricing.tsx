@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { openCheckout } from "@/lib/payments/paddle";
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { PaymentTestModeBanner } from "@/components/payments/PaymentTestModeBanner";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/pricing")({

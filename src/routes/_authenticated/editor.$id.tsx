@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { EditorStatusBar } from "@/components/editor-status-bar";
-import { ExportMenu } from "@/components/export-menu";
+import { ExportMenu } from "@/components/diagrams/export-menu";
 import { printAsPdf } from "@/lib/spec/export";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
@@ -81,7 +81,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 
 import { getSpec, updateSpec, createSpec, getDocUsageTotals, logSpecUsage } from "@/lib/spec/spec.functions";
-import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
+import { ReviewSuggestionsPanel } from "@/components/diagrams/review-suggestions-panel";
 import {
   normalizeReviewNotes,
   SpecOutputSchema,

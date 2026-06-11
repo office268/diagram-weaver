@@ -6,6 +6,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth } from "@/lib/api/auth.server";
 
 const InsertSchema = z.object({
   mode: z.literal("insert").optional(),
@@ -26,21 +27,9 @@ export const Route = createFileRoute("/api/lab-upload")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-        console.info("[lab-upload][server] request:start", {
-          hasAuthHeader: Boolean(auth),
-          hasBearerToken: Boolean(token),
-        });
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
-        console.info("[lab-upload][server] auth:resolved", {
-          hasUser: Boolean(userData?.user),
-          authError: userErr?.message ?? null,
-        });
-        if (userErr || !userData?.user) return new Response("Unauthorized", { status: 401 });
-        const userId = userData.user.id;
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         let raw: unknown;
         try {

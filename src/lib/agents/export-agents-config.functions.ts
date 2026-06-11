@@ -5,19 +5,9 @@
 // ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdmin } from "@/lib/api/auth.server";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("רק אדמין יכול לייצא תצורת סוכנים");
-}
 
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
