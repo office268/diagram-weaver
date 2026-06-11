@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/project-activity-feed.tsx
+// src/components/diagrams/project-activity-feed.tsx
 // רכיב UI — project-activity-feed
 // ============================================================
 import { Link } from "@tanstack/react-router";

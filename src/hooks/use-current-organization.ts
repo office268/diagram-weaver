@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/hooks/use-auth";
-import { getCurrentOrganization } from "@/lib/organizations.functions";
+import { getCurrentOrganization } from "@/lib/orgs/organizations.functions";
 
 const LEGACY_CACHE_KEY = "current-organization-cache-v1";
 

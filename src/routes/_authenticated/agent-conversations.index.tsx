@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AppBreadcrumb } from "@/components/navigation/app-breadcrumb";
 import { AgentPersonasCard } from "@/components/settings/agent-personas-card";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import {
   listAgentConversations,

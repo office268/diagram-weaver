@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/editor-status-bar.tsx
+// src/components/diagrams/editor-status-bar.tsx
 // רכיב UI — editor-status-bar
 // ============================================================
 import { Type, ListChecks, Coins, DollarSign } from "lucide-react";

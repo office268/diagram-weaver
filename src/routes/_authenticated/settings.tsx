@@ -12,12 +12,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 import { Card, CardContent } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/settings/app-metadata-card";
-import { EditableSiteText } from "@/components/editable-site-text";
+import { EditableSiteText } from "@/components/ui/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/settings/doc-type-sections-card";
 import { DocTypeInstructionsCard } from "@/components/settings/doc-type-instructions-card";
 import { BusinessKnowledgeCard } from "@/components/settings/business-knowledge-card";
-import { LoginLogCard } from "@/components/login-log-card";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { LoginLogCard } from "@/components/settings/login-log-card";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import { AppBreadcrumb } from "@/components/navigation/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
 import { AiUsageCard } from "@/components/settings/ai-usage-card";

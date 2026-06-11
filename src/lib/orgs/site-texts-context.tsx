@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/site-texts-context.tsx
+// src/lib/orgs/site-texts-context.tsx
 // ספריית עזר (lib) — site-texts-context.tsx
 // ============================================================
 import { createContext, useCallback, useContext, useMemo, useState } from "react";

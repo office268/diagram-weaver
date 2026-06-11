@@ -12,8 +12,8 @@ import { Loader2, Sparkles, MoreHorizontal, Shapes, FileText, Wrench } from "luc
 import {
   getDashboardTileOrder,
   setDashboardTileOrder,
-} from "@/lib/dashboard-tile-order.functions";
-import { useSiteTexts } from "@/lib/site-texts-context";
+} from "@/lib/projects/dashboard-tile-order.functions";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import {
   DndContext,
   MouseSensor,
@@ -39,7 +39,7 @@ import {
   isDiagramType,
   type OutputKey,
 } from "@/lib/doc-types/output-types";
-import { createChatThread } from "@/lib/chat.functions";
+import { createChatThread } from "@/lib/chat/chat.functions";
 import {
   Drawer,
   DrawerContent,

@@ -14,7 +14,7 @@ import { AgentConfigCard } from "@/components/settings/agent-config-card";
 import { Button } from "@/components/ui/button";
 import { getAgentsConfig } from "@/lib/agents/agents-config.functions";
 import { exportAgentsConfigToSheets } from "@/lib/agents/export-agents-config.functions";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 
 export const Route = createFileRoute("/_authenticated/agents")({
   head: () => ({

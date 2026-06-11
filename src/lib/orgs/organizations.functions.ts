@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/organizations.functions.ts
+// src/lib/orgs/organizations.functions.ts
 // Server function (createServerFn) — organizations.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

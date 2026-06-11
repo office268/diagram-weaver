@@ -16,7 +16,7 @@ import {
   loadPromptBoxSettings,
   savePromptBoxSettings,
   type PromptBoxSettings,
-} from "@/lib/prompt-box-settings";
+} from "@/lib/ai/prompt-box-settings";
 
 export function PromptBoxSettingsCard() {
   const [s, setS] = useState<PromptBoxSettings>(DEFAULT_PROMPT_BOX_SETTINGS);
