@@ -1,58 +1,76 @@
-# תוכנית סידור: payments.functions + ניקוי components/ui
 
-## מטרה
-שתי הזזות קטנות וממוקדות שמורידות חיכוך בקריאה ובתחזוקה, בלי לשנות שום לוגיקה:
-1. להעביר `src/utils/payments.functions.ts` ל-`src/lib/payments/` (איפה שכל שאר ה-`.functions.ts` יושבים).
-2. להוציא מ-`src/components/ui/` רכיבים שהם **לא** shadcn primitives, כדי שהתיקייה תישאר נקייה (קונבנציית shadcn: `ui/` = auto-generated, לא נוגעים).
+## רקע מהבדיקה
 
-## שלב 1 — `payments.functions.ts`
+הצילום שצירפת מציג את מסך הצ'אט (`/chat/$threadId`), אזור ה־Composer עם כפתור `+`. אישרת ש:
+- לחיצה על `+` → בוחר הקבצים **כן נפתח**.
+- הניסיון הוא עם **PDF**.
+- הקובץ לא נפתח / לא מתחיל לעלות אחרי הבחירה.
 
-**מקור:** `src/utils/payments.functions.ts`
-**יעד:** `src/lib/payments/payments.functions.ts`
+### מה כבר ידוע מהקוד
 
-פעולות:
-- `mv` של הקובץ.
-- חיפוש כל ה-imports בפרויקט (`from "@/utils/payments.functions"` או נתיב יחסי) ועדכון ל-`@/lib/payments/payments.functions`.
-- אם `src/utils/` נשאר ריק — מחיקת התיקייה.
+1. הרכיב הרלוונטי: `src/routes/_authenticated/chat.$threadId.tsx`
+   - `onPickFiles` → `uploadFiles(file)` → שני שלבים:
+     - `supabase.storage.from("chat-attachments").upload(path, file)` (RLS, בצד לקוח)
+     - `extractTextFromFile(file)` (PDF.js בדפדפן)
+2. Bucket `chat-attachments` **קיים** (אומת מול ה־DB), עם RLS תקין לפי `userId/...`.
+3. ב־`lab.$sessionId.tsx` קיים flow מקביל עם **לוגים מובנים מפורטים** (`[lab-upload][client] ...`) שמאפשרים אבחון מדויק — בצ'אט אין לוגים כאלה כרגע. ה־toast היחיד שמופיע במידה ויש שגיאה הוא:
+   - `"נדרשת התחברות מחדש"` (אין session)
+   - `"הקובץ גדול מ-10MB"`
+   - `"<filename>: <error message>"` (שגיאת storage או חילוץ)
+4. ה־Console logs האחרונים שלך ריקים (אין שגיאות JS), וב־Network שמורת ההפעלה אין רשומת `upload` — מה שמרמז ששגיאה קורית **לפני** קריאת הרשת (sessionless / שגיאת PDF.js בטעינת ה־worker / חריגה שנבלעה ב־try), או שמופיע toast קצר שאתה לא רואה.
 
-סיכון: נמוך. רק שינוי נתיב, אין שינוי API.
+### חשודים מובילים (לפי סדר סבירות)
 
-## שלב 2 — ניקוי `components/ui/`
+1. **PDF.js worker** — `await import("pdfjs-dist/build/pdf.worker.min.mjs?url")` עלול להיכשל ב־build הפרודקשן (path/CSP/MIME) — שגיאה נזרקת ב־`extractPdf` ונבלעת ל־toast `"<file>: ..."` שיכול להיעלם מהר.
+2. **`supabase.storage.upload` נכשל** עקב MIME לא צפוי (Android Chrome לעיתים מחזיר `application/octet-stream` ל־PDF) — ה־bucket לא מגביל MIME אבל זה עדיין סטוץ' לוודא.
+3. **Session expired** ב־`supabase.auth.getSession()` — מציג רק toast קצר ויוצא בלי שום קריאת רשת.
+4. **כשל שקט בתוך `Promise.all` של uploadFiles** — אם משהו נזרק לפני ה־try (למשל ב־`crypto.randomUUID()` בסביבה בעייתית), אין toast בכלל.
 
-הרכיבים הבאים נמצאים ב-`ui/` אבל אינם shadcn primitives:
+## תוכנית
 
-| קובץ נוכחי | יעד מוצע |
-|---|---|
-| `src/components/ui/editable-text.tsx` | `src/components/common/editable-text.tsx` |
-| `src/components/ui/editable-site-text.tsx` | `src/components/common/editable-site-text.tsx` |
-| `src/components/ui/empty-state.tsx` | `src/components/common/empty-state.tsx` |
-| `src/components/ui/pull-to-refresh-indicator.tsx` | `src/components/common/pull-to-refresh-indicator.tsx` |
-| `src/components/ui/swipeable-row.tsx` | `src/components/common/swipeable-row.tsx` |
-| `src/components/ui/theme-toggle.tsx` | `src/components/common/theme-toggle.tsx` |
+### שלב 1 — הוספת לוגים מובנים זהים ל־Lab בצ'אט (אבחון בלבד)
 
-(אם תעדיף שם תיקייה אחר כמו `shared/` במקום `common/` — תגיד, אני מתאים.)
+עריכת `src/routes/_authenticated/chat.$threadId.tsx` בלבד, בפונקציות:
+- `onPickFiles` — לוג של `count` ו־`names`.
+- `uploadFiles` — לוג בכל צומת:
+  - `[chat-upload] start` (קובץ, גודל, type, hasSession)
+  - `[chat-upload] storage:before` / `storage:after` (כולל `error?.message`)
+  - `[chat-upload] extract:start` / `extract:done` (`charCount`) / `extract:error` (message + stack)
+- שמירת ה־toasts הקיימים — בלי לשנות UX.
 
-פעולות לכל קובץ:
-- `mv` ליעד החדש.
-- עדכון כל ה-imports בפרויקט (`@/components/ui/<name>` → `@/components/common/<name>`).
-- אימות שאף `components.json` של shadcn לא מצביע על הקבצים האלה (הם לא רשומים שם — נוצרו ידנית).
+הלוגים בלבד; **אין שינוי בלוגיקה, אין שינוי באיכות התוצרים האפיוניים**.
 
-סיכון: נמוך. הרכיבים האלה לא חלק מ-shadcn registry, אז עדכון shadcn עתידי לא יגע בהם.
+### שלב 2 — שיפור הצגת שגיאות ל־UI (קל)
 
-## מה לא נכלל בתוכנית הזו (במפורש)
+- בכל toast של שגיאה להוסיף את `status code` / `error.code` כאשר זמין.
+- לשמור את ה־`errorMessage` ב־state כבר היום — לוודא שהוא מוצג כ־`title` על ה־chip (כבר עושים זאת).
 
-- **לא** משנים מבנה של `agents/`, `routes/`, `lib/` (חוץ מ-payments), `hooks/`, או `integrations/`.
-- **לא** נוגעים ב-`routeTree.gen.ts` (יתחדש אוטומטית אם תאנסטאק תרצה).
-- **לא** משנים שום system prompt / schema / ולידציה / agent logic — רק הזזות קבצים ועדכון imports.
-- **לא** מאחדים `lib/doc-types/types.ts` עם `types.server.ts` (העלית כאפשרות אבל זה stylistic — אם תרצה, נפרד).
-- **לא** מקבצים את דפי ה-marketing תחת layout — שינוי משמעותי יותר, שווה דיון נפרד.
+### שלב 3 — רפרודוקציה חיה ב־browser tool
 
-## אימות
+לאחר השינוי:
+1. אכנס לפריוויו ב־browser tool (תוך שימוש בסשן שלך).
+2. אנווט ל־thread קיים בצ'אט.
+3. אנסה להעלות PDF קטן (1–2 עמודים) דרך כפתור ה־`+`.
+4. אקרא את ה־Console + Network של ה־browser tool כדי לאתר את הצומת שנכשל.
+5. אדווח לך מה הסיבה המדויקת ואציע תיקון ממוקד (תוכנית נפרדת).
 
-- בנייה עוברת (TanStack Router יחדש את `routeTree.gen.ts` אוטומטית, אם בכלל צריך — אף route לא הוזז).
-- חיפוש `rg "utils/payments.functions"` ו-`rg "components/ui/(editable-text|editable-site-text|empty-state|pull-to-refresh-indicator|swipeable-row|theme-toggle)"` — צריך לחזור 0 תוצאות אחרי העדכון.
-- preview עולה בלי שגיאות runtime.
+### שלב 4 (תלוי בממצאי שלב 3) — תיקון
 
-## הערה טכנית
+לפי מה שנמצא:
+- אם זה **PDF.js worker** → לעבור ל־import של ה־worker ב־`new Worker(new URL(...))` או להשתמש ב־`workerSrc` מתוך CDN של pdfjs בגרסה המקבילה.
+- אם זה **MIME / RLS** → להוסיף fallback של `contentType` ולבדוק את `error.statusCode`.
+- אם זה **Session** → לרענן טוקן לפני העלאה.
 
-ל-`.functions.ts` חשוב להישאר במסלול client-safe (לא תחת `src/server/`) — `src/lib/payments/` עומד בזה. תוכן הקובץ לא משתנה, רק המיקום.
+## מה לא משתנה
+
+- אין שינוי ב־system prompts, סכמות, ולידציה, thinking steps, self-critique או באיכות התוצרים האפיוניים.
+- אין שינוי במיגרציות / RLS / buckets.
+- אין שינוי באף route או פלואו פרט להוספת לוגים בצ'אט.
+
+## קבצים מושפעים בשלב 1+2
+
+- `src/routes/_authenticated/chat.$threadId.tsx` — הוספת `console.info`/`console.error` בלבד ב־`uploadFiles`/`onPickFiles`.
+
+## אישור
+
+מאשר/ת להמשיך לשלב 1 ואז לרוץ אבחון חי בדפדפן?

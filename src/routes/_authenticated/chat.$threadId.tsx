@@ -418,8 +418,28 @@ function ChatPage() {
     const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
     const MAX_CHARS = 60_000;
 
-    const { data: sess } = await supabase.auth.getSession();
-    const userId = sess.session?.user?.id;
+    console.info("[chat-upload] uploadFiles:start", {
+      threadId,
+      count: list.length,
+      names: list.map((f) => f.name),
+      sizes: list.map((f) => f.size),
+      types: list.map((f) => f.type),
+    });
+
+    let sessRes;
+    try {
+      sessRes = await supabase.auth.getSession();
+    } catch (e) {
+      console.error("[chat-upload] getSession:threw", e);
+      toast.error("נדרשת התחברות מחדש");
+      return;
+    }
+    const userId = sessRes.data.session?.user?.id;
+    console.info("[chat-upload] session", {
+      hasSession: Boolean(sessRes.data.session),
+      hasToken: Boolean(sessRes.data.session?.access_token),
+      userId: userId ?? null,
+    });
     if (!userId) {
       toast.error("נדרשת התחברות מחדש");
       return;
@@ -443,6 +463,14 @@ function ChatPage() {
         const storagePath = `${userId}/${threadId}/${id}/${safeName}`;
         const mimeType = file.type || "application/octet-stream";
 
+        console.info("[chat-upload] file:prepared", {
+          id,
+          name: file.name,
+          storagePath,
+          mimeType,
+          size: file.size,
+        });
+
         setAttachments((prev) => [
           ...prev,
           {
@@ -456,6 +484,7 @@ function ChatPage() {
         ]);
 
         if (file.size > MAX_BYTES) {
+          console.warn("[chat-upload] file:too-large", { id, name: file.name, size: file.size });
           setAttachments((prev) =>
             prev.map((a) =>
               a.id === id
@@ -469,14 +498,28 @@ function ChatPage() {
 
         // 1) Upload original file to storage
         try {
-          const { error: upErr } = await supabase.storage
+          console.info("[chat-upload] storage:before", { id, name: file.name, storagePath });
+          const { data: upData, error: upErr } = await supabase.storage
             .from("chat-attachments")
             .upload(storagePath, file, {
               contentType: mimeType,
               upsert: false,
             });
+          console.info("[chat-upload] storage:after", {
+            id,
+            name: file.name,
+            ok: !upErr,
+            path: upData?.path ?? null,
+            errMessage: upErr?.message ?? null,
+            errName: upErr?.name ?? null,
+            errStatus:
+              upErr && typeof upErr === "object" && "statusCode" in upErr
+                ? (upErr as { statusCode?: unknown }).statusCode
+                : null,
+          });
           if (upErr) throw upErr;
         } catch (e) {
+          console.error("[chat-upload] storage:threw", { id, name: file.name, error: e });
           const msg = e instanceof Error ? e.message : "העלאת הקובץ נכשלה";
           setAttachments((prev) =>
             prev.map((a) =>
@@ -497,15 +540,28 @@ function ChatPage() {
           prev.map((a) => (a.id === id ? { ...a, status: "extracting" } : a)),
         );
         try {
+          console.info("[chat-upload] extract:start", { id, name: file.name, type: file.type });
           const { text: rawText } = await extractTextFromFile(file);
           const truncated = rawText.length > MAX_CHARS;
           const text = truncated ? rawText.slice(0, MAX_CHARS) : rawText;
+          console.info("[chat-upload] extract:done", {
+            id,
+            name: file.name,
+            charCount: rawText.length,
+            truncated,
+          });
           setAttachments((prev) =>
             prev.map((a) =>
               a.id === id ? { ...a, status: "ready", text, truncated } : a,
             ),
           );
         } catch (e) {
+          console.error("[chat-upload] extract:threw", {
+            id,
+            name: file.name,
+            error: e,
+            stack: e instanceof Error ? e.stack : undefined,
+          });
           const msg = e instanceof Error ? e.message : "חילוץ טקסט נכשל";
           setAttachments((prev) =>
             prev.map((a) =>
@@ -516,11 +572,18 @@ function ChatPage() {
         }
       }),
     );
+    console.info("[chat-upload] uploadFiles:done", { threadId, count: list.length });
   }
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length > 0) {
-      void uploadFiles(e.target.files);
+    const files = e.target.files;
+    console.info("[chat-upload] onPickFiles", {
+      threadId,
+      count: files?.length ?? 0,
+      names: files ? Array.from(files).map((f) => f.name) : [],
+    });
+    if (files && files.length > 0) {
+      void uploadFiles(files);
     }
     e.target.value = "";
   }
