@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 import { Card, CardContent } from "@/components/ui/card";
 import { AppMetadataCard } from "@/components/settings/app-metadata-card";
-import { EditableSiteText } from "@/components/ui/editable-site-text";
+import { EditableSiteText } from "@/components/common/editable-site-text";
 import { DocTypeSectionsCard } from "@/components/settings/doc-type-sections-card";
 import { DocTypeInstructionsCard } from "@/components/settings/doc-type-instructions-card";
 import { BusinessKnowledgeCard } from "@/components/settings/business-knowledge-card";

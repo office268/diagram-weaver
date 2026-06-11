@@ -1,67 +1,58 @@
-<!--
-  .lovable/plan.md
-  מסמך תכנון פעיל (Lovable plan)
--->
-# הוספת תיעוד בראש כל קבצי הפרויקט
+# תוכנית סידור: payments.functions + ניקוי components/ui
 
-## היקף מורחב
-תיעוד בכל קבצי הקוד והתצורה בפרויקט, כולל מה שהוצא קודם:
-- כל `src/` (כולל `components/ui/`)
-- קבצי שורש: `vite.config.ts`, `eslint.config.js`, `tsconfig.json` (כהערה לא רלוונטית — ידולג, JSON לא תומך), `components.json` (ידולג), `bunfig.toml`, `.prettierrc` (ידולג)
-- `supabase/config.toml`
-- `supabase/migrations/*.sql`
-- קבצי `.md` בשורש ובתיקיות (README, plan.md)
+## מטרה
+שתי הזזות קטנות וממוקדות שמורידות חיכוך בקריאה ובתחזוקה, בלי לשנות שום לוגיקה:
+1. להעביר `src/utils/payments.functions.ts` ל-`src/lib/payments/` (איפה שכל שאר ה-`.functions.ts` יושבים).
+2. להוציא מ-`src/components/ui/` רכיבים שהם **לא** shadcn primitives, כדי שהתיקייה תישאר נקייה (קונבנציית shadcn: `ui/` = auto-generated, לא נוגעים).
 
-## פורמט לפי סוג קובץ
-- `.ts/.tsx/.js/.jsx`:
-  ```
-  // ============================================================
-  // <נתיב יחסי>
-  // <תיאור עברית בשורה-שתיים>
-  // ============================================================
-  ```
-- `.css`: `/* ... */`
-- `.sql` / `.toml`: `-- ...` / `# ...`
-- `.md`: בלוק HTML comment `<!-- ... -->` בראש הקובץ (לא משבש רינדור).
+## שלב 1 — `payments.functions.ts`
 
-## חריגים שעדיין לא נוגעים בהם
-- `src/routeTree.gen.ts` — מתחדש אוטומטית בכל build, כל הערה תימחק.
-- `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` — auto-generated, ההוראות בפרויקט אוסרות עריכה.
-- קבצי JSON (`tsconfig.json`, `components.json`, `package.json`, `.prettierrc`, `.lovable/project.json`) — JSON לא תומך בהערות.
-- `.env*` — לא קוד.
-- `bun.lockb` / lockfiles.
+**מקור:** `src/utils/payments.functions.ts`
+**יעד:** `src/lib/payments/payments.functions.ts`
 
-אם תרצה לכלול בכל זאת את קבצי ה-auto-generated של Supabase — אגיד כן רק אחרי אישור מפורש, כי כל regeneration ימחק.
+פעולות:
+- `mv` של הקובץ.
+- חיפוש כל ה-imports בפרויקט (`from "@/utils/payments.functions"` או נתיב יחסי) ועדכון ל-`@/lib/payments/payments.functions`.
+- אם `src/utils/` נשאר ריק — מחיקת התיקייה.
 
-## כללי שימור
-- אם השורה הראשונה היא `"use client"`, `'use server'`, shebang (`#!`), `@ts-...`, או directive דומה — ההערה תיכנס מתחתיה.
-- קובץ שכבר יש בו בלוק תיעוד פתיחה (זוהה ע"י הערה ב-3 השורות הראשונות שמכילה את שם הקובץ/הנתיב) — יידלג כדי לא לדרוס תיעוד קיים.
-- אין שינוי קוד פונקציונלי.
+סיכון: נמוך. רק שינוי נתיב, אין שינוי API.
 
-## ייצור התיאור
-תיאור קצר אוטומטי לפי דפוסי הנתיב והשם:
-- `routes/api/**` → "HTTP endpoint — ..."
-- `routes/_authenticated/**` → "מסך מאומת — ..."
-- `*.functions.ts` → "Server function (TanStack createServerFn) — ..."
-- `*.server.ts` → "מודול server-only — ..."
-- `agents/<x>/index.server.ts` → "סוכן <x> — נקודת כניסה"
-- `agents/<x>/system.ts` / `prompt.ts` → "System prompt / Prompt builder לסוכן <x>"
-- `components/ui/*.tsx` → "shadcn primitive — <שם>"
-- `components/*.tsx` → "רכיב UI — <שם>"
-- `hooks/*.ts(x)` → "Hook — <שם>"
-- `lib/*` → לפי שם הקובץ
-- `supabase/migrations/*.sql` → "Migration — <שם הקובץ>"
-- ברירת מחדל: שם הקובץ + תיקייה.
+## שלב 2 — ניקוי `components/ui/`
 
-## ביצוע
-סקריפט חד-פעמי `scripts/add-file-headers.mjs`:
-1. הולך רקורסיבית על השורשים: `src/`, `supabase/`, ושורש הפרויקט (לא רקורסיבית לשורש כדי לא לגעת ב-`node_modules`/`.lovable`/`dist`).
-2. מסנן רשימת חריגים + תיעוד קיים.
-3. מחשב פורמט הערה לפי סיומת.
-4. מוסיף בלוק בראש (מתחת ל-directives אם יש).
-5. הסקריפט יישאר ב-repo להרצה חוזרת בעתיד; הוא idempotent.
+הרכיבים הבאים נמצאים ב-`ui/` אבל אינם shadcn primitives:
+
+| קובץ נוכחי | יעד מוצע |
+|---|---|
+| `src/components/ui/editable-text.tsx` | `src/components/common/editable-text.tsx` |
+| `src/components/ui/editable-site-text.tsx` | `src/components/common/editable-site-text.tsx` |
+| `src/components/ui/empty-state.tsx` | `src/components/common/empty-state.tsx` |
+| `src/components/ui/pull-to-refresh-indicator.tsx` | `src/components/common/pull-to-refresh-indicator.tsx` |
+| `src/components/ui/swipeable-row.tsx` | `src/components/common/swipeable-row.tsx` |
+| `src/components/ui/theme-toggle.tsx` | `src/components/common/theme-toggle.tsx` |
+
+(אם תעדיף שם תיקייה אחר כמו `shared/` במקום `common/` — תגיד, אני מתאים.)
+
+פעולות לכל קובץ:
+- `mv` ליעד החדש.
+- עדכון כל ה-imports בפרויקט (`@/components/ui/<name>` → `@/components/common/<name>`).
+- אימות שאף `components.json` של shadcn לא מצביע על הקבצים האלה (הם לא רשומים שם — נוצרו ידנית).
+
+סיכון: נמוך. הרכיבים האלה לא חלק מ-shadcn registry, אז עדכון shadcn עתידי לא יגע בהם.
+
+## מה לא נכלל בתוכנית הזו (במפורש)
+
+- **לא** משנים מבנה של `agents/`, `routes/`, `lib/` (חוץ מ-payments), `hooks/`, או `integrations/`.
+- **לא** נוגעים ב-`routeTree.gen.ts` (יתחדש אוטומטית אם תאנסטאק תרצה).
+- **לא** משנים שום system prompt / schema / ולידציה / agent logic — רק הזזות קבצים ועדכון imports.
+- **לא** מאחדים `lib/doc-types/types.ts` עם `types.server.ts` (העלית כאפשרות אבל זה stylistic — אם תרצה, נפרד).
+- **לא** מקבצים את דפי ה-marketing תחת layout — שינוי משמעותי יותר, שווה דיון נפרד.
 
 ## אימות
-- build עובר.
-- בדיקת דגימה: קובץ route, קובץ agent, קובץ shadcn, migration SQL, README.
-- ספירה: כמה קבצים תועדו / דולגו, מודפס בסיום הסקריפט.
+
+- בנייה עוברת (TanStack Router יחדש את `routeTree.gen.ts` אוטומטית, אם בכלל צריך — אף route לא הוזז).
+- חיפוש `rg "utils/payments.functions"` ו-`rg "components/ui/(editable-text|editable-site-text|empty-state|pull-to-refresh-indicator|swipeable-row|theme-toggle)"` — צריך לחזור 0 תוצאות אחרי העדכון.
+- preview עולה בלי שגיאות runtime.
+
+## הערה טכנית
+
+ל-`.functions.ts` חשוב להישאר במסלול client-safe (לא תחת `src/server/`) — `src/lib/payments/` עומד בזה. תוכן הקובץ לא משתנה, רק המיקום.
