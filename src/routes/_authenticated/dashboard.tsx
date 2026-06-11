@@ -78,11 +78,11 @@ function HomePage() {
     [orderData],
   );
   const movedToExtras = useMemo<OutputKey[]>(
-    () => ((orderData as any)?.movedToExtras as OutputKey[] | undefined) ?? [],
+    () => orderData?.movedToExtras ?? [],
     [orderData],
   );
   const movedToMain = useMemo<OutputKey[]>(
-    () => ((orderData as any)?.movedToMain as OutputKey[] | undefined) ?? [],
+    () => orderData?.movedToMain ?? [],
     [orderData],
   );
 
