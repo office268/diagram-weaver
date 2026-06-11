@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260528153223_b4b7189e-118f-4066-85cb-07ea18348dc8.sql
+-- Migration — 20260528153223_b4b7189e-118f-4066-85cb-07ea18348dc8.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER
 LANGUAGE plpgsql

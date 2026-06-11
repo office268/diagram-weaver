@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-gateway.server.ts
+// מודול server-only — ai-gateway.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";

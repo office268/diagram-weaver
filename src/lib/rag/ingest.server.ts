@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/rag/ingest.server.ts
+// מודול server-only — ingest.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractText } from "./text-extractor.server";
 import { chunkText } from "./chunker.server";

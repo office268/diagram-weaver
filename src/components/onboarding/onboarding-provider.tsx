@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/onboarding/onboarding-provider.tsx
+// רכיב UI — onboarding-provider
+// ============================================================
 import {
   createContext,
   useCallback,

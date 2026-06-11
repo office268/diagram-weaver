@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260609062824_361b3dda-3f08-47d9-a5f3-59e6b9b42ad4.sql
+-- Migration — 20260609062824_361b3dda-3f08-47d9-a5f3-59e6b9b42ad4.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE OR REPLACE FUNCTION public.reset_stuck_diagram_jobs(_stale_minutes integer DEFAULT 5)
 RETURNS integer
 LANGUAGE plpgsql

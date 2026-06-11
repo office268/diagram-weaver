@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260602204254_e4e9b1d0-bead-48d2-911e-db49c7f04520.sql
+-- Migration — 20260602204254_e4e9b1d0-bead-48d2-911e-db49c7f04520.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.ai_usage_events (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL,

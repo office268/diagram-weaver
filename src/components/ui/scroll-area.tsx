@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/scroll-area.tsx
+// shadcn primitive — scroll-area
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 

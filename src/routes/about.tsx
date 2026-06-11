@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/about.tsx
+// Route — about.tsx
+// מסך/דף ב-TanStack Router (file-based routing)
+// ============================================================
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/about")({

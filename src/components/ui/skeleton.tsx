@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/skeleton.tsx
+// shadcn primitive — skeleton
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import { cn } from "@/lib/utils";
 
 function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

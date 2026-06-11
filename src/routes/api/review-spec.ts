@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/review-spec.ts
+// HTTP endpoint (server route) — review-spec.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { z } from "zod";

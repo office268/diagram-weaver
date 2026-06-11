@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/requirements/prompt.ts
+// בונה Prompt עבור סוכן requirements
+// ============================================================
 import type { AgentContext } from "@/agents/shared/types";
 import {
   buildRagBlock,

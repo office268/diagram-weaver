@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/dialog.tsx
+// shadcn primitive — dialog
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";

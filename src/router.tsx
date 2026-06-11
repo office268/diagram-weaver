@@ -1,3 +1,7 @@
+// ============================================================
+// src/router.tsx
+// הגדרת TanStack Router לאפליקציה
+// ============================================================
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";

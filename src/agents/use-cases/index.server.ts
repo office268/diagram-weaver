@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/use-cases/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { generateText } from "ai";
 import { z } from "zod";
 import type { AgentContext, UseCasesOutput, RequirementsOutput } from "@/agents/shared/types";

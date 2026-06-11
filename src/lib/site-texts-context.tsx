@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/site-texts-context.tsx
+// ספריית עזר (lib) — site-texts-context.tsx
+// ============================================================
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";

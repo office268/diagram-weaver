@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/meeting-transcribe.tsx
+// מסך מאומת (Authenticated route) — meeting-transcribe.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";

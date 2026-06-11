@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/editor.$id.tsx
+// מסך מאומת (Authenticated route) — editor.$id.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

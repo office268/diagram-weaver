@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/mermaid-utils.ts
+// ספריית עזר (lib) — mermaid-utils.ts
+// ============================================================
 import mermaid from "mermaid";
 import elkLayouts from "@mermaid-js/layout-elk";
 import { sanitizeSvg } from "./svg-sanitize";

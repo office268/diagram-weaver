@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/ai-model-setting-card.tsx
+// רכיב UI — ai-model-setting-card
+// ============================================================
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

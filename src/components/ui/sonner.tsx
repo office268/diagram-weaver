@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/sonner.tsx
+// shadcn primitive — sonner
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import { Toaster as Sonner } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;

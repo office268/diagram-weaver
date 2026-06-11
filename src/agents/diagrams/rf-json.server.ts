@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/diagrams/rf-json.server.ts
+// מודול server-only — rf-json.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Unified RF-JSON diagram agent — produces React Flow JSON directly via
 // constrained decoding. Preserves ALL quality safeguards from the prior
 // Mermaid path: content rules, minimums, self-critique, retry on validation

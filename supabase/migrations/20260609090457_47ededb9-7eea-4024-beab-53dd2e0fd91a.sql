@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260609090457_47ededb9-7eea-4024-beab-53dd2e0fd91a.sql
+-- Migration — 20260609090457_47ededb9-7eea-4024-beab-53dd2e0fd91a.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 ALTER TABLE public.chat_threads
   ADD COLUMN IF NOT EXISTS project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL;
 

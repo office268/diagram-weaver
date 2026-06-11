@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260604133336_5611b5d5-290b-4375-9879-5ceebddfc3d7.sql
+-- Migration — 20260604133336_5611b5d5-290b-4375-9879-5ceebddfc3d7.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- agent_personas
 CREATE TABLE public.agent_personas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

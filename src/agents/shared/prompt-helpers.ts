@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/shared/prompt-helpers.ts
+// משאבים משותפים לכל הסוכנים — prompt-helpers.ts
+// ============================================================
 // Shared prompt building blocks injected into every agent
 
 export const HEBREW_WRITING_RULES = `

@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/output-types.ts
+// ספריית עזר (lib) — output-types.ts
+// ============================================================
 // Unified catalog of all "output types" a user can create from the home tiles:
 // document types (BRD/TRD/initiation/spec) + diagram types (mermaid).
 import {

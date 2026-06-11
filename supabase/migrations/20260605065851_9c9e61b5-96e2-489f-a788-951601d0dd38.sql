@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260605065851_9c9e61b5-96e2-489f-a788-951601d0dd38.sql
+-- Migration — 20260605065851_9c9e61b5-96e2-489f-a788-951601d0dd38.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.ai_model_setting (
   id text PRIMARY KEY DEFAULT 'singleton',
   model text NOT NULL DEFAULT 'google/gemini-2.5-pro',

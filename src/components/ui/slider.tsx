@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/slider.tsx
+// shadcn primitive — slider
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 

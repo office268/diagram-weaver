@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/recent-items-menu.tsx
+// רכיב UI — recent-items-menu
+// ============================================================
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

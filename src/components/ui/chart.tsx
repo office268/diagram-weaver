@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/chart.tsx
+// shadcn primitive — chart
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 

@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/resizable.tsx
+// shadcn primitive — resizable
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import { GripVertical } from "lucide-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 

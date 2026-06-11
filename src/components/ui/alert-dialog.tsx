@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/alert-dialog.tsx
+// shadcn primitive — alert-dialog
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 

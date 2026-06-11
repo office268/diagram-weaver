@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-subscription.ts
+// Hook — use-subscription
+// ============================================================
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";

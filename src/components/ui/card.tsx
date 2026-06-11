@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/card.tsx
+// shadcn primitive — card
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 
 import { cn } from "@/lib/utils";

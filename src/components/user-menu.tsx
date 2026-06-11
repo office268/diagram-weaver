@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/user-menu.tsx
+// רכיב UI — user-menu
+// ============================================================
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { LogOut, Settings, User as UserIcon, CreditCard, Zap, Sun, Moon, ShieldCheck, Menu, MessagesSquare, Bot, Workflow, KanbanSquare, Rocket, FlaskConical } from "lucide-react";
 

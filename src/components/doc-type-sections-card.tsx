@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/doc-type-sections-card.tsx
+// רכיב UI — doc-type-sections-card
+// ============================================================
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

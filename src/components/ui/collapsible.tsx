@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/collapsible.tsx
+// shadcn primitive — collapsible
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
 const Collapsible = CollapsiblePrimitive.Root;

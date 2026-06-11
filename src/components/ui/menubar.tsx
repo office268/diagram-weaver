@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/menubar.tsx
+// shadcn primitive — menubar
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
 import { Check, ChevronRight, Circle } from "lucide-react";

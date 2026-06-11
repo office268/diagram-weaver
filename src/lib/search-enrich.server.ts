@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/search-enrich.server.ts
+// מודול server-only — search-enrich.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Server-only helper to enrich list rows with author name and product/project path.
 // Used by global search to display: name · type · date · path · author.
 

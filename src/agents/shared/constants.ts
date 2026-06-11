@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/shared/constants.ts
+// משאבים משותפים לכל הסוכנים — constants.ts
+// ============================================================
 export const SCORE_THRESHOLD = 7;
 export const MAX_ITERATIONS = 3;
 

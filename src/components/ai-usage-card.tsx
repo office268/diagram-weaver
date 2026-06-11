@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/ai-usage-card.tsx
+// רכיב UI — ai-usage-card
+// ============================================================
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAiUsage, type AiUsageRow } from "@/lib/ai-usage.functions";

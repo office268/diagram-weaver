@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260605144357_a71d8ce2-36b7-4d47-b3c1-3983439a95a2.sql
+-- Migration — 20260605144357_a71d8ce2-36b7-4d47-b3c1-3983439a95a2.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.dashboard_tile_order (
   id text NOT NULL PRIMARY KEY DEFAULT 'singleton',
   "order" jsonb NOT NULL DEFAULT '[]'::jsonb,

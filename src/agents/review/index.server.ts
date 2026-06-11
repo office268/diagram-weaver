@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/review/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { generateText } from "ai";
 import type { SpecOutput, SpecReview } from "@/lib/spec-output-schema";
 import { ReviewSchema, extractJson } from "@/lib/spec-output-schema";

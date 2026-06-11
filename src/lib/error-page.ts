@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/error-page.ts
+// ספריית עזר (lib) — error-page.ts
+// ============================================================
 export function renderErrorPage(): string {
   return `<!doctype html>
 <html lang="en">

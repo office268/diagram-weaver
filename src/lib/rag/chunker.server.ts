@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/rag/chunker.server.ts
+// מודול server-only — chunker.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 export interface TextChunk {
   index: number;
   content: string;

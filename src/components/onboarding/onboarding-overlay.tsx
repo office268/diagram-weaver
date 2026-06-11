@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/onboarding/onboarding-overlay.tsx
+// רכיב UI — onboarding-overlay
+// ============================================================
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";

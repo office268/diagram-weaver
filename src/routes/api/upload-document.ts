@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/upload-document.ts
+// HTTP endpoint (server route) — upload-document.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ingestDocument } from "@/lib/rag/ingest.server";

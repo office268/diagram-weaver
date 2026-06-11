@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260608192238_10bd85b9-17c1-4b23-968d-f9b4d7549c11.sql
+-- Migration — 20260608192238_10bd85b9-17c1-4b23-968d-f9b4d7549c11.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.diagram_jobs (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,

@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260601100332_0686acbe-5542-41e4-aca5-74a0c1c8888b.sql
+-- Migration — 20260601100332_0686acbe-5542-41e4-aca5-74a0c1c8888b.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.login_events (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id uuid NOT NULL,

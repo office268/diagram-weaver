@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/dropdown-menu.tsx
+// shadcn primitive — dropdown-menu
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";

@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/organization-logo-card.tsx
+// רכיב UI — organization-logo-card
+// ============================================================
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

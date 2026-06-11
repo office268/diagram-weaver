@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/mobile-bottom-nav.tsx
+// רכיב UI — mobile-bottom-nav
+// ============================================================
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, FileText, FolderKanban } from "lucide-react";
 

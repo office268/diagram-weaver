@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/select.tsx
+// shadcn primitive — select
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";

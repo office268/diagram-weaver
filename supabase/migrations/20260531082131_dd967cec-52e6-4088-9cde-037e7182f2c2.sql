@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260531082131_dd967cec-52e6-4088-9cde-037e7182f2c2.sql
+-- Migration — 20260531082131_dd967cec-52e6-4088-9cde-037e7182f2c2.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.doc_type_settings (
   user_id uuid NOT NULL,
   doc_type text NOT NULL,

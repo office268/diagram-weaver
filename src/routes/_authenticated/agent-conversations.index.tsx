@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/agent-conversations.index.tsx
+// מסך מאומת (Authenticated route) — agent-conversations.index.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

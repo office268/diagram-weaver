@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/drawer.tsx
+// shadcn primitive — drawer
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 

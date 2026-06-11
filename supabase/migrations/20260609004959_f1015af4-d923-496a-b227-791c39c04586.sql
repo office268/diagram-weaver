@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260609004959_f1015af4-d923-496a-b227-791c39c04586.sql
+-- Migration — 20260609004959_f1015af4-d923-496a-b227-791c39c04586.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Split diagram_jobs pipeline: add per-stage tracking columns
 ALTER TABLE public.diagram_jobs
   ADD COLUMN IF NOT EXISTS stage TEXT,

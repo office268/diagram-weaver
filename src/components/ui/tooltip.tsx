@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/tooltip.tsx
+// shadcn primitive — tooltip
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 

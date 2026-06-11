@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/doc-types.server.ts
+// מודול server-only — doc-types.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Server-only per-doc-type system instructions.
 // The `.server.ts` suffix blocks this file from the client bundle.
 //

@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/app-breadcrumb.tsx
+// רכיב UI — app-breadcrumb
+// ============================================================
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import {

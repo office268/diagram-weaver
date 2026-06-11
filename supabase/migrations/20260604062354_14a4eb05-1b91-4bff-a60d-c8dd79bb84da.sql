@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260604062354_14a4eb05-1b91-4bff-a60d-c8dd79bb84da.sql
+-- Migration — 20260604062354_14a4eb05-1b91-4bff-a60d-c8dd79bb84da.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- 1. app_metadata: admin-only writes
 DROP POLICY IF EXISTS "metadata auth insert" ON public.app_metadata;
 DROP POLICY IF EXISTS "metadata auth update" ON public.app_metadata;

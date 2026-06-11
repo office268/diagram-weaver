@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/ai-spec-defaults.ts
+// ספריית עזר (lib) — ai-spec-defaults.ts
+// ============================================================
 // Client-safe stub for AI spec defaults.
 // All prompts, model names, and schema descriptions live in
 // `ai-spec-defaults.server.ts` so they never leak into the browser bundle.

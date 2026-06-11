@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/requirements/system.ts
+// System prompt לסוכן requirements
+// ============================================================
 import { HEBREW_WRITING_RULES, SPEC_QUALITY_CRITERIA } from "@/agents/shared/prompt-helpers";
 
 export const REQUIREMENTS_SYSTEM = [

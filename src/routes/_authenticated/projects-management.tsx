@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/projects-management.tsx
+// מסך מאומת (Authenticated route) — projects-management.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/projects-management")({

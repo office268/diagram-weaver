@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/onboarding/restart-tour-button.tsx
+// רכיב UI — restart-tour-button
+// ============================================================
 import { PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

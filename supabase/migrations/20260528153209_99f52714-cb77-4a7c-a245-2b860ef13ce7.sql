@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260528153209_99f52714-cb77-4a7c-a245-2b860ef13ce7.sql
+-- Migration — 20260528153209_99f52714-cb77-4a7c-a245-2b860ef13ce7.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- profiles table
 CREATE TABLE public.profiles (
   id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,

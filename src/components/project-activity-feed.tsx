@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/project-activity-feed.tsx
+// רכיב UI — project-activity-feed
+// ============================================================
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Activity, FilePlus2, FilePen } from "lucide-react";

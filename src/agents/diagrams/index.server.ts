@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/diagrams/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Diagrams agent — unified pipeline.
 // Produces React-Flow JSON for every diagram in the spec by delegating to
 // the same agent used by the chat ("runRfJsonDiagramAgent"). No Mermaid

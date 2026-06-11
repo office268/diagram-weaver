@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/business-knowledge-card.tsx
+// רכיב UI — business-knowledge-card
+// ============================================================
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";

@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/spec-schema.ts
+// ספריית עזר (lib) — spec-schema.ts
+// ============================================================
 import { z } from "zod";
 
 export const RequirementSchema = z.object({

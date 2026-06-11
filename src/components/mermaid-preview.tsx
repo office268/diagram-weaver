@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/mermaid-preview.tsx
+// רכיב UI — mermaid-preview
+// ============================================================
 import { useEffect, useRef, useState } from "react";
 import { renderMermaid } from "@/lib/mermaid-utils";
 import { AlertTriangle, Download, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";

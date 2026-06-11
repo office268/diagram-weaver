@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated.tsx
+// Route — _authenticated.tsx
+// מסך/דף ב-TanStack Router (file-based routing)
+// ============================================================
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";

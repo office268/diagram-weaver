@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260601110000_rag_uploaded_documents.sql
+-- Migration — 20260601110000_rag_uploaded_documents.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Enable pgvector extension for embedding storage
 CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 

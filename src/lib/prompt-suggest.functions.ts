@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/prompt-suggest.functions.ts
+// Server function (createServerFn) — prompt-suggest.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

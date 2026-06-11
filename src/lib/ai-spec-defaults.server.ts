@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-spec-defaults.server.ts
+// מודול server-only — ai-spec-defaults.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Server-only AI defaults. The `.server.ts` suffix blocks this file from
 // the client bundle, so prompts and model names never reach the browser.
 

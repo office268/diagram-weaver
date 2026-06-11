@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/paddle.server.ts
+// מודול server-only — paddle.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { Environment, Paddle, EventName } from "@paddle/paddle-node-sdk";
 
 const getEnv = (key: string): string => {

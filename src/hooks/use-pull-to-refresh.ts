@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-pull-to-refresh.ts
+// Hook — use-pull-to-refresh
+// ============================================================
 import { useRef, useState } from "react";
 
 const THRESHOLD = 72;

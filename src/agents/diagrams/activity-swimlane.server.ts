@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/diagrams/activity-swimlane.server.ts
+// מודול server-only — activity-swimlane.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";

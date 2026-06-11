@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/knowledge-context.server.ts
+// מודול server-only — knowledge-context.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // In-memory cache with 60s TTL — avoids redundant DB queries per generation call

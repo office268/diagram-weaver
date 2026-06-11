@@ -1,3 +1,7 @@
+<!--
+  src/routes/README.md
+  מסמך README — תיעוד כללי לתיקייה/פרויקט
+-->
 # Routes
 
 TanStack Start uses **file-based routing**. Every `.tsx` file in this directory

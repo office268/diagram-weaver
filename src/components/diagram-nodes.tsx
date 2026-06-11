@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/diagram-nodes.tsx
+// רכיב UI — diagram-nodes
+// ============================================================
 // All custom React Flow node components for the unified diagram editor.
 // Each component reads `data.label` (and optional kind-specific data).
 

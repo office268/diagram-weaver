@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260608183542_7baf5196-6291-46cb-80d5-a4ca70616308.sql
+-- Migration — 20260608183542_7baf5196-6291-46cb-80d5-a4ca70616308.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 ALTER TABLE public.ai_usage_events ALTER COLUMN spec_document_id DROP NOT NULL;
 ALTER TABLE public.ai_usage_events ADD COLUMN IF NOT EXISTS diagram_id uuid NULL;
 ALTER TABLE public.ai_usage_events ADD COLUMN IF NOT EXISTS artifact_kind text NOT NULL DEFAULT 'spec_document';

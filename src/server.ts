@@ -1,3 +1,7 @@
+// ============================================================
+// src/server.ts
+// src/server.ts
+// ============================================================
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";

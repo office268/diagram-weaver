@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/agent-config-card.tsx
+// רכיב UI — agent-config-card
+// ============================================================
 import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-model-setting.server.ts
+// מודול server-only — ai-model-setting.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { DEFAULT_AGENT_MODEL, ALLOWED_AGENT_MODELS } from "@/agents/shared/constants";
 

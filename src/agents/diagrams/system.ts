@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/diagrams/system.ts
+// System prompt לסוכן diagrams
+// ============================================================
 import { MERMAID_RULES } from "@/agents/shared/prompt-helpers";
 
 export const DIAGRAMS_SYSTEM = [

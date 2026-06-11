@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/ai-pricing.ts
+// ספריית עזר (lib) — ai-pricing.ts
+// ============================================================
 // Pricing per 1M tokens, USD. Values approximated from public list prices.
 // Unknown models → cost = 0 (we still record tokens).
 export interface ModelPricing {

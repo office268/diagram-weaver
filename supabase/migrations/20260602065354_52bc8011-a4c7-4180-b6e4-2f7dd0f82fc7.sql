@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260602065354_52bc8011-a4c7-4180-b6e4-2f7dd0f82fc7.sql
+-- Migration — 20260602065354_52bc8011-a4c7-4180-b6e4-2f7dd0f82fc7.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 ALTER TABLE public.uploaded_documents
   ADD COLUMN IF NOT EXISTS error_message text,
   ADD COLUMN IF NOT EXISTS storage_path  text;

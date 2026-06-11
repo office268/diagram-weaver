@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/pagination.tsx
+// shadcn primitive — pagination
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 

@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/progress.tsx
+// shadcn primitive — progress
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 

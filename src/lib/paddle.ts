@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/paddle.ts
+// ספריית עזר (lib) — paddle.ts
+// ============================================================
 import { resolvePaddlePrice, createPortalSession } from "@/utils/payments.functions";
 
 const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;

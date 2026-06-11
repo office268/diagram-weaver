@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/swipeable-row.tsx
+// רכיב UI — swipeable-row
+// ============================================================
 import { useRef, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 

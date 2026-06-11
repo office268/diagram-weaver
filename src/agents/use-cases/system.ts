@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/use-cases/system.ts
+// System prompt לסוכן use-cases
+// ============================================================
 import { HEBREW_WRITING_RULES } from "@/agents/shared/prompt-helpers";
 
 export const USE_CASES_SYSTEM = [

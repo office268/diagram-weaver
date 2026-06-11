@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/ai-model-labels.ts
+// ספריית עזר (lib) — ai-model-labels.ts
+// ============================================================
 export const MODEL_LABELS: Record<string, string> = {
   "google/gemini-2.5-pro": "Gemini 2.5 Pro — Reasoning (ברירת מחדל)",
   "google/gemini-3.1-pro-preview": "Gemini 3.1 Pro Preview — Reasoning",

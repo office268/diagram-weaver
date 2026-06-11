@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260603090603_0748e53f-c451-44fe-97f8-9b021389e6a6.sql
+-- Migration — 20260603090603_0748e53f-c451-44fe-97f8-9b021389e6a6.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Add approval status to profiles
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'pending';

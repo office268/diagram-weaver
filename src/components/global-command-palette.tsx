@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/global-command-palette.tsx
+// רכיב UI — global-command-palette
+// ============================================================
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";

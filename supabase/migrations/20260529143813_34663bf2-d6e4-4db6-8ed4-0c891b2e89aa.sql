@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260529143813_34663bf2-d6e4-4db6-8ed4-0c891b2e89aa.sql
+-- Migration — 20260529143813_34663bf2-d6e4-4db6-8ed4-0c891b2e89aa.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 WITH groups AS (
   SELECT user_id, prompt, gen_random_uuid() AS new_gid
   FROM public.spec_documents

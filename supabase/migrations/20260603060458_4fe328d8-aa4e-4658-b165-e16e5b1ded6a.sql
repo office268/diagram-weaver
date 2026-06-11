@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260603060458_4fe328d8-aa4e-4658-b165-e16e5b1ded6a.sql
+-- Migration — 20260603060458_4fe328d8-aa4e-4658-b165-e16e5b1ded6a.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Organizations multi-tenant scaffolding
 CREATE TYPE public.org_role AS ENUM ('owner', 'admin', 'member');
 

@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260529102818_98b1e06f-670c-4680-93c3-e32e9ab6c5aa.sql
+-- Migration — 20260529102818_98b1e06f-670c-4680-93c3-e32e9ab6c5aa.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.ai_settings (
   user_id UUID NOT NULL PRIMARY KEY,
   system_instruction TEXT NOT NULL,

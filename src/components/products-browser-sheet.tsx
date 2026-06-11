@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/products-browser-sheet.tsx
+// רכיב UI — products-browser-sheet
+// ============================================================
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

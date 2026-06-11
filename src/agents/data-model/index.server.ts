@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/data-model/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { generateText } from "ai";
 import { z } from "zod";
 import type { AgentContext, DataModelOutput, RequirementsOutput } from "@/agents/shared/types";

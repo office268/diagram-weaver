@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/settings.tsx
+// מסך מאומת (Authenticated route) — settings.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";

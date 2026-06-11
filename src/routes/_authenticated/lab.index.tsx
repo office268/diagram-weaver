@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/lab.index.tsx
+// מסך מאומת (Authenticated route) — lab.index.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";

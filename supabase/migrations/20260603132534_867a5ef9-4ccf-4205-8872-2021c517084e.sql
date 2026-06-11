@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260603132534_867a5ef9-4ccf-4205-8872-2021c517084e.sql
+-- Migration — 20260603132534_867a5ef9-4ccf-4205-8872-2021c517084e.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Products table: groups projects under an organization
 CREATE TABLE public.products (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

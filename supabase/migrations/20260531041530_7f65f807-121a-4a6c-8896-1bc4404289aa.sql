@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260531041530_7f65f807-121a-4a6c-8896-1bc4404289aa.sql
+-- Migration — 20260531041530_7f65f807-121a-4a6c-8896-1bc4404289aa.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- 1) Roles enum
 DO $$ BEGIN
   CREATE TYPE public.app_role AS ENUM ('admin', 'user');

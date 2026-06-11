@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/export-menu.tsx
+// רכיב UI — export-menu
+// ============================================================
 import { Download, FileText, FileType2, Printer, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
