@@ -53,7 +53,7 @@ export const updateSiteText = createServerFn({ method: "POST" })
     const sb = context.supabase as Parameters<typeof assertAdmin>[0];
     await assertAdmin(sb, context.userId, "רק מנהל מערכת יכול לערוך טקסטים");
 
-    const { error } = await sb
+    const { error } = await (sb as any)
       .from("site_texts")
       .upsert(
         { key: data.key, value: data.value, updated_by: context.userId, updated_at: new Date().toISOString() },

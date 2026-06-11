@@ -33,7 +33,7 @@ export async function runRequirementsAgent(
   tracker?: UsageTracker,
 ): Promise<RequirementsOutput> {
   const model = ctx.model ?? AGENT_MODELS.requirements;
-  return generateWithRetry(
+  return (await generateWithRetry(
     {
       gateway,
       model,
@@ -45,5 +45,5 @@ export async function runRequirementsAgent(
     },
     OutputSchema,
     tracker,
-  );
+  )) as RequirementsOutput;
 }
