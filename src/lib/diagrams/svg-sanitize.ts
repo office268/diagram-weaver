@@ -1,10 +1,4 @@
-/**
- * Generic SVG sanitizer used by the React-Flow activity renderer and the
- * Mermaid renderer. Strips <script> tags, on*-event handler attributes, and
- * javascript:/data: URLs in href/xlink:href. Mermaid is configured with
- * `securityLevel: 'strict'` so node labels are already HTML-escaped; this
- * function trims the remaining attack surface.
- */
+/** Strip scripts, event-handler attributes, and javascript:/data: hrefs from SVG strings. */
 export function sanitizeSvg(svg: string): string {
   if (typeof window === "undefined") return svg;
 

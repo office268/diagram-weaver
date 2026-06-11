@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdmin } from "@/lib/api/auth.server";
 
 function publicServerClient() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -27,14 +28,15 @@ export const getSiteTexts = createServerFn({ method: "GET" }).handler(async () =
 export const getIsAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await (context.supabase as any)
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    return { isAdmin: !!data };
+    try {
+      await assertAdmin(context.supabase as Parameters<typeof assertAdmin>[0], context.userId);
+      return { isAdmin: true };
+    } catch (err) {
+      if (err instanceof Error && err.message === "רק אדמין יכול לבצע פעולה זו") {
+        return { isAdmin: false };
+      }
+      throw err;
+    }
   });
 
 export const updateSiteText = createServerFn({ method: "POST" })
@@ -48,14 +50,9 @@ export const updateSiteText = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = context.supabase as any;
-    const { data: roleRow } = await sb
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleRow) throw new Error("רק מנהל מערכת יכול לערוך טקסטים");
+    await assertAdmin(sb, context.userId, "רק מנהל מערכת יכול לערוך טקסטים");
 
     const { error } = await sb
       .from("site_texts")

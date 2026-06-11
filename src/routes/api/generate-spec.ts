@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types/types";
 import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
+import { sanitizeUserPrompt } from "@/lib/api/sanitize";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 
 const BodySchema = z.object({
@@ -17,17 +18,6 @@ const BodySchema = z.object({
   projectId: z.string().uuid().optional(),
   model: z.string().max(100).optional(),
 });
-
-const BASE_CREDITS = 3;
-
-function sanitizePrompt(raw: string): string {
-  return raw
-    .replace(/\bignore\b.{0,60}\b(instructions?|system|rules?)\b/gi, "")
-    .replace(/\bsystem\s*:/gi, "")
-    .replace(/<\/?s(?:ystem|cript)[^>]*>/gi, "")
-    .slice(0, 5000)
-    .trim();
-}
 
 export const Route = createFileRoute("/api/generate-spec")({
   server: {
@@ -46,10 +36,6 @@ export const Route = createFileRoute("/api/generate-spec")({
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("LOVABLE_API_KEY missing", { status: 500 });
-
-        // Credit check temporarily disabled — allow generation regardless of balance.
-        void BASE_CREDITS;
-
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
@@ -77,7 +63,7 @@ export const Route = createFileRoute("/api/generate-spec")({
               const modelOverride = await loadAgentModelOverride();
 
               const result = await runOrchestrator({
-                userPrompt: sanitizePrompt(body.prompt),
+                userPrompt: sanitizeUserPrompt(body.prompt),
                 docType: (body.docType ?? "spec_overview") as DocTypeKey,
                 userId,
                 projectId: body.projectId ?? null,

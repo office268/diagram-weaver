@@ -10,6 +10,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertAdmin } from "@/lib/api/auth.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
+// Local types for agent tables (not in Supabase generated schema)
+interface AgentConvRow { id: string; title: string; topic: string | null; }
+interface AgentPartRow {
+  agent_personas: { id: string; name: string; role_title: string; role_description: string; color?: string } | null;
+}
+interface AgentMsgRow { id: string; persona_id: string | null; role: string; content: string; created_at: string; }
+
 const SuggestInput = z.object({
   field: z.enum(["name", "role_description", "knowledge"]),
   name: z.string().trim().max(120).default(""),
@@ -102,30 +109,32 @@ export const pickNextSpeaker = createServerFn({ method: "POST" })
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("חסר מפתח LOVABLE_API_KEY");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
     const [{ data: conv }, { data: parts }, { data: msgs }] = await Promise.all([
-      (supabase as any)
+      agentDb
         .from("agent_conversations")
         .select("title, topic")
         .eq("id", data.conversationId)
-        .maybeSingle(),
-      (supabase as any)
+        .maybeSingle() as Promise<{ data: AgentConvRow | null; error: unknown }>,
+      agentDb
         .from("agent_conversation_participants")
         .select("agent_personas:persona_id ( id, name, role_title, role_description )")
-        .eq("conversation_id", data.conversationId),
-      (supabase as any)
+        .eq("conversation_id", data.conversationId) as Promise<{ data: AgentPartRow[] | null; error: unknown }>,
+      agentDb
         .from("agent_messages")
         .select("role, content, persona_id, created_at")
         .eq("conversation_id", data.conversationId)
-        .order("created_at", { ascending: true }),
+        .order("created_at", { ascending: true }) as Promise<{ data: AgentMsgRow[] | null; error: unknown }>,
     ]);
 
     const personas = (parts ?? [])
-      .map((p: any) => p.agent_personas)
-      .filter(Boolean) as Array<{ id: string; name: string; role_title: string; role_description: string }>;
+      .map((p: AgentPartRow) => p.agent_personas)
+      .filter((p): p is NonNullable<AgentPartRow["agent_personas"]> => p !== null);
     if (personas.length === 0) throw new Error("אין משתתפים בשיחה");
 
     const personaById = new Map(personas.map((p) => [p.id, p]));
-    const history = (msgs ?? []).slice(-20).map((m: any) => {
+    const history = (msgs ?? []).slice(-20).map((m: AgentMsgRow) => {
       if (m.role === "moderator" || !m.persona_id) return `מנחה: ${m.content}`;
       const p = personaById.get(m.persona_id);
       return `${p?.name ?? "סוכן"} (${p?.role_title ?? ""}): ${m.content}`;
@@ -167,7 +176,9 @@ export const listAgentPersonas = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { data, error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { data, error } = await agentDb
       .from("agent_personas")
       .select("*, organizations:org_id ( id, name )")
       .order("created_at", { ascending: false });
@@ -192,6 +203,8 @@ export const upsertAgentPersona = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
     const payload = {
       name: data.name,
       org_id: data.org_id ?? null,
@@ -203,14 +216,14 @@ export const upsertAgentPersona = createServerFn({ method: "POST" })
       created_by: userId,
     };
     if (data.id) {
-      const { error } = await (supabase as any)
+      const { error } = await agentDb
         .from("agent_personas")
         .update(payload)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    const { data: row, error } = await (supabase as any)
+    const { data: row, error } = await agentDb
       .from("agent_personas")
       .insert(payload)
       .select("id")
@@ -225,7 +238,9 @@ export const deleteAgentPersona = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { error } = await agentDb
       .from("agent_personas")
       .delete()
       .eq("id", data.id);
@@ -240,7 +255,9 @@ export const listAgentConversations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { data, error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { data, error } = await agentDb
       .from("agent_conversations")
       .select("*")
       .order("updated_at", { ascending: false });
@@ -260,7 +277,9 @@ export const createAgentConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { data: conv, error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { data: conv, error } = await agentDb
       .from("agent_conversations")
       .insert({ title: data.title, topic: data.topic, created_by: userId })
       .select("id")
@@ -270,13 +289,12 @@ export const createAgentConversation = createServerFn({ method: "POST" })
       conversation_id: conv.id as string,
       persona_id: pid,
     }));
-    const { error: pErr } = await (supabase as any)
+    const { error: pErr } = await agentDb
       .from("agent_conversation_participants")
       .insert(rows);
     if (pErr) throw new Error(pErr.message);
-    // Seed conversation with topic as a moderator message if provided
     if (data.topic.trim()) {
-      await (supabase as any).from("agent_messages").insert({
+      await agentDb.from("agent_messages").insert({
         conversation_id: conv.id,
         persona_id: null,
         role: "moderator",
@@ -294,18 +312,20 @@ export const getAgentConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
     const [{ data: conv, error: cErr }, { data: parts, error: pErr }, { data: msgs, error: mErr }] =
       await Promise.all([
-        (supabase as any)
+        agentDb
           .from("agent_conversations")
           .select("*")
           .eq("id", data.conversationId)
           .maybeSingle(),
-        (supabase as any)
+        agentDb
           .from("agent_conversation_participants")
           .select("persona_id, agent_personas:persona_id ( id, name, role_title, color )")
           .eq("conversation_id", data.conversationId),
-        (supabase as any)
+        agentDb
           .from("agent_messages")
           .select("*")
           .eq("conversation_id", data.conversationId)
@@ -315,7 +335,9 @@ export const getAgentConversation = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     if (mErr) throw new Error(mErr.message);
     if (!conv) throw new Error("שיחה לא נמצאה");
-    const participants = (parts ?? []).map((p: any) => p.agent_personas).filter(Boolean);
+    const participants = (parts ?? [])
+      .map((p: AgentPartRow) => p.agent_personas)
+      .filter(Boolean);
     return { conversation: conv, participants, messages: msgs ?? [] };
   });
 
@@ -327,7 +349,9 @@ export const deleteAgentConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { error } = await (supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { error } = await agentDb
       .from("agent_conversations")
       .delete()
       .eq("id", data.conversationId);
@@ -348,14 +372,16 @@ export const addModeratorMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-    const { error } = await (supabase as any).from("agent_messages").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const agentDb = supabase as any;
+    const { error } = await agentDb.from("agent_messages").insert({
       conversation_id: data.conversationId,
       persona_id: null,
       role: "moderator",
       content: data.content,
     });
     if (error) throw new Error(error.message);
-    await (supabase as any)
+    await agentDb
       .from("agent_conversations")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", data.conversationId);
