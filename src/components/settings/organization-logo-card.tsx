@@ -24,7 +24,7 @@ import {
   removeOrganizationLogo,
   updateOrganizationDetails,
   type OrgKind,
-} from "@/lib/organizations.functions";
+} from "@/lib/orgs/organizations.functions";
 
 const MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];

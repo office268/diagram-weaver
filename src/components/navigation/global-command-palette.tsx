@@ -25,8 +25,8 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { listProjects } from "@/lib/project.functions";
-import { listRecentItems } from "@/lib/recent.functions";
+import { listProjects } from "@/lib/projects/project.functions";
+import { listRecentItems } from "@/lib/projects/recent.functions";
 import { useTheme } from "@/hooks/use-theme";
 
 export function GlobalCommandPalette() {

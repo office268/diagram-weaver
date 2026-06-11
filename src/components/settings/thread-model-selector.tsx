@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { updateChatThreadModel } from "@/lib/chat.functions";
+import { updateChatThreadModel } from "@/lib/chat/chat.functions";
 import { getAvailableAgentModels } from "@/lib/ai/model-setting.functions";
 import { MODEL_LABELS, modelShortLabel } from "@/lib/ai/model-labels";
 import { cn } from "@/lib/utils";

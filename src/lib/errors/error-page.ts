@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/error-page.ts
+// src/lib/errors/error-page.ts
 // ספריית עזר (lib) — error-page.ts
 // ============================================================
 export function renderErrorPage(): string {

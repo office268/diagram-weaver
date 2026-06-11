@@ -30,7 +30,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Package } from "lucide-react";
-import { ProductsBrowserSheet } from "@/components/products-browser-sheet";
+import { ProductsBrowserSheet } from "@/components/navigation/products-browser-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +42,7 @@ import {
 import { listSpecs } from "@/lib/spec/spec.functions";
 import { listDiagrams } from "@/lib/diagrams/diagrams.functions";
 import { listDocuments } from "@/lib/doc-types/documents.functions";
-import { listProjects } from "@/lib/project.functions";
+import { listProjects } from "@/lib/projects/project.functions";
 
 type Category = "project" | "document" | "diagram" | "upload";
 type GroupFilter = "all" | Category;

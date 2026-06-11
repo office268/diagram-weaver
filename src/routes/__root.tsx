@@ -17,9 +17,9 @@ import { useEffect } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { getAppMetadata } from "@/lib/app-metadata.functions";
-import { getSiteTexts, getIsAdmin } from "@/lib/site-texts.functions";
-import { SiteTextsProvider } from "@/lib/site-texts-context";
+import { getAppMetadata } from "@/lib/projects/app-metadata.functions";
+import { getSiteTexts, getIsAdmin } from "@/lib/orgs/site-texts.functions";
+import { SiteTextsProvider } from "@/lib/orgs/site-texts-context";
 import { useAuth } from "@/hooks/use-auth";
 
 
@@ -162,7 +162,7 @@ function AuthBridge() {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         queryClient.clear();
         router.invalidate();
-        import("@/lib/login-log.functions")
+        import("@/lib/audit/login-log.functions")
           .then(({ recordLoginEvent }) =>
             recordLoginEvent({
               data: {

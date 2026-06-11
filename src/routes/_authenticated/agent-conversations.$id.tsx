@@ -12,7 +12,7 @@ import { Loader2, Send, ArrowRight, Bot, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import {
   getAgentConversation,
   addModeratorMessage,

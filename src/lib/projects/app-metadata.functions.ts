@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/app-metadata.functions.ts
+// src/lib/projects/app-metadata.functions.ts
 // Server function (createServerFn) — app-metadata.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

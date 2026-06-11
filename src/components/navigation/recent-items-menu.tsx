@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { listRecentItems } from "@/lib/recent.functions";
+import { listRecentItems } from "@/lib/projects/recent.functions";
 
 interface RecentItemsMenuProps {
   trigger?: React.ReactNode;

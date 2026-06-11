@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/document-uploader.tsx
+// src/components/diagrams/document-uploader.tsx
 // רכיב UI — document-uploader
 // ============================================================
 import { useCallback, useRef, useState } from "react";

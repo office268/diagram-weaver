@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/prompt-box-settings.ts
+// src/lib/ai/prompt-box-settings.ts
 // ספריית עזר (lib) — prompt-box-settings.ts
 // ============================================================
 import { useEffect, useState } from "react";

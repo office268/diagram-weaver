@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { EditorStatusBar } from "@/components/editor-status-bar";
+import { EditorStatusBar } from "@/components/diagrams/editor-status-bar";
 import { ExportMenu } from "@/components/diagrams/export-menu";
 import { printAsPdf } from "@/lib/spec/export";
 import { formatDistanceToNow } from "date-fns";
@@ -60,7 +60,7 @@ const DOC_TYPE_EN: Record<string, string> = {
   spec_overview: "High-Level Design (HLD)",
   spec_detailed: "Low-Level Design (LLD)",
 };
-import { getProject } from "@/lib/project.functions";
+import { getProject } from "@/lib/projects/project.functions";
 import {
   DndContext,
   MouseSensor,

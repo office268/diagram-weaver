@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/site-texts.functions.ts
+// src/lib/orgs/site-texts.functions.ts
 // Server function (createServerFn) — site-texts.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

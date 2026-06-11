@@ -33,7 +33,7 @@ import {
   updateAppMetadata,
   generateAppImage,
   type AppMetadata,
-} from "@/lib/app-metadata.functions";
+} from "@/lib/projects/app-metadata.functions";
 
 export function AppMetadataCard() {
   const qc = useQueryClient();

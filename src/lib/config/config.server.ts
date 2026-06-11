@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/config.server.ts
+// src/lib/config/config.server.ts
 // מודול server-only — config.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

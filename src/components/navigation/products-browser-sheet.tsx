@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/products-browser-sheet.tsx
+// src/components/navigation/products-browser-sheet.tsx
 // רכיב UI — products-browser-sheet
 // ============================================================
 import { useState } from "react";
@@ -38,7 +38,7 @@ import {
   getProduct,
   createProduct,
   listProductProjectSpecs,
-} from "@/lib/products.functions";
+} from "@/lib/projects/products.functions";
 
 type Level = "products" | "projects" | "items";
 

@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCredits } from "@/hooks/use-credits";
 import { useTheme } from "@/hooks/use-theme";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import {
   DropdownMenu,
   DropdownMenuContent,

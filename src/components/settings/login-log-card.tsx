@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/login-log-card.tsx
+// src/components/settings/login-log-card.tsx
 // רכיב UI — login-log-card
 // ============================================================
 import React, { useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import { ChevronDown, ChevronLeft, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { getLoginLog, type LoginLogRow } from "@/lib/login-log.functions";
+import { getLoginLog, type LoginLogRow } from "@/lib/audit/login-log.functions";
 
 function formatDate(iso: string) {
   try {

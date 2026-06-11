@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/error-capture.ts
+// src/lib/errors/error-capture.ts
 // ספריית עזר (lib) — error-capture.ts
 // ============================================================
 // Captures the original Error out-of-band so server.ts can recover the stack

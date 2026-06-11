@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/project.functions.ts
+// src/lib/projects/project.functions.ts
 // Server function (createServerFn) — project.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

@@ -74,7 +74,7 @@ import {
   deleteChatThread,
   getChatThreadAssignment,
   assignChatThreadProductProject,
-} from "@/lib/chat.functions";
+} from "@/lib/chat/chat.functions";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 
 import { cancelDiagramJob } from "@/lib/diagrams/diagrams.functions";
@@ -84,7 +84,7 @@ import { OUTPUT_TYPES, type OutputKey } from "@/lib/doc-types/output-types";
 import { ActivitySwimlaneRenderer } from "@/components/diagrams/activity-swimlane-renderer";
 import { MermaidPreview } from "@/components/diagrams/mermaid-preview";
 import { DiagramRenderer } from "@/components/diagrams/diagram-renderer";
-import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
+import { usePromptBoxSettings } from "@/lib/ai/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({
   head: () => ({ meta: [{ title: "שיחה — סוכן ניתוח מערכות" }] }),

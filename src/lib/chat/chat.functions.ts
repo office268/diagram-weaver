@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/chat.functions.ts
+// src/lib/chat/chat.functions.ts
 // Server function (createServerFn) — chat.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

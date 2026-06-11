@@ -1,9 +1,9 @@
 // ============================================================
-// src/components/editable-site-text.tsx
+// src/components/ui/editable-site-text.tsx
 // רכיב UI — editable-site-text
 // ============================================================
 import { useEffect, useRef, useState, type ElementType } from "react";
-import { useSiteTexts } from "@/lib/site-texts-context";
+import { useSiteTexts } from "@/lib/orgs/site-texts-context";
 import { cn } from "@/lib/utils";
 
 type Tag = "h1" | "h2" | "h3" | "h4" | "p" | "span" | "div";
