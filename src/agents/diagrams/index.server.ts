@@ -15,7 +15,7 @@ import type {
   ArchitectureOutput,
   DataModelOutput,
 } from "@/agents/shared/types";
-import type { UsageTracker } from "@/lib/ai-usage.server";
+import type { UsageTracker } from "@/lib/ai/usage.server";
 import { runRfJsonDiagramAgent } from "./rf-json.server";
 
 interface RunInput {

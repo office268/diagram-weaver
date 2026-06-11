@@ -16,10 +16,10 @@ import {
   validateDiagramAiOutput,
   type DiagramAiOutput,
   type DiagramRFData,
-} from "@/lib/diagram-rf";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+} from "@/lib/diagrams/diagram-rf";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { AGENT_TEMPERATURES, DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
-import type { UsageTracker } from "@/lib/ai-usage.server";
+import type { UsageTracker } from "@/lib/ai/usage.server";
 import { buildSelfCritiqueInstruction } from "@/agents/shared/prompt-helpers";
 
 // ── Per-kind config ──────────────────────────────────────────────────────────

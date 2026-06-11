@@ -8,7 +8,7 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireBearerAuth } from "@/lib/api/auth.server";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
   OUTPUT_TYPES,
@@ -17,7 +17,7 @@ import {
   type OutputKey,
 } from "@/lib/output-types";
 import type { DocTypeKey } from "@/lib/doc-types";
-import type { SpecOutput } from "@/lib/spec-output-schema";
+import type { SpecOutput } from "@/lib/spec/output-schema";
 
 const BodySchema = z.object({
   threadId: z.string().uuid(),
@@ -97,7 +97,7 @@ export const Route = createFileRoute("/api/chat-message")({
         if (body.mode === "plan") {
           try {
             const provider = createLovableAiGatewayProvider(apiKey);
-            const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+            const { loadEffectiveModelForThread } = await import("@/lib/ai/model-setting.server");
             const model = provider(await loadEffectiveModelForThread(body.threadId));
             const planSystem =
               `אתה אנליסט מערכות מנוסה שעוזר ללקוח לחדד את הבקשה לפני יצירת ${def.label}. ` +
@@ -153,7 +153,7 @@ export const Route = createFileRoute("/api/chat-message")({
         // seconds and runs the heavy AI pipeline out of band. The client
         // polls `diagram_jobs.status` for completion.
         if (def.category === "diagram") {
-          const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+          const { loadEffectiveModelForThread } = await import("@/lib/ai/model-setting.server");
           const modelOverride = await loadEffectiveModelForThread(body.threadId);
           const diagramKind = outputType as DiagramOutputKey;
 
@@ -197,11 +197,11 @@ export const Route = createFileRoute("/api/chat-message")({
         // ── Document (spec) path: keep the existing streaming flow ──
         const encoder = new TextEncoder();
 
-        const { createUsageTracker, logAiUsage } = await import("@/lib/ai-usage.server");
+        const { createUsageTracker, logAiUsage } = await import("@/lib/ai/usage.server");
         const docTracker = createUsageTracker();
         void docTracker; // reserved for future partial-usage logging on doc path
         let usageLogged = false;
-        const { loadEffectiveModelForThread } = await import("@/lib/ai-model-setting.server");
+        const { loadEffectiveModelForThread } = await import("@/lib/ai/model-setting.server");
         const modelOverride = await loadEffectiveModelForThread(body.threadId);
 
         const stream = new ReadableStream<Uint8Array>({

@@ -28,7 +28,7 @@ import { AiModelSettingCard } from "@/components/ai-model-setting-card";
 import {
   getAiSettings,
   updateBusinessKnowledge,
-} from "@/lib/ai-settings.functions";
+} from "@/lib/ai/settings.functions";
 
 
 

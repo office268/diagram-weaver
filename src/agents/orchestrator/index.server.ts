@@ -4,7 +4,7 @@
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
 import type { DocTypeKey } from "@/lib/doc-types";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 import { SCORE_THRESHOLD, MAX_ITERATIONS, IMPROVEMENT_KEYWORDS } from "@/agents/shared/constants";
 import type { AgentContext, OrchestratorOutput } from "@/agents/shared/types";
@@ -16,7 +16,7 @@ import { runDataModelAgent } from "@/agents/data-model/index.server";
 import { runUseCasesAgent } from "@/agents/use-cases/index.server";
 import { runDiagramsAgent } from "@/agents/diagrams/index.server";
 import { runReviewAgent, filterNotesByKeywords } from "@/agents/review/index.server";
-import { createUsageTracker, type UsageTotals } from "@/lib/ai-usage.server";
+import { createUsageTracker, type UsageTotals } from "@/lib/ai/usage.server";
 
 export async function runOrchestrator(params: {
   userPrompt: string;

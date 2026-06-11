@@ -26,6 +26,16 @@ export const AGENT_TEMPERATURES = {
   review:        0.2,
 } as const;
 
+export const AGENT_MAX_OUTPUT_TOKENS = {
+  requirements: 4000,
+  architecture: 6000,
+  dataModel: 6000,
+  useCases: 6000,
+  diagrams: 8000,
+  review: 2000,
+  retryBoost: 8000,
+} as const;
+
 /** Keyword routing for the orchestrator improvement loop */
 export const IMPROVEMENT_KEYWORDS = {
   requirements: ["דרישה", "FR", "NFR", "requirements", "מטרה", "סיכון", "הנחה"],

@@ -3,11 +3,10 @@
 // מודול server-only — index.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
-import { generateText } from "ai";
 import { z } from "zod";
 import type { AgentContext, DataModelOutput, RequirementsOutput } from "@/agents/shared/types";
-import { AGENT_MODELS, AGENT_TEMPERATURES } from "@/agents/shared/constants";
-import { extractJson } from "@/lib/spec-output-schema";
+import { AGENT_MODELS, AGENT_TEMPERATURES, AGENT_MAX_OUTPUT_TOKENS } from "@/agents/shared/constants";
+import { generateWithRetry } from "@/agents/shared/generate-with-retry.server";
 import {
   buildRagBlock,
   buildThinkingInstruction,
@@ -15,8 +14,8 @@ import {
   JSON_ONLY_INSTRUCTION,
 } from "@/agents/shared/prompt-helpers";
 import { DATA_MODEL_SYSTEM } from "./system";
-import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import type { UsageTracker } from "@/lib/ai-usage.server";
+import type { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
+import type { UsageTracker } from "@/lib/ai/usage.server";
 
 const OutputSchema = z.object({
   data_model: z.object({
@@ -72,25 +71,16 @@ export async function runDataModelAgent(
   tracker?: UsageTracker,
 ): Promise<DataModelOutput> {
   const model = ctx.model ?? AGENT_MODELS.dataModel;
-  const { text, usage } = await generateText({
-    model: gateway(model),
-    system: DATA_MODEL_SYSTEM,
-    prompt: buildPrompt(ctx, reqs),
-    maxOutputTokens: 6000,
-    temperature: AGENT_TEMPERATURES.dataModel,
-  });
-  tracker?.track(model, usage);
-  try {
-    return OutputSchema.parse(JSON.parse(extractJson(text)));
-  } catch {
-    const { text: text2, usage: usage2 } = await generateText({
-      model: gateway(model),
+  return generateWithRetry(
+    {
+      gateway,
+      model,
       system: DATA_MODEL_SYSTEM,
-      prompt: buildPrompt(ctx, reqs) + "\n\nהחזר JSON תקני בלבד, ללא ```json fences. אל תקצר.",
-      maxOutputTokens: 8000,
-      temperature: 0,
-    });
-    tracker?.track(model, usage2);
-    return OutputSchema.parse(JSON.parse(extractJson(text2)));
-  }
+      prompt: buildPrompt(ctx, reqs),
+      maxOutputTokens: AGENT_MAX_OUTPUT_TOKENS.dataModel,
+      temperature: AGENT_TEMPERATURES.dataModel,
+    },
+    OutputSchema,
+    tracker,
+  );
 }

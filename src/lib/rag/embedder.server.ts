@@ -4,7 +4,7 @@
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
 import { embedMany } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
 const EMBEDDING_MODEL = "text-embedding-3-small";
 const BATCH_SIZE = 50;

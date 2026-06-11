@@ -19,9 +19,9 @@ import { Label } from "@/components/ui/label";
 import {
   getAiModelSetting,
   updateAiModelSetting,
-} from "@/lib/ai-model-setting.functions";
+} from "@/lib/ai/model-setting.functions";
 
-import { MODEL_LABELS } from "@/lib/ai-model-labels";
+import { MODEL_LABELS } from "@/lib/ai/model-labels";
 
 export function AiModelSettingCard() {
   const qc = useQueryClient();

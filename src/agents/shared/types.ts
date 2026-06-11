@@ -2,7 +2,7 @@
 // src/agents/shared/types.ts
 // משאבים משותפים לכל הסוכנים — types.ts
 // ============================================================
-import type { SpecOutput, SpecReview } from "@/lib/spec-output-schema";
+import type { SpecOutput, SpecReview } from "@/lib/spec/output-schema";
 import type { DocTypeKey } from "@/lib/doc-types";
 
 export interface AgentContext {

@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { EditorStatusBar } from "@/components/editor-status-bar";
 import { ExportMenu } from "@/components/export-menu";
-import { printAsPdf } from "@/lib/spec-export";
+import { printAsPdf } from "@/lib/spec/export";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -80,7 +80,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { getSpec, updateSpec, createSpec, getDocUsageTotals, logSpecUsage } from "@/lib/spec.functions";
+import { getSpec, updateSpec, createSpec, getDocUsageTotals, logSpecUsage } from "@/lib/spec/spec.functions";
 import { ReviewSuggestionsPanel } from "@/components/review-suggestions-panel";
 import {
   normalizeReviewNotes,
@@ -88,7 +88,7 @@ import {
   extractJson,
   type SpecOutput,
   type SpecReview,
-} from "@/lib/spec-output-schema";
+} from "@/lib/spec/output-schema";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ import {
   type TextItem,
   type Persona,
   type UseCase,
-} from "@/lib/spec-schema";
+} from "@/lib/spec/schema";
 
 export const Route = createFileRoute("/_authenticated/editor/$id")({
   head: () => ({

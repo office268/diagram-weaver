@@ -2,7 +2,7 @@
 // src/agents/shared/assembler.ts
 // משאבים משותפים לכל הסוכנים — assembler.ts
 // ============================================================
-import type { SpecOutput } from "@/lib/spec-output-schema";
+import type { SpecOutput } from "@/lib/spec/output-schema";
 import type {
   RequirementsOutput,
   ArchitectureOutput,

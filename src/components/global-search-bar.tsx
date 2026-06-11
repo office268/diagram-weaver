@@ -39,7 +39,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { listSpecs } from "@/lib/spec.functions";
+import { listSpecs } from "@/lib/spec/spec.functions";
 import { listDiagrams } from "@/lib/diagrams.functions";
 import { listDocuments } from "@/lib/documents.functions";
 import { listProjects } from "@/lib/project.functions";

@@ -6,10 +6,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { DEFAULT_MODEL } from "@/lib/ai-spec-defaults.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
+import { DEFAULT_MODEL } from "@/lib/ai/spec-defaults.server";
 import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
-import { extractJson } from "@/lib/spec-output-schema";
+import { extractJson } from "@/lib/spec/output-schema";
 import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
 const BodySchema = z.object({
@@ -92,7 +92,7 @@ export const Route = createFileRoute("/api/improve-section")({
 
           if (body.docId) {
             try {
-              const { logAiUsage } = await import("@/lib/ai-usage.server");
+              const { logAiUsage } = await import("@/lib/ai/usage.server");
               await logAiUsage({
                 userId: userId,
                 specDocumentId: body.docId,

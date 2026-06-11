@@ -64,7 +64,7 @@ export const exportAgentsConfigToSheets = createServerFn({ method: "POST" })
       import("@/agents/data-model/system"),
       import("@/agents/use-cases/system"),
       import("@/agents/diagrams/system"),
-      import("@/lib/ai-model-setting.server"),
+      import("@/lib/ai/model-setting.server"),
     ]);
 
     const effectiveModel = await loadAgentModelOverride();

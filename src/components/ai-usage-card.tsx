@@ -4,7 +4,7 @@
 // ============================================================
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listAiUsage, type AiUsageRow } from "@/lib/ai-usage.functions";
+import { listAiUsage, type AiUsageRow } from "@/lib/ai/usage.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,

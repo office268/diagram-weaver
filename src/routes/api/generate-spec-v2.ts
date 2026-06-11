@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
               // Stream progress tokens so the UI knows work is happening
               enqueue("__PROGRESS__:start\n");
 
-              const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+              const { loadAgentModelOverride } = await import("@/lib/ai/model-setting.server");
               const modelOverride = await loadAgentModelOverride();
               const result = await runOrchestrator({
                 userPrompt: body.prompt,

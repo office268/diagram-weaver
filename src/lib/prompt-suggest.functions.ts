@@ -7,7 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
 
 export const suggestUserPrompt = createServerFn({ method: "POST" })

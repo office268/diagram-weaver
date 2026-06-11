@@ -232,7 +232,7 @@ export const logSpecUsage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    const { logAiUsage } = await import("@/lib/ai-usage.server");
+    const { logAiUsage } = await import("@/lib/ai/usage.server");
     await logAiUsage({
       userId,
       specDocumentId: data.docId,

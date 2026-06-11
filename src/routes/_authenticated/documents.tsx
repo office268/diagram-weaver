@@ -48,7 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { listSpecs, deleteSpec, updateSpec } from "@/lib/spec.functions";
+import { listSpecs, deleteSpec, updateSpec } from "@/lib/spec/spec.functions";
 import { listDiagrams, deleteDiagram, updateDiagram } from "@/lib/diagrams.functions";
 import { listDocuments, deleteDocument, renameDocument } from "@/lib/documents.functions";
 

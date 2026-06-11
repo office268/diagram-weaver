@@ -4,9 +4,9 @@
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
-import type { UsageTracker } from "@/lib/ai-usage.server";
+import type { UsageTracker } from "@/lib/ai/usage.server";
 import {
   ActivityDiagramGenerationError,
   STAGE1_SYSTEM,
@@ -16,7 +16,7 @@ import {
   validateActivitySvg,
   reviewActivitySvg,
   type ProcessMap,
-} from "@/lib/activity-diagram-pipeline.server";
+} from "@/lib/diagrams/activity-pipeline.server";
 
 type Model = Parameters<typeof generateText>[0]["model"];
 

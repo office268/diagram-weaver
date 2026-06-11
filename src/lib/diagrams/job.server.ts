@@ -22,13 +22,13 @@
  * RF-JSON kinds run as a single step (one LLM call, no iteration).
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { createUsageTracker, logAiUsage } from "@/lib/ai-usage.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
+import { createUsageTracker, logAiUsage } from "@/lib/ai/usage.server";
 import {
   ActivityDiagramGenerationError,
   validateActivitySvg,
   type ProcessMap,
-} from "@/lib/activity-diagram-pipeline.server";
+} from "@/lib/diagrams/activity-pipeline.server";
 import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/output-types";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 

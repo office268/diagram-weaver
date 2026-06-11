@@ -12,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { SpecReview, ReviewNote } from "@/lib/spec-output-schema";
+import type { SpecReview, ReviewNote } from "@/lib/spec/output-schema";
 
 const SCORE_CRITERIA = [
   "שלמות — האם כל הסעיפים הנדרשים מכוסים",
