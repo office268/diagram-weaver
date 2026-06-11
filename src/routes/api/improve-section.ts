@@ -15,14 +15,27 @@ import { loadKnowledgeContextBlock } from "@/lib/rag/knowledge-context.server";
 const BodySchema = z.object({
   sectionKey: z.string().min(1).max(100),
   sectionLabel: z.string().min(1).max(200),
-  sectionValue: z.any(),
+  sectionValue: z.union([
+    z.string().max(50_000),
+    z.array(z.unknown()).max(1_000),
+    z.record(z.string(), z.unknown()),
+  ]),
   instruction: z.string().min(1).max(2000),
   contextPrompt: z.string().max(5000).optional(),
   docType: z.string().max(100).optional(),
   valueShape: z.enum(["string", "array", "object"]),
   projectId: z.string().uuid().optional(),
   docId: z.string().uuid().optional(),
-});
+}).refine(
+  (b) =>
+    (b.valueShape === "string" && typeof b.sectionValue === "string") ||
+    (b.valueShape === "array" && Array.isArray(b.sectionValue)) ||
+    (b.valueShape === "object" &&
+      typeof b.sectionValue === "object" &&
+      b.sectionValue !== null &&
+      !Array.isArray(b.sectionValue)),
+  { message: "sectionValue type must match valueShape" },
+);
 
 
 const SYSTEM = [

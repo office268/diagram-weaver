@@ -31,7 +31,9 @@ function normalizeKeys(keys: unknown, allow: Set<string>): OutputKey[] {
 export const getDashboardTileOrder = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await (context.supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = context.supabase as any;
+    const { data } = await db
       .from("dashboard_tile_order")
       .select("order, moved_to_extras, moved_to_main")
       .eq("id", "singleton")
@@ -53,7 +55,9 @@ export const setDashboardTileOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => UpdateSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { data: roleRow } = await (context.supabase as any)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = context.supabase as any;
+    const { data: roleRow } = await db
       .from("user_roles")
       .select("role")
       .eq("user_id", context.userId)
@@ -62,7 +66,7 @@ export const setDashboardTileOrder = createServerFn({ method: "POST" })
     if (!roleRow) throw new Error("רק מנהל מערכת יכול לשנות את סדר הקוביות");
 
     // Load current row to preserve fields not provided in this call.
-    const { data: current } = await (context.supabase as any)
+    const { data: current } = await db
       .from("dashboard_tile_order")
       .select("order, moved_to_extras, moved_to_main")
       .eq("id", "singleton")
@@ -80,7 +84,7 @@ export const setDashboardTileOrder = createServerFn({ method: "POST" })
       VALID_EXTRAS,
     );
 
-    const { error } = await (context.supabase as any)
+    const { error } = await db
       .from("dashboard_tile_order")
       .upsert({
         id: "singleton",

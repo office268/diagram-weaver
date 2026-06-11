@@ -50,8 +50,7 @@ export const updateSiteText = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = context.supabase as any;
+    const sb = context.supabase as Parameters<typeof assertAdmin>[0];
     await assertAdmin(sb, context.userId, "רק מנהל מערכת יכול לערוך טקסטים");
 
     const { error } = await sb
