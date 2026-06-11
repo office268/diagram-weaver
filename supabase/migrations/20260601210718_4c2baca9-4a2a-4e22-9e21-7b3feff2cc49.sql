@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260601210718_4c2baca9-4a2a-4e22-9e21-7b3feff2cc49.sql
+-- Migration — 20260601210718_4c2baca9-4a2a-4e22-9e21-7b3feff2cc49.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- 1) pgvector
 CREATE EXTENSION IF NOT EXISTS vector;
 

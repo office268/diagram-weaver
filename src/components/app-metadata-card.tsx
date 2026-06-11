@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/app-metadata-card.tsx
+// רכיב UI — app-metadata-card
+// ============================================================
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";

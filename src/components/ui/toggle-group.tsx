@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/toggle-group.tsx
+// shadcn primitive — toggle-group
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { type VariantProps } from "class-variance-authority";

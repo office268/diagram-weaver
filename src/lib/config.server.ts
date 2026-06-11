@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/config.server.ts
+// מודול server-only — config.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import process from "node:process";
 
 // Server-only config. The .server.ts suffix prevents Vite from bundling

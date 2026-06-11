@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/lab-answer.ts
+// HTTP endpoint (server route) — lab-answer.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

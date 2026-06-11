@@ -1,3 +1,8 @@
+// ============================================================
+// src/utils/payments.functions.ts
+// Server function (createServerFn) — payments.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {

@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-mobile.tsx
+// Hook — use-mobile
+// ============================================================
 import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;

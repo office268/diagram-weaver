@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/onboarding/tour-steps.ts
+// רכיב UI — tour-steps
+// ============================================================
 export type TourPlacement = "top" | "bottom" | "center";
 
 export interface TourStep {

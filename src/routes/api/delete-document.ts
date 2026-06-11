@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/delete-document.ts
+// HTTP endpoint (server route) — delete-document.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

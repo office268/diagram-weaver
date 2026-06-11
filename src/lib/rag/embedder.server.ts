@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/rag/embedder.server.ts
+// מודול server-only — embedder.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { embedMany } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 

@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/prompt-box-settings.ts
+// ספריית עזר (lib) — prompt-box-settings.ts
+// ============================================================
 import { useEffect, useState } from "react";
 
 export type UploadKind = "file" | "image" | "link";

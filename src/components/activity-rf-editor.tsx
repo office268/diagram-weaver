@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/activity-rf-editor.tsx
+// רכיב UI — activity-rf-editor
+// ============================================================
 import { useCallback, useEffect, useMemo } from "react";
 import {
   ReactFlow,

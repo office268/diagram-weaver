@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/sheet.tsx
+// shadcn primitive — sheet
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";

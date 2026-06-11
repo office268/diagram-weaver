@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/login-log.functions.ts
+// Server function (createServerFn) — login-log.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { z } from "zod";

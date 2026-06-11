@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/hover-card.tsx
+// shadcn primitive — hover-card
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 

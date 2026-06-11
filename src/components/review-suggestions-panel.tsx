@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/review-suggestions-panel.tsx
+// רכיב UI — review-suggestions-panel
+// ============================================================
 import { useMemo } from "react";
 import { Loader2, Sparkles, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";

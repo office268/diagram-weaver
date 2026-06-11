@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/diagram-job.server.ts
+// מודול server-only — diagram-job.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 /**
  * Async diagram-job runner — step-based.
  *

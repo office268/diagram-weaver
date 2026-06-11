@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/billing.tsx
+// מסך מאומת (Authenticated route) — billing.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CreditCard, Sparkles, Zap, ExternalLink } from "lucide-react";

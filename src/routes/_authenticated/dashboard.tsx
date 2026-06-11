@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/dashboard.tsx
+// מסך מאומת (Authenticated route) — dashboard.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

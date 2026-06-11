@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/diagram.$id.tsx
+// מסך מאומת (Authenticated route) — diagram.$id.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

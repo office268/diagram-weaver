@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260529041736_66cd0758-5c55-4fd4-a1ea-6f5fab000996.sql
+-- Migration — 20260529041736_66cd0758-5c55-4fd4-a1ea-6f5fab000996.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 DROP TABLE IF EXISTS public.diagrams;
 
 CREATE TABLE public.spec_documents (

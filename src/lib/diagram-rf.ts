@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/diagram-rf.ts
+// ספריית עזר (lib) — diagram-rf.ts
+// ============================================================
 // Unified React-Flow JSON schema for ALL diagram kinds.
 // rfVersion: 2 = the new schema. rfVersion: 1 = legacy activity (still readable).
 

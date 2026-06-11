@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/activity-swimlane-renderer.tsx
+// רכיב UI — activity-swimlane-renderer
+// ============================================================
 import { useCallback, useMemo, useState } from "react";
 import { sanitizeSvg } from "@/lib/svg-sanitize";
 import { ActivityRFEditor } from "@/components/activity-rf-editor";

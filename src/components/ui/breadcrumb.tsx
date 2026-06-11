@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/breadcrumb.tsx
+// shadcn primitive — breadcrumb
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { ChevronRight, MoreHorizontal } from "lucide-react";

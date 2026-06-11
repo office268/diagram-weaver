@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/improve-section.ts
+// HTTP endpoint (server route) — improve-section.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { generateText } from "ai";
 import { z } from "zod";

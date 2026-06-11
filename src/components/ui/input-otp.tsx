@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/input-otp.tsx
+// shadcn primitive — input-otp
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
 import { Minus } from "lucide-react";

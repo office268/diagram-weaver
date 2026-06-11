@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/accordion.tsx
+// shadcn primitive — accordion
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ChevronDown } from "lucide-react";

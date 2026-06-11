@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-theme.ts
+// Hook — use-theme
+// ============================================================
 import { useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark";

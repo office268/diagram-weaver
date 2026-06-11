@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/popover.tsx
+// shadcn primitive — popover
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 

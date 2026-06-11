@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/public/payments/webhook.ts
+// HTTP endpoint (server route) — webhook.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {

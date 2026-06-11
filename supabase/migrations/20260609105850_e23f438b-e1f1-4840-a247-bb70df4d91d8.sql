@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260609105850_e23f438b-e1f1-4840-a247-bb70df4d91d8.sql
+-- Migration — 20260609105850_e23f438b-e1f1-4840-a247-bb70df4d91d8.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE POLICY "chat-attachments owner read" ON storage.objects FOR SELECT TO authenticated
 USING (bucket_id = 'chat-attachments' AND auth.uid()::text = (storage.foldername(name))[1]);
 

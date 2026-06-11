@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/export-agents-config.functions.ts
+// Server function (createServerFn) — export-agents-config.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 

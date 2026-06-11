@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/chat.$threadId.tsx
+// מסך מאומת (Authenticated route) — chat.$threadId.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-auth.ts
+// Hook — use-auth
+// ============================================================
 import { useSyncExternalStore } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";

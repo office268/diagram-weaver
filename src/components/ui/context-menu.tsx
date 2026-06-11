@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/context-menu.tsx
+// shadcn primitive — context-menu
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";

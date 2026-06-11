@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/agent-persona-dialog.tsx
+// רכיב UI — agent-persona-dialog
+// ============================================================
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

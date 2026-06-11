@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260531144210_927d99d9-a115-453d-961d-3c33359eec03.sql
+-- Migration — 20260531144210_927d99d9-a115-453d-961d-3c33359eec03.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Allow 'signup_bonus' kind
 ALTER TABLE public.credit_transactions DROP CONSTRAINT IF EXISTS credit_transactions_kind_check;
 ALTER TABLE public.credit_transactions ADD CONSTRAINT credit_transactions_kind_check

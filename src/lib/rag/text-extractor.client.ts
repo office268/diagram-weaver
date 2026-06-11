@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/rag/text-extractor.client.ts
+// ספריית עזר (lib) — text-extractor.client.ts
+// ============================================================
 // Client-side text extraction for RAG ingest.
 // Runs in the browser so Cloudflare Workers don't need pdf-parse/mammoth.
 // Heavy deps are dynamically imported only when needed.

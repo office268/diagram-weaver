@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/site-texts.functions.ts
+// Server function (createServerFn) — site-texts.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";

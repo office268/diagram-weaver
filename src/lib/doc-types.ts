@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/doc-types.ts
+// ספריית עזר (lib) — doc-types.ts
+// ============================================================
 // Definitions of the 5 supported document types.
 // Each type has its own AI system instruction + default section list/titles
 // that seed the editor's section_order/section_titles on creation.

@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/checkbox.tsx
+// shadcn primitive — checkbox
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { Check } from "lucide-react";

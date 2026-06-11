@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/diagram-rf-editor.tsx
+// רכיב UI — diagram-rf-editor
+// ============================================================
 // Generic React Flow editor for all diagram kinds.
 import { useCallback, useEffect, useMemo } from "react";
 import {

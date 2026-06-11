@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260601110001_rag_document_chunks.sql
+-- Migration — 20260601110001_rag_document_chunks.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Table: document_chunks
 -- Stores chunked text + embeddings for vector similarity search
 CREATE TABLE public.document_chunks (

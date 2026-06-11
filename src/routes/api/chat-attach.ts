@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/chat-attach.ts
+// HTTP endpoint (server route) — chat-attach.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 // Chat attachment endpoint — TXT only.
 // PDF/DOCX are extracted client-side (see text-extractor.client.ts) and the
 // extracted text is sent directly with the chat message, so this route is

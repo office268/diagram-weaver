@@ -1,3 +1,7 @@
+// ============================================================
+// src/hooks/use-prompt-history.ts
+// Hook — use-prompt-history
+// ============================================================
 import { useCallback, useEffect, useState } from "react";
 
 const MAX = 5;

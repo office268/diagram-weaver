@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/radio-group.tsx
+// shadcn primitive — radio-group
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Circle } from "lucide-react";

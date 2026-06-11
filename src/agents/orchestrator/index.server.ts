@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/orchestrator/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import type { DocTypeKey } from "@/lib/doc-types";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";

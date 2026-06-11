@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/agent-personas-card.tsx
+// רכיב UI — agent-personas-card
+// ============================================================
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

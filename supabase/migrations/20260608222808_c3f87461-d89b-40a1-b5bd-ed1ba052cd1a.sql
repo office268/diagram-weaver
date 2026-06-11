@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260608222808_c3f87461-d89b-40a1-b5bd-ed1ba052cd1a.sql
+-- Migration — 20260608222808_c3f87461-d89b-40a1-b5bd-ed1ba052cd1a.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 ALTER TABLE public.diagram_jobs
   ADD COLUMN IF NOT EXISTS attempts integer NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS max_attempts integer NOT NULL DEFAULT 1,

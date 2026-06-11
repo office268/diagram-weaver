@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/toggle.tsx
+// shadcn primitive — toggle
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as TogglePrimitive from "@radix-ui/react-toggle";
 import { cva, type VariantProps } from "class-variance-authority";

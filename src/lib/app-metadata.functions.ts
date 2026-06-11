@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/app-metadata.functions.ts
+// Server function (createServerFn) — app-metadata.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";

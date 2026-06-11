@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260602072648_4eff9c0f-1d0f-4c6a-a9f9-e6715b65d0fc.sql
+-- Migration — 20260602072648_4eff9c0f-1d0f-4c6a-a9f9-e6715b65d0fc.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Chat threads (one per "document/diagram being created")
 CREATE TABLE public.chat_threads (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/transcribe-audio.ts
+// HTTP endpoint (server route) — transcribe-audio.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 

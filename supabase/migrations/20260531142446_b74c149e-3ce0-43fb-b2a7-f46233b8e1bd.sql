@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260531142446_b74c149e-3ce0-43fb-b2a7-f46233b8e1bd.sql
+-- Migration — 20260531142446_b74c149e-3ce0-43fb-b2a7-f46233b8e1bd.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Subscriptions
 CREATE TABLE public.subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

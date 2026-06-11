@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/organization.tsx
+// מסך מאומת (Authenticated route) — organization.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Building2, MapPin, Globe, Hash, Loader2, Pencil, X } from "lucide-react";

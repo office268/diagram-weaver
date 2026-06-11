@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/lab-chat.ts
+// HTTP endpoint (server route) — lab-chat.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";

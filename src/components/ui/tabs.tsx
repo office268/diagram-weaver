@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/tabs.tsx
+// shadcn primitive — tabs
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 

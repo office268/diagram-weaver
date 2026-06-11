@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/products.functions.ts
+// Server function (createServerFn) — products.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/spec-export.ts
+// ספריית עזר (lib) — spec-export.ts
+// ============================================================
 import type { SpecContent } from "@/lib/spec-schema";
 import { DEFAULT_SECTION_TITLES } from "@/lib/doc-types";
 

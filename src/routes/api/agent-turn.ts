@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/agent-turn.ts
+// HTTP endpoint (server route) — agent-turn.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";

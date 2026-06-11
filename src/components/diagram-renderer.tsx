@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/diagram-renderer.tsx
+// רכיב UI — diagram-renderer
+// ============================================================
 // Entry-point renderer: detects RF JSON (v1/v2) and renders, with edit toggle.
 import { useCallback, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";

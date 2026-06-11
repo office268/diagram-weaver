@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/pending-approval.tsx
+// Route — pending-approval.tsx
+// מסך/דף ב-TanStack Router (file-based routing)
+// ============================================================
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/generate-spec.ts
+// HTTP endpoint (server route) — generate-spec.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types";

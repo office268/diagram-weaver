@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/reset-password.tsx
+// Route — reset-password.tsx
+// מסך/דף ב-TanStack Router (file-based routing)
+// ============================================================
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

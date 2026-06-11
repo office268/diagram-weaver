@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/api/example.functions.ts
+// Server function (createServerFn) — example.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 

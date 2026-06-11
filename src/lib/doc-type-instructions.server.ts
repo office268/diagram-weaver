@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/doc-type-instructions.server.ts
+// מודול server-only — doc-type-instructions.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 // Server-only helpers for resolving per-doc-type system instructions.
 
 import { getDocTypeSystemInstruction } from "./doc-types.server";

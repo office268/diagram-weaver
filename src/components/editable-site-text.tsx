@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/editable-site-text.tsx
+// רכיב UI — editable-site-text
+// ============================================================
 import { useEffect, useRef, useState, type ElementType } from "react";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { cn } from "@/lib/utils";

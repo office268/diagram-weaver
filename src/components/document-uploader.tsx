@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/document-uploader.tsx
+// רכיב UI — document-uploader
+// ============================================================
 import { useCallback, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

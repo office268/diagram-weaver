@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260531080352_00c99578-fbe0-4fb8-ae9a-1277c020f3be.sql
+-- Migration — 20260531080352_00c99578-fbe0-4fb8-ae9a-1277c020f3be.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- Projects table
 CREATE TABLE public.projects (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,

@@ -1,3 +1,7 @@
+// ============================================================
+// src/lib/spec-output-schema.ts
+// ספריית עזר (lib) — spec-output-schema.ts
+// ============================================================
 import { z } from "zod";
 
 const ItemSchema = z.object({

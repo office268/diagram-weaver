@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-usage.functions.ts
+// Server function (createServerFn) — ai-usage.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

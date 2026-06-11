@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/separator.tsx
+// shadcn primitive — separator
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 

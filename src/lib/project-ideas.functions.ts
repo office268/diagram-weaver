@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/project-ideas.functions.ts
+// Server function (createServerFn) — project-ideas.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";

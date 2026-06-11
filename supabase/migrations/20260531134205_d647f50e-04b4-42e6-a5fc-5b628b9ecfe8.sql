@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260531134205_d647f50e-04b4-42e6-a5fc-5b628b9ecfe8.sql
+-- Migration — 20260531134205_d647f50e-04b4-42e6-a5fc-5b628b9ecfe8.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.doc_type_instructions (
   doc_type text PRIMARY KEY,
   system_instruction text NOT NULL,

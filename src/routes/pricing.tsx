@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/pricing.tsx
+// Route — pricing.tsx
+// מסך/דף ב-TanStack Router (file-based routing)
+// ============================================================
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Gift, Sparkles, Zap, Package } from "lucide-react";
 import { useState } from "react";

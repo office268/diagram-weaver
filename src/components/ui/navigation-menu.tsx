@@ -1,3 +1,8 @@
+// ============================================================
+// src/components/ui/navigation-menu.tsx
+// shadcn primitive — navigation-menu
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
 import { cva } from "class-variance-authority";

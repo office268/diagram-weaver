@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-usage.server.ts
+// מודול server-only — ai-usage.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { calcCostUsd } from "./ai-pricing";
 

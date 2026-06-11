@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/documents.functions.ts
+// Server function (createServerFn) — documents.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 // CRUD listing + deletion for uploaded documents (server functions).
 
 import { createServerFn } from "@tanstack/react-start";

@@ -1,49 +1,67 @@
+<!--
+  .lovable/plan.md
+  מסמך תכנון פעיל (Lovable plan)
+-->
+# הוספת תיעוד בראש כל קבצי הפרויקט
 
-# תוכנית: ייצוא תצורת הסוכנים ל-Google Sheets
+## היקף מורחב
+תיעוד בכל קבצי הקוד והתצורה בפרויקט, כולל מה שהוצא קודם:
+- כל `src/` (כולל `components/ui/`)
+- קבצי שורש: `vite.config.ts`, `eslint.config.js`, `tsconfig.json` (כהערה לא רלוונטית — ידולג, JSON לא תומך), `components.json` (ידולג), `bunfig.toml`, `.prettierrc` (ידולג)
+- `supabase/config.toml`
+- `supabase/migrations/*.sql`
+- קבצי `.md` בשורש ובתיקיות (README, plan.md)
 
-## מטרה
-להוסיף בדף `/agents` (אדמין בלבד) כפתור "ייצא ל-Google Sheets" שייצר גיליון חדש המכיל את רשימת ההגדרות של הסוכנים + סיכום של "דינאמי vs קבוע" שכתבתי בתשובה הקודמת.
+## פורמט לפי סוג קובץ
+- `.ts/.tsx/.js/.jsx`:
+  ```
+  // ============================================================
+  // <נתיב יחסי>
+  // <תיאור עברית בשורה-שתיים>
+  // ============================================================
+  ```
+- `.css`: `/* ... */`
+- `.sql` / `.toml`: `-- ...` / `# ...`
+- `.md`: בלוק HTML comment `<!-- ... -->` בראש הקובץ (לא משבש רינדור).
 
-## הבהרה חשובה לפני בנייה
-ה-connector של Google Sheets ב-Lovable מתחבר לחשבון **של בעל הסביבה (אתה)**, לא לחשבון של כל משתמש קצה. כלומר כל הגיליונות שייווצרו יהיו ב-Drive שלך. זה מתאים לפיצ'ר אדמין-בלבד כמו זה. אם תרצה שכל משתמש יוכל לייצא ל-Drive שלו — צריך OAuth-per-user נפרד (פלואו שונה ומורכב יותר, לא חלק מהתוכנית הזו).
+## חריגים שעדיין לא נוגעים בהם
+- `src/routeTree.gen.ts` — מתחדש אוטומטית בכל build, כל הערה תימחק.
+- `src/integrations/supabase/{client,client.server,auth-middleware,auth-attacher,types}.ts` — auto-generated, ההוראות בפרויקט אוסרות עריכה.
+- קבצי JSON (`tsconfig.json`, `components.json`, `package.json`, `.prettierrc`, `.lovable/project.json`) — JSON לא תומך בהערות.
+- `.env*` — לא קוד.
+- `bun.lockb` / lockfiles.
 
-## תוכן הגיליון
-הגיליון ייווצר עם 3 worksheets:
+אם תרצה לכלול בכל זאת את קבצי ה-auto-generated של Supabase — אגיד כן רק אחרי אישור מפורש, כי כל regeneration ימחק.
 
-1. **"סוכנים"** — שורה לכל סוכן, עמודות:
-   - שם, תפקיד, מודל, מקור המודל (default/override), טמפרטורה, max tokens, שלב בצנרת, in-loop (כן/לא), מילות מפתח ללולאה, מספר shared blocks, אורך system prompt (תווים), score threshold (ל-review בלבד), max iterations (ל-review בלבד)
+## כללי שימור
+- אם השורה הראשונה היא `"use client"`, `'use server'`, shebang (`#!`), `@ts-...`, או directive דומה — ההערה תיכנס מתחתיה.
+- קובץ שכבר יש בו בלוק תיעוד פתיחה (זוהה ע"י הערה ב-3 השורות הראשונות שמכילה את שם הקובץ/הנתיב) — יידלג כדי לא לדרוס תיעוד קיים.
+- אין שינוי קוד פונקציונלי.
 
-2. **"הגדרות דינאמיות vs קבועות"** — טבלת סיכום:
-   - שם הגדרה | סטטוס נוכחי | דינאמי בזמן ריצה? | חייב להיות קבוע מראש? | הערות
-   - (Model, Temperature, Max tokens, In-loop, Loop keywords, System prompt, Shared blocks, Prompt template, Score threshold, Max iterations, Business knowledge, Doc-type instructions, RAG top-K/threshold, Few-shot examples, Reasoning effort)
+## ייצור התיאור
+תיאור קצר אוטומטי לפי דפוסי הנתיב והשם:
+- `routes/api/**` → "HTTP endpoint — ..."
+- `routes/_authenticated/**` → "מסך מאומת — ..."
+- `*.functions.ts` → "Server function (TanStack createServerFn) — ..."
+- `*.server.ts` → "מודול server-only — ..."
+- `agents/<x>/index.server.ts` → "סוכן <x> — נקודת כניסה"
+- `agents/<x>/system.ts` / `prompt.ts` → "System prompt / Prompt builder לסוכן <x>"
+- `components/ui/*.tsx` → "shadcn primitive — <שם>"
+- `components/*.tsx` → "רכיב UI — <שם>"
+- `hooks/*.ts(x)` → "Hook — <שם>"
+- `lib/*` → לפי שם הקובץ
+- `supabase/migrations/*.sql` → "Migration — <שם הקובץ>"
+- ברירת מחדל: שם הקובץ + תיקייה.
 
-3. **"המלצות לשיפור"** — 5 ההמלצות שציינתי (per-agent model override, RAG tuning, score threshold גמיש, few-shot per-org, reasoning effort).
+## ביצוע
+סקריפט חד-פעמי `scripts/add-file-headers.mjs`:
+1. הולך רקורסיבית על השורשים: `src/`, `supabase/`, ושורש הפרויקט (לא רקורסיבית לשורש כדי לא לגעת ב-`node_modules`/`.lovable`/`dist`).
+2. מסנן רשימת חריגים + תיעוד קיים.
+3. מחשב פורמט הערה לפי סיומת.
+4. מוסיף בלוק בראש (מתחת ל-directives אם יש).
+5. הסקריפט יישאר ב-repo להרצה חוזרת בעתיד; הוא idempotent.
 
-## שינויים טכניים
-
-### 1. חיבור Google Sheets connector
-שימוש בכלי `standard_connectors--connect` עם `connector_id: "google_sheets"` — תתבקש לאשר חיבור פעם אחת.
-
-### 2. server function חדשה
-קובץ חדש: `src/lib/export-agents-config.functions.ts`
-- `createServerFn({ method: "POST" })` עם `requireSupabaseAuth` middleware
-- בדיקת `assertAdmin` (לפי הזיכרון: server fn לפעולות אדמין חייב לבדוק בעצמו)
-- שליפת תצורת הסוכנים (אותו לוגיקה כמו `getAgentsConfig`)
-- קריאה ל-Google Sheets API דרך ה-connector gateway:
-  - `POST https://connector-gateway.lovable.dev/google_sheets/v4/spreadsheets` ליצירת spreadsheet עם 3 sheets
-  - `POST .../values:batchUpdate` למילוי הנתונים
-- שימוש בכותרות `Authorization: Bearer $LOVABLE_API_KEY` + `X-Connection-Api-Key: $GOOGLE_SHEETS_API_KEY`
-- החזרת `{ spreadsheetUrl }` ללקוח
-
-### 3. כפתור ב-UI
-ב-`src/routes/_authenticated/agents.tsx`:
-- כפתור "ייצא ל-Google Sheets" ליד כותרת הדף
-- בלחיצה: קריאה ל-server function, הצגת toast עם קישור לפתיחת הגיליון בטאב חדש
-- מצב loading + טיפול בשגיאות
-
-## ללא שינוי
-- אין נגיעה בפרומפטים, סכמות, ולידציה, מינימומים, או איכות התוצרים — רק שכבת ייצוא חדשה.
-- אין שינוי DB.
-
-## אישור
-לאשר את התוכנית והאם נכון שהגיליונות ייווצרו ב-Drive שלך (כי החיבור הוא workspace-level).
+## אימות
+- build עובר.
+- בדיקת דגימה: קובץ route, קובץ agent, קובץ shadcn, migration SQL, README.
+- ספירה: כמה קבצים תועדו / דולגו, מודפס בסיום הסקריפט.

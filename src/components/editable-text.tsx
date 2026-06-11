@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/editable-text.tsx
+// רכיב UI — editable-text
+// ============================================================
 import { createContext, useEffect, useRef, useState } from "react";
 
 interface Props {

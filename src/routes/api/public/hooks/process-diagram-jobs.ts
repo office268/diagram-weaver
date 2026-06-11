@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/public/hooks/process-diagram-jobs.ts
+// HTTP endpoint (server route) — process-diagram-jobs.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runDiagramJob } from "@/lib/diagram-job.server";

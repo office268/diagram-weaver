@@ -1,5 +1,10 @@
 "use client";
 
+// ============================================================
+// src/components/ui/avatar.tsx
+// shadcn primitive — avatar
+// רכיב UI בסיסי (shadcn/ui) — לא לערוך עיצוב גלובלי כאן
+// ============================================================
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 

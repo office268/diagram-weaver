@@ -1,4 +1,9 @@
 
+-- ============================================================
+-- supabase/migrations/20260609141712_3882c4ea-1190-4f2c-ad49-32144f2b2599.sql
+-- Migration — 20260609141712_3882c4ea-1190-4f2c-ad49-32144f2b2599.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 -- lab_sessions
 CREATE TABLE public.lab_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,3 +1,7 @@
+// ============================================================
+// src/routes/__root.tsx
+// Route — שורש האפליקציה (shell, providers, layout)
+// ============================================================
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Outlet,

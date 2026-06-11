@@ -1,3 +1,7 @@
+// ============================================================
+// src/components/prompt-box-settings-card.tsx
+// רכיב UI — prompt-box-settings-card
+// ============================================================
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";

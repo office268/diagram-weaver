@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/data-model/system.ts
+// System prompt לסוכן data-model
+// ============================================================
 import { HEBREW_WRITING_RULES, MERMAID_RULES } from "@/agents/shared/prompt-helpers";
 
 export const DATA_MODEL_SYSTEM = [

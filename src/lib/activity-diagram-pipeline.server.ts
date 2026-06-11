@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/activity-diagram-pipeline.server.ts
+// מודול server-only — activity-diagram-pipeline.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { generateText } from "ai";
 
 export interface ProcessMap {

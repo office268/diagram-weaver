@@ -1,3 +1,8 @@
+// ============================================================
+// src/lib/ai-model-setting.functions.ts
+// Server function (createServerFn) — ai-model-setting.functions.ts
+// נקודת RPC מהלקוח לשרת
+// ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";

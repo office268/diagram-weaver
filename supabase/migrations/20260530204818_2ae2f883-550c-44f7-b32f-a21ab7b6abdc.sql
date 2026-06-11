@@ -1,3 +1,8 @@
+-- ============================================================
+-- supabase/migrations/20260530204818_2ae2f883-550c-44f7-b32f-a21ab7b6abdc.sql
+-- Migration — 20260530204818_2ae2f883-550c-44f7-b32f-a21ab7b6abdc.sql
+-- מיגרציית מסד נתונים (Lovable Cloud / Supabase)
+-- ============================================================
 CREATE TABLE public.app_metadata (
   id text PRIMARY KEY DEFAULT 'singleton',
   title text NOT NULL DEFAULT 'סוכן ניתוח מערכות — תרשימים מתוך טקסט',

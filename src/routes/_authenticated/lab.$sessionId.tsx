@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/lab.$sessionId.tsx
+// מסך מאומת (Authenticated route) — lab.$sessionId.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

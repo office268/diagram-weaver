@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/api/ingest-document.ts
+// HTTP endpoint (server route) — ingest-document.ts
+// נקודת קצה ציבורית/פנימית עבור TanStack Start
+// ============================================================
 // Ingest a document for RAG. The CLIENT extracts text from PDF/DOCX/TXT
 // and sends plain text here (Workers don't run pdf-parse/mammoth/canvas).
 

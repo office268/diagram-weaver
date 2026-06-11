@@ -1,3 +1,7 @@
+// ============================================================
+// src/start.ts
+// TanStack Start — middleware גלובלי
+// ============================================================
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";

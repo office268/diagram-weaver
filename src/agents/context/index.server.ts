@@ -1,3 +1,8 @@
+// ============================================================
+// src/agents/context/index.server.ts
+// מודול server-only — index.server.ts
+// מורץ רק בצד השרת (TanStack Start)
+// ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { embedChunks } from "@/lib/rag/embedder.server";
 

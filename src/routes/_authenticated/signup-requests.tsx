@@ -1,3 +1,8 @@
+// ============================================================
+// src/routes/_authenticated/signup-requests.tsx
+// מסך מאומת (Authenticated route) — signup-requests.tsx
+// דורש משתמש מחובר; יושב תחת layout _authenticated
+// ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, X } from "lucide-react";

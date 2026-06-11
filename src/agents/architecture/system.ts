@@ -1,3 +1,7 @@
+// ============================================================
+// src/agents/architecture/system.ts
+// System prompt לסוכן architecture
+// ============================================================
 import { HEBREW_WRITING_RULES, MERMAID_RULES } from "@/agents/shared/prompt-helpers";
 
 export const ARCHITECTURE_SYSTEM = [
