@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/mermaid-utils.ts
+// src/lib/diagrams/mermaid-utils.ts
 // ספריית עזר (lib) — mermaid-utils.ts
 // ============================================================
 import mermaid from "mermaid";

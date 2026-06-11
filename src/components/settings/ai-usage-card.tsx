@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/ai-usage-card.tsx
+// src/components/settings/ai-usage-card.tsx
 // רכיב UI — ai-usage-card
 // ============================================================
 import { useQuery } from "@tanstack/react-query";

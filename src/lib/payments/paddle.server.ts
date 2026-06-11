@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/paddle.server.ts
+// src/lib/payments/paddle.server.ts
 // מודול server-only — paddle.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

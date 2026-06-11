@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/business-knowledge-card.tsx
+// src/components/settings/business-knowledge-card.tsx
 // רכיב UI — business-knowledge-card
 // ============================================================
 import { useEffect, useRef, useState } from "react";

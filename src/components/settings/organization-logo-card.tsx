@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/organization-logo-card.tsx
+// src/components/settings/organization-logo-card.tsx
 // רכיב UI — organization-logo-card
 // ============================================================
 import { useEffect, useRef, useState } from "react";

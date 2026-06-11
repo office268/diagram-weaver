@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/spec-output-schema.ts
+// src/lib/spec/output-schema.ts
 // ספריית עזר (lib) — spec-output-schema.ts
 // ============================================================
 import { z } from "zod";

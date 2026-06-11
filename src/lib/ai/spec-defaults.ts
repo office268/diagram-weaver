@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-spec-defaults.ts
+// src/lib/ai/spec-defaults.ts
 // ספריית עזר (lib) — ai-spec-defaults.ts
 // ============================================================
 // Client-safe stub for AI spec defaults.

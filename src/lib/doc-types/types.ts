@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/doc-types.ts
+// src/lib/doc-types/types.ts
 // ספריית עזר (lib) — doc-types.ts
 // ============================================================
 // Definitions of the 5 supported document types.

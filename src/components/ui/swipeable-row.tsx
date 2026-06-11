@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/swipeable-row.tsx
+// src/components/ui/swipeable-row.tsx
 // רכיב UI — swipeable-row
 // ============================================================
 import { useRef, useState, type ReactNode } from "react";

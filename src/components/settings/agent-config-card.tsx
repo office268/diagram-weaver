@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/agent-config-card.tsx
+// src/components/settings/agent-config-card.tsx
 // רכיב UI — agent-config-card
 // ============================================================
 import { useState } from "react";

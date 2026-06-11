@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/recent-items-menu.tsx
+// src/components/navigation/recent-items-menu.tsx
 // רכיב UI — recent-items-menu
 // ============================================================
 import { Link } from "@tanstack/react-router";

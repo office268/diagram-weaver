@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/diagram-rf.ts
+// src/lib/diagrams/diagram-rf.ts
 // ספריית עזר (lib) — diagram-rf.ts
 // ============================================================
 // Unified React-Flow JSON schema for ALL diagram kinds.

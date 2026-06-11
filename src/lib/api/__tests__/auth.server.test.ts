@@ -8,7 +8,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   },
 }));
 
-import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
+import { requireBearerAuth, translateAiError, assertAdmin } from "@/lib/api/auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const mockGetUser = supabaseAdmin.auth.getUser as ReturnType<typeof vi.fn>;
@@ -81,5 +81,40 @@ describe("translateAiError", () => {
     const { status, message } = translateAiError("plain string error");
     expect(status).toBe(500);
     expect(message).toBe("plain string error");
+  });
+});
+
+function makeSupabaseMock(result: { data: unknown; error: unknown }) {
+  const chain: Record<string, unknown> = {};
+  chain.maybeSingle = vi.fn().mockResolvedValue(result);
+  chain.eq = vi.fn().mockReturnValue(chain);
+  chain.select = vi.fn().mockReturnValue(chain);
+  const from = vi.fn().mockReturnValue(chain);
+  return { from };
+}
+
+describe("assertAdmin", () => {
+  it("resolves when user has admin role", async () => {
+    const supabase = makeSupabaseMock({ data: { role: "admin" }, error: null });
+    await expect(assertAdmin(supabase, "user-123")).resolves.toBeUndefined();
+  });
+
+  it("throws with default message when user has no admin role", async () => {
+    const supabase = makeSupabaseMock({ data: null, error: null });
+    await expect(assertAdmin(supabase, "user-456")).rejects.toThrow(
+      "רק אדמין יכול לבצע פעולה זו",
+    );
+  });
+
+  it("throws with custom message when provided", async () => {
+    const supabase = makeSupabaseMock({ data: null, error: null });
+    await expect(assertAdmin(supabase, "user-456", "גישה נדחתה")).rejects.toThrow(
+      "גישה נדחתה",
+    );
+  });
+
+  it("throws when supabase returns an error", async () => {
+    const supabase = makeSupabaseMock({ data: null, error: { message: "db error" } });
+    await expect(assertAdmin(supabase, "user-789")).rejects.toThrow("db error");
   });
 });

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/activity-diagram-pipeline.server.ts
+// src/lib/diagrams/activity-pipeline.server.ts
 // מודול server-only — activity-diagram-pipeline.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/user-menu.tsx
+// src/components/navigation/user-menu.tsx
 // רכיב UI — user-menu
 // ============================================================
 import { Link, useNavigate, useLocation } from "@tanstack/react-router";

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/export-agents-config.functions.ts
+// src/lib/agents/export-agents-config.functions.ts
 // Server function (createServerFn) — export-agents-config.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-usage.server.ts
+// src/lib/ai/usage.server.ts
 // מודול server-only — ai-usage.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

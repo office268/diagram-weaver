@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-gateway.server.ts
+// src/lib/ai/gateway.server.ts
 // מודול server-only — ai-gateway.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

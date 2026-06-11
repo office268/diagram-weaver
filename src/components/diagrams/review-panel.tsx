@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/review-panel.tsx
+// src/components/diagrams/review-panel.tsx
 // רכיב UI — review-panel
 // ============================================================
 import type { SpecReview } from "@/lib/spec/output-schema";

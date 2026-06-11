@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/theme-toggle.tsx
+// src/components/ui/theme-toggle.tsx
 // רכיב UI — theme-toggle
 // ============================================================
 import { Sun, Moon } from "lucide-react";

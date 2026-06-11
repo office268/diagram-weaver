@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/empty-state.tsx
+// src/components/ui/empty-state.tsx
 // רכיב UI — empty-state
 // ============================================================
 import type { LucideIcon } from "lucide-react";

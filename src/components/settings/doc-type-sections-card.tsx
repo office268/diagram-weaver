@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/doc-type-sections-card.tsx
+// src/components/settings/doc-type-sections-card.tsx
 // רכיב UI — doc-type-sections-card
 // ============================================================
 import { useEffect, useMemo, useState } from "react";

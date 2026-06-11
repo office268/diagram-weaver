@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/search-enrich.server.ts
+// src/lib/rag/search-enrich.server.ts
 // מודול server-only — search-enrich.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

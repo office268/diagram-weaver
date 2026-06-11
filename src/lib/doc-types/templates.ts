@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/doc-templates.ts
+// src/lib/doc-types/templates.ts
 // ספריית עזר (lib) — doc-templates.ts
 // ============================================================
 import type { DocTypeKey } from "@/lib/doc-types/types";

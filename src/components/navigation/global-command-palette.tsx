@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/global-command-palette.tsx
+// src/components/navigation/global-command-palette.tsx
 // רכיב UI — global-command-palette
 // ============================================================
 import { useEffect, useState } from "react";

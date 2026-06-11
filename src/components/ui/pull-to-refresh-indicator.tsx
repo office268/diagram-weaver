@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/pull-to-refresh-indicator.tsx
+// src/components/ui/pull-to-refresh-indicator.tsx
 // רכיב UI — pull-to-refresh-indicator
 // ============================================================
 import { Loader2, ArrowDown } from "lucide-react";
