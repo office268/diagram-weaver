@@ -309,7 +309,7 @@ export const Route = createFileRoute("/api/chat-message")({
                   role: "assistant",
                   content: `אירעה שגיאה ביצירת ${def.label}. אפשר לנסות שוב.\n\nפרטי שגיאה: ${msg}`,
                 });
-              } catch { /* swallow */ }
+              } catch (e) { console.warn("[chat-message] failed to persist error message:", e); }
               enqueue("\n__ERROR__\n" + msg);
             } finally {
               clearInterval(heartbeat);

@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/generate-spec")({
                 modelOverride,
               });
 
-              console.log(
+              console.info(
                 `[generate-spec] done score=${result.finalScore} iterations=${result.iterations}`,
               );
 
