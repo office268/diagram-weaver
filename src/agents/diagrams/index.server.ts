@@ -69,13 +69,22 @@ function dataModelPrompt(ctx: AgentContext, dm: DataModelOutput): string {
 export async function runDiagramsAgent(input: RunInput): Promise<DiagramsOutput> {
   const { ctx, useCases, architecture, dataModel, lovableApiKey, tracker } = input;
 
-  const safe = async <T,>(p: Promise<T>): Promise<T | null> => {
-    try { return await p; } catch { return null; }
+  const safe = async <T>(label: string, p: Promise<T>): Promise<T | null> => {
+    try {
+      return await p;
+    } catch (err) {
+      console.warn(
+        `[diagrams-agent] ${label} failed:`,
+        err instanceof Error ? err.message : String(err),
+      );
+      return null;
+    }
   };
 
   // Run all diagrams in parallel — each call is independent.
   const useCasePromises = useCases.use_cases.map((uc) =>
     safe(
+      `sequence:${uc.id}`,
       runRfJsonDiagramAgent({
         kind: "diagram_sequence",
         userPrompt: useCasePrompt(uc),
@@ -88,6 +97,7 @@ export async function runDiagramsAgent(input: RunInput): Promise<DiagramsOutput>
   );
 
   const archPromise = safe(
+    "architecture",
     runRfJsonDiagramAgent({
       kind: "diagram_flow",
       userPrompt: architecturePrompt(ctx, architecture),
@@ -99,6 +109,7 @@ export async function runDiagramsAgent(input: RunInput): Promise<DiagramsOutput>
   );
 
   const dmPromise = safe(
+    "data-model",
     runRfJsonDiagramAgent({
       kind: "diagram_erd",
       userPrompt: dataModelPrompt(ctx, dataModel),

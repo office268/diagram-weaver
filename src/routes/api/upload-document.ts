@@ -5,6 +5,7 @@
 // ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth } from "@/lib/api/auth.server";
 import { ingestDocument } from "@/lib/rag/ingest.server";
 
 const ALLOWED_TYPES = new Set([
@@ -18,18 +19,9 @@ export const Route = createFileRoute("/api/upload-document")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Auth
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ")
-          ? auth.slice(7).trim()
-          : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } =
-          await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user)
-          return new Response("Unauthorized", { status: 401 });
-        const userId = userData.user.id;
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("LOVABLE_API_KEY missing", { status: 500 });

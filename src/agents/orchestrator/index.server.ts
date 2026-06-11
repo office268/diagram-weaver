@@ -6,7 +6,7 @@
 import type { DocTypeKey } from "@/lib/doc-types";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
-import { SCORE_THRESHOLD, MAX_ITERATIONS } from "@/agents/shared/constants";
+import { SCORE_THRESHOLD, MAX_ITERATIONS, IMPROVEMENT_KEYWORDS } from "@/agents/shared/constants";
 import type { AgentContext, OrchestratorOutput } from "@/agents/shared/types";
 import { assembleSpec, mergeRequirements, mergeUseCases, mergeArchitecture } from "@/agents/shared/assembler";
 import { retrieveContext } from "@/agents/context/index.server";
@@ -95,13 +95,13 @@ export async function runOrchestrator(params: {
   while (currentReview.score < scoreThreshold && iterations < maxIterations) {
     const notes = currentReview.notes.map((n) => n.text);
 
-    const reqKeywords = ["דרישה", "FR", "NFR", "requirements", "מטרה", "סיכון", "הנחה"];
-    const archKeywords = ["ארכיטקטורה", "architecture", "רכיב", "diagram", "דיאגרמה"];
-    const useCaseKeywords = ["תרחיש", "use case", "persona", "משתמש", "זרימה"];
-
-    const reqNotes = filterNotesByKeywords(currentReview.notes, reqKeywords);
-    const archNotes = filterNotesByKeywords(currentReview.notes, archKeywords);
-    const ucNotes = filterNotesByKeywords(currentReview.notes, useCaseKeywords);
+    const reqNotes = filterNotesByKeywords(currentReview.notes, [
+      ...IMPROVEMENT_KEYWORDS.requirements,
+    ]);
+    const archNotes = filterNotesByKeywords(currentReview.notes, [
+      ...IMPROVEMENT_KEYWORDS.architecture,
+    ]);
+    const ucNotes = filterNotesByKeywords(currentReview.notes, [...IMPROVEMENT_KEYWORDS.useCases]);
 
     const improveCtx: AgentContext = { ...ctx, isRevision: true, reviewNotes: notes };
 

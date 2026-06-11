@@ -6,7 +6,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { DOC_TYPE_KEYS } from "@/lib/doc-types";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 
 const BodySchema = z.object({
@@ -21,18 +21,9 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Auth
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ")
-          ? auth.slice(7).trim()
-          : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } =
-          await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user)
-          return new Response("Unauthorized", { status: 401 });
-        const userId = userData.user.id;
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         let body: z.infer<typeof BodySchema>;
         try {
@@ -84,12 +75,9 @@ export const Route = createFileRoute("/api/generate-spec-v2")({
 
               enqueue(JSON.stringify(result.spec));
             } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
               console.error("[generate-spec-v2] error:", err);
-              let friendly = msg;
-              if (msg.includes("429")) friendly = "הגעת למגבלת קצב.";
-              else if (msg.includes("402")) friendly = "אזלו קרדיטי ה-AI.";
-              enqueue(`\n__STREAM_ERROR__:${friendly}`);
+              const { message } = translateAiError(err);
+              enqueue(`\n__STREAM_ERROR__:${message}`);
             }
 
             close();
