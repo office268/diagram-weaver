@@ -94,7 +94,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { EditableText } from "@/components/ui/editable-text";
+import { EditableText } from "@/components/common/editable-text";
 import { SpecDiagram } from "@/components/diagrams/spec-diagram";
 import {
   normalizeSpec,
