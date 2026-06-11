@@ -8,6 +8,7 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireBearerAuth } from "@/lib/api/auth.server";
+import { sanitizeUserPrompt } from "@/lib/api/sanitize";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 import {
@@ -25,16 +26,6 @@ const BodySchema = z.object({
   mode: z.enum(["auto", "plan", "build"]).optional().default("auto"),
 });
 
-const BASE_CREDITS = 3;
-const PLAN_CREDITS = 1;
-
-function sanitize(s: string): string {
-  return s
-    .replace(/\bignore\b.{0,60}\b(instructions?|system|rules?)\b/gi, "")
-    .replace(/\bsystem\s*:/gi, "")
-    .slice(0, 5000)
-    .trim();
-}
 
 
 export const Route = createFileRoute("/api/chat-message")({
@@ -77,7 +68,7 @@ export const Route = createFileRoute("/api/chat-message")({
           .order("created_at", { ascending: true });
         const prior = priorMsgs ?? [];
 
-        const cleanUserMsg = sanitize(body.message);
+        const cleanUserMsg = sanitizeUserPrompt(body.message);
 
         // Insert user message
         const { error: insertUserErr } = await supabaseAdmin.from("chat_messages").insert({
@@ -87,11 +78,6 @@ export const Route = createFileRoute("/api/chat-message")({
           content: cleanUserMsg,
         });
         if (insertUserErr) return new Response(insertUserErr.message, { status: 500 });
-
-        // Credit check temporarily disabled — allow creation regardless of balance.
-        const creditsToCharge = body.mode === "plan" ? PLAN_CREDITS : BASE_CREDITS;
-        void creditsToCharge;
-
 
         // Plan mode: respond with clarifying questions / outline only, no artifact
         if (body.mode === "plan") {
