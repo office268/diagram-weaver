@@ -38,7 +38,7 @@ import {
   OUTPUT_TYPE_EXTRAS,
   isDiagramType,
   type OutputKey,
-} from "@/lib/output-types";
+} from "@/lib/doc-types/output-types";
 import { createChatThread } from "@/lib/chat.functions";
 import {
   Drawer,

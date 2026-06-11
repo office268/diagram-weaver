@@ -9,7 +9,7 @@ import {
   verifyWebhook,
   EventName,
   type PaddleEnv,
-} from "@/lib/paddle.server";
+} from "@/lib/payments/paddle.server";
 
 let _supabase: SupabaseClient | null = null;
 function getSupabase(): SupabaseClient {

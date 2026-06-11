@@ -25,7 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { listDocuments, deleteDocument } from "@/lib/documents.functions";
+import { listDocuments, deleteDocument } from "@/lib/doc-types/documents.functions";
 import {
   describeMime,
   extractTextFromFile,

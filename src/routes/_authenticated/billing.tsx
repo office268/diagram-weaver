@@ -11,7 +11,7 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { openCustomerPortal } from "@/lib/paddle";
+import { openCustomerPortal } from "@/lib/payments/paddle";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";

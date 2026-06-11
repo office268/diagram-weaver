@@ -5,7 +5,7 @@
 // ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types";
+import { DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types/types";
 import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { runOrchestrator } from "@/agents/orchestrator/index.server";
 

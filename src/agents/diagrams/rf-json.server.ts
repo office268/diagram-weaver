@@ -9,7 +9,7 @@
 // failure. Zod-based constrained decoding replaces brittle regex checks.
 
 import { generateText, Output } from "ai";
-import type { DiagramOutputKey } from "@/lib/output-types";
+import type { DiagramOutputKey } from "@/lib/doc-types/output-types";
 import {
   DiagramAiOutputSchema,
   buildDiagramRF,

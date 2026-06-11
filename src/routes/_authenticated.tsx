@@ -12,15 +12,15 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
-import { UserMenu } from "@/components/user-menu";
+import { UserMenu } from "@/components/navigation/user-menu";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-import { RecentItemsMenu } from "@/components/recent-items-menu";
+import { RecentItemsMenu } from "@/components/navigation/recent-items-menu";
 import {
   GlobalCommandPalette,
   CommandTriggerButton,
-} from "@/components/global-command-palette";
+} from "@/components/navigation/global-command-palette";
 
 import { OnboardingProvider } from "@/components/onboarding/onboarding-provider";
 import { OnboardingOverlay } from "@/components/onboarding/onboarding-overlay";

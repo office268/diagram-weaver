@@ -29,7 +29,7 @@ import {
   validateActivitySvg,
   type ProcessMap,
 } from "@/lib/diagrams/activity-pipeline.server";
-import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/output-types";
+import { OUTPUT_TYPES, type DiagramOutputKey } from "@/lib/doc-types/output-types";
 import { DEFAULT_AGENT_MODEL } from "@/agents/shared/constants";
 
 /** Single-step timeout — must stay well under the Worker request budget. */

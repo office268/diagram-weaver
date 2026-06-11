@@ -11,12 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DOC_TYPES, DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types";
+import { DOC_TYPES, DOC_TYPE_KEYS, type DocTypeKey } from "@/lib/doc-types/types";
 import {
   listDocTypeInstructions,
   updateDocTypeInstruction,
   resetDocTypeInstruction,
-} from "@/lib/doc-type-instructions.functions";
+} from "@/lib/doc-types/instructions.functions";
 
 type Row = {
   doc_type: string;

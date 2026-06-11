@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getPaddleEnvironment } from "@/lib/payments/paddle";
 
 export function useSubscription() {
   const { user } = useAuth();

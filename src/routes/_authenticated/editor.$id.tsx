@@ -50,7 +50,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getDocTypeVisual, getDocType } from "@/lib/doc-types";
+import { getDocTypeVisual, getDocType } from "@/lib/doc-types/types";
 
 const DOC_TYPE_EN: Record<string, string> = {
   business_requirements: "Business Requirements Document (BRD)",
@@ -95,7 +95,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EditableText } from "@/components/editable-text";
-import { SpecDiagram } from "@/components/spec-diagram";
+import { SpecDiagram } from "@/components/diagrams/spec-diagram";
 import {
   normalizeSpec,
   newId,

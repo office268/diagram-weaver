@@ -10,7 +10,7 @@ import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 import { DEFAULT_MODEL } from "@/lib/ai/spec-defaults.server";
 import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { extractJson } from "@/lib/spec/output-schema";
-import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
+import { loadKnowledgeContextBlock } from "@/lib/rag/knowledge-context.server";
 
 const BodySchema = z.object({
   sectionKey: z.string().min(1).max(100),

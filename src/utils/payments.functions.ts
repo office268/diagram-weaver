@@ -9,7 +9,7 @@ import {
   gatewayFetch,
   getPaddleClient,
   type PaddleEnv,
-} from "@/lib/paddle.server";
+} from "@/lib/payments/paddle.server";
 
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
   .inputValidator((data: { priceId: string; environment: PaddleEnv }) => data)

@@ -3,9 +3,9 @@
 // מודול server-only — index.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
-import type { DocTypeKey } from "@/lib/doc-types";
+import type { DocTypeKey } from "@/lib/doc-types/types";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
-import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
+import { loadKnowledgeContextBlock } from "@/lib/rag/knowledge-context.server";
 import { SCORE_THRESHOLD, MAX_ITERATIONS, IMPROVEMENT_KEYWORDS } from "@/agents/shared/constants";
 import type { AgentContext, OrchestratorOutput } from "@/agents/shared/types";
 import { assembleSpec, mergeRequirements, mergeUseCases, mergeArchitecture } from "@/agents/shared/assembler";

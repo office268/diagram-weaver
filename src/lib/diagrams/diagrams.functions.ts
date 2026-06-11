@@ -7,7 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { buildSearchMaps, enrichRow } from "@/lib/search-enrich.server";
+import { buildSearchMaps, enrichRow } from "@/lib/rag/search-enrich.server";
 
 export const listDiagrams = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

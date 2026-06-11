@@ -11,19 +11,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { AppMetadataCard } from "@/components/app-metadata-card";
+import { AppMetadataCard } from "@/components/settings/app-metadata-card";
 import { EditableSiteText } from "@/components/editable-site-text";
-import { DocTypeSectionsCard } from "@/components/doc-type-sections-card";
-import { DocTypeInstructionsCard } from "@/components/doc-type-instructions-card";
-import { BusinessKnowledgeCard } from "@/components/business-knowledge-card";
+import { DocTypeSectionsCard } from "@/components/settings/doc-type-sections-card";
+import { DocTypeInstructionsCard } from "@/components/settings/doc-type-instructions-card";
+import { BusinessKnowledgeCard } from "@/components/settings/business-knowledge-card";
 import { LoginLogCard } from "@/components/login-log-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
-import { AppBreadcrumb } from "@/components/app-breadcrumb";
+import { AppBreadcrumb } from "@/components/navigation/app-breadcrumb";
 import { RestartTourButton, OnboardingEnabledToggle } from "@/components/onboarding/restart-tour-button";
-import { AiUsageCard } from "@/components/ai-usage-card";
-import { PromptBoxSettingsCard } from "@/components/prompt-box-settings-card";
-import { OrganizationLogoCard } from "@/components/organization-logo-card";
-import { AiModelSettingCard } from "@/components/ai-model-setting-card";
+import { AiUsageCard } from "@/components/settings/ai-usage-card";
+import { PromptBoxSettingsCard } from "@/components/settings/prompt-box-settings-card";
+import { OrganizationLogoCard } from "@/components/settings/organization-logo-card";
+import { AiModelSettingCard } from "@/components/settings/ai-model-setting-card";
 
 import {
   getAiSettings,

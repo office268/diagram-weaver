@@ -2,7 +2,7 @@
 // src/lib/doc-templates.ts
 // ספריית עזר (lib) — doc-templates.ts
 // ============================================================
-import type { DocTypeKey } from "@/lib/doc-types";
+import type { DocTypeKey } from "@/lib/doc-types/types";
 
 export interface DocTemplate {
   /** Short label shown on the chip. */

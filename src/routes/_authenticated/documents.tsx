@@ -49,10 +49,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { listSpecs, deleteSpec, updateSpec } from "@/lib/spec/spec.functions";
-import { listDiagrams, deleteDiagram, updateDiagram } from "@/lib/diagrams.functions";
-import { listDocuments, deleteDocument, renameDocument } from "@/lib/documents.functions";
+import { listDiagrams, deleteDiagram, updateDiagram } from "@/lib/diagrams/diagrams.functions";
+import { listDocuments, deleteDocument, renameDocument } from "@/lib/doc-types/documents.functions";
 
-import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/output-types";
+import { OUTPUT_TYPES, OUTPUT_TYPE_ORDER, type OutputKey } from "@/lib/doc-types/output-types";
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => ({

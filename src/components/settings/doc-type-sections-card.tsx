@@ -22,13 +22,13 @@ import {
   DOC_TYPES,
   DOC_TYPE_KEYS,
   type DocTypeKey,
-} from "@/lib/doc-types";
+} from "@/lib/doc-types/types";
 import {
   listDocTypeSettings,
   updateDocTypeSettings,
   resetDocTypeSettings,
   effectiveDocTypeConfig,
-} from "@/lib/doc-type-settings.functions";
+} from "@/lib/doc-types/settings.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

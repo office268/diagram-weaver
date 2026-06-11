@@ -11,7 +11,7 @@
 // AI's identity, the required sections, what to leave empty, and the
 // quality bar for that specific document type.
 
-import type { DocTypeKey } from "./doc-types";
+import type { DocTypeKey } from "./types";
 
 const MERMAID_RULES = [
   "כללי Mermaid:",

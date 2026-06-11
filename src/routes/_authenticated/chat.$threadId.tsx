@@ -77,13 +77,13 @@ import {
 } from "@/lib/chat.functions";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 
-import { cancelDiagramJob } from "@/lib/diagrams.functions";
-import { ThreadModelSelector } from "@/components/thread-model-selector";
+import { cancelDiagramJob } from "@/lib/diagrams/diagrams.functions";
+import { ThreadModelSelector } from "@/components/settings/thread-model-selector";
 import { suggestUserPrompt } from "@/lib/prompt-suggest.functions";
-import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
-import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
-import { MermaidPreview } from "@/components/mermaid-preview";
-import { DiagramRenderer } from "@/components/diagram-renderer";
+import { OUTPUT_TYPES, type OutputKey } from "@/lib/doc-types/output-types";
+import { ActivitySwimlaneRenderer } from "@/components/diagrams/activity-swimlane-renderer";
+import { MermaidPreview } from "@/components/diagrams/mermaid-preview";
+import { DiagramRenderer } from "@/components/diagrams/diagram-renderer";
 import { usePromptBoxSettings } from "@/lib/prompt-box-settings";
 
 export const Route = createFileRoute("/_authenticated/chat/$threadId")({

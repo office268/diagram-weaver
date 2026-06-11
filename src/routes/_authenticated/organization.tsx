@@ -10,7 +10,7 @@ import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { OrganizationLogoCard } from "@/components/organization-logo-card";
+import { OrganizationLogoCard } from "@/components/settings/organization-logo-card";
 
 export const Route = createFileRoute("/_authenticated/organization")({
   component: OrganizationHomePage,

@@ -11,7 +11,7 @@ import {
   DOC_TYPES,
   ALL_SECTION_KEYS,
   type DocTypeKey,
-} from "./doc-types";
+} from "./types";
 
 export interface DocTypeOverride {
   doc_type: DocTypeKey;
