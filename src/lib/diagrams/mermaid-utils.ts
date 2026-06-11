@@ -4,7 +4,7 @@
 // ============================================================
 import mermaid from "mermaid";
 import elkLayouts from "@mermaid-js/layout-elk";
-import { sanitizeSvg } from "@/lib/svg-sanitize";
+import { sanitizeSvg } from "@/lib/diagrams/svg-sanitize";
 
 let initialized = false;
 
@@ -29,7 +29,7 @@ export function setMermaidTheme(dark: boolean) {
   mermaid.initialize({ ...MERMAID_CONFIG, theme: dark ? "dark" : "default" });
 }
 
-/** @deprecated use `sanitizeSvg` from "@/lib/svg-sanitize" directly. */
+/** @deprecated use `sanitizeSvg` from "@/lib/diagrams/svg-sanitize" directly. */
 export const sanitizeMermaidSvg = sanitizeSvg;
 
 let renderCounter = 0;

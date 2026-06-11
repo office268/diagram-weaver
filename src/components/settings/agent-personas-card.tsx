@@ -23,7 +23,7 @@ import {
 import {
   listAgentPersonas,
   deleteAgentPersona,
-} from "@/lib/agents.functions";
+} from "@/lib/agents/agents.functions";
 import { AgentPersonaDialog, type PersonaDraft } from "./agent-persona-dialog";
 
 export function AgentPersonasCard() {

@@ -12,8 +12,8 @@ import { toast } from "sonner";
 import { AppBreadcrumb } from "@/components/navigation/app-breadcrumb";
 import { AgentConfigCard } from "@/components/settings/agent-config-card";
 import { Button } from "@/components/ui/button";
-import { getAgentsConfig } from "@/lib/agents-config.functions";
-import { exportAgentsConfigToSheets } from "@/lib/export-agents-config.functions";
+import { getAgentsConfig } from "@/lib/agents/agents-config.functions";
+import { exportAgentsConfigToSheets } from "@/lib/agents/export-agents-config.functions";
 import { useSiteTexts } from "@/lib/site-texts-context";
 
 export const Route = createFileRoute("/_authenticated/agents")({

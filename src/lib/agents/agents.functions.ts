@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdmin } from "@/lib/api/auth.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
 const SuggestInput = z.object({
@@ -158,17 +159,6 @@ ${history || "(אין הודעות עדיין)"}
     return { personaId: valid };
   });
 
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("רק אדמין יכול לבצע פעולה זו");
-}
 
 // ============ PERSONAS ============
 

@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
 const BodySchema = z.object({
@@ -37,13 +38,9 @@ export const Route = createFileRoute("/api/lab-chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user) return new Response("Unauthorized", { status: 401 });
-        const userId = userData.user.id;
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         let body: z.infer<typeof BodySchema>;
         try {
@@ -179,9 +176,9 @@ export const Route = createFileRoute("/api/lab-chat")({
 
           return Response.json({ ok: true, reply, newQuestions });
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
           console.error("[lab-chat] error:", err);
-          return new Response(msg, { status: 500 });
+          const { status, message } = translateAiError(err);
+          return new Response(message, { status });
         }
       },
     },

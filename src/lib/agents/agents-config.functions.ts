@@ -5,6 +5,7 @@
 // ============================================================
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAdmin } from "@/lib/api/auth.server";
 import {
   AGENT_MODELS,
   AGENT_TEMPERATURES,
@@ -44,17 +45,6 @@ export type AgentConfig = {
     maxIterations: number;
   };
 };
-
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("רק אדמין יכול לצפות בדף זה");
-}
 
 export const getAgentsConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

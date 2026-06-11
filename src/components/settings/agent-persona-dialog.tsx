@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents.functions";
+import { upsertAgentPersona, suggestPersonaField } from "@/lib/agents/agents.functions";
 
 
 

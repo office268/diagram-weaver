@@ -20,6 +20,22 @@ export async function requireBearerAuth(request: Request): Promise<AuthResult> {
   return { ok: true, userId: userData.user.id };
 }
 
+/** Assert that userId holds the admin role; throws if not. */
+export async function assertAdmin(
+  supabase: { from: (t: string) => unknown },
+  userId: string,
+  msg = "רק אדמין יכול לבצע פעולה זו",
+): Promise<void> {
+  const { data, error } = await (supabase as any)
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) throw new Error((error as { message: string }).message);
+  if (!data) throw new Error(msg);
+}
+
 /** Translate a raw AI provider error into an HTTP { status, message } pair. */
 export function translateAiError(err: unknown): { status: number; message: string } {
   const msg = err instanceof Error ? err.message : String(err);

@@ -17,7 +17,7 @@ import {
   getAgentConversation,
   addModeratorMessage,
   pickNextSpeaker,
-} from "@/lib/agents.functions";
+} from "@/lib/agents/agents.functions";
 
 export const Route = createFileRoute("/_authenticated/agent-conversations/$id")({
   head: () => ({ meta: [{ title: "שיחת סוכנים" }] }),

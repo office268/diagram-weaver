@@ -7,7 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireBearerAuth } from "@/lib/api/auth.server";
+import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
 const BodySchema = z.object({
@@ -166,9 +166,9 @@ export const Route = createFileRoute("/api/agent-turn")({
 
           return Response.json({ ok: true, message: inserted });
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
           console.error("[agent-turn] error:", err);
-          return new Response(msg, { status: 500 });
+          const { status, message } = translateAiError(err);
+          return new Response(message, { status });
         }
       },
     },
