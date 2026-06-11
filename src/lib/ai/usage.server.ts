@@ -4,7 +4,7 @@
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { calcCostUsd } from "./ai-pricing";
+import { calcCostUsd } from "./pricing";
 
 export interface UsageLike {
   // AI SDK v5+ field names

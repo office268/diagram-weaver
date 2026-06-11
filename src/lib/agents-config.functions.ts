@@ -63,7 +63,7 @@ export const getAgentsConfig = createServerFn({ method: "GET" })
     await assertAdmin(supabase, userId);
 
     const { loadAgentModelOverride } = await import(
-      "@/lib/ai-model-setting.server"
+      "@/lib/ai/model-setting.server"
     );
     const effectiveModel = await loadAgentModelOverride();
     const modelSource: "global-override" | "default" =

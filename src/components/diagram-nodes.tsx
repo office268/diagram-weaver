@@ -11,7 +11,7 @@ import {
   type NodeProps,
   type Node,
 } from "@xyflow/react";
-import type { DiagramNodeData } from "@/lib/diagram-rf";
+import type { DiagramNodeData } from "@/lib/diagrams/diagram-rf";
 
 const handleStyle: React.CSSProperties = {
   width: 8,

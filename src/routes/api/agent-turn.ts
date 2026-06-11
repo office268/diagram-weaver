@@ -8,7 +8,7 @@ import { z } from "zod";
 import { generateText } from "ai";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireBearerAuth } from "@/lib/api/auth.server";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
 
 const BodySchema = z.object({
   conversationId: z.string().uuid(),

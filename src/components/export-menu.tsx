@@ -18,8 +18,8 @@ import {
   downloadDocx,
   downloadMarkdown,
   printAsPdf,
-} from "@/lib/spec-export";
-import type { SpecContent } from "@/lib/spec-schema";
+} from "@/lib/spec/export";
+import type { SpecContent } from "@/lib/spec/schema";
 
 interface Props {
   title: string;

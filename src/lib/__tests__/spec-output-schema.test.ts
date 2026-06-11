@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractJson } from "@/lib/spec-output-schema";
+import { extractJson } from "@/lib/spec/output-schema";
 
 describe("extractJson", () => {
   it("returns plain JSON unchanged", () => {

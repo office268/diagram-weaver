@@ -73,7 +73,7 @@ export const Route = createFileRoute("/api/generate-spec")({
             const heartbeat = setInterval(() => safeEnqueue(" "), 10_000);
 
             try {
-              const { loadAgentModelOverride } = await import("@/lib/ai-model-setting.server");
+              const { loadAgentModelOverride } = await import("@/lib/ai/model-setting.server");
               const modelOverride = await loadAgentModelOverride();
 
               const result = await runOrchestrator({

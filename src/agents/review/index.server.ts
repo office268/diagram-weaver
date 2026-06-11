@@ -4,12 +4,12 @@
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================
 import { generateText } from "ai";
-import type { SpecOutput, SpecReview } from "@/lib/spec-output-schema";
-import { ReviewSchema, extractJson } from "@/lib/spec-output-schema";
+import type { SpecOutput, SpecReview } from "@/lib/spec/output-schema";
+import { ReviewSchema, extractJson } from "@/lib/spec/output-schema";
 import { AGENT_MODELS, AGENT_TEMPERATURES, SCORE_THRESHOLD } from "@/agents/shared/constants";
 import { buildSelfCritiqueInstruction } from "@/agents/shared/prompt-helpers";
-import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import type { UsageTracker } from "@/lib/ai-usage.server";
+import type { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
+import type { UsageTracker } from "@/lib/ai/usage.server";
 
 const REVIEW_SYSTEM = [
   "אתה מבקר איכות בכיר של מסמכי אפיון מערכת.",

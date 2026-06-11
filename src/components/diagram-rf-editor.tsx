@@ -22,7 +22,7 @@ import "@xyflow/react/dist/style.css";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { nodeTypes } from "@/components/diagram-nodes";
-import type { DiagramNodeData, DiagramRFData, LegacyActivityRFData } from "@/lib/diagram-rf";
+import type { DiagramNodeData, DiagramRFData, LegacyActivityRFData } from "@/lib/diagrams/diagram-rf";
 
 type AnyRF = DiagramRFData | LegacyActivityRFData;
 

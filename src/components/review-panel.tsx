@@ -2,7 +2,7 @@
 // src/components/review-panel.tsx
 // רכיב UI — review-panel
 // ============================================================
-import type { SpecReview } from "@/lib/spec-output-schema";
+import type { SpecReview } from "@/lib/spec/output-schema";
 
 export function ReviewPanel({ review }: { review: SpecReview }) {
   const tone =

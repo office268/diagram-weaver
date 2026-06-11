@@ -23,7 +23,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ActivityNodeData, ActivityRFData } from "@/lib/activity-rf";
+import type { ActivityNodeData, ActivityRFData } from "@/lib/diagrams/activity-rf";
 
 // ── Custom node components ─────────────────────────────────────────────────
 
