@@ -9,6 +9,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth } from "@/lib/api/auth.server";
 
 const BodySchema = z.object({
   fileName: z.string().min(1).max(255),
@@ -83,18 +84,9 @@ export const Route = createFileRoute("/api/ingest-document")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ")
-          ? auth.slice(7).trim()
-          : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } =
-          await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-        const userId = userData.user.id;
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         let body: z.infer<typeof BodySchema>;
         try {

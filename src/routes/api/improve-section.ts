@@ -8,7 +8,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { DEFAULT_MODEL } from "@/lib/ai-spec-defaults.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth, translateAiError } from "@/lib/api/auth.server";
 import { extractJson } from "@/lib/spec-output-schema";
 import { loadKnowledgeContextBlock } from "@/lib/knowledge-context.server";
 
@@ -43,17 +43,9 @@ export const Route = createFileRoute("/api/improve-section")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ")
-          ? auth.slice(7).trim()
-          : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } =
-          await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
+        const { userId } = authResult;
 
         let body: z.infer<typeof BodySchema>;
         try {
@@ -68,7 +60,7 @@ export const Route = createFileRoute("/api/improve-section")({
         try {
           const gateway = createLovableAiGatewayProvider(key);
           const knowledgeBlock = await loadKnowledgeContextBlock(
-            userData.user.id,
+            userId,
             body.projectId,
           );
           const userPrompt =
@@ -102,7 +94,7 @@ export const Route = createFileRoute("/api/improve-section")({
             try {
               const { logAiUsage } = await import("@/lib/ai-usage.server");
               await logAiUsage({
-                userId: userData.user.id,
+                userId: userId,
                 specDocumentId: body.docId,
                 model: DEFAULT_MODEL,
                 purpose: "improve_section",
@@ -128,18 +120,9 @@ export const Route = createFileRoute("/api/improve-section")({
 
           return Response.json({ value });
         } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
           console.error("[improve-section] failed:", e);
-          let status = 500;
-          let friendly = msg;
-          if (msg.includes("429")) {
-            status = 429;
-            friendly = "הגעת למגבלת קצב.";
-          } else if (msg.includes("402")) {
-            status = 402;
-            friendly = "אזלו קרדיטי ה-AI.";
-          }
-          return new Response(friendly, { status });
+          const { status, message } = translateAiError(e);
+          return new Response(message, { status });
         }
       },
     },

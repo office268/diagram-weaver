@@ -26,6 +26,13 @@ export const AGENT_TEMPERATURES = {
   review:        0.2,
 } as const;
 
+/** Keyword routing for the orchestrator improvement loop */
+export const IMPROVEMENT_KEYWORDS = {
+  requirements: ["דרישה", "FR", "NFR", "requirements", "מטרה", "סיכון", "הנחה"],
+  architecture: ["ארכיטקטורה", "architecture", "רכיב", "diagram", "דיאגרמה"],
+  useCases: ["תרחיש", "use case", "persona", "משתמש", "זרימה"],
+} as const;
+
 // Whitelist of models that admin can select for the agents.
 export const ALLOWED_AGENT_MODELS = [
   "google/gemini-2.5-pro",

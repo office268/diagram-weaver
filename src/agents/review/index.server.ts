@@ -6,7 +6,7 @@
 import { generateText } from "ai";
 import type { SpecOutput, SpecReview } from "@/lib/spec-output-schema";
 import { ReviewSchema, extractJson } from "@/lib/spec-output-schema";
-import { AGENT_MODELS, AGENT_TEMPERATURES } from "@/agents/shared/constants";
+import { AGENT_MODELS, AGENT_TEMPERATURES, SCORE_THRESHOLD } from "@/agents/shared/constants";
 import { buildSelfCritiqueInstruction } from "@/agents/shared/prompt-helpers";
 import type { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import type { UsageTracker } from "@/lib/ai-usage.server";
@@ -64,8 +64,11 @@ export async function runReviewAgent(
     text = res.text;
     tracker?.track(model, res.usage);
   } catch (err) {
-    console.warn("[review-agent] generateText failed, using default review:", err);
-    return { score: 8, notes: [] };
+    console.error(
+      "[review-agent] generateText failed — rethrowing so orchestrator can handle:",
+      err,
+    );
+    throw err;
   }
 
   try {
@@ -84,8 +87,9 @@ export async function runReviewAgent(
       .filter((n: { text: string }) => n.text.trim())
       .slice(0, 8);
     return ReviewSchema.parse({ score, notes });
-  } catch {
-    return { score: 8, notes: [] };
+  } catch (parseErr) {
+    console.warn("[review-agent] JSON parse failed — using conservative fallback:", parseErr);
+    return { score: SCORE_THRESHOLD - 1, notes: [] };
   }
 }
 

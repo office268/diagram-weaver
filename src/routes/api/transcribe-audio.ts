@@ -5,6 +5,7 @@
 // ============================================================
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireBearerAuth } from "@/lib/api/auth.server";
 
 const ALLOWED_MIME_PREFIXES = ["audio/", "video/"]; // many webm recordings come as video/webm
 const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
@@ -76,17 +77,8 @@ export const Route = createFileRoute("/api/transcribe-audio")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Auth
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.toLowerCase().startsWith("bearer ")
-          ? auth.slice(7).trim()
-          : "";
-        if (!token) return new Response("Unauthorized", { status: 401 });
-
-        const { data: userData, error: userErr } =
-          await supabaseAdmin.auth.getUser(token);
-        if (userErr || !userData?.user)
-          return new Response("Unauthorized", { status: 401 });
+        const authResult = await requireBearerAuth(request);
+        if (!authResult.ok) return authResult.response;
 
         const apiKey = process.env.ELEVENLABS_API_KEY;
         if (!apiKey)
