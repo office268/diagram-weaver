@@ -98,16 +98,3 @@ export function normalizeSpec(input: unknown): SpecContent {
     risks: arr<TextItem>(obj.risks),
   };
 }
-
-export const SECTION_LABELS_HE = {
-  overview: "סקירה כללית",
-  goals: "מטרות",
-  personas: "משתמשי קצה",
-  functional_requirements: "דרישות פונקציונליות",
-  non_functional_requirements: "דרישות לא־פונקציונליות",
-  assumptions: "הנחות יסוד",
-  use_cases: "תרחישי שימוש",
-  architecture: "ארכיטקטורה",
-  data_model: "מודל נתונים",
-  risks: "סיכונים",
-} as const;
