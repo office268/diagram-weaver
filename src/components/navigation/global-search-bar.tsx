@@ -40,8 +40,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { listSpecs } from "@/lib/spec/spec.functions";
-import { listDiagrams } from "@/lib/diagrams.functions";
-import { listDocuments } from "@/lib/documents.functions";
+import { listDiagrams } from "@/lib/diagrams/diagrams.functions";
+import { listDocuments } from "@/lib/doc-types/documents.functions";
 import { listProjects } from "@/lib/project.functions";
 
 type Category = "project" | "document" | "diagram" | "upload";

@@ -8,7 +8,7 @@ import { Check, Gift, Sparkles, Zap, Package } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { openCheckout } from "@/lib/paddle";
+import { openCheckout } from "@/lib/payments/paddle";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { toast } from "sonner";
 

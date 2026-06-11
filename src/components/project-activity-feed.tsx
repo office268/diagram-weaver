@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { Activity, FilePlus2, FilePen } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { he } from "date-fns/locale";
-import { getDocTypeVisual } from "@/lib/doc-types";
+import { getDocTypeVisual } from "@/lib/doc-types/types";
 
 interface SpecRow {
   id: string;

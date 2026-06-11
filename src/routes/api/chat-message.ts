@@ -15,8 +15,8 @@ import {
   type DiagramOutputKey,
   type DocumentOutputKey,
   type OutputKey,
-} from "@/lib/output-types";
-import type { DocTypeKey } from "@/lib/doc-types";
+} from "@/lib/doc-types/output-types";
+import type { DocTypeKey } from "@/lib/doc-types/types";
 import type { SpecOutput } from "@/lib/spec/output-schema";
 
 const BodySchema = z.object({

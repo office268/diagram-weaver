@@ -5,7 +5,7 @@
 // ============================================================
 // Server-only helpers for resolving per-doc-type system instructions.
 
-import { getDocTypeSystemInstruction } from "./doc-types.server";
+import { getDocTypeSystemInstruction } from "./types.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export function getDefaultFullInstruction(docType: string | null | undefined): string {

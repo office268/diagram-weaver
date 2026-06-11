@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { createChatThread } from "@/lib/chat.functions";
-import { OUTPUT_TYPES } from "@/lib/output-types";
+import { OUTPUT_TYPES } from "@/lib/doc-types/output-types";
 
 export const Route = createFileRoute("/_authenticated/meeting-transcribe")({
   head: () => ({

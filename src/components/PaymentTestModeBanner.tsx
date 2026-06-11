@@ -2,7 +2,7 @@
 // src/components/PaymentTestModeBanner.tsx
 // רכיב UI — PaymentTestModeBanner
 // ============================================================
-import { getPaddleEnvironment } from "@/lib/paddle";
+import { getPaddleEnvironment } from "@/lib/payments/paddle";
 
 export function PaymentTestModeBanner() {
   if (getPaddleEnvironment() !== "sandbox") return null;

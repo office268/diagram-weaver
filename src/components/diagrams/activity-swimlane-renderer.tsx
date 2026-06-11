@@ -4,7 +4,7 @@
 // ============================================================
 import { useCallback, useMemo, useState } from "react";
 import { sanitizeSvg } from "@/lib/svg-sanitize";
-import { ActivityRFEditor } from "@/components/activity-rf-editor";
+import { ActivityRFEditor } from "@/components/diagrams/activity-rf-editor";
 import { parseSvgToRF, isActivityRF, type ActivityRFData } from "@/lib/diagrams/activity-rf";
 import { Download, Maximize2, Minus, Pencil, Plus, RotateCcw } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";

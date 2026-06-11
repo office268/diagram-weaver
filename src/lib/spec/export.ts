@@ -3,7 +3,7 @@
 // ספריית עזר (lib) — spec-export.ts
 // ============================================================
 import type { SpecContent } from "@/lib/spec/schema";
-import { DEFAULT_SECTION_TITLES } from "@/lib/doc-types";
+import { DEFAULT_SECTION_TITLES } from "@/lib/doc-types/types";
 
 interface ExportInput {
   title: string;

@@ -4,7 +4,7 @@
 // ============================================================
 import mermaid from "mermaid";
 import elkLayouts from "@mermaid-js/layout-elk";
-import { sanitizeSvg } from "./svg-sanitize";
+import { sanitizeSvg } from "@/lib/svg-sanitize";
 
 let initialized = false;
 

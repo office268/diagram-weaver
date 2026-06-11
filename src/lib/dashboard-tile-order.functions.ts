@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { OUTPUT_TYPE_ORDER, OUTPUT_TYPE_EXTRAS, type OutputKey } from "@/lib/output-types";
+import { OUTPUT_TYPE_ORDER, OUTPUT_TYPE_EXTRAS, type OutputKey } from "@/lib/doc-types/output-types";
 
 const VALID_ORDER = new Set<string>(OUTPUT_TYPE_ORDER as readonly string[]);
 const VALID_EXTRAS = new Set<string>(OUTPUT_TYPE_EXTRAS as readonly string[]);

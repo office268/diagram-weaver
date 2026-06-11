@@ -8,7 +8,7 @@ import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { DiagramRFEditor } from "@/components/diagram-rf-editor";
+import { DiagramRFEditor } from "@/components/diagrams/diagram-rf-editor";
 import { isDiagramRF, parseDiagramRF, type DiagramRFData, type LegacyActivityRFData } from "@/lib/diagrams/diagram-rf";
 
 interface Props {

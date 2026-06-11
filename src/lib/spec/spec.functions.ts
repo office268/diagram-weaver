@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { buildSearchMaps, enrichRow } from "@/lib/search-enrich.server";
+import { buildSearchMaps, enrichRow } from "@/lib/rag/search-enrich.server";
 
 const idSchema = z.object({ id: z.string().uuid() });
 

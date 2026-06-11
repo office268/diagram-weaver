@@ -6,7 +6,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runDiagramJob } from "@/lib/diagrams/job.server";
-import type { DiagramOutputKey } from "@/lib/output-types";
+import type { DiagramOutputKey } from "@/lib/doc-types/output-types";
 
 const RESET_STUCK_MINUTES = 3;
 

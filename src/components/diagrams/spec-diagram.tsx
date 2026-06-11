@@ -2,7 +2,7 @@
 // src/components/spec-diagram.tsx
 // רכיב UI — spec-diagram
 // ============================================================
-import { DiagramRenderer } from "@/components/diagram-renderer";
+import { DiagramRenderer } from "@/components/diagrams/diagram-renderer";
 
 interface Props {
   code: string;

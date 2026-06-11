@@ -33,8 +33,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AppBreadcrumb } from "@/components/app-breadcrumb";
-import { AgentPersonasCard } from "@/components/agent-personas-card";
+import { AppBreadcrumb } from "@/components/navigation/app-breadcrumb";
+import { AgentPersonasCard } from "@/components/settings/agent-personas-card";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { useCurrentOrganization } from "@/hooks/use-current-organization";
 import {

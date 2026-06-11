@@ -3,7 +3,7 @@
 // רכיב UI — mermaid-preview
 // ============================================================
 import { useEffect, useRef, useState } from "react";
-import { renderMermaid } from "@/lib/mermaid-utils";
+import { renderMermaid } from "@/lib/diagrams/mermaid-utils";
 import { AlertTriangle, Download, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { toast } from "sonner";

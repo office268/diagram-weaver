@@ -6,8 +6,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { DOC_TYPE_KEYS } from "@/lib/doc-types";
-import { getDefaultFullInstruction } from "@/lib/doc-type-instructions.server";
+import { DOC_TYPE_KEYS } from "@/lib/doc-types/types";
+import { getDefaultFullInstruction } from "@/lib/doc-types/instructions.server";
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data, error } = await supabase

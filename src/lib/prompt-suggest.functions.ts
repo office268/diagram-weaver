@@ -8,7 +8,7 @@ import { generateText } from "ai";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createLovableAiGatewayProvider } from "@/lib/ai/gateway.server";
-import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
+import { OUTPUT_TYPES, type OutputKey } from "@/lib/doc-types/output-types";
 
 export const suggestUserPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

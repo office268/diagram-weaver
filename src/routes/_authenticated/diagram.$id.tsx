@@ -9,12 +9,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MermaidPreview } from "@/components/mermaid-preview";
-import { DiagramRenderer } from "@/components/diagram-renderer";
+import { MermaidPreview } from "@/components/diagrams/mermaid-preview";
+import { DiagramRenderer } from "@/components/diagrams/diagram-renderer";
 import { isDiagramRF } from "@/lib/diagrams/diagram-rf";
-import { ActivitySwimlaneRenderer } from "@/components/activity-swimlane-renderer";
-import { getDiagram, updateDiagram } from "@/lib/diagrams.functions";
-import { OUTPUT_TYPES, type OutputKey } from "@/lib/output-types";
+import { ActivitySwimlaneRenderer } from "@/components/diagrams/activity-swimlane-renderer";
+import { getDiagram, updateDiagram } from "@/lib/diagrams/diagrams.functions";
+import { OUTPUT_TYPES, type OutputKey } from "@/lib/doc-types/output-types";
 
 export const Route = createFileRoute("/_authenticated/diagram/$id")({
   head: () => ({
