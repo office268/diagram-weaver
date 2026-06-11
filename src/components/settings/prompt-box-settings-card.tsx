@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/prompt-box-settings-card.tsx
+// src/components/settings/prompt-box-settings-card.tsx
 // רכיב UI — prompt-box-settings-card
 // ============================================================
 import { useEffect, useState } from "react";

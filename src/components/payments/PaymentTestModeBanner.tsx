@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/PaymentTestModeBanner.tsx
+// src/components/payments/PaymentTestModeBanner.tsx
 // רכיב UI — PaymentTestModeBanner
 // ============================================================
 import { getPaddleEnvironment } from "@/lib/payments/paddle";

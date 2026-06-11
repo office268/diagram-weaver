@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/diagram-job.server.ts
+// src/lib/diagrams/job.server.ts
 // מודול server-only — diagram-job.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

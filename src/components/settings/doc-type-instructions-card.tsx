@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/doc-type-instructions-card.tsx
+// src/components/settings/doc-type-instructions-card.tsx
 // רכיב UI — doc-type-instructions-card
 // ============================================================
 import { useEffect, useState } from "react";

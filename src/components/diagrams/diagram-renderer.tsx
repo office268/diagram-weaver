@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/diagram-renderer.tsx
+// src/components/diagrams/diagram-renderer.tsx
 // רכיב UI — diagram-renderer
 // ============================================================
 // Entry-point renderer: detects RF JSON (v1/v2) and renders, with edit toggle.

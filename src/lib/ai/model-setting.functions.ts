@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-model-setting.functions.ts
+// src/lib/ai/model-setting.functions.ts
 // Server function (createServerFn) — ai-model-setting.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/mermaid-preview.tsx
+// src/components/diagrams/mermaid-preview.tsx
 // רכיב UI — mermaid-preview
 // ============================================================
 import { useEffect, useRef, useState } from "react";

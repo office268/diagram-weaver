@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-spec-defaults.server.ts
+// src/lib/ai/spec-defaults.server.ts
 // מודול server-only — ai-spec-defaults.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

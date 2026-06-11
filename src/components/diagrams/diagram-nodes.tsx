@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/diagram-nodes.tsx
+// src/components/diagrams/diagram-nodes.tsx
 // רכיב UI — diagram-nodes
 // ============================================================
 // All custom React Flow node components for the unified diagram editor.

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/agents-config.functions.ts
+// src/lib/agents/agents-config.functions.ts
 // Server function (createServerFn) — agents-config.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

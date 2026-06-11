@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/global-search-bar.tsx
+// src/components/navigation/global-search-bar.tsx
 // רכיב UI — global-search-bar
 // ============================================================
 import { useMemo, useState } from "react";

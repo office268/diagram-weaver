@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/thread-model-selector.tsx
+// src/components/settings/thread-model-selector.tsx
 // רכיב UI — thread-model-selector
 // ============================================================
 import { useState } from "react";

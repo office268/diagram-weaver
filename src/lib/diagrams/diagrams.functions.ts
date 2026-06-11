@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/diagrams.functions.ts
+// src/lib/diagrams/diagrams.functions.ts
 // Server function (createServerFn) — diagrams.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

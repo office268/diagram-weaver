@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/diagram-rf-editor.tsx
+// src/components/diagrams/diagram-rf-editor.tsx
 // רכיב UI — diagram-rf-editor
 // ============================================================
 // Generic React Flow editor for all diagram kinds.

@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/editable-text.tsx
+// src/components/ui/editable-text.tsx
 // רכיב UI — editable-text
 // ============================================================
 import { createContext, useEffect, useRef, useState } from "react";

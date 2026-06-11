@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/app-metadata-card.tsx
+// src/components/settings/app-metadata-card.tsx
 // רכיב UI — app-metadata-card
 // ============================================================
 import { useState } from "react";

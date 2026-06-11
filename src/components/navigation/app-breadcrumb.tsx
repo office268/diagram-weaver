@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/app-breadcrumb.tsx
+// src/components/navigation/app-breadcrumb.tsx
 // רכיב UI — app-breadcrumb
 // ============================================================
 import { Link } from "@tanstack/react-router";

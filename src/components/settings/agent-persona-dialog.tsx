@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/agent-persona-dialog.tsx
+// src/components/settings/agent-persona-dialog.tsx
 // רכיב UI — agent-persona-dialog
 // ============================================================
 import { useEffect, useState } from "react";

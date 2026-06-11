@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/export-menu.tsx
+// src/components/diagrams/export-menu.tsx
 // רכיב UI — export-menu
 // ============================================================
 import { Download, FileText, FileType2, Printer, Copy } from "lucide-react";

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-model-setting.server.ts
+// src/lib/ai/model-setting.server.ts
 // מודול server-only — ai-model-setting.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/activity-rf.ts
+// src/lib/diagrams/activity-rf.ts
 // ספריית עזר (lib) — activity-rf.ts
 // ============================================================
 import type { Node, Edge } from "@xyflow/react";

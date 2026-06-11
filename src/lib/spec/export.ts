@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/spec-export.ts
+// src/lib/spec/export.ts
 // ספריית עזר (lib) — spec-export.ts
 // ============================================================
 import type { SpecContent } from "@/lib/spec/schema";

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/doc-types.server.ts
+// src/lib/doc-types/types.server.ts
 // מודול server-only — doc-types.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

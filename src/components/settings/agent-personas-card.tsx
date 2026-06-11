@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/agent-personas-card.tsx
+// src/components/settings/agent-personas-card.tsx
 // רכיב UI — agent-personas-card
 // ============================================================
 import { useState } from "react";

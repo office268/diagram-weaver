@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/mobile-bottom-nav.tsx
+// src/components/navigation/mobile-bottom-nav.tsx
 // רכיב UI — mobile-bottom-nav
 // ============================================================
 import { Link, useRouterState } from "@tanstack/react-router";

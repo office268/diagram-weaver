@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/prompt-suggest.functions.ts
+// src/lib/ai/prompt-suggest.functions.ts
 // Server function (createServerFn) — prompt-suggest.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

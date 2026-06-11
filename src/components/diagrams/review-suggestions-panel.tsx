@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/review-suggestions-panel.tsx
+// src/components/diagrams/review-suggestions-panel.tsx
 // רכיב UI — review-suggestions-panel
 // ============================================================
 import { useMemo } from "react";

@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/activity-rf-editor.tsx
+// src/components/diagrams/activity-rf-editor.tsx
 // רכיב UI — activity-rf-editor
 // ============================================================
 import { useCallback, useEffect, useMemo } from "react";

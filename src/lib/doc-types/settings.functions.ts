@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/doc-type-settings.functions.ts
+// src/lib/doc-types/settings.functions.ts
 // Server function (createServerFn) — doc-type-settings.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/knowledge-context.server.ts
+// src/lib/rag/knowledge-context.server.ts
 // מודול server-only — knowledge-context.server.ts
 // מורץ רק בצד השרת (TanStack Start)
 // ============================================================

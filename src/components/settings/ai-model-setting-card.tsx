@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/ai-model-setting-card.tsx
+// src/components/settings/ai-model-setting-card.tsx
 // רכיב UI — ai-model-setting-card
 // ============================================================
 import { useState, useEffect } from "react";

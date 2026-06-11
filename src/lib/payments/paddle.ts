@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/paddle.ts
+// src/lib/payments/paddle.ts
 // ספריית עזר (lib) — paddle.ts
 // ============================================================
 import { resolvePaddlePrice, createPortalSession } from "@/utils/payments.functions";

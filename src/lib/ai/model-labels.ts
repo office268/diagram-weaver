@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/ai-model-labels.ts
+// src/lib/ai/model-labels.ts
 // ספריית עזר (lib) — ai-model-labels.ts
 // ============================================================
 export const MODEL_LABELS: Record<string, string> = {

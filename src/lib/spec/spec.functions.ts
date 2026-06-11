@@ -1,5 +1,5 @@
 // ============================================================
-// src/lib/spec.functions.ts
+// src/lib/spec/spec.functions.ts
 // Server function (createServerFn) — spec.functions.ts
 // נקודת RPC מהלקוח לשרת
 // ============================================================

@@ -1,5 +1,5 @@
 // ============================================================
-// src/components/spec-diagram.tsx
+// src/components/diagrams/spec-diagram.tsx
 // רכיב UI — spec-diagram
 // ============================================================
 import { DiagramRenderer } from "@/components/diagrams/diagram-renderer";
